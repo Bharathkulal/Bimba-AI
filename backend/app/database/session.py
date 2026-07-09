@@ -42,6 +42,7 @@ def init_db():
     from app.models.student import Student
     from app.models.otp import OTP
     from app.models.analytics import Resume, ResumeVersion, AIUsageLog, EditingSession, DownloadLog, ActivityLog
+    from app.models.ai_admin import AIProvider, AIGatewayLog, AISystemSettings
     from datetime import datetime, timedelta, timezone
     
     # Create tables
@@ -165,6 +166,72 @@ def init_db():
             
             db.commit()
             print("Successfully seeded all real-time analytics data!")
+            
+        # Seed AI admin default settings and providers if they don't exist yet
+        providers_count = db.query(AIProvider).count()
+        if providers_count == 0:
+            print("Seeding AI Providers and Admin settings...")
+            from app.utils.crypto import encrypt_key
+            
+            p1 = AIProvider(
+                name="Gemini",
+                slug="gemini",
+                encrypted_api_key=encrypt_key("AIzaSyB1-mockGeminiKey92348572"),
+                priority=1,
+                is_active=True,
+                status="Healthy",
+                today_requests=102,
+                latency_ms=800,
+                success_rate=99
+            )
+            
+            p2 = AIProvider(
+                name="OpenRouter",
+                slug="openrouter",
+                encrypted_api_key=encrypt_key("sk-or-v1-mockOpenRouterKey2384723"),
+                priority=2,
+                is_active=True,
+                status="Connected",
+                today_requests=10,
+                latency_ms=1100,
+                success_rate=98
+            )
+            
+            p3 = AIProvider(
+                name="Groq",
+                slug="groq",
+                encrypted_api_key=encrypt_key("gsk_mockGroqAPIKey238472938479"),
+                priority=3,
+                is_active=True,
+                status="Connected",
+                today_requests=6,
+                latency_ms=450,
+                success_rate=100
+            )
+            
+            db.add_all([p1, p2, p3])
+            
+            # Seed default system settings
+            settings = AISystemSettings(
+                auto_retry=True,
+                fallback=True,
+                ai_timeout=20,
+                request_limit=50,
+                log_retention=90,
+                debug=False
+            )
+            db.add(settings)
+            
+            # Seed gateway activity logs
+            db.add_all([
+                AIGatewayLog(provider="Gemini", feature="Resume Generator", status="Success", latency_ms=812, user_roll="BCA25008"),
+                AIGatewayLog(provider="Gemini", feature="Resume Improve", status="Success", latency_ms=640, user_roll="BCA25008"),
+                AIGatewayLog(provider="OpenRouter", feature="ATS Analysis", status="Success", latency_ms=1150, user_roll="BCA25008"),
+                AIGatewayLog(provider="Groq", feature="AI Chat Assistant", status="Success", latency_ms=420, user_roll="BCA25008"),
+                AIGatewayLog(provider="Gemini", feature="Cover Letter", status="Failed", latency_ms=2500, user_roll="BCA25008"),
+            ])
+            db.commit()
+            print("Successfully seeded default AI Management config and logs!")
     except Exception as e:
         print(f"Error seeding database: {e}")
     finally:

@@ -4,6 +4,7 @@ from app.core.config import settings
 from app.api.health import router as health_router
 from app.api.auth import router as auth_router
 from app.api.analytics import router as analytics_router
+from app.api.ai_admin import router as ai_admin_router
 from app.database.session import init_db
 
 app = FastAPI(
@@ -29,6 +30,7 @@ if settings.BACKEND_CORS_ORIGINS:
 app.include_router(health_router, prefix=settings.API_V1_STR)
 app.include_router(auth_router, prefix=settings.API_V1_STR)
 app.include_router(analytics_router, prefix=settings.API_V1_STR)
+app.include_router(ai_admin_router, prefix=settings.API_V1_STR)
 
 # Also expose health check on root-level "/health" as requested by user
 app.include_router(health_router)

@@ -3,7 +3,7 @@ import { Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Home, FileText, LayoutTemplate, Bot, Award, BarChart3, Settings, 
-  User, LogOut
+  User, LogOut, Cpu
 } from 'lucide-react';
 import { useUserStore } from '../store/userStore';
 
@@ -20,6 +20,7 @@ export const DashboardLayout: React.FC = () => {
     { label: 'AI Assistant', path: '/dashboard', sectionId: 'ai-assistant-section', icon: Bot },
     { label: 'ATS Checker', path: '/dashboard', sectionId: 'ats-section', icon: Award },
     { label: 'Analytics', path: '/dashboard', sectionId: 'analytics-section', icon: BarChart3 },
+    { label: 'AI Management ⭐', path: '/admin/ai', icon: Cpu },
     { label: 'Profile', path: '/profile', icon: User },
     { label: 'Settings', path: '/settings', icon: Settings },
   ];

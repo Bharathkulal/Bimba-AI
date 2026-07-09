@@ -13,6 +13,7 @@ import { Dashboard } from '../pages/Dashboard';
 import { ResumeBuilder } from '../pages/ResumeBuilder';
 import { Profile } from '../pages/Profile';
 import { Settings } from '../pages/Settings';
+import { AiManagement } from '../pages/AiManagement';
 import { NotFound } from '../pages/NotFound';
 
 export const AppRoutes: React.FC = () => {
@@ -32,6 +33,7 @@ export const AppRoutes: React.FC = () => {
           <Route path="/resume-builder" element={<ResumeBuilder />} />
           <Route path="/profile" element={<Profile />} />
           <Route path="/settings" element={<Settings />} />
+          <Route path="/admin/ai" element={<AiManagement />} />
         </Route>
 
         {/* 404 Route */}
