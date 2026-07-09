@@ -1,49 +1,76 @@
-import React, { useState } from 'react';
-import { Outlet, useLocation, useNavigate } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { Outlet, useNavigate, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
-  Home, FileText, LayoutTemplate, Bot, Award, BarChart3, Settings, 
-  User, LogOut
+  Home, Users, FileText, LayoutTemplate, Cpu, BarChart3, 
+  Shield, FileSpreadsheet, Settings, LogOut
 } from 'lucide-react';
-import { useUserStore } from '../store/userStore';
+import { adminService } from '../services/admin';
 
-export const DashboardLayout: React.FC = () => {
-  const location = useLocation();
+export const AdminLayout: React.FC = () => {
   const navigate = useNavigate();
-  const logout = useUserStore((state) => state.logout);
+  const location = useLocation();
   const [isHovered, setIsHovered] = useState(false);
 
+  // Authentication check
+  useEffect(() => {
+    const token = localStorage.getItem('admin_token');
+    if (!token) {
+      navigate('/admin/login');
+    }
+  }, [navigate, location]);
+
+  // Session timeout implementation (15 mins inactivity)
+  useEffect(() => {
+    let timeoutId: any;
+    const resetTimer = () => {
+      clearTimeout(timeoutId);
+      timeoutId = setTimeout(() => {
+        adminService.logout();
+        alert("Session expired due to inactivity. Please log in again.");
+        navigate('/admin/login');
+      }, 15 * 60 * 1000); // 15 minutes
+    };
+
+    // Listen to user interactions
+    window.addEventListener('mousemove', resetTimer);
+    window.addEventListener('keydown', resetTimer);
+    window.addEventListener('click', resetTimer);
+
+    resetTimer(); // initialize
+
+    return () => {
+      clearTimeout(timeoutId);
+      window.removeEventListener('mousemove', resetTimer);
+      window.removeEventListener('keydown', resetTimer);
+      window.removeEventListener('click', resetTimer);
+    };
+  }, [navigate]);
+
   const menuItems = [
-    { label: 'Home', path: '/dashboard', sectionId: 'top', icon: Home },
-    { label: 'My Resumes', path: '/dashboard', sectionId: 'resumes-section', icon: FileText },
-    { label: 'Templates', path: '/dashboard', sectionId: 'templates-section', icon: LayoutTemplate },
-    { label: 'AI Assistant', path: '/dashboard', sectionId: 'ai-assistant-section', icon: Bot },
-    { label: 'ATS Checker', path: '/dashboard', sectionId: 'ats-section', icon: Award },
-    { label: 'Analytics', path: '/dashboard', sectionId: 'analytics-section', icon: BarChart3 },
-    { label: 'Profile', path: '/profile', icon: User },
-    { label: 'Settings', path: '/settings', icon: Settings },
+    { label: 'Dashboard', path: '/admin/dashboard', icon: Home },
+    { label: 'Users', path: '/admin/users', icon: Users },
+    { label: 'Resumes', path: '/admin/resumes', icon: FileText },
+    { label: 'Templates', path: '/admin/templates', icon: LayoutTemplate },
+    { label: 'AI Management', path: '/admin/ai', icon: Cpu },
+    { label: 'Analytics', path: '/admin/analytics', icon: BarChart3 },
+    { label: 'Security', path: '/admin/security', icon: Shield },
+    { label: 'Logs', path: '/admin/logs', icon: FileSpreadsheet },
+    { label: 'Settings', path: '/admin/settings', icon: Settings },
   ];
 
-  const handleNavClick = (item: typeof menuItems[0]) => {
-    if (item.sectionId) {
-      if (location.pathname !== '/dashboard') {
-        navigate('/dashboard');
-        setTimeout(() => {
-          const el = document.getElementById(item.sectionId!);
-          if (el) el.scrollIntoView({ behavior: 'smooth' });
-        }, 100);
-      } else {
-        const el = document.getElementById(item.sectionId);
-        if (el) el.scrollIntoView({ behavior: 'smooth' });
-      }
-    } else {
-      navigate(item.path);
-    }
+  const handleNavClick = (path: string) => {
+    navigate(path);
+  };
+
+  const handleLogout = () => {
+    adminService.logout();
+    navigate('/admin/login');
   };
 
   return (
-    <div className="min-h-screen bg-[#F8FAFC] text-slate-800 flex overflow-x-hidden font-sans relative selection:bg-blue-600/10">
-      {/* Decorative blurred glow elements */}
+    <div className="min-h-screen bg-[#F8FAFC] text-slate-800 flex overflow-x-hidden font-sans relative selection:bg-blue-600/10 w-full">
+      {/* Decorative background glows */}
       <div className="absolute top-[-10%] left-[-10%] w-[50%] h-[50%] rounded-full bg-blue-500/5 blur-[120px] pointer-events-none z-0" />
       <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] rounded-full bg-indigo-500/5 blur-[120px] pointer-events-none z-0" />
 
@@ -59,8 +86,8 @@ export const DashboardLayout: React.FC = () => {
         <div className="flex flex-col gap-8">
           {/* Logo / Bimba Dock Header */}
           <div className="flex items-center gap-3.5 px-2.5 overflow-hidden">
-            <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-blue-600 to-indigo-600 flex items-center justify-center text-white font-black text-xl shadow-lg shadow-blue-500/20 shrink-0">
-              B
+            <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-slate-700 to-slate-900 flex items-center justify-center text-white font-black text-xl shadow-lg shrink-0">
+              A
             </div>
             <AnimatePresence>
               {isHovered && (
@@ -69,9 +96,9 @@ export const DashboardLayout: React.FC = () => {
                   animate={{ opacity: 1, x: 0 }}
                   exit={{ opacity: 0, x: -10 }}
                   transition={{ duration: 0.15 }}
-                  className="font-extrabold text-slate-800 text-lg tracking-tight whitespace-nowrap"
+                  className="font-extrabold text-slate-800 text-base tracking-tight whitespace-nowrap"
                 >
-                  Bimba AI
+                  Admin Console
                 </motion.span>
               )}
             </AnimatePresence>
@@ -81,14 +108,12 @@ export const DashboardLayout: React.FC = () => {
           <nav className="flex flex-col gap-1.5">
             {menuItems.map((item) => {
               const Icon = item.icon;
-              const isActive = item.sectionId 
-                ? (location.pathname === '/dashboard' && !item.path.includes('/profile') && !item.path.includes('/settings'))
-                : location.pathname === item.path;
+              const isActive = location.pathname === item.path;
 
               return (
                 <button
                   key={item.label}
-                  onClick={() => handleNavClick(item)}
+                  onClick={() => handleNavClick(item.path)}
                   className={`flex items-center w-full px-3 py-3 rounded-xl transition-all duration-250 relative group cursor-pointer ${
                     isActive 
                       ? 'text-blue-600' 
@@ -98,7 +123,7 @@ export const DashboardLayout: React.FC = () => {
                   {/* Active Page Animated Glow Accent */}
                   {isActive && (
                     <motion.div 
-                      layoutId="activeGlowLight" 
+                      layoutId="activeGlowLightAdmin" 
                       className="absolute inset-0 rounded-xl bg-blue-50 border border-blue-200/50 shadow-sm pointer-events-none"
                     />
                   )}
@@ -135,7 +160,7 @@ export const DashboardLayout: React.FC = () => {
 
         {/* Dock Footer (Logout) */}
         <button
-          onClick={() => logout()}
+          onClick={handleLogout}
           className="flex items-center w-full px-3 py-3 rounded-xl text-red-600 hover:text-red-700 hover:bg-red-50 transition-all duration-250 cursor-pointer relative group"
         >
           <div className="flex items-center shrink-0 justify-center w-6 h-6">
@@ -150,56 +175,24 @@ export const DashboardLayout: React.FC = () => {
                 transition={{ duration: 0.15 }}
                 className="ml-3 text-xs font-bold tracking-wide whitespace-nowrap"
               >
-                Log Out
+                Logout
               </motion.span>
             )}
           </AnimatePresence>
-
           {!isHovered && (
-            <div className="absolute left-20 bg-slate-900 border border-slate-800 text-red-500 px-2.5 py-1.5 rounded-lg text-[10px] font-bold tracking-wider uppercase opacity-0 pointer-events-none group-hover:opacity-100 transition-opacity duration-200 shadow-xl whitespace-nowrap z-50">
-              Log Out
+            <div className="absolute left-20 bg-red-600 text-white px-2.5 py-1.5 rounded-lg text-[10px] font-bold tracking-wider uppercase opacity-0 pointer-events-none group-hover:opacity-100 transition-opacity duration-200 shadow-xl whitespace-nowrap z-50">
+              Logout
             </div>
           )}
         </button>
       </motion.aside>
 
-      {/* Floating Bottom Navigation Bar - MOBILE */}
-      <nav className="md:hidden fixed bottom-4 inset-x-4 bg-white/80 border border-slate-200/60 backdrop-blur-xl rounded-2xl py-2.5 px-4 flex items-center justify-around z-40 shadow-xl shadow-slate-100/50">
-        {menuItems.slice(0, 5).map((item) => {
-          const Icon = item.icon;
-          const isActive = item.sectionId 
-            ? (location.pathname === '/dashboard' && !item.path.includes('/profile') && !item.path.includes('/settings'))
-            : location.pathname === item.path;
+      {/* Main Workspace Frame */}
+      <main className="flex-grow min-h-screen py-10 px-6 md:pl-28 transition-all duration-300 w-full relative z-10">
+        <Outlet />
+      </main>
 
-          return (
-            <button
-              key={item.label}
-              onClick={() => handleNavClick(item)}
-              className="flex flex-col items-center justify-center p-2 relative cursor-pointer"
-            >
-              <Icon size={18} className={isActive ? 'text-blue-600' : 'text-slate-400'} />
-              {isActive && (
-                <span className="absolute bottom-[-2px] w-1.5 h-1.5 rounded-full bg-blue-600" />
-              )}
-            </button>
-          );
-        })}
-        {/* Mobile Settings Shortcut */}
-        <button
-          onClick={() => navigate('/settings')}
-          className="flex flex-col items-center justify-center p-2 cursor-pointer"
-        >
-          <Settings size={18} className={location.pathname === '/settings' ? 'text-blue-600' : 'text-slate-400'} />
-        </button>
-      </nav>
-
-      {/* Content wrapper */}
-      <div className="flex-grow pl-0 md:pl-[84px] min-h-screen flex flex-col z-10 w-full">
-        <main className="p-4 md:p-8 flex-grow pb-24 md:pb-8 w-full">
-          <Outlet />
-        </main>
-      </div>
     </div>
   );
 };
-export default DashboardLayout;
+export default AdminLayout;

@@ -13,7 +13,11 @@ export const apiClient = axios.create({
 // Request Interceptor (e.g. for injecting Auth Tokens in the future)
 apiClient.interceptors.request.use(
   (config) => {
-    const token = localStorage.getItem('auth_token');
+    const isAdminRequest = config.url?.includes('/admin') || window.location.pathname.startsWith('/admin');
+    const token = isAdminRequest 
+      ? (localStorage.getItem('admin_token') || localStorage.getItem('auth_token'))
+      : (localStorage.getItem('auth_token') || localStorage.getItem('admin_token'));
+      
     if (token && config.headers) {
       config.headers.Authorization = `Bearer ${token}`;
     }
