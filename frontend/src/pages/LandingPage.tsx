@@ -1,5 +1,6 @@
+import React, { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
-import { motion } from 'framer-motion';
+import { motion, useInView } from 'framer-motion';
 import { 
   Sparkles, HelpCircle, ArrowRight, Star 
 } from 'lucide-react';
@@ -8,18 +9,71 @@ import { Card } from '../components/Card';
 import { SectionTitle } from '../components/SectionTitle';
 import { TemplateShowcase } from '../components/TemplateShowcase';
 
-export const LandingPage: React.FC = () => {
-  // Animation Variants
-  const floatingVariants: any = {
-    animate: {
-      y: [0, -8, 0],
-      transition: {
-        duration: 5,
-        repeat: Infinity,
-        ease: 'easeInOut'
-      }
+const AnimatedNumber: React.FC<{ value: number; suffix?: string; duration?: number }> = ({ value, suffix = '', duration = 1200 }) => {
+  const [count, setCount] = useState(0);
+  const ref = useRef(null);
+  const isInView = useInView(ref, { once: true, margin: "-50px" });
+
+  useEffect(() => {
+    if (isInView) {
+      let start = 0;
+      const end = value;
+      if (start === end) return;
+
+      const incrementTime = Math.max(Math.floor(duration / end), 15);
+      const timer = setInterval(() => {
+        start += 1;
+        setCount(start);
+        if (start === end) {
+          clearInterval(timer);
+        }
+      }, incrementTime);
+
+      return () => clearInterval(timer);
     }
-  };
+  }, [isInView, value, duration]);
+
+  return <span ref={ref}>{count}{suffix}</span>;
+};
+
+// Animation Variants
+const sectionVariants: any = {
+  hidden: { opacity: 0, y: 24 },
+  show: {
+    opacity: 1,
+    y: 0,
+    transition: {
+      duration: 0.7,
+      ease: [0.16, 1, 0.3, 1], // easeOut
+      staggerChildren: 0.1
+    }
+  }
+};
+
+const childVariants: any = {
+  hidden: { opacity: 0, y: 16 },
+  show: {
+    opacity: 1,
+    y: 0,
+    transition: {
+      duration: 0.6,
+      ease: [0.16, 1, 0.3, 1]
+    }
+  }
+};
+
+const floatingVariants: any = {
+  animate: {
+    y: [0, -8, 0],
+    transition: {
+      duration: 5,
+      repeat: Infinity,
+      ease: 'easeInOut'
+    }
+  }
+};
+
+export const LandingPage: React.FC = () => {
 
   return (
     <div className="overflow-hidden bg-slate-50/50">
@@ -31,13 +85,15 @@ export const LandingPage: React.FC = () => {
 
       {/* 1. HERO SECTION */}
       <section className="relative pt-16 pb-20 z-10">
-        <div className="max-w-7xl mx-auto px-6 grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
-          
+        <motion.div 
+          variants={sectionVariants}
+          initial="hidden"
+          animate="show"
+          className="max-w-7xl mx-auto px-6 grid grid-cols-1 lg:grid-cols-2 gap-12 items-center"
+        >
           {/* Hero Left Content */}
           <motion.div 
-            initial={{ opacity: 0, x: -40 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.8 }}
+            variants={childVariants}
             className="flex flex-col gap-6"
           >
             {/* Resumes created today indicator */}
@@ -46,7 +102,7 @@ export const LandingPage: React.FC = () => {
                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
                 <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
               </span>
-              <span>48,827 resumes created today</span>
+              <span><AnimatedNumber value={48827} duration={1500} /> resumes created today</span>
             </div>
 
             <h1 className="text-4xl md:text-6xl font-extrabold text-slate-800 tracking-tight leading-[1.1] !my-0">
@@ -73,12 +129,16 @@ export const LandingPage: React.FC = () => {
             {/* Placement stats */}
             <div className="flex items-center gap-8 mt-6 pt-6 border-t border-slate-100">
               <div>
-                <span className="bg-emerald-100 text-emerald-700 text-xs font-bold px-2 py-1 rounded-md">48%</span>
+                <span className="bg-emerald-100 text-emerald-700 text-xs font-bold px-2 py-1 rounded-md">
+                  <AnimatedNumber value={48} suffix="%" />
+                </span>
                 <p className="text-xs text-slate-400 font-medium mt-2">more likely to get hired</p>
               </div>
               <div className="w-px h-10 bg-slate-200" />
               <div>
-                <span className="bg-amber-100 text-amber-700 text-xs font-bold px-2 py-1 rounded-md">12%</span>
+                <span className="bg-amber-100 text-amber-700 text-xs font-bold px-2 py-1 rounded-md">
+                  <AnimatedNumber value={12} suffix="%" />
+                </span>
                 <p className="text-xs text-slate-400 font-medium mt-2">better pay with your next job</p>
               </div>
             </div>
@@ -153,31 +213,43 @@ export const LandingPage: React.FC = () => {
             {/* Behind blob */}
             <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-80 h-80 rounded-full bg-gradient-to-tr from-primary/10 to-accent/10 blur-2xl z-0" />
           </motion.div>
-        </div>
+        </motion.div>
       </section>
 
       {/* 2. LOGO TRUST BAR */}
-      <section className="py-8 bg-slate-50 border-y border-slate-100">
+      <motion.section 
+        variants={sectionVariants}
+        initial="hidden"
+        whileInView="show"
+        viewport={{ once: true, margin: "-50px" }}
+        className="py-8 bg-slate-50 border-y border-slate-100"
+      >
         <div className="max-w-7xl mx-auto px-6 text-center">
-          <p className="text-xs uppercase font-extrabold tracking-wider text-slate-400 mb-6">
+          <motion.p variants={childVariants} className="text-xs uppercase font-extrabold tracking-wider text-slate-400 mb-6">
             Our customers have been hired at:
-          </p>
-          <div className="flex flex-wrap items-center justify-center gap-8 md:gap-16 opacity-60">
+          </motion.p>
+          <motion.div variants={childVariants} className="flex flex-wrap items-center justify-center gap-8 md:gap-16 opacity-60">
             {['Google', 'DHL', 'Booking.com', 'Spotify', 'Facebook', 'Amazon'].map((brand) => (
               <span key={brand} className="text-slate-600 font-bold text-lg tracking-tight select-none">
                 {brand}
               </span>
             ))}
-          </div>
+          </motion.div>
         </div>
-      </section>
+      </motion.section>
 
       {/* 3. 3-STEP TIMELINE SECTION */}
-      <section className="py-24 bg-white">
+      <motion.section 
+        variants={sectionVariants}
+        initial="hidden"
+        whileInView="show"
+        viewport={{ once: true, margin: "-100px" }}
+        className="py-24 bg-white"
+      >
         <div className="max-w-7xl mx-auto px-6 grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
           
           {/* Visual Cards Mockup on Left */}
-          <div className="relative flex justify-center">
+          <motion.div variants={childVariants} className="relative flex justify-center">
             <Card className="w-full max-w-[400px] border border-slate-100 shadow-xl relative z-10 flex flex-col gap-4">
               <div className="flex items-center gap-2 mb-2">
                 <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center text-primary font-bold text-xs">
@@ -209,10 +281,10 @@ export const LandingPage: React.FC = () => {
 
             {/* Blob behind */}
             <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-72 h-72 rounded-full bg-blue-50 blur-xl z-0" />
-          </div>
+          </motion.div>
 
           {/* Timeline Steps on Right */}
-          <div>
+          <motion.div variants={childVariants}>
             <SectionTitle 
               title="Create your job-winning, AI-powered resume in 3 steps" 
               subtitle="Job search is stressful enough. Avoid the design headache with our recruiter-approved placement builder."
@@ -247,16 +319,22 @@ export const LandingPage: React.FC = () => {
                 </Button>
               </Link>
             </div>
-          </div>
+          </motion.div>
 
         </div>
-      </section>
+      </motion.section>
 
       {/* 4. TEMPLATE SHOWCASE SECTION */}
       <TemplateShowcase />
 
       {/* 5. TESTIMONIAL / TRUST SECTION */}
-      <section className="py-24 bg-slate-50 relative z-10 border-b border-slate-100">
+      <motion.section 
+        variants={sectionVariants}
+        initial="hidden"
+        whileInView="show"
+        viewport={{ once: true, margin: "-100px" }}
+        className="py-24 bg-slate-50 relative z-10 border-b border-slate-100"
+      >
         <div className="max-w-7xl mx-auto px-6">
           <SectionTitle 
             title="Learn why people choose our AI-powered resumes" 
@@ -267,7 +345,7 @@ export const LandingPage: React.FC = () => {
           <div className="grid grid-cols-1 lg:grid-cols-4 gap-8 items-center mt-12">
             
             {/* Rating Widget */}
-            <div className="lg:col-span-1 flex flex-col items-center lg:items-start text-center lg:text-left bg-white p-6 rounded-[20px] border border-slate-150 shadow-sm gap-4">
+            <motion.div variants={childVariants} className="lg:col-span-1 flex flex-col items-center lg:items-start text-center lg:text-left bg-white p-6 rounded-[20px] border border-slate-150 shadow-sm gap-4">
               <span className="text-slate-800 font-extrabold text-3xl">4.5 out of 5</span>
               <div className="flex items-center gap-1 text-emerald-500">
                 {[1, 2, 3, 4, 5].map((st) => (
@@ -278,16 +356,16 @@ export const LandingPage: React.FC = () => {
                 <span className="text-emerald-500">★</span> Trustpilot
               </div>
               <p className="text-[11px] text-slate-400">based on 3,112 reviews</p>
-            </div>
+            </motion.div>
 
             {/* Testimonial slider / list */}
-            <div className="lg:col-span-3 grid grid-cols-1 md:grid-cols-3 gap-6">
+            <motion.div variants={childVariants} className="lg:col-span-3 grid grid-cols-1 md:grid-cols-3 gap-6">
               {[
                 { name: 'Sarah Thompson', time: 'about 1 day ago', text: 'Bimba AI made it sooo easy. Like many others here, I had no idea how to write my resume at all. The AI suggestions were spot-on!' },
                 { name: 'Jason Miller', time: 'about 1 day ago', text: 'Landed several interviews! I created my resume in 10 minutes and got two callbacks the same week. Super easy!' },
                 { name: 'Priya Ramesh', time: 'about 1 day ago', text: 'Fast and effective. Bimba AI helped me say what I meant, and believe it or not, my bullet points sound so professional!' }
               ].map((rev, idx) => (
-                <Card key={idx} className="flex flex-col justify-between gap-5 p-5 bg-white border border-slate-150 shadow-sm h-full">
+                <Card key={idx} className="flex flex-col justify-between gap-5 p-5 bg-white border border-slate-150 shadow-sm h-full hover:-translate-y-1 transition-all duration-250 hover:shadow-md">
                   <div>
                     <div className="flex items-center gap-0.5 text-emerald-500 mb-3">
                       {[1, 2, 3, 4, 5].map((st) => (
@@ -302,14 +380,20 @@ export const LandingPage: React.FC = () => {
                   </div>
                 </Card>
               ))}
-            </div>
+            </motion.div>
 
           </div>
         </div>
-      </section>
+      </motion.section>
 
       {/* 6. WHY USE BIMBA AI FEATURE CARDS */}
-      <section className="py-24 bg-white relative z-10">
+      <motion.section 
+        variants={sectionVariants}
+        initial="hidden"
+        whileInView="show"
+        viewport={{ once: true, margin: "-100px" }}
+        className="py-24 bg-white relative z-10"
+      >
         <div className="max-w-7xl mx-auto px-6 text-center">
           <SectionTitle 
             title="Why use Bimba AI's AI Resume Builder?" 
@@ -317,7 +401,7 @@ export const LandingPage: React.FC = () => {
             centered
           />
 
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mt-12">
+          <motion.div variants={childVariants} className="grid grid-cols-1 md:grid-cols-4 gap-6 mt-12">
             {[
               {
                 title: 'Enjoy the head start',
@@ -371,16 +455,16 @@ export const LandingPage: React.FC = () => {
                 visual: (
                   <div className="w-full h-24 bg-blue-50/50 rounded-xl border border-slate-100 flex items-center justify-center p-3 relative overflow-hidden">
                     <div className="bg-white rounded-lg p-2.5 shadow-sm border border-slate-150 text-center w-full flex flex-col items-center justify-center gap-1.5">
-                      <div className="w-6 h-6 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center font-bold text-[10px]">
+                      <div className="w-6 h-6 rounded-full bg-emerald-100 text-emerald-650 flex items-center justify-center font-bold text-[10px]">
                         ✓
                       </div>
-                      <span className="text-[8px] font-bold text-slate-600">Accept the offer!</span>
+                      <span className="text-[8px] font-bold text-slate-650">Accept the offer!</span>
                     </div>
                   </div>
                 )
               }
             ].map((card, idx) => (
-              <div key={idx} className="flex flex-col bg-white p-6 rounded-[20px] border border-slate-150 shadow-sm text-left h-full justify-between gap-5">
+              <div key={idx} className="flex flex-col bg-white p-6 rounded-[20px] border border-slate-150 shadow-sm text-left h-full justify-between gap-5 card-hover-premium hover:shadow-md transition-all duration-250 cursor-pointer">
                 <div className="flex flex-col gap-4">
                   {card.visual}
                   <h4 className="font-extrabold text-slate-800 text-sm mt-1">{card.title}</h4>
@@ -388,34 +472,40 @@ export const LandingPage: React.FC = () => {
                 </div>
               </div>
             ))}
-          </div>
+          </motion.div>
 
-          <div className="mt-12 flex justify-center">
+          <motion.div variants={childVariants} className="mt-12 flex justify-center">
             <Link to="/activate">
               <Button variant="primary" size="lg" className="shadow-lg shadow-blue-500/20 font-semibold">
                 Create My AI Resume
               </Button>
             </Link>
-          </div>
+          </motion.div>
 
         </div>
-      </section>
+      </motion.section>
 
       {/* 7. FAQ SECTION */}
-      <section className="py-24 bg-slate-50 border-t border-slate-100 relative z-10">
+      <motion.section 
+        variants={sectionVariants}
+        initial="hidden"
+        whileInView="show"
+        viewport={{ once: true, margin: "-100px" }}
+        className="py-24 bg-slate-50 border-t border-slate-100 relative z-10"
+      >
         <div className="max-w-4xl mx-auto px-6">
           <SectionTitle 
             title="Frequently Asked Questions" 
             subtitle="Got questions about Bimba AI's student placement resume builder? We have answers."
             centered
           />
-          <div className="flex flex-col gap-5 mt-10">
+          <motion.div variants={childVariants} className="flex flex-col gap-5 mt-10">
             {[
               { q: 'Is my resume secure?', a: 'Yes, we take security very seriously. All student data is stored securely in accordance with college database policies.' },
               { q: 'Will my resume bypass applicant tracking systems (ATS)?', a: 'Absolutely. Every template is rigorously structured following standard parser rules to guarantee maximum ATS scores.' },
               { q: 'How does the AI assistance work?', a: 'The AI analyzes your details and dynamically drafts high-impact achievements and job descriptions tailored to your target roles.' }
             ].map((faq, idx) => (
-              <Card key={idx} className="p-6 bg-white border border-slate-150 shadow-sm">
+              <Card key={idx} className="p-6 bg-white border border-slate-150 shadow-sm hover:shadow-md transition-all duration-250 cursor-pointer">
                 <h4 className="font-extrabold text-slate-800 text-sm md:text-base flex items-center gap-2.5 mb-2">
                   <HelpCircle size={18} className="text-primary shrink-0" />
                   {faq.q}
@@ -423,9 +513,9 @@ export const LandingPage: React.FC = () => {
                 <p className="text-xs md:text-sm text-slate-500 pl-7 leading-relaxed font-medium">{faq.a}</p>
               </Card>
             ))}
-          </div>
+          </motion.div>
         </div>
-      </section>
+      </motion.section>
     </div>
   );
 };

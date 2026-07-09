@@ -195,7 +195,7 @@ export const DashboardLayout: React.FC = () => {
 
       {/* Content wrapper */}
       <div className="flex-grow pl-0 md:pl-[84px] min-h-screen flex flex-col z-10 w-full">
-        <main className="p-4 md:p-8 flex-grow pb-24 md:pb-8 w-full max-w-[1600px] mx-auto">
+        <main className="p-4 md:p-8 flex-grow pb-24 md:pb-8 w-full">
           <Outlet />
         </main>
       </div>

@@ -464,7 +464,7 @@ export const TemplateShowcase: React.FC = () => {
   };
 
   return (
-    <section id="templates" className="py-24 bg-[#0B1220] text-white relative z-10 font-sans">
+    <section id="templates" className="py-24 bg-white text-slate-800 relative z-10 font-sans border-t border-slate-100">
       {/* Background radial effects */}
       <div className="absolute top-0 right-0 w-[40%] h-[40%] rounded-full bg-blue-500/5 blur-[120px] pointer-events-none" />
       <div className="absolute bottom-0 left-0 w-[30%] h-[30%] rounded-full bg-indigo-500/5 blur-[100px] pointer-events-none" />
@@ -476,7 +476,7 @@ export const TemplateShowcase: React.FC = () => {
             initial={{ opacity: 0, y: -20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
-            className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-blue-500/10 border border-blue-500/20 text-xs font-semibold text-[#4F7CFF] mb-4"
+            className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-blue-50 border border-blue-200 text-xs font-semibold text-blue-600 mb-4"
           >
             <Sparkles size={12} />
             ATS Friendly Templates
@@ -485,7 +485,7 @@ export const TemplateShowcase: React.FC = () => {
             initial={{ opacity: 0, y: 10 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
-            className="text-4xl md:text-5xl font-extrabold tracking-tight text-white mb-4"
+            className="text-4xl md:text-5xl font-extrabold tracking-tight text-slate-905 mb-4"
           >
             Professional Resume Templates
           </motion.h2>
@@ -493,24 +493,24 @@ export const TemplateShowcase: React.FC = () => {
             initial={{ opacity: 0, y: 10 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
-            className="text-slate-400 text-base md:text-lg leading-relaxed"
+            className="text-slate-500 text-base md:text-lg leading-relaxed"
           >
             Accelerate your career path with premium, recruiter-approved formats engineered to land interviews and clear ATS screening checks seamlessly.
           </motion.p>
         </div>
 
         {/* Filter and Search Bar */}
-        <div className="bg-slate-900/40 backdrop-blur-xl border border-slate-800 rounded-3xl p-5 mb-10 flex flex-col gap-5">
+        <div className="bg-slate-50/50 border border-slate-200/60 rounded-3xl p-5 mb-10 flex flex-col gap-5">
           <div className="flex flex-col lg:flex-row gap-4 items-center justify-between">
             {/* Search Input */}
             <div className="relative w-full lg:w-96">
-              <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500" size={16} />
+              <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-450" size={16} />
               <input 
                 type="text"
                 placeholder="Search premium templates..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-slate-950/60 border border-slate-800 focus:border-[#4F7CFF] focus:outline-none text-sm text-slate-100 placeholder:text-slate-600 transition-smooth"
+                className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-white border border-slate-200/80 focus:border-blue-500 focus:outline-none text-sm text-slate-700 placeholder:text-slate-450 transition-smooth"
               />
             </div>
 
@@ -520,7 +520,7 @@ export const TemplateShowcase: React.FC = () => {
               <select
                 value={sortBy}
                 onChange={(e) => setSortBy(e.target.value)}
-                className="bg-slate-950/60 border border-slate-800 rounded-xl px-4 py-2.5 text-xs font-semibold text-slate-350 focus:border-[#4F7CFF] focus:outline-none cursor-pointer transition-smooth"
+                className="bg-white border border-slate-200 rounded-xl px-4 py-2.5 text-xs font-semibold text-slate-600 focus:border-blue-500 focus:outline-none cursor-pointer transition-smooth"
               >
                 <option value="Popularity">Popularity</option>
                 <option value="ATS Score">ATS Match Score</option>
@@ -530,15 +530,15 @@ export const TemplateShowcase: React.FC = () => {
           </div>
 
           {/* Category Chips Container */}
-          <div className="border-t border-slate-800/80 pt-4 overflow-x-auto no-scrollbar flex items-center gap-2">
+          <div className="border-t border-slate-200/60 pt-4 overflow-x-auto no-scrollbar flex items-center gap-2">
             {categories.map((cat) => (
               <button
                 key={cat}
                 onClick={() => setSelectedCategory(cat)}
                 className={`px-4 py-2 rounded-xl text-xs font-semibold whitespace-nowrap cursor-pointer transition-smooth ${
                   selectedCategory === cat 
-                    ? 'bg-[#4F7CFF] text-white shadow-lg shadow-blue-500/20' 
-                    : 'bg-slate-950/40 text-slate-400 border border-slate-800/60 hover:text-slate-200 hover:border-slate-700'
+                    ? 'bg-blue-600 text-white shadow shadow-blue-500/10' 
+                    : 'bg-white text-slate-550 border border-slate-200/60 hover:bg-slate-50 hover:text-slate-800'
                 }`}
               >
                 {cat}
@@ -564,15 +564,15 @@ export const TemplateShowcase: React.FC = () => {
                   layout
                   variants={cardVariants}
                   onClick={() => setSelectedTemplate(tpl.id)}
-                  className={`group relative rounded-3xl bg-slate-900/35 border p-4.5 flex flex-col justify-between overflow-hidden cursor-pointer h-[420px] transition-all duration-250 ease-out hover:-translate-y-2 hover:shadow-2xl hover:shadow-blue-500/10 ${
+                  className={`group relative rounded-3xl bg-white border p-4.5 flex flex-col justify-between overflow-hidden cursor-pointer h-[420px] transition-all duration-250 ease-out hover:-translate-y-2 hover:shadow-xl hover:shadow-slate-200/50 ${
                     isSelected 
-                      ? 'border-[#4F7CFF] bg-[#4F7CFF]/5 shadow-lg shadow-[#4F7CFF]/15' 
-                      : 'border-slate-800/80 hover:border-[#4F7CFF]/50'
+                      ? 'border-blue-500 bg-blue-50/5 shadow-md shadow-blue-500/5' 
+                      : 'border-slate-200/60 hover:border-blue-500/50'
                   }`}
                 >
                   {/* Selected Indicator Banner */}
                   {isSelected && (
-                    <div className="absolute top-0 right-0 bg-[#4F7CFF] text-white px-3 py-1 rounded-bl-xl text-[10px] font-extrabold flex items-center gap-1 shadow-md z-20 animate-pulse">
+                    <div className="absolute top-0 right-0 bg-blue-600 text-white px-3 py-1 rounded-bl-xl text-[10px] font-extrabold flex items-center gap-1 shadow z-20 animate-pulse">
                       <Check size={10} strokeWidth={3} /> Selected
                     </div>
                   )}
@@ -582,28 +582,28 @@ export const TemplateShowcase: React.FC = () => {
                     <span className={`bg-gradient-to-r ${tpl.badgeColor} text-white text-[9px] font-black tracking-wider uppercase px-2 py-0.8 rounded-md shadow`}>
                       {tpl.badge}
                     </span>
-                    <div className="flex items-center gap-1 text-slate-400 text-[10px] font-semibold bg-slate-950/40 px-2 py-0.8 rounded-md border border-slate-800">
-                      <Award size={10} className="text-[#4F7CFF]" /> ATS {tpl.atsScore}%
+                    <div className="flex items-center gap-1 text-slate-550 text-[10px] font-semibold bg-slate-50 px-2 py-0.8 rounded-md border border-slate-200">
+                      <Award size={10} className="text-blue-600" /> ATS {tpl.atsScore}%
                     </div>
                   </div>
 
                   {/* High Quality miniature Resume Preview */}
-                  <div className="relative flex-grow rounded-2xl overflow-hidden border border-slate-800/80 shadow bg-slate-950/80 group-hover:border-[#4F7CFF]/30 transition-all duration-250">
+                  <div className="relative flex-grow rounded-2xl overflow-hidden border border-slate-200/60 shadow bg-slate-50 group-hover:border-blue-200 transition-all duration-250">
                     {/* Render specific template preview layout */}
                     <div className="w-full h-full transform transition-transform duration-250 group-hover:scale-105">
                       {tpl.renderPreview(false)}
                     </div>
 
                     {/* Gradient Overlay for Unselected or Hover */}
-                    <div className="absolute inset-0 bg-gradient-to-t from-slate-950/90 via-transparent to-transparent opacity-60 pointer-events-none" />
+                    <div className="absolute inset-0 bg-gradient-to-t from-slate-100/10 via-transparent to-transparent opacity-60 pointer-events-none" />
 
                     {/* Active Gradient Overlay on Selected */}
                     {isSelected && (
-                      <div className="absolute inset-0 bg-[#4F7CFF]/5 border border-[#4F7CFF]/10 pointer-events-none" />
+                      <div className="absolute inset-0 bg-blue-500/5 border border-blue-500/10 pointer-events-none" />
                     )}
 
                     {/* Action buttons sliding upwards on Hover */}
-                    <div className="absolute inset-0 bg-slate-950/75 backdrop-blur-sm flex flex-col justify-center gap-2.5 px-4 opacity-0 group-hover:opacity-100 transition-opacity duration-250">
+                    <div className="absolute inset-0 bg-white/90 backdrop-blur-sm flex flex-col justify-center gap-2.5 px-4 opacity-0 group-hover:opacity-100 transition-opacity duration-250">
                       <Button 
                         onClick={(e) => {
                           e.stopPropagation();
@@ -611,7 +611,7 @@ export const TemplateShowcase: React.FC = () => {
                         }}
                         variant="outline" 
                         size="sm" 
-                        className="w-full py-2 text-xs font-bold border-slate-700 text-slate-200 hover:bg-slate-800 hover:text-white"
+                        className="w-full py-2 text-xs font-bold border-slate-200 text-slate-650 hover:bg-slate-50 hover:text-slate-800"
                       >
                         Preview Design
                       </Button>
@@ -622,7 +622,7 @@ export const TemplateShowcase: React.FC = () => {
                         }}
                         variant="primary" 
                         size="sm" 
-                        className="w-full py-2 text-xs font-bold bg-[#4F7CFF] hover:bg-blue-600 shadow shadow-blue-500/10 gap-1.5"
+                        className="w-full py-2 text-xs font-bold bg-blue-600 hover:bg-blue-750 shadow shadow-blue-500/5 gap-1.5"
                       >
                         Use Template <ArrowRight size={12} />
                       </Button>
@@ -630,22 +630,22 @@ export const TemplateShowcase: React.FC = () => {
                   </div>
 
                   {/* Bottom details block */}
-                  <div className="mt-3.5 pt-3 border-t border-slate-800/60 z-10">
+                  <div className="mt-3.5 pt-3 border-t border-slate-100 z-10">
                     <div className="flex justify-between items-start">
                       <div>
-                        <h4 className="font-extrabold text-sm text-slate-100 group-hover:text-[#4F7CFF] transition-smooth">{tpl.name}</h4>
+                        <h4 className="font-extrabold text-sm text-slate-800 group-hover:text-blue-600 transition-smooth">{tpl.name}</h4>
                         <p className="text-[10px] text-slate-500 font-medium mt-0.5">{tpl.style}</p>
                       </div>
                       <div className="text-right">
                         <span className="text-[9px] font-black text-slate-400 block tracking-wide uppercase">Used By</span>
-                        <span className="text-[10px] font-extrabold text-slate-200">{tpl.usersCount}</span>
+                        <span className="text-[10px] font-extrabold text-slate-700">{tpl.usersCount}</span>
                       </div>
                     </div>
 
                     {/* Tags row */}
                     <div className="flex flex-wrap gap-1 mt-2.5">
                       {tpl.tags.slice(0, 3).map((tag) => (
-                        <span key={tag} className="text-[9px] font-semibold bg-slate-950/50 text-slate-550 border border-slate-800/40 px-2 py-0.5 rounded-md">
+                        <span key={tag} className="text-[9px] font-semibold bg-slate-50 text-slate-500 border border-slate-200/50 px-2 py-0.5 rounded-md">
                           {tag}
                         </span>
                       ))}
@@ -659,12 +659,12 @@ export const TemplateShowcase: React.FC = () => {
 
         {/* Empty Placeholder State */}
         {filteredTemplates.length === 0 && (
-          <div className="bg-slate-900/35 border border-slate-800 rounded-3xl p-16 text-center max-w-xl mx-auto flex flex-col items-center gap-4">
-            <div className="w-14 h-14 bg-slate-950 rounded-2xl border border-slate-800 flex items-center justify-center text-slate-500 mb-2">
+          <div className="bg-slate-50 border border-slate-200/60 rounded-3xl p-16 text-center max-w-xl mx-auto flex flex-col items-center gap-4">
+            <div className="w-14 h-14 bg-white rounded-2xl border border-slate-200/60 flex items-center justify-center text-slate-400 mb-2 shadow-sm">
               <FileText size={24} />
             </div>
-            <h4 className="text-lg font-bold text-slate-200">No Premium Templates Match Your Filters</h4>
-            <p className="text-slate-400 text-sm leading-relaxed">
+            <h4 className="text-lg font-bold text-slate-800">No Premium Templates Match Your Filters</h4>
+            <p className="text-slate-500 text-sm leading-relaxed">
               We couldn't find any templates for "{searchQuery}" matching your current selection. Try broadening your criteria or reset the search.
             </p>
             <Button 
@@ -674,7 +674,7 @@ export const TemplateShowcase: React.FC = () => {
               }}
               variant="outline"
               size="sm"
-              className="mt-2 text-xs font-bold border-slate-800 text-slate-350 hover:bg-slate-800"
+              className="mt-2 text-xs font-bold border-slate-200 text-slate-650 hover:bg-slate-50"
             >
               Reset Filters
             </Button>
@@ -689,41 +689,41 @@ export const TemplateShowcase: React.FC = () => {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-slate-950/80 backdrop-blur-md z-50 flex items-center justify-center p-4 md:p-8"
+            className="fixed inset-0 bg-slate-950/50 backdrop-blur-md z-50 flex items-center justify-center p-4 md:p-8"
           >
             <motion.div 
               initial={{ scale: 0.95, y: 15 }}
               animate={{ scale: 1, y: 0 }}
               exit={{ scale: 0.95, y: 15 }}
               transition={{ type: "spring", duration: 0.4 }}
-              className="bg-[#0B1220] border border-slate-800 rounded-3xl w-full max-w-4xl h-[90vh] flex flex-col overflow-hidden shadow-2xl relative shadow-blue-500/5"
+              className="bg-white border border-slate-200 rounded-3xl w-full max-w-4xl h-[90vh] flex flex-col overflow-hidden shadow-2xl relative"
             >
               {/* Modal Top Bar */}
-              <div className="flex items-center justify-between px-6 py-4 border-b border-slate-800 bg-slate-950/40">
+              <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200 bg-slate-50/50">
                 <div>
-                  <h3 className="font-extrabold text-lg text-white">{previewingTemplate.name}</h3>
-                  <p className="text-xs text-slate-400 mt-0.5">{previewingTemplate.description}</p>
+                  <h3 className="font-extrabold text-lg text-slate-900">{previewingTemplate.name}</h3>
+                  <p className="text-xs text-slate-500 mt-0.5">{previewingTemplate.description}</p>
                 </div>
 
                 {/* Controls & Zoom Panel */}
                 <div className="flex items-center gap-4">
                   {/* Zoom Controls */}
-                  <div className="hidden md:flex items-center bg-slate-950/80 border border-slate-800 rounded-xl p-1 gap-1">
+                  <div className="hidden md:flex items-center bg-slate-100 border border-slate-200 rounded-xl p-1 gap-1">
                     <button 
                       onClick={() => setZoomLevel(100)}
-                      className={`px-3 py-1.5 rounded-lg text-xs font-extrabold transition-smooth ${zoomLevel === 100 ? 'bg-[#4F7CFF] text-white' : 'text-slate-400 hover:text-slate-200'}`}
+                      className={`px-3 py-1.5 rounded-lg text-xs font-extrabold transition-smooth ${zoomLevel === 100 ? 'bg-blue-600 text-white' : 'text-slate-500 hover:text-slate-800'}`}
                     >
                       100%
                     </button>
                     <button 
                       onClick={() => setZoomLevel(125)}
-                      className={`px-3 py-1.5 rounded-lg text-xs font-extrabold transition-smooth ${zoomLevel === 125 ? 'bg-[#4F7CFF] text-white' : 'text-slate-400 hover:text-slate-200'}`}
+                      className={`px-3 py-1.5 rounded-lg text-xs font-extrabold transition-smooth ${zoomLevel === 125 ? 'bg-blue-600 text-white' : 'text-slate-500 hover:text-slate-800'}`}
                     >
                       125%
                     </button>
                     <button 
                       onClick={() => setZoomLevel(150)}
-                      className={`px-3 py-1.5 rounded-lg text-xs font-extrabold transition-smooth ${zoomLevel === 150 ? 'bg-[#4F7CFF] text-white' : 'text-slate-400 hover:text-slate-200'}`}
+                      className={`px-3 py-1.5 rounded-lg text-xs font-extrabold transition-smooth ${zoomLevel === 150 ? 'bg-blue-600 text-white' : 'text-slate-500 hover:text-slate-800'}`}
                     >
                       150%
                     </button>
@@ -734,7 +734,7 @@ export const TemplateShowcase: React.FC = () => {
                     onClick={() => handleDownloadSample(previewingTemplate)}
                     variant="outline" 
                     size="sm" 
-                    className="gap-2 border-slate-800 text-slate-200 hover:bg-slate-900"
+                    className="gap-2 border-slate-200 text-slate-700 hover:bg-slate-50"
                   >
                     <Download size={14} /> <span className="hidden sm:inline">Download Sample PDF</span>
                   </Button>
@@ -742,7 +742,7 @@ export const TemplateShowcase: React.FC = () => {
                   {/* Close button */}
                   <button 
                     onClick={() => setPreviewingTemplate(null)}
-                    className="w-10 h-10 rounded-xl bg-slate-950 border border-slate-800 flex items-center justify-center text-slate-400 hover:text-white hover:border-slate-700 transition-smooth cursor-pointer"
+                    className="w-10 h-10 rounded-xl bg-white border border-slate-200 flex items-center justify-center text-slate-500 hover:text-slate-800 hover:border-slate-300 transition-smooth cursor-pointer shadow-sm"
                   >
                     <X size={18} />
                   </button>
@@ -750,7 +750,7 @@ export const TemplateShowcase: React.FC = () => {
               </div>
 
               {/* Modal Content Scroll Area */}
-              <div className="flex-grow p-6 md:p-10 overflow-y-auto bg-slate-950/20 no-scrollbar flex justify-center items-start">
+              <div className="flex-grow p-6 md:p-10 overflow-y-auto bg-slate-100/10 no-scrollbar flex justify-center items-start">
                 <div 
                   className="w-full max-w-2xl bg-white rounded-2xl shadow-xl transition-all duration-300"
                   style={{ transform: `scale(${zoomLevel / 100})`, transformOrigin: 'top center' }}
@@ -762,9 +762,9 @@ export const TemplateShowcase: React.FC = () => {
               </div>
 
               {/* Modal Bottom Bar */}
-              <div className="px-6 py-4 border-t border-slate-800 bg-slate-950/40 flex justify-between items-center">
-                <div className="flex items-center gap-4 text-xs font-semibold text-slate-400">
-                  <span className="flex items-center gap-1"><Award size={13} className="text-[#4F7CFF]" /> ATS Optimized {previewingTemplate.atsScore}%</span>
+              <div className="px-6 py-4 border-t border-slate-200 bg-slate-50/50 flex justify-between items-center">
+                <div className="flex items-center gap-4 text-xs font-semibold text-slate-500">
+                  <span className="flex items-center gap-1"><Award size={13} className="text-blue-600" /> ATS Optimized {previewingTemplate.atsScore}%</span>
                   <span className="flex items-center gap-1"><Flame size={13} className="text-orange-500" /> {previewingTemplate.popularity}</span>
                 </div>
                 <Button
@@ -774,7 +774,7 @@ export const TemplateShowcase: React.FC = () => {
                   }}
                   variant="primary"
                   size="sm"
-                  className="bg-[#4F7CFF] hover:bg-blue-600 gap-1.5"
+                  className="bg-blue-600 hover:bg-blue-755 gap-1.5"
                 >
                   Use This Template <ArrowRight size={14} />
                 </Button>
