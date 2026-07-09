@@ -1,16 +1,14 @@
-import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { 
-  Sparkles, HelpCircle, ArrowRight, Check, Star 
+  Sparkles, HelpCircle, ArrowRight, Star 
 } from 'lucide-react';
 import { Button } from '../components/Button';
 import { Card } from '../components/Card';
 import { SectionTitle } from '../components/SectionTitle';
+import { TemplateShowcase } from '../components/TemplateShowcase';
 
 export const LandingPage: React.FC = () => {
-  const [activeTemplate, setActiveTemplate] = useState('Astral');
-
   // Animation Variants
   const floatingVariants: any = {
     animate: {
@@ -22,16 +20,6 @@ export const LandingPage: React.FC = () => {
       }
     }
   };
-
-  const templatesList = [
-    { name: 'Cosmos', style: 'Minimalist & Clean' },
-    { name: 'Celestial', style: 'Recruiter Approved' },
-    { name: 'Galaxy', style: 'Technical Density' },
-    { name: 'Astral', style: 'Bold Headings & Accents' },
-    { name: 'Astralis', style: 'Modern & Compact' },
-    { name: 'Pulsar', style: 'Elegant Layout' },
-    { name: 'Eclipse', style: 'Executive Standard' }
-  ];
 
   return (
     <div className="overflow-hidden bg-slate-50/50">
@@ -264,72 +252,8 @@ export const LandingPage: React.FC = () => {
         </div>
       </section>
 
-      {/* 4. TEMPLATE SLIDER SECTION */}
-      <section id="templates" className="py-24 bg-slate-900 text-white relative z-10">
-        <div className="max-w-7xl mx-auto px-6 text-center">
-          <SectionTitle 
-            title="Choose your resume template, AI will do the rest" 
-            subtitle="With Bimba AI's generator, you'll get a professional, typo-free, and ATS-friendly resume ready in no time. Explore recruiter-approved templates."
-            centered
-          />
-          
-          <div className="mt-4 mb-10 flex justify-center">
-            <Link to="/activate">
-              <Button variant="accent" size="md" className="font-semibold text-slate-900 bg-white hover:bg-slate-100">
-                View all templates
-              </Button>
-            </Link>
-          </div>
-
-          {/* Template Cards Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mt-12">
-            {templatesList.slice(0, 4).map((tpl) => (
-              <div 
-                key={tpl.name}
-                onClick={() => setActiveTemplate(tpl.name)}
-                className={`relative rounded-[20px] p-5 cursor-pointer border transition-smooth text-left h-[320px] flex flex-col justify-between overflow-hidden ${
-                  activeTemplate === tpl.name 
-                    ? 'bg-slate-800 border-primary shadow-lg shadow-blue-500/10' 
-                    : 'bg-slate-850/50 border-slate-800 hover:border-slate-700'
-                }`}
-              >
-                {/* Visual template mock content */}
-                <div className="bg-slate-800/40 border border-slate-700/50 rounded-xl flex-grow p-4 flex flex-col gap-2.5 relative group overflow-hidden">
-                  <div className="h-3 bg-slate-700 rounded w-1/3" />
-                  <div className="h-2 bg-slate-750 rounded w-2/3" />
-                  <hr className="border-slate-800" />
-                  <div className="h-1.5 bg-slate-750 rounded w-full" />
-                  <div className="h-1.5 bg-slate-750 rounded w-full" />
-                  <div className="h-1.5 bg-slate-750 rounded w-4/5" />
-
-                  {/* Active template overlay hover button */}
-                  <div className="absolute inset-0 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center opacity-0 group-hover:opacity-100 transition-smooth">
-                    <Link to="/activate">
-                      <Button variant="primary" size="sm" className="gap-1.5 text-xs font-bold uppercase tracking-wider">
-                        Use This Template <Check size={12} />
-                      </Button>
-                    </Link>
-                  </div>
-                </div>
-
-                {/* Info Footer */}
-                <div className="mt-4 pt-3 border-t border-slate-800 flex justify-between items-center">
-                  <div>
-                    <h5 className="font-extrabold text-sm text-slate-100">{tpl.name}</h5>
-                    <p className="text-[10px] text-slate-500 font-medium mt-0.5">{tpl.style}</p>
-                  </div>
-                  {activeTemplate === tpl.name && (
-                    <span className="w-5 h-5 rounded-full bg-primary flex items-center justify-center text-white text-[10px]">
-                      ✓
-                    </span>
-                  )}
-                </div>
-              </div>
-            ))}
-          </div>
-
-        </div>
-      </section>
+      {/* 4. TEMPLATE SHOWCASE SECTION */}
+      <TemplateShowcase />
 
       {/* 5. TESTIMONIAL / TRUST SECTION */}
       <section className="py-24 bg-slate-50 relative z-10 border-b border-slate-100">
