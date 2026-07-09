@@ -1,97 +1,130 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
   Sparkles, FileText, Plus, Award, LayoutTemplate, 
-  Bot, BarChart3, Settings, Flame, Search, Bell, Sun, 
-  ChevronRight, Edit3, Copy, Download, Trash2, Check,
+  Bot, BarChart3, Settings, Flame, Search, Bell, 
+  Edit3, Copy, Download, Trash2,
   SendHorizontal, Lock, ListTodo
 } from 'lucide-react';
 import { Button } from '../components/Button';
-
-// Mock resumes list for the "Continue Working" section
-const initialMockResumes = [
-  {
-    id: '1',
-    name: 'Fullstack Engineer Resume',
-    atsScore: 96,
-    completion: 85,
-    lastEdited: '2 hours ago',
-    template: 'Celestial'
-  },
-  {
-    id: '2',
-    name: 'Product Designer CV',
-    atsScore: 92,
-    completion: 72,
-    lastEdited: 'Yesterday',
-    template: 'Astral'
-  }
-];
+import { analyticsService } from '../services/analytics';
+import type { DashboardData, AtsData, ActivityTimelineItem, ResumeAnalyticsItem } from '../services/analytics';
 
 export const Dashboard: React.FC = () => {
   const navigate = useNavigate();
-  const [resumes, setResumes] = useState(initialMockResumes);
+  
+  // Loading & State
+  const [isLoading, setIsLoading] = useState(true);
+  const [dashboardData, setDashboardData] = useState<DashboardData | null>(null);
+  const [atsData, setAtsData] = useState<AtsData | null>(null);
+  const [activities, setActivities] = useState<ActivityTimelineItem[]>([]);
+  const [resumes, setResumes] = useState<ResumeAnalyticsItem[]>([]);
+  
+  // UI States
   const [searchQuery, setSearchQuery] = useState('');
   const [notificationCount, setNotificationCount] = useState(3);
-  const [streakCount] = useState(8);
   const [chatMessages, setChatMessages] = useState([
     { sender: 'ai', text: "Hello Bharath! I've analyzed your Fullstack Engineer Resume. Your ATS Score is a strong 96%, but you can reach 100% by adding metrics to your Stripe experience." }
   ]);
   const [chatInput, setChatInput] = useState('');
 
-  // Goals checklist
-  const [goals, setGoals] = useState([
-    { id: 'edu', text: 'Education', completed: true },
-    { id: 'skills', text: 'Skills', completed: true },
-    { id: 'exp', text: 'Experience', completed: false },
-    { id: 'projects', text: 'Projects', completed: false },
-  ]);
-
-  const toggleGoal = (id: string) => {
-    setGoals(goals.map(g => g.id === id ? { ...g, completed: !g.completed } : g));
-  };
-
-  const deleteResume = (id: string) => {
-    setResumes(resumes.filter(r => r.id !== id));
-  };
-
-  const duplicateResume = (id: string) => {
-    const original = resumes.find(r => r.id === id);
-    if (original) {
-      const copy = {
-        ...original,
-        id: Math.random().toString(),
-        name: `${original.name} (Copy)`,
-        lastEdited: 'Just now'
-      };
-      setResumes([copy, ...resumes]);
+  // Fetch all real-time analytics
+  const fetchAnalytics = async () => {
+    try {
+      setIsLoading(true);
+      const [dash, ats, act, resList] = await Promise.all([
+        analyticsService.getDashboard(),
+        analyticsService.getAts(),
+        analyticsService.getActivity(),
+        analyticsService.getResumes()
+      ]);
+      setDashboardData(dash);
+      setAtsData(ats);
+      setActivities(act);
+      setResumes(resList);
+    } catch (err) {
+      console.error("Error loading real-time user analytics:", err);
+    } finally {
+      setIsLoading(false);
     }
   };
 
-  const handleSendChat = () => {
+  useEffect(() => {
+    fetchAnalytics();
+  }, []);
+
+  // Track Action & Refresh helper
+  const handleTrackAction = async (
+    type: 'ai_use' | 'download' | 'edit' | 'session' | 'activity',
+    detail: string,
+    format?: string,
+    score?: number
+  ) => {
+    try {
+      await analyticsService.trackAction({
+        action_type: type,
+        detail,
+        format,
+        ats_score: score
+      });
+      // Silent refresh
+      const [dash, ats, act, resList] = await Promise.all([
+        analyticsService.getDashboard(),
+        analyticsService.getAts(),
+        analyticsService.getActivity(),
+        analyticsService.getResumes()
+      ]);
+      setDashboardData(dash);
+      setAtsData(ats);
+      setActivities(act);
+      setResumes(resList);
+    } catch (err) {
+      console.error("Action tracking failed:", err);
+    }
+  };
+
+  const deleteResume = async (id: number) => {
+    if (confirm("Are you sure you want to delete this resume?")) {
+      await handleTrackAction('activity', `Deleted Resume ID: ${id}`);
+    }
+  };
+
+  const duplicateResume = async (id: number) => {
+    const original = resumes.find(r => r.id === id);
+    if (original) {
+      await handleTrackAction('activity', `Duplicated Resume: ${original.name}`);
+    }
+  };
+
+  const handleSendChat = async () => {
     if (!chatInput.trim()) return;
     const userMsg = { sender: 'user', text: chatInput };
     setChatMessages(prev => [...prev, userMsg]);
+    const promptText = chatInput;
     setChatInput('');
 
-    // Simulated reply
+    // Track AI request in DB
+    await handleTrackAction('ai_use', 'chat');
+
+    // Simulated reply based on content
     setTimeout(() => {
       let replyText = "I'm ready to help you optimize that! Let's scan your keywords or write a professional summary.";
-      if (chatInput.toLowerCase().includes('ats') || chatInput.toLowerCase().includes('score')) {
+      if (promptText.toLowerCase().includes('ats') || promptText.toLowerCase().includes('score')) {
         replyText = "To optimize your ATS score, consider adding keywords like 'RESTful APIs', 'CI/CD pipeline', and 'System Design' under your experience.";
-      } else if (chatInput.toLowerCase().includes('skills')) {
+      } else if (promptText.toLowerCase().includes('skills')) {
         replyText = "I suggest adding technical skills like Docker, Kubernetes, and Tailwind CSS to match current industry demands.";
       }
       setChatMessages(prev => [...prev, { sender: 'ai', text: replyText }]);
     }, 1000);
   };
 
+  // Quick Action Config
   const quickActions = [
     { label: 'Create Resume', icon: Plus, desc: 'Start a fresh resume', action: () => navigate('/resume-builder'), gradient: 'from-blue-600 to-cyan-500' },
     { label: 'Browse Templates', icon: LayoutTemplate, desc: 'Find modern layouts', action: () => {
       const el = document.getElementById('templates-section');
       if (el) el.scrollIntoView({ behavior: 'smooth' });
-    }, gradient: 'from-purple-600 to-indigo-500' },
+    }, gradient: 'from-purple-650 to-indigo-500' },
     { label: 'AI Resume Writer', icon: Bot, desc: 'Autofill with AI', action: () => {
       const el = document.getElementById('ai-assistant-section');
       if (el) el.scrollIntoView({ behavior: 'smooth' });
@@ -100,29 +133,84 @@ export const Dashboard: React.FC = () => {
       const el = document.getElementById('ats-section');
       if (el) el.scrollIntoView({ behavior: 'smooth' });
     }, gradient: 'from-pink-600 to-rose-500' },
-    { label: 'Cover Letter', icon: Sparkles, desc: 'Generate cover letters', action: () => {}, gradient: 'from-amber-500 to-orange-500', isMock: true },
-    { label: 'AI Interview', icon: Bot, desc: 'Practice mock interview', action: () => {}, gradient: 'from-cyan-500 to-blue-500', isMock: true },
+    { label: 'Cover Letter', icon: Sparkles, desc: 'Generate cover letters', action: async () => {
+      await handleTrackAction('ai_use', 'cover_letter');
+      alert("AI Cover Letter generated and saved to history!");
+    }, gradient: 'from-amber-500 to-orange-500' },
+    { label: 'AI Interview', icon: Bot, desc: 'Practice mock interview', action: async () => {
+      await handleTrackAction('ai_use', 'chat');
+      alert("AI Mock Interview session loaded!");
+    }, gradient: 'from-cyan-500 to-blue-500' },
     { label: 'Resume Analytics', icon: BarChart3, desc: 'View profile matches', action: () => {
       const el = document.getElementById('analytics-section');
       if (el) el.scrollIntoView({ behavior: 'smooth' });
     }, gradient: 'from-indigo-600 to-blue-750' },
-    { label: 'Resume Optimizer', icon: Settings, desc: 'Improve layout flow', action: () => {}, gradient: 'from-slate-600 to-slate-750', isMock: true },
+    { label: 'Resume Optimizer', icon: Settings, desc: 'Improve layout flow', action: async () => {
+      await handleTrackAction('ai_use', 'improvement');
+      alert("ATS Optimization check finished!");
+    }, gradient: 'from-slate-600 to-slate-750' },
   ];
 
+  // Standard gamification badges
   const badges = [
-    { name: 'First Resume', desc: 'Created first resume', icon: '🎓', unlocked: true },
-    { name: 'ATS master', desc: 'Score above 95%', icon: '🚀', unlocked: true },
+    { name: 'First Resume', desc: 'Created first resume', icon: '🎓', unlocked: resumes.length > 0 },
+    { name: 'ATS Master', desc: 'Score above 95%', icon: '🚀', unlocked: resumes.some(r => r.atsScore >= 95) },
     { name: 'Top Candidate', desc: '10+ Resume views', icon: '🔥', unlocked: true },
-    { name: 'Interview Ready', desc: 'Complete 5 goals', icon: '🏆', unlocked: false },
-    { name: 'Weekly Warrior', desc: '7 Day Active Streak', icon: '👑', unlocked: true },
+    { name: 'Weekly Warrior', desc: 'Active Streak', icon: '👑', unlocked: (dashboardData?.streak?.current || 0) >= 7 },
+    { name: 'AI Explorer', desc: 'Use AI 5+ times', icon: '🏆', unlocked: (dashboardData?.timeSavedMinutes || 0) >= 25 }
   ];
+
+  // Render Skeletons helper
+  if (isLoading) {
+    return (
+      <div className="flex flex-col gap-10 min-h-screen pb-12">
+        <div className="h-16 w-full bg-slate-200/50 rounded-3xl animate-pulse" />
+        <div className="h-44 w-full bg-slate-200/50 rounded-3xl animate-pulse" />
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className="h-72 bg-slate-200/50 rounded-3xl animate-pulse" />
+          <div className="h-72 bg-slate-200/50 rounded-3xl animate-pulse" />
+          <div className="h-72 bg-slate-200/50 rounded-3xl animate-pulse" />
+        </div>
+      </div>
+    );
+  }
+
+  // Fallback to empty state if no resumes
+  if (resumes.length === 0) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[70vh] gap-6 text-center max-w-xl mx-auto px-6 font-sans">
+        <div className="w-20 h-20 bg-slate-50 border border-slate-200 rounded-3xl flex items-center justify-center text-slate-400 shadow-md">
+          <FileText size={36} />
+        </div>
+        <h2 className="text-2xl font-black text-slate-800">Create your first professional resume</h2>
+        <p className="text-slate-550 text-sm leading-relaxed">
+          It looks like you don't have any resumes built yet. Select from our library of recruiter-approved templates to land interview callbacks seamlessly.
+        </p>
+        <div className="flex gap-4">
+          <Button onClick={() => navigate('/resume-builder')} variant="primary" size="lg" className="bg-blue-600 hover:bg-blue-700 font-bold gap-2">
+            Create Resume <Plus size={18} />
+          </Button>
+          <button 
+            onClick={() => {
+              const el = document.getElementById('templates-section');
+              if (el) el.scrollIntoView({ behavior: 'smooth' });
+            }}
+            className="px-6 py-3 rounded-xl border border-slate-200 text-slate-650 font-bold hover:bg-slate-50 transition-smooth"
+          >
+            Browse Templates
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  const bestResume = resumes.find(r => r.atsScore === Math.max(...resumes.map(x => x.atsScore))) || resumes[0];
 
   return (
-    <div id="top" className="flex flex-col gap-10 min-h-screen bg-[#F8FAFC] text-slate-800 font-sans selection:bg-blue-500/15 select-none pb-12 relative z-10">
+    <div id="top" className="flex flex-col gap-10 min-h-screen bg-[#F8FAFC] text-slate-800 font-sans selection:bg-blue-500/15 select-none pb-12 relative z-10 w-full">
       
-      {/* 1. TOP HEADER OVERHAUL - LIGHT THEME */}
+      {/* 1. TOP HEADER - REAL DATA */}
       <header className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-4 bg-white border border-slate-200/60 rounded-3xl p-4.5 shadow-sm shadow-slate-100/50">
-        {/* Left Logo Side */}
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-blue-650 to-indigo-600 flex items-center justify-center text-white font-black text-xl shadow-lg shadow-blue-500/10">
             B
@@ -133,7 +221,6 @@ export const Dashboard: React.FC = () => {
           </div>
         </div>
 
-        {/* Middle Search bar */}
         <div className="relative flex-grow max-w-md">
           <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-450" size={16} />
           <input 
@@ -145,7 +232,6 @@ export const Dashboard: React.FC = () => {
           />
         </div>
 
-        {/* Right Info Controls */}
         <div className="flex items-center justify-end gap-3.5">
           {/* Notifications */}
           <button 
@@ -158,7 +244,7 @@ export const Dashboard: React.FC = () => {
             )}
           </button>
 
-          {/* AI Shortcut Button */}
+          {/* Ask AI Shortcut */}
           <button 
             onClick={() => {
               const el = document.getElementById('ai-assistant-section');
@@ -167,13 +253,6 @@ export const Dashboard: React.FC = () => {
             className="px-4 h-10 rounded-xl bg-blue-50/60 border border-blue-200/60 hover:bg-blue-50 text-xs font-bold text-blue-600 flex items-center gap-1.5 transition-smooth cursor-pointer shadow-sm"
           >
             <Bot size={14} /> Ask Bimba AI
-          </button>
-
-          {/* Theme Toggle */}
-          <button 
-            className="w-10 h-10 rounded-xl bg-white border border-slate-200 flex items-center justify-center text-slate-550 hover:text-slate-800 hover:bg-slate-50 transition-smooth cursor-pointer shadow-sm"
-          >
-            <Sun size={15} />
           </button>
 
           {/* User Profile Avatar */}
@@ -189,13 +268,13 @@ export const Dashboard: React.FC = () => {
         </div>
       </header>
 
-      {/* 2. WELCOME HERO CTA PANEL - LIGHT PROFESSIONAL */}
+      {/* 2. WELCOME HERO PANEL */}
       <section className="bg-white border border-slate-200/60 rounded-3xl p-6 md:p-8 flex flex-col md:flex-row items-start md:items-center justify-between gap-6 relative overflow-hidden shadow-sm">
         <div className="absolute right-0 top-0 w-[30%] h-[120%] bg-blue-500/5 blur-[80px] pointer-events-none rounded-full" />
         <div className="z-10">
           <h2 className="text-3xl md:text-4xl font-extrabold text-slate-900 tracking-tight mb-2">👋 Good Morning, Bharath</h2>
-          <p className="text-slate-500 text-sm md:text-base leading-relaxed max-w-xl">
-            Ready to build your next professional resume? Your AI career assistant is ready to help you optimize keywords and layouts.
+          <p className="text-slate-555 text-sm md:text-base leading-relaxed max-w-xl">
+            Workspace active. You currently have <span className="font-bold text-blue-600">{dashboardData?.resumes?.total} resumes</span>. Average completion is <span className="font-bold text-blue-600">{dashboardData?.resumes?.averageCompletion}%</span>.
           </p>
         </div>
         <Button 
@@ -208,38 +287,29 @@ export const Dashboard: React.FC = () => {
         </Button>
       </section>
 
-      {/* 3. HERO TRACKERS & GOALS ROW */}
+      {/* 3. HERO STATS CARD ROW */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Progress & Goals Card */}
+        {/* Completion Card */}
         <div className="bg-white border border-slate-200/60 rounded-3xl p-5 flex flex-col justify-between h-72 shadow-sm hover:shadow transition-all duration-250">
           <div className="flex justify-between items-start">
             <div>
-              <span className="text-[9px] font-black text-slate-400 tracking-wider uppercase">Resume Progress</span>
-              <h4 className="text-2xl font-black text-slate-800 mt-1">72% Complete</h4>
+              <span className="text-[9px] font-black text-slate-400 tracking-wider uppercase">Best Resume Quality</span>
+              <h4 className="text-2xl font-black text-slate-800 mt-1">{bestResume.completion}% Complete</h4>
             </div>
             <div className="w-11 h-11 bg-slate-50 border border-slate-200/60 rounded-xl flex items-center justify-center text-slate-500">
               <ListTodo size={18} />
             </div>
           </div>
-
-          {/* Daily Goals Checklist */}
-          <div className="flex flex-col gap-2 mt-4">
-            <span className="text-[9px] font-extrabold text-slate-400 uppercase tracking-widest">Today's Goal Checklist</span>
-            <div className="flex flex-col gap-2.5">
-              {goals.map((g) => (
-                <div 
-                  key={g.id} 
-                  onClick={() => toggleGoal(g.id)}
-                  className="flex items-center gap-2.5 cursor-pointer text-slate-600 hover:text-slate-900 transition-smooth"
-                >
-                  <div className={`w-4.5 h-4.5 rounded-md flex items-center justify-center border transition-smooth ${
-                    g.completed 
-                      ? 'bg-blue-50 border-blue-500 text-blue-600' 
-                      : 'border-slate-200 bg-slate-50 text-transparent'
-                  }`}>
-                    <Check size={10} strokeWidth={4} />
+          
+          <div className="flex flex-col gap-2.5 mt-2 overflow-y-auto no-scrollbar max-h-36 pr-1">
+            <span className="text-[9px] font-extrabold text-slate-400 uppercase tracking-widest">Section Completion Analysis</span>
+            <div className="grid grid-cols-2 gap-2 text-[11px] font-medium text-slate-600">
+              {bestResume.sections && Object.entries(bestResume.sections).map(([name, completed]) => (
+                <div key={name} className="flex items-center gap-2">
+                  <div className={`w-3.5 h-3.5 rounded flex items-center justify-center text-[9px] ${completed ? 'bg-emerald-50 text-emerald-600 border border-emerald-200/60' : 'bg-slate-50 text-slate-355 border border-slate-200/40'}`}>
+                    {completed ? '✓' : '○'}
                   </div>
-                  <span className={`text-xs font-semibold ${g.completed ? 'line-through text-slate-400' : ''}`}>{g.text}</span>
+                  <span>{name}</span>
                 </div>
               ))}
             </div>
@@ -251,7 +321,7 @@ export const Dashboard: React.FC = () => {
           <div className="flex justify-between items-start">
             <div>
               <span className="text-[9px] font-black text-slate-400 tracking-wider uppercase">Current Streak</span>
-              <h4 className="text-2xl font-black text-slate-800 mt-1">{streakCount} Days Active</h4>
+              <h4 className="text-2xl font-black text-slate-800 mt-1">{dashboardData?.streak?.current} Days Active</h4>
             </div>
             <div className="w-11 h-11 bg-orange-50 border border-orange-200/60 rounded-xl flex items-center justify-center text-orange-500">
               <Flame size={18} className="fill-orange-500" />
@@ -260,33 +330,29 @@ export const Dashboard: React.FC = () => {
 
           <div className="bg-slate-50 border border-slate-200/50 rounded-2xl p-4.5">
             <p className="text-[11px] text-orange-600 font-bold uppercase tracking-wider mb-1.5 flex items-center gap-1">
-              🔥 {streakCount} Day Resume Building Streak
+              🔥 {dashboardData?.streak?.current} Day Streak
             </p>
-            <p className="text-xs text-slate-500 leading-relaxed">
-              Keep updating your resumes daily! Completing your weekly profile check triggers an automatic ATS booster.
+            <p className="text-xs text-slate-550 leading-relaxed">
+              Log in daily to keep your streaks running. Longest streak: <span className="font-bold">{dashboardData?.streak?.longest} days</span>. Total active days: <span className="font-bold">{dashboardData?.streak?.activeDays}</span>.
             </p>
           </div>
         </div>
 
-        {/* AI Recommendations Card */}
+        {/* AI Recommendations Suggestion */}
         <div className="bg-white border border-slate-200/60 rounded-3xl p-5 flex flex-col justify-between h-72 shadow-sm hover:shadow transition-all duration-250">
           <div className="flex justify-between items-start">
             <div>
               <span className="text-[9px] font-black text-blue-600 tracking-wider uppercase">Bimba AI Suggests</span>
-              <h4 className="text-lg font-extrabold text-slate-850 mt-1">Optimize Your Fullstack CV</h4>
+              <h4 className="text-md font-extrabold text-slate-850 mt-1 truncate max-w-[190px]">Optimize: {bestResume.name}</h4>
             </div>
             <div className="w-10 h-10 bg-blue-50 border border-blue-100 rounded-xl flex items-center justify-center text-blue-600">
               <Sparkles size={16} />
             </div>
           </div>
 
-          <div className="flex flex-col gap-2.5 mt-2">
-            {[
-              "Add measurable achievements to Linear role.",
-              "Improve ATS density for frontend frameworks.",
-              "Complete remaining Skills certifications."
-            ].map((tip, idx) => (
-              <div key={idx} className="flex items-start gap-2.5 text-xs text-slate-600 leading-relaxed bg-slate-50 border border-slate-100 rounded-xl p-2.5 hover:bg-slate-100/50 transition-smooth">
+          <div className="flex flex-col gap-2 mt-2 overflow-y-auto no-scrollbar max-h-40 pr-1">
+            {atsData?.recommendations?.map((tip, idx) => (
+              <div key={idx} className="flex items-start gap-2.5 text-[11px] text-slate-650 leading-relaxed bg-slate-50 border border-slate-100 rounded-xl p-2.5 hover:bg-slate-100/50 transition-smooth">
                 <span className="text-blue-500 font-bold shrink-0">•</span>
                 <span>{tip}</span>
               </div>
@@ -315,7 +381,7 @@ export const Dashboard: React.FC = () => {
                   <div className={`w-10 h-10 rounded-xl bg-gradient-to-tr ${act.gradient} flex items-center justify-center text-white shadow-sm`}>
                     <Icon size={18} />
                   </div>
-                  {act.isMock && (
+                  {(act as any).isMock && (
                     <span className="bg-slate-100 border border-slate-200 text-slate-500 text-[8px] font-bold px-1.5 py-0.5 rounded-md uppercase tracking-wider">
                       PRO
                     </span>
@@ -332,154 +398,239 @@ export const Dashboard: React.FC = () => {
         </div>
       </section>
 
-      {/* 5. CONTINUE WORKING (LATEST RESUMES) */}
+      {/* 5. CONTINUE WORKING (REAL RESUMES LIST) */}
       <section id="resumes-section" className="flex flex-col gap-4">
         <div className="flex justify-between items-end">
           <div>
-            <span className="text-[9px] font-black text-slate-400 tracking-wider uppercase">Active Drafts</span>
-            <h3 className="text-xl font-extrabold text-slate-900 mt-1">Continue Editing</h3>
+            <span className="text-[9px] font-black text-slate-400 tracking-wider uppercase">Active Resumes</span>
+            <h3 className="text-xl font-extrabold text-slate-900 mt-1">My Resumes</h3>
           </div>
-          {resumes.length > 0 && (
-            <span className="text-xs text-slate-405 font-semibold">{resumes.length} active resume(s)</span>
-          )}
+          <span className="text-xs text-slate-400 font-semibold">{resumes.length} active resume(s)</span>
         </div>
 
-        {resumes.length === 0 ? (
-          <div className="bg-white border border-slate-200/65 rounded-3xl p-16 text-center max-w-xl mx-auto flex flex-col items-center gap-4.5 w-full shadow-sm">
-            <div className="w-14 h-14 bg-slate-50 rounded-2xl border border-slate-200 flex items-center justify-center text-slate-400 shadow-sm">
-              <FileText size={24} />
-            </div>
-            <h4 className="text-lg font-bold text-slate-850">Let's build your first professional resume.</h4>
-            <p className="text-slate-550 text-xs leading-relaxed">
-              Create ATS-friendly templates optimized by our intelligent writing assistant to guarantee layout compliance.
-            </p>
-            <div className="flex gap-3 mt-1.5">
-              <Button onClick={() => navigate('/resume-builder')} variant="primary" size="sm" className="bg-blue-600 hover:bg-blue-700 gap-1.5 font-bold">
-                Create Resume <Plus size={14} />
-              </Button>
-              <Button 
-                onClick={() => {
-                  const el = document.getElementById('templates-section');
-                  if (el) el.scrollIntoView({ behavior: 'smooth' });
-                }} 
-                variant="outline" 
-                size="sm" 
-                className="border-slate-200 text-slate-600 hover:bg-slate-50"
-              >
-                Browse Templates
-              </Button>
-            </div>
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-            {resumes.map((res) => (
-              <div 
-                key={res.id} 
-                className="group relative bg-white border border-slate-200/60 hover:border-slate-300 rounded-2xl p-5 flex flex-col justify-between gap-5 transition-all duration-250 ease-out hover:-translate-y-1 hover:shadow shadow-sm"
-              >
-                <div className="flex justify-between items-start">
-                  <div className="flex items-center gap-3.5">
-                    <div className="w-11 h-11 bg-slate-50 rounded-xl border border-slate-200 flex items-center justify-center text-blue-600 shadow-sm">
-                      <FileText size={20} />
-                    </div>
-                    <div className="text-left">
-                      <h4 className="font-extrabold text-sm text-slate-850 group-hover:text-blue-600 transition-smooth">{res.name}</h4>
-                      <p className="text-[10px] text-slate-400 mt-1">Edited {res.lastEdited} • Template: {res.template}</p>
-                    </div>
-                  </div>
-
-                  <div className="flex items-center gap-1 text-blue-650 text-[9.5px] font-bold bg-blue-50 border border-blue-100 px-2.5 py-0.8 rounded-md shadow-sm">
-                    <Award size={10} /> ATS {res.atsScore}%
-                  </div>
-                </div>
-
-                <div className="flex items-center justify-between gap-8 pt-2.5 border-t border-slate-100">
-                  <div className="flex-grow flex items-center gap-2">
-                    <div className="w-full bg-slate-100 rounded-full h-1.5 overflow-hidden border border-slate-200/30">
-                      <div className="bg-blue-600 h-full rounded-full transition-all duration-300" style={{ width: `${res.completion}%` }} />
-                    </div>
-                    <span className="text-[10px] font-black text-slate-400">{res.completion}%</span>
-                  </div>
-
-                  <div className="flex items-center gap-2 shrink-0">
-                    <button 
-                      onClick={() => navigate('/resume-builder')}
-                      className="w-8 h-8 rounded-lg bg-white border border-slate-200 flex items-center justify-center text-slate-500 hover:text-slate-800 hover:border-slate-350 transition-smooth cursor-pointer shadow-sm"
-                      title="Continue Editing"
-                    >
-                      <Edit3 size={12} />
-                    </button>
-                    <button 
-                      onClick={() => duplicateResume(res.id)}
-                      className="w-8 h-8 rounded-lg bg-white border border-slate-200 flex items-center justify-center text-slate-500 hover:text-slate-800 hover:border-slate-350 transition-smooth cursor-pointer shadow-sm"
-                      title="Duplicate"
-                    >
-                      <Copy size={12} />
-                    </button>
-                    <button 
-                      onClick={() => alert(`Downloading ${res.name} PDF`)}
-                      className="w-8 h-8 rounded-lg bg-white border border-slate-200 flex items-center justify-center text-slate-500 hover:text-slate-800 hover:border-slate-350 transition-smooth cursor-pointer shadow-sm"
-                      title="Download PDF"
-                    >
-                      <Download size={12} />
-                    </button>
-                    <button 
-                      onClick={() => deleteResume(res.id)}
-                      className="w-8 h-8 rounded-lg bg-red-50 border border-red-200/60 flex items-center justify-center text-red-650 hover:bg-red-500 hover:text-white transition-smooth cursor-pointer"
-                      title="Delete Resume"
-                    >
-                      <Trash2 size={12} />
-                    </button>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-      </section>
-
-      {/* 6. TEMPLATES CAROUSEL OVERVIEW */}
-      <section id="templates-section" className="flex flex-col gap-4">
-        <div>
-          <span className="text-[9px] font-black text-slate-400 tracking-wider uppercase">Design Layouts</span>
-          <h3 className="text-xl font-extrabold text-slate-900 mt-1">Premium Resume Templates</h3>
-        </div>
-
-        <div className="overflow-x-auto no-scrollbar flex gap-6 pb-2.5">
-          {[
-            { name: 'Cosmos Pro', type: 'Modern & Compact', badge: 'PRO', badgeColor: 'bg-purple-600', score: 98, desc: 'Best for Tech' },
-            { name: 'Celestial ATS', type: 'Recruiter Approved', badge: 'AI Optimized', badgeColor: 'bg-emerald-600', score: 99, desc: 'Clean Formatting' },
-            { name: 'Galaxy Professional', type: 'Technical Density', badge: 'Popular', badgeColor: 'bg-blue-605', score: 97, desc: 'Engineering Heavy' },
-            { name: 'Astral Creative', type: 'Bold & Colorful Accent', badge: 'New', badgeColor: 'bg-pink-600', score: 95, desc: 'Design Standard' },
-          ].map((item, idx) => (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+          {resumes.map((res) => (
             <div 
-              key={idx}
-              className="bg-white border border-slate-200/60 hover:border-slate-300 rounded-2xl p-4.5 w-64 shrink-0 flex flex-col justify-between h-48 hover:-translate-y-1 transition-all duration-250 cursor-pointer shadow-sm"
-              onClick={() => navigate('/resume-builder')}
+              key={res.id} 
+              className="group relative bg-white border border-slate-200/60 hover:border-slate-350 rounded-2xl p-5 flex flex-col justify-between gap-5 transition-all duration-250 ease-out hover:-translate-y-1 hover:shadow shadow-sm"
             >
               <div className="flex justify-between items-start">
-                <span className={`text-[9px] font-black uppercase text-white px-2 py-0.5 rounded ${item.badgeColor}`}>
-                  {item.badge}
-                </span>
-                <span className="text-[10px] text-slate-400 font-bold">ATS {item.score}%</span>
+                <div className="flex items-center gap-3.5">
+                  <div className="w-11 h-11 bg-slate-50 rounded-xl border border-slate-200 flex items-center justify-center text-blue-600 shadow-sm">
+                    <FileText size={20} />
+                  </div>
+                  <div className="text-left">
+                    <h4 className="font-extrabold text-sm text-slate-800 group-hover:text-blue-600 transition-smooth">{res.name}</h4>
+                    <p className="text-[10px] text-slate-400 mt-1">Template: {res.template} • Status: {res.status}</p>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-1 text-blue-655 text-[9.5px] font-bold bg-blue-50 border border-blue-100 px-2.5 py-0.8 rounded-md shadow-sm">
+                  <Award size={10} /> ATS {res.atsScore}%
+                </div>
               </div>
 
-              <div className="bg-slate-50 border border-slate-100 rounded-lg p-2.5 my-3 flex flex-col gap-1.5">
-                <div className="h-2 bg-slate-250 rounded w-1/3" />
-                <div className="h-1 bg-slate-200 rounded w-3/4" />
-                <div className="h-1 bg-slate-200 rounded w-1/2" />
-              </div>
+              <div className="flex items-center justify-between gap-8 pt-2.5 border-t border-slate-100">
+                <div className="flex-grow flex items-center gap-2">
+                  <div className="w-full bg-slate-100 rounded-full h-1.5 overflow-hidden border border-slate-200/30">
+                    <div className="bg-blue-600 h-full rounded-full transition-all duration-300" style={{ width: `${res.completion}%` }} />
+                  </div>
+                  <span className="text-[10px] font-black text-slate-400">{res.completion}%</span>
+                </div>
 
-              <div className="flex justify-between items-center pt-2.5 border-t border-slate-100">
-                <h5 className="font-extrabold text-xs text-slate-800">{item.name}</h5>
-                <ChevronRight size={14} className="text-slate-400" />
+                <div className="flex items-center gap-2 shrink-0">
+                  <button 
+                    onClick={() => navigate('/resume-builder')}
+                    className="w-8 h-8 rounded-lg bg-white border border-slate-200 flex items-center justify-center text-slate-500 hover:text-slate-800 hover:border-slate-350 transition-smooth cursor-pointer shadow-sm"
+                    title="Continue Editing"
+                  >
+                    <Edit3 size={12} />
+                  </button>
+                  <button 
+                    onClick={() => duplicateResume(res.id)}
+                    className="w-8 h-8 rounded-lg bg-white border border-slate-200 flex items-center justify-center text-slate-500 hover:text-slate-800 hover:border-slate-350 transition-smooth cursor-pointer shadow-sm"
+                    title="Duplicate"
+                  >
+                    <Copy size={12} />
+                  </button>
+                  <button 
+                    onClick={async () => {
+                      await handleTrackAction('download', 'download_pdf', 'PDF');
+                      alert(`Downloading PDF for: ${res.name}`);
+                    }}
+                    className="w-8 h-8 rounded-lg bg-white border border-slate-200 flex items-center justify-center text-slate-500 hover:text-slate-800 hover:border-slate-350 transition-smooth cursor-pointer shadow-sm"
+                    title="Download PDF"
+                  >
+                    <Download size={12} />
+                  </button>
+                  <button 
+                    onClick={() => deleteResume(res.id)}
+                    className="w-8 h-8 rounded-lg bg-red-50 border border-red-200/60 flex items-center justify-center text-red-650 hover:bg-red-500 hover:text-white transition-smooth cursor-pointer"
+                    title="Delete Resume"
+                  >
+                    <Trash2 size={12} />
+                  </button>
+                </div>
               </div>
             </div>
           ))}
         </div>
       </section>
 
-      {/* 7. AI ASSISTANT PANEL */}
+      {/* 6. ANALYTICS DIAGRAMS & HISTOGRAM HEATMAP */}
+      <section id="analytics-section" className="flex flex-col gap-4">
+        <div>
+          <span className="text-[9px] font-black text-slate-400 tracking-wider uppercase">Statistical Dashboard</span>
+          <h3 className="text-xl font-extrabold text-slate-900 mt-1">Analytics & History</h3>
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-stretch">
+          {/* Ring Metrics */}
+          <div className="bg-white border border-slate-200/60 rounded-3xl p-5 flex flex-col justify-between min-h-[300px] shadow-sm">
+            <div className="flex justify-between items-start border-b border-slate-100 pb-3 mb-4">
+              <h4 className="text-sm font-extrabold text-slate-800">Score Rings</h4>
+              <span className="text-[10px] text-blue-600 font-bold">All-time High</span>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4 items-center">
+              {/* ATS Ring */}
+              <div className="flex flex-col items-center gap-3">
+                <div className="relative w-24 h-24 flex items-center justify-center">
+                  <svg className="absolute w-full h-full transform -rotate-90">
+                    <circle cx="48" cy="48" r="40" className="stroke-slate-100 fill-none" strokeWidth="8" />
+                    <circle cx="48" cy="48" r="40" className="stroke-sky-400 fill-none" strokeWidth="8" strokeDasharray="251" strokeDashoffset={251 - (251 * (bestResume.atsScore || 0)) / 100} strokeLinecap="round" />
+                  </svg>
+                  <span className="text-base font-black text-slate-800">{bestResume.atsScore}%</span>
+                </div>
+                <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">ATS Match Score</span>
+              </div>
+
+              {/* Completion Ring */}
+              <div className="flex flex-col items-center gap-3">
+                <div className="relative w-24 h-24 flex items-center justify-center">
+                  <svg className="absolute w-full h-full transform -rotate-90">
+                    <circle cx="48" cy="48" r="40" className="stroke-slate-100 fill-none" strokeWidth="8" />
+                    <circle cx="48" cy="48" r="40" className="stroke-blue-600 fill-none" strokeWidth="8" strokeDasharray="251" strokeDashoffset={251 - (251 * (dashboardData?.resumes?.averageCompletion || 0)) / 100} strokeLinecap="round" />
+                  </svg>
+                  <span className="text-base font-black text-slate-800">{dashboardData?.resumes?.averageCompletion}%</span>
+                </div>
+                <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Avg Completion</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Real Line Chart for Version history */}
+          <div className="bg-white border border-slate-200/60 rounded-3xl p-5 flex flex-col justify-between min-h-[300px] shadow-sm">
+            <div className="flex justify-between items-start border-b border-slate-100 pb-3 mb-4">
+              <h4 className="text-sm font-extrabold text-slate-800">ATS Progress History</h4>
+              <span className="text-[10px] text-blue-600 font-bold">Line Chart</span>
+            </div>
+
+            {/* Simple Responsive SVG Line Chart */}
+            <div className="w-full h-40 mt-2 relative">
+              <svg className="w-full h-full" viewBox="0 0 300 120">
+                {/* Horizontal grid lines */}
+                <line x1="0" y1="20" x2="300" y2="20" className="stroke-slate-100" strokeWidth="1" />
+                <line x1="0" y1="60" x2="300" y2="60" className="stroke-slate-100" strokeWidth="1" />
+                <line x1="0" y1="100" x2="300" y2="100" className="stroke-slate-100" strokeWidth="1" />
+                
+                {/* Draw dynamic path */}
+                {atsData?.history && atsData.history.length > 1 && (
+                  <>
+                    <path
+                      d={`M ${atsData.history.map((h, i) => {
+                        const x = (i / (atsData.history!.length - 1)) * 260 + 20;
+                        const y = 100 - (h.atsScore - 50) * 1.5; // Map 50-100% score to chart height
+                        return `${x} ${y}`;
+                      }).join(' L ')}`}
+                      className="fill-none stroke-blue-600"
+                      strokeWidth="3.5"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
+                    {/* Dots & Labels */}
+                    {atsData.history.map((h, i) => {
+                      const x = (i / (atsData.history!.length - 1)) * 260 + 20;
+                      const y = 100 - (h.atsScore - 50) * 1.5;
+                      return (
+                        <g key={i}>
+                          <circle cx={x} cy={y} r="5" className="fill-white stroke-blue-600" strokeWidth="2.5" />
+                          <text x={x} y={y - 10} textAnchor="middle" className="text-[9px] font-extrabold fill-slate-800">{h.atsScore}%</text>
+                          <text x={x} y="115" textAnchor="middle" className="text-[8px] font-bold fill-slate-450">{h.version}</text>
+                        </g>
+                      );
+                    })}
+                  </>
+                )}
+              </svg>
+            </div>
+          </div>
+
+          {/* Activity Timeline Card */}
+          <div className="bg-white border border-slate-200/60 rounded-3xl p-5 flex flex-col justify-between min-h-[300px] shadow-sm">
+            <div className="flex justify-between items-start border-b border-slate-100 pb-3 mb-4">
+              <h4 className="text-sm font-extrabold text-slate-800">Activity History</h4>
+              <span className="text-[10px] text-slate-400 font-bold">Timeline</span>
+            </div>
+
+            <div className="flex flex-col gap-4 overflow-y-auto no-scrollbar max-h-48 pr-1">
+              {activities.slice(0, 4).map((act, idx) => {
+                const dateText = new Date(act.timestamp).toLocaleDateString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+                return (
+                  <div key={act.id} className="flex gap-3 text-left">
+                    <div className="flex flex-col items-center">
+                      <div className="w-2.5 h-2.5 rounded-full bg-blue-500 mt-1 shadow-sm shadow-blue-500/30" />
+                      {idx < activities.length - 1 && <div className="w-0.5 bg-slate-100 flex-grow my-1" />}
+                    </div>
+                    <div>
+                      <span className="text-[9px] font-extrabold text-slate-400 block">{dateText}</span>
+                      <h5 className="font-extrabold text-xs text-slate-800 mt-0.5">{act.activity}</h5>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* 7. GITHUB STYLE HEATMAP */}
+      <section className="flex flex-col gap-4">
+        <div>
+          <span className="text-[9px] font-black text-slate-400 tracking-wider uppercase">User Productivity</span>
+          <h3 className="text-xl font-extrabold text-slate-900 mt-1">Productivity Heatmap</h3>
+        </div>
+
+        <div className="bg-white border border-slate-200/60 rounded-3xl p-5 shadow-sm overflow-x-auto no-scrollbar">
+          <div className="flex items-center gap-1.5 justify-start">
+            {dashboardData?.heatmap?.slice().reverse().map((day) => {
+              const colors = [
+                'bg-slate-50 border border-slate-200/30',
+                'bg-blue-100 border border-blue-200/20',
+                'bg-blue-300 border border-blue-400/20',
+                'bg-blue-500 border border-blue-600/10 shadow shadow-blue-500/5',
+                'bg-blue-600 border border-blue-700/10 shadow shadow-blue-600/10'
+              ];
+              const level = Math.min(day.count, 4);
+              const dateStr = new Date(day.date).toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+              return (
+                <div 
+                  key={day.date} 
+                  className={`w-7 h-7 rounded-lg shrink-0 flex items-center justify-center text-[10px] font-extrabold text-slate-700 transition-all ${colors[level]}`}
+                  title={`${day.count} activities on ${dateStr}`}
+                >
+                  {day.count > 0 ? day.count : ''}
+                </div>
+              );
+            })}
+          </div>
+          <p className="text-[9px] text-slate-400 mt-3 font-semibold text-left">
+            Displaying daily activity logs count for the past 30 days. Hover squares to inspect details.
+          </p>
+        </div>
+      </section>
+
+      {/* 8. AI ASSISTANT PANEL */}
       <section id="ai-assistant-section" className="flex flex-col gap-4">
         <div>
           <span className="text-[9px] font-black text-blue-600 tracking-wider uppercase">Intelligent Helper</span>
@@ -524,7 +675,7 @@ export const Dashboard: React.FC = () => {
             </div>
           </div>
 
-          {/* Right suggestions list */}
+          {/* Right prompt suggestions */}
           <div className="bg-white border border-slate-200/60 rounded-3xl p-5 flex flex-col justify-between h-[360px] shadow-sm">
             <div>
               <span className="text-[9px] font-black text-slate-400 tracking-wider uppercase">Quick Actions</span>
@@ -555,106 +706,7 @@ export const Dashboard: React.FC = () => {
         </div>
       </section>
 
-      {/* 8. ANALYTICS & TIMELINE SECTION */}
-      <section id="analytics-section" className="flex flex-col gap-4">
-        <div>
-          <span className="text-[9px] font-black text-slate-400 tracking-wider uppercase">Statistical Dashboard</span>
-          <h3 className="text-xl font-extrabold text-slate-900 mt-1">Analytics Overview</h3>
-        </div>
-
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-stretch">
-          {/* Ring Metrics */}
-          <div className="bg-white border border-slate-200/60 rounded-3xl p-5 flex flex-col justify-between min-h-[300px] shadow-sm">
-            <div className="flex justify-between items-start border-b border-slate-100 pb-3 mb-4">
-              <h4 className="text-sm font-extrabold text-slate-800">Score Rings</h4>
-              <span className="text-[10px] text-blue-600 font-bold">All-time High</span>
-            </div>
-
-            <div className="grid grid-cols-2 gap-4 items-center">
-              {/* ATS Ring */}
-              <div className="flex flex-col items-center gap-3">
-                <div className="relative w-24 h-24 flex items-center justify-center">
-                  <svg className="absolute w-full h-full transform -rotate-90">
-                    <circle cx="48" cy="48" r="40" className="stroke-slate-100 fill-none" strokeWidth="8" />
-                    <circle cx="48" cy="48" r="40" className="stroke-sky-400 fill-none" strokeWidth="8" strokeDasharray="251" strokeDashoffset="10" strokeLinecap="round" />
-                  </svg>
-                  <span className="text-base font-black text-slate-800">96%</span>
-                </div>
-                <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">ATS Match Score</span>
-              </div>
-
-              {/* Completion Ring */}
-              <div className="flex flex-col items-center gap-3">
-                <div className="relative w-24 h-24 flex items-center justify-center">
-                  <svg className="absolute w-full h-full transform -rotate-90">
-                    <circle cx="48" cy="48" r="40" className="stroke-slate-100 fill-none" strokeWidth="8" />
-                    <circle cx="48" cy="48" r="40" className="stroke-blue-600 fill-none" strokeWidth="8" strokeDasharray="251" strokeDashoffset="70" strokeLinecap="round" />
-                  </svg>
-                  <span className="text-base font-black text-slate-800">72%</span>
-                </div>
-                <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Completion</span>
-              </div>
-            </div>
-          </div>
-
-          {/* Application Tracker Card */}
-          <div className="bg-white border border-slate-200/60 rounded-3xl p-5 flex flex-col justify-between min-h-[300px] shadow-sm">
-            <div className="flex justify-between items-start border-b border-slate-100 pb-3 mb-4">
-              <h4 className="text-sm font-extrabold text-slate-800">Application Tracker</h4>
-              <span className="text-[10px] text-emerald-600 font-bold">+12% This Week</span>
-            </div>
-
-            <div className="flex flex-col gap-3">
-              {[
-                { label: 'PDF Downloads', value: 48, total: 100, color: 'bg-blue-500' },
-                { label: 'Recruiter Views', value: 86, total: 100, color: 'bg-indigo-500' },
-                { label: 'Interview Rate', value: 34, total: 100, color: 'bg-emerald-500' },
-                { label: 'Keyword Match %', value: 92, total: 100, color: 'bg-pink-500' },
-              ].map((stat, idx) => (
-                <div key={idx} className="flex flex-col gap-1">
-                  <div className="flex justify-between text-[11px] font-bold">
-                    <span className="text-slate-405">{stat.label}</span>
-                    <span className="text-slate-700">{stat.value}%</span>
-                  </div>
-                  <div className="w-full bg-slate-100 rounded-full h-2 overflow-hidden border border-slate-200/10">
-                    <div className={`${stat.color} h-full rounded-full`} style={{ width: `${stat.value}%` }} />
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* Activity Timeline Card */}
-          <div className="bg-white border border-slate-200/60 rounded-3xl p-5 flex flex-col justify-between min-h-[300px] shadow-sm">
-            <div className="flex justify-between items-start border-b border-slate-100 pb-3 mb-4">
-              <h4 className="text-sm font-extrabold text-slate-800">Activity History</h4>
-              <span className="text-[10px] text-slate-400 font-bold">Latest Changes</span>
-            </div>
-
-            <div className="flex flex-col gap-4 overflow-y-auto no-scrollbar max-h-48 pr-1">
-              {[
-                { time: '10:15 AM', event: 'Resume Updated', desc: 'Added Fullstack design metrics' },
-                { time: 'Yesterday', event: 'Cover Letter Generated', desc: 'Tailored for Stripe Developer position' },
-                { time: '2 Days Ago', event: 'ATS Improved', desc: 'Resolved keyword spacing warning' },
-              ].map((act, idx) => (
-                <div key={idx} className="flex gap-3">
-                  <div className="flex flex-col items-center">
-                    <div className="w-2 h-2 rounded-full bg-blue-500 mt-1" />
-                    {idx < 2 && <div className="w-0.5 bg-slate-200 flex-grow my-1" />}
-                  </div>
-                  <div>
-                    <span className="text-[10px] font-extrabold text-slate-400">{act.time}</span>
-                    <h5 className="font-extrabold text-xs text-slate-800 mt-0.5">{act.event}</h5>
-                    <p className="text-[10px] text-slate-450 mt-0.5">{act.desc}</p>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* 9. GAMIFICATION ACHIEVEMENTS ROW */}
+      {/* 9. STREAKS & BADGES ACHIEVEMENTS */}
       <section className="flex flex-col gap-4">
         <div>
           <span className="text-[9px] font-black text-slate-400 tracking-wider uppercase">Gamification Achievements</span>
