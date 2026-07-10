@@ -8,7 +8,7 @@ import { Input } from '../components/Input';
 import { Button } from '../components/Button';
 import { useUserStore } from '../store/userStore';
 import { apiClient } from '../services/api';
-import { CheckCircle, ShieldAlert, Sparkles, KeyRound, Mail, ArrowRight, Copy, Check } from 'lucide-react';
+import { CheckCircle, ShieldAlert, Sparkles, KeyRound, Mail, ArrowRight, Copy, Check, ArrowLeft } from 'lucide-react';
 
 // Validation Schemas
 const loginSchema = z.object({
@@ -177,7 +177,14 @@ export const Login: React.FC = () => {
         <Card className="w-full bg-white/80 border border-slate-200/60 backdrop-blur-xl rounded-3xl p-8 shadow-xl shadow-slate-100/50">
           
           {/* Header Title */}
-          <div className="text-center mb-8">
+          <div className="text-center mb-8 relative">
+            <button
+              onClick={() => navigate('/')}
+              className="absolute left-0 top-0 text-slate-450 hover:text-slate-700 flex items-center gap-1.5 text-[10px] font-black uppercase tracking-wider transition-colors cursor-pointer"
+            >
+              <ArrowLeft size={14} /> Landing
+            </button>
+            
             <div className="w-14 h-14 rounded-2xl bg-gradient-to-tr from-blue-600 to-indigo-600 flex items-center justify-center text-white shadow-lg shadow-blue-500/10 mx-auto mb-4">
               <Sparkles size={28} />
             </div>
