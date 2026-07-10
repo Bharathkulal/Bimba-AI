@@ -3,7 +3,9 @@ import { Outlet, useNavigate, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Home, Users, FileText, LayoutTemplate, Cpu, BarChart3, 
-  Shield, FileSpreadsheet, Settings, LogOut
+  Shield, FileSpreadsheet, Settings, LogOut,
+  Database, Building2, BookOpen, Megaphone, Mail, DownloadCloud,
+  UserCheck, Activity, Bell
 } from 'lucide-react';
 import { adminService } from '../services/admin';
 
@@ -51,9 +53,18 @@ export const AdminLayout: React.FC = () => {
     { label: 'Dashboard', path: '/admin/dashboard', icon: Home },
     { label: 'Users', path: '/admin/users', icon: Users },
     { label: 'Resumes', path: '/admin/resumes', icon: FileText },
+    { label: 'Datasets', path: '/admin/datasets', icon: Database },
+    { label: 'Departments', path: '/admin/departments', icon: Building2 },
+    { label: 'Subjects', path: '/admin/subjects', icon: BookOpen },
+    { label: 'Announcements', path: '/admin/announcements', icon: Megaphone },
+    { label: 'Email Center', path: '/admin/email', icon: Mail },
+    { label: 'Reports', path: '/admin/reports', icon: BarChart3 },
+    { label: 'Backups', path: '/admin/backups', icon: DownloadCloud },
+    { label: 'Admin Roles', path: '/admin/admins', icon: UserCheck },
+    { label: 'System Monitor', path: '/admin/monitor', icon: Activity },
+    { label: 'Notifications', path: '/admin/notifications', icon: Bell },
     { label: 'Templates', path: '/admin/templates', icon: LayoutTemplate },
     { label: 'AI Management', path: '/admin/ai', icon: Cpu },
-    { label: 'Analytics', path: '/admin/analytics', icon: BarChart3 },
     { label: 'Security', path: '/admin/security', icon: Shield },
     { label: 'Logs', path: '/admin/logs', icon: FileSpreadsheet },
     { label: 'Settings', path: '/admin/settings', icon: Settings },

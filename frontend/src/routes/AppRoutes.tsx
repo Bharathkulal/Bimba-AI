@@ -115,6 +115,16 @@ export const AppRoutes: React.FC = () => {
             <Route path="/admin/dashboard" element={<AdminDashboard />} />
             <Route path="/admin/users" element={<AdminDashboard />} />
             <Route path="/admin/resumes" element={<AdminDashboard />} />
+            <Route path="/admin/datasets" element={<AdminDashboard />} />
+            <Route path="/admin/departments" element={<AdminDashboard />} />
+            <Route path="/admin/subjects" element={<AdminDashboard />} />
+            <Route path="/admin/announcements" element={<AdminDashboard />} />
+            <Route path="/admin/email" element={<AdminDashboard />} />
+            <Route path="/admin/reports" element={<AdminDashboard />} />
+            <Route path="/admin/backups" element={<AdminDashboard />} />
+            <Route path="/admin/admins" element={<AdminDashboard />} />
+            <Route path="/admin/monitor" element={<AdminDashboard />} />
+            <Route path="/admin/notifications" element={<AdminDashboard />} />
             <Route path="/admin/templates" element={<AdminDashboard />} />
             <Route path="/admin/ai" element={<AdminDashboard />} />
             <Route path="/admin/analytics" element={<AdminDashboard />} />

@@ -44,7 +44,12 @@ def init_db():
     from app.models.login_history import LoginHistory
     from app.models.analytics import Resume, ResumeVersion, AIUsageLog, EditingSession, DownloadLog, ActivityLog
     from app.models.ai_admin import AIProvider, AIGatewayLog, AISystemSettings
+    from app.models.admin_user import AdminUser
+    from app.models.academic import Department, Subject
+    from app.models.communications import Announcement, EmailTemplate, EmailQueueLog, Notification
+    from app.models.system import Backup, DatasetImport, AuditLog, SystemHealth
     from datetime import datetime, timedelta, timezone
+    from app.core.security import get_password_hash
     
     # Create tables
     Base.metadata.create_all(bind=engine)
@@ -52,7 +57,95 @@ def init_db():
     # Seed development record
     db = SessionLocal()
     try:
-        # Check if the dev record exists
+        # Seed Admin User if none exists
+        admin_count = db.query(AdminUser).count()
+        if admin_count == 0:
+            super_admin = AdminUser(
+                username="admin",
+                email="admin@bimba.ai",
+                password_hash=get_password_hash("admin"),
+                role="super_admin",
+                is_active=True
+            )
+            moderator = AdminUser(
+                username="moderator",
+                email="mod@bimba.ai",
+                password_hash=get_password_hash("moderator"),
+                role="moderator",
+                is_active=True
+            )
+            db.add_all([super_admin, moderator])
+            db.commit()
+            print("Successfully seeded admin users (admin, moderator)")
+
+        # Seed initial departments
+        dept_count = db.query(Department).count()
+        if dept_count == 0:
+            cs_dept = Department(
+                code="CS",
+                name="Computer Science & Engineering",
+                description="Core computer systems and algorithms engineering department.",
+                hod_name="Dr. Alan Turing",
+                status="Active",
+                student_count=120,
+                subject_count=12,
+                faculty_count=8
+            )
+            bca_dept = Department(
+                code="BCA",
+                name="Bachelor of Computer Applications",
+                description="Practical software applications and systems deployment.",
+                hod_name="Dr. Grace Hopper",
+                status="Active",
+                student_count=85,
+                subject_count=10,
+                faculty_count=6
+            )
+            db.add_all([cs_dept, bca_dept])
+            db.commit()
+            print("Successfully seeded departments")
+
+        # Seed initial subjects
+        sub_count = db.query(Subject).count()
+        if sub_count == 0:
+            cs = db.query(Department).filter(Department.code == "CS").first()
+            bca = db.query(Department).filter(Department.code == "BCA").first()
+            if cs and bca:
+                s1 = Subject(code="CS301", name="Database Management Systems", department_id=cs.id, semester=3, credits=4, faculty_name="Prof. John Doe", status="Active", students_enrolled=45)
+                s2 = Subject(code="CS302", name="Operating Systems", department_id=cs.id, semester=3, credits=3, faculty_name="Prof. Jane Smith", status="Active", students_enrolled=45)
+                s3 = Subject(code="BCA301", name="Web Technologies", department_id=bca.id, semester=3, credits=3, faculty_name="Prof. Bob Johnson", status="Active", students_enrolled=40)
+                db.add_all([s1, s2, s3])
+                db.commit()
+                print("Successfully seeded subjects")
+
+        # Seed email templates
+        template_count = db.query(EmailTemplate).count()
+        if template_count == 0:
+            t1 = EmailTemplate(name="OTP", subject="Your Bimba AI One-Time Password", body="Hello, your OTP verification code is {{otp}}. This code is valid for 10 minutes.")
+            t2 = EmailTemplate(name="Welcome", subject="Welcome to Bimba AI Portal", body="Hello {{student_name}},\n\nYour account has been successfully created. Welcome aboard!")
+            t3 = EmailTemplate(name="Password Reset", subject="Bimba AI Password Reset Request", body="Hello, click the following link to reset your password: {{reset_link}}")
+            t4 = EmailTemplate(name="Announcement", subject="New Academic Announcement", body="Dear Students,\n\nA new announcement has been published:\n\n{{announcement_title}}\n\n{{announcement_content}}")
+            t5 = EmailTemplate(name="Resume Ready", subject="Your AI Resume is Ready!", body="Great news! Your resume has been optimized with our AI gateway and is ready for download.")
+            db.add_all([t1, t2, t3, t4, t5])
+            db.commit()
+            print("Successfully seeded email templates")
+
+        # Seed notifications
+        notification_count = db.query(Notification).count()
+        if notification_count == 0:
+            n1 = Notification(type="Dataset Imported", message="Student directory batch file 'student_list_v1.csv' has been imported. 120 records created.")
+            n2 = Notification(type="Backup Completed", message="Automatic daily database backup generated successfully: backup_2026_07_10.db")
+            db.add_all([n1, n2])
+            db.commit()
+            print("Successfully seeded notification logs")
+
+        # Seed initial system health stats
+        health_count = db.query(SystemHealth).count()
+        if health_count == 0:
+            h = SystemHealth(cpu_usage=24.5, ram_usage=62.1, disk_usage=45.8, db_health="Healthy", api_health="Healthy", latency_ms=120, db_queries_count=1200, request_rate=15)
+            db.add(h)
+            db.commit()
+
         test_student = db.query(Student).filter(Student.roll_number == "BCA25008").first()
         if not test_student:
             test_student = Student(
