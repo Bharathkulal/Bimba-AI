@@ -30,6 +30,31 @@ class UserModifyRequest(BaseModel):
     roll_number: str
     action: str  # "suspend" | "activate" | "delete" | "reset_password"
 
+class StudentCreateRequest(BaseModel):
+    roll_number: str
+    student_name: str
+    email: str
+    dob: str
+    department: str
+    semester: int
+    section: Optional[str] = "A"
+    academic_year: Optional[str] = "2026"
+
+class StudentUpdateRequest(BaseModel):
+    roll_number: str
+    student_name: str
+    email: str
+    dob: str
+    department: str
+    semester: int
+    section: Optional[str] = None
+    academic_year: Optional[str] = None
+    status: str
+
+class BulkModifyRequest(BaseModel):
+    roll_numbers: List[str]
+    action: str  # "suspend" | "activate" | "delete"
+
 class TemplateRequest(BaseModel):
     id: Optional[int] = None
     name: str
