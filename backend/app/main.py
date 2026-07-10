@@ -6,6 +6,7 @@ from app.api.auth import router as auth_router
 from app.api.analytics import router as analytics_router
 from app.api.ai_admin import router as ai_admin_router
 from app.api.admin_portal import router as admin_portal_router
+from app.api.resume_studio import router as resume_studio_router
 from app.database.session import init_db
 
 app = FastAPI(
@@ -33,6 +34,7 @@ app.include_router(auth_router, prefix=settings.API_V1_STR)
 app.include_router(analytics_router, prefix=settings.API_V1_STR)
 app.include_router(ai_admin_router, prefix=settings.API_V1_STR)
 app.include_router(admin_portal_router, prefix=settings.API_V1_STR)
+app.include_router(resume_studio_router, prefix=settings.API_V1_STR)
 
 # Expose health check at root-level "/health" - db refresh reload
 app.include_router(health_router)

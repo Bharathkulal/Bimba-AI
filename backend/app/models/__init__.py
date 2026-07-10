@@ -6,6 +6,11 @@ from app.models.admin_user import AdminUser
 from app.models.academic import Department, Subject
 from app.models.communications import Announcement, EmailTemplate, EmailQueueLog, Notification
 from app.models.system import Backup, DatasetImport, AuditLog, SystemHealth
+from app.models.resume_studio import (
+    ResumeMaster, ResumeVersion as ResumeStudioVersion, ResumeEducation, 
+    ResumeExperience, ResumeProject, ResumeSkill, ResumeCertificate, 
+    ResumeTemplate, ResumeDownload, ResumeATS, ResumeAILog, CareerReadiness
+)
 
 __all__ = [
     "Base", 
@@ -22,6 +27,18 @@ __all__ = [
     "Backup",
     "DatasetImport",
     "AuditLog",
-    "SystemHealth"
+    "SystemHealth",
+    "ResumeMaster",
+    "ResumeStudioVersion",
+    "ResumeEducation",
+    "ResumeExperience",
+    "ResumeProject",
+    "ResumeSkill",
+    "ResumeCertificate",
+    "ResumeTemplate",
+    "ResumeDownload",
+    "ResumeATS",
+    "ResumeAILog",
+    "CareerReadiness"
 ]
 

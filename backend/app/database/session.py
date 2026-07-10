@@ -48,6 +48,11 @@ def init_db():
     from app.models.academic import Department, Subject
     from app.models.communications import Announcement, EmailTemplate, EmailQueueLog, Notification
     from app.models.system import Backup, DatasetImport, AuditLog, SystemHealth
+    from app.models.resume_studio import (
+        ResumeMaster, ResumeVersion as ResumeStudioVersion, ResumeEducation, 
+        ResumeExperience, ResumeProject, ResumeSkill, ResumeCertificate, 
+        ResumeTemplate, ResumeDownload, ResumeATS, ResumeAILog, CareerReadiness
+    )
     from datetime import datetime, timedelta, timezone
     from app.core.security import get_password_hash
     
@@ -145,6 +150,24 @@ def init_db():
             h = SystemHealth(cpu_usage=24.5, ram_usage=62.1, disk_usage=45.8, db_health="Healthy", api_health="Healthy", latency_ms=120, db_queries_count=1200, request_rate=15)
             db.add(h)
             db.commit()
+
+        # Seed default templates
+        tpl_count = db.query(ResumeTemplate).count()
+        if tpl_count == 0:
+            templates = [
+                ResumeTemplate(slug="professional", name="Professional", category="Professional", ats_rating=97, popularity=95, color_theme="blue", thumbnail=""),
+                ResumeTemplate(slug="ats_friendly", name="ATS Friendly", category="ATS Friendly", ats_rating=99, popularity=98, color_theme="slate", thumbnail=""),
+                ResumeTemplate(slug="modern", name="Modern", category="Modern", ats_rating=96, popularity=94, color_theme="indigo", thumbnail=""),
+                ResumeTemplate(slug="minimal", name="Minimal", category="Minimal", ats_rating=95, popularity=90, color_theme="emerald", thumbnail=""),
+                ResumeTemplate(slug="corporate", name="Corporate", category="Corporate", ats_rating=97, popularity=92, color_theme="blue", thumbnail=""),
+                ResumeTemplate(slug="creative", name="Creative", category="Creative", ats_rating=92, popularity=88, color_theme="violet", thumbnail=""),
+                ResumeTemplate(slug="developer", name="Developer", category="Developer", ats_rating=98, popularity=97, color_theme="zinc", thumbnail=""),
+                ResumeTemplate(slug="student", name="Student", category="Student", ats_rating=95, popularity=89, color_theme="blue", thumbnail=""),
+                ResumeTemplate(slug="classic", name="Classic", category="Classic", ats_rating=94, popularity=85, color_theme="slate", thumbnail=""),
+            ]
+            db.add_all(templates)
+            db.commit()
+            print("Successfully seeded resume templates")
 
         test_student = db.query(Student).filter(Student.roll_number == "BCA25008").first()
         if not test_student:
