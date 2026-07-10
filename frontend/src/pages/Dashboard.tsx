@@ -7,11 +7,22 @@ import {
   SendHorizontal, Lock, ListTodo
 } from 'lucide-react';
 import { Button } from '../components/Button';
+import { useUserStore } from '../store/userStore';
 import { analyticsService } from '../services/analytics';
 import type { DashboardData, AtsData, ActivityTimelineItem, ResumeAnalyticsItem } from '../services/analytics';
 
 export const Dashboard: React.FC = () => {
   const navigate = useNavigate();
+  const user = useUserStore((state) => state.user);
+  
+  const getDisplayName = () => {
+    if (!user) return 'Student';
+    const email = user.personal_email;
+    const prefix = email.split('@')[0];
+    const name = prefix.replace(/[0-9_.]/g, ' ');
+    return name.charAt(0).toUpperCase() + name.slice(1).trim();
+  };
+  const displayName = getDisplayName();
   
   // Loading & State
   const [isLoading, setIsLoading] = useState(true);
@@ -23,9 +34,14 @@ export const Dashboard: React.FC = () => {
   // UI States
   const [searchQuery, setSearchQuery] = useState('');
   const [notificationCount, setNotificationCount] = useState(3);
-  const [chatMessages, setChatMessages] = useState([
-    { sender: 'ai', text: "Hello Bharath! I've analyzed your Fullstack Engineer Resume. Your ATS Score is a strong 96%, but you can reach 100% by adding metrics to your Stripe experience." }
-  ]);
+  const [chatMessages, setChatMessages] = useState<Array<{ sender: string; text: string }>>([]);
+
+  useEffect(() => {
+    setChatMessages([
+      { sender: 'ai', text: `Hello ${displayName}! I've analyzed your Fullstack Engineer Resume. Your ATS Score is a strong 96%, but you can reach 100% by adding metrics to your Stripe experience.` }
+    ]);
+  }, [displayName]);
+
   const [chatInput, setChatInput] = useState('');
 
   // Fetch all real-time analytics
@@ -258,21 +274,21 @@ export const Dashboard: React.FC = () => {
           {/* User Profile Avatar */}
           <div className="flex items-center gap-2.5 pl-2 border-l border-slate-200">
             <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-sky-400 to-blue-500 flex items-center justify-center text-white font-extrabold text-sm shadow-sm">
-              B
+              {displayName.charAt(0).toUpperCase()}
             </div>
             <div className="hidden lg:block text-left">
-              <h5 className="font-extrabold text-xs text-slate-800">Bharath</h5>
+              <h5 className="font-extrabold text-xs text-slate-800">{displayName}</h5>
               <p className="text-[9px] text-slate-400 font-bold tracking-wider uppercase mt-0.5">Plus Plan</p>
             </div>
           </div>
         </div>
       </header>
-
+ 
       {/* 2. WELCOME HERO PANEL */}
       <section className="bg-white border border-slate-200/60 rounded-3xl p-6 md:p-8 flex flex-col md:flex-row items-start md:items-center justify-between gap-6 relative overflow-hidden shadow-sm">
         <div className="absolute right-0 top-0 w-[30%] h-[120%] bg-blue-500/5 blur-[80px] pointer-events-none rounded-full" />
         <div className="z-10">
-          <h2 className="text-3xl md:text-4xl font-extrabold text-slate-900 tracking-tight mb-2">👋 Good Morning, Bharath</h2>
+          <h2 className="text-3xl md:text-4xl font-extrabold text-slate-900 tracking-tight mb-2">👋 Good Morning, {displayName}</h2>
           <p className="text-slate-555 text-sm md:text-base leading-relaxed max-w-xl">
             Workspace active. You currently have <span className="font-bold text-blue-600">{dashboardData?.resumes?.total} resumes</span>. Average completion is <span className="font-bold text-blue-600">{dashboardData?.resumes?.averageCompletion}%</span>.
           </p>

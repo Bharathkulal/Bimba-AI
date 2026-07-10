@@ -34,7 +34,14 @@ apiClient.interceptors.response.use(
   (error) => {
     // Handle specific errors like 401 Unauthorized
     if (error.response && error.response.status === 401) {
-      // Logic for token refresh or redirect to login could go here
+      const isAdminRequest = error.config.url?.includes('/admin') || window.location.pathname.startsWith('/admin');
+      if (isAdminRequest) {
+        localStorage.removeItem('admin_token');
+        window.location.href = '/admin/login';
+      } else {
+        localStorage.removeItem('auth_token');
+        window.location.href = '/login';
+      }
     }
     return Promise.reject(error);
   }

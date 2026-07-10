@@ -216,3 +216,18 @@ def forgot_password_reset(payload: ResetPasswordRequest, db: Session = Depends(g
     db.commit()
     
     return {"message": "Password reset successfully. You can now login."}
+
+from fastapi.security import OAuth2PasswordBearer
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/auth/login", auto_error=False)
+
+@router.get("/me")
+def get_me(token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)):
+    from app.api.analytics import get_current_student
+    student = get_current_student(token, db)
+    return {
+        "roll_number": student.roll_number,
+        "personal_email": student.personal_email,
+        "department": student.department,
+        "semester": student.semester
+    }
+
