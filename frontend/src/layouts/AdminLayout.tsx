@@ -116,7 +116,7 @@ export const AdminLayout: React.FC = () => {
           </div>
 
           {/* Dock Navigation List */}
-          <nav className="flex flex-col gap-1.5">
+          <nav className="flex flex-col gap-1.5 overflow-y-auto no-scrollbar max-h-[calc(100vh-180px)] pr-1">
             {menuItems.map((item) => {
               const Icon = item.icon;
               const isActive = location.pathname === item.path;

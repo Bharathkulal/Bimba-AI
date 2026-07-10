@@ -158,13 +158,19 @@ def init_db():
                 section="A",
                 academic_year="2023-2026",
                 status="Active",
-                account_activated=False,
-                otp_verified=False
+                account_activated=True,
+                otp_verified=True,
+                password_hash=get_password_hash("Test@12345")
             )
             db.add(test_student)
             db.commit()
             db.refresh(test_student)
             print("Successfully seeded development student: BCA25008")
+        else:
+            test_student.account_activated = True
+            test_student.otp_verified = True
+            test_student.password_hash = get_password_hash("Test@12345")
+            db.commit()
 
         test_student_24001 = db.query(Student).filter(Student.roll_number == "BCA24001").first()
         if not test_student_24001:
@@ -178,12 +184,18 @@ def init_db():
                 section="A",
                 academic_year="2024-2027",
                 status="Active",
-                account_activated=False,
-                otp_verified=False
+                account_activated=True,
+                otp_verified=True,
+                password_hash=get_password_hash("Test@12345")
             )
             db.add(test_student_24001)
             db.commit()
             print("Successfully seeded activation test student: BCA24001")
+        else:
+            test_student_24001.account_activated = True
+            test_student_24001.otp_verified = True
+            test_student_24001.password_hash = get_password_hash("Test@12345")
+            db.commit()
 
         # Seed analytics data if BCA25008 has no resumes yet
         resumes_count = db.query(Resume).filter(Resume.student_id == test_student.id).count()

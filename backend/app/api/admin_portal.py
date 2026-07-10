@@ -484,7 +484,7 @@ def commit_dataset_import(payload: DatasetImportRequest, request: Request, admin
     return {"success": True, "message": "Dataset imported successfully", "imported": imported_count, "updated": updated_count}
 
 @router.delete("/dataset")
-def rollback_import(import_id: int = Query(...), request: Request, admin: AdminUser = Depends(require_role(["super_admin"])), db: Session = Depends(get_db)):
+def rollback_import(request: Request, import_id: int = Query(...), admin: AdminUser = Depends(require_role(["super_admin"])), db: Session = Depends(get_db)):
     import_log = db.query(DatasetImport).filter(DatasetImport.id == import_id).first()
     if not import_log:
         raise HTTPException(status_code=404, detail="Import entry not found")
