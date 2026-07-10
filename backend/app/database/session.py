@@ -40,7 +40,8 @@ def get_db():
 def init_db():
     # Import models to register them on Base.metadata
     from app.models.student import Student
-    from app.models.otp import OTP
+    from app.models.otp_verification import OTPVerification
+    from app.models.login_history import LoginHistory
     from app.models.analytics import Resume, ResumeVersion, AIUsageLog, EditingSession, DownloadLog, ActivityLog
     from app.models.ai_admin import AIProvider, AIGatewayLog, AISystemSettings
     from datetime import datetime, timedelta, timezone
@@ -56,18 +57,40 @@ def init_db():
         if not test_student:
             test_student = Student(
                 roll_number="BCA25008",
-                date_of_birth="29-05-2007",
-                personal_email="bharathkulal2007@gmail.com",
+                student_name="Bharath Kulal",
+                dob="29-05-2007",
+                email="bharathkulal2007@gmail.com",
                 department="CS",
                 semester=3,
+                section="A",
+                academic_year="2023-2026",
                 status="Active",
-                is_activated=False,
-                email_verified=False
+                account_activated=False,
+                otp_verified=False
             )
             db.add(test_student)
             db.commit()
             db.refresh(test_student)
             print("Successfully seeded development student: BCA25008")
+
+        test_student_24001 = db.query(Student).filter(Student.roll_number == "BCA24001").first()
+        if not test_student_24001:
+            test_student_24001 = Student(
+                roll_number="BCA24001",
+                student_name="Test Student",
+                dob="15-08-2005",
+                email="bharathkulal2007@gmail.com",
+                department="BCA",
+                semester=3,
+                section="A",
+                academic_year="2024-2027",
+                status="Active",
+                account_activated=False,
+                otp_verified=False
+            )
+            db.add(test_student_24001)
+            db.commit()
+            print("Successfully seeded activation test student: BCA24001")
 
         # Seed analytics data if BCA25008 has no resumes yet
         resumes_count = db.query(Resume).filter(Resume.student_id == test_student.id).count()

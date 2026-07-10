@@ -1,13 +1,14 @@
 import random
 import string
 from datetime import datetime, timedelta, timezone
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, Request
 from sqlalchemy.orm import Session
 from pydantic import BaseModel
 
 from app.database.session import get_db
 from app.models.student import Student
-from app.models.otp import OTP
+from app.models.otp_verification import OTPVerification
+from app.models.login_history import LoginHistory
 from app.core.security import get_password_hash, verify_password, create_access_token
 
 router = APIRouter(prefix="/auth", tags=["Authentication"])
@@ -34,26 +35,73 @@ class ResetPasswordRequest(BaseModel):
     roll_number: str
     password: str
 
+# Helper to mask email
+def mask_email(email: str) -> str:
+    if not email or "@" not in email:
+        return email
+    parts = email.split("@")
+    name = parts[0]
+    domain = parts[1]
+    if len(name) <= 2:
+        masked_name = name[0] + "*" * (len(name) - 1)
+    else:
+        masked_name = name[0] + "*" * 8 + name[-1]
+    return f"{masked_name}@{domain}"
+
 # Helper to generate and save a 6-digit OTP
-def generate_and_save_otp(db: Session, roll_number: str, purpose: str) -> str:
-    # Remove older OTPs for the same roll number and purpose
-    db.query(OTP).filter(OTP.roll_number == roll_number, OTP.purpose == purpose).delete()
+def generate_and_save_otp(db: Session, student_id: int, purpose: str) -> str:
+    # Remove older OTPs for the same student and purpose
+    db.query(OTPVerification).filter(OTPVerification.student_id == student_id, OTPVerification.purpose == purpose).delete()
     
     # Generate 6-digit code
     otp_code = "".join(random.choices(string.digits, k=6))
     
+    # Store hashed OTP
+    otp_hash = get_password_hash(otp_code)
+    
     # Expires in 5 minutes
     expires_at = datetime.now(timezone.utc) + timedelta(minutes=5)
     
-    new_otp = OTP(
-        roll_number=roll_number,
-        otp_code=otp_code,
+    new_otp = OTPVerification(
+        student_id=student_id,
+        otp_hash=otp_hash,
         purpose=purpose,
-        expires_at=expires_at
+        expires_at=expires_at,
+        attempts=0,
+        verified=False
     )
     db.add(new_otp)
     db.commit()
     return otp_code
+
+# Helper to log login attempts
+def log_login_attempt(db: Session, student_id: int, request: Request, status_str: str):
+    ip_address = request.client.host if request.client else "Unknown"
+    user_agent = request.headers.get("user-agent", "Unknown")
+    
+    browser = "Unknown"
+    if "Chrome" in user_agent:
+        browser = "Chrome"
+    elif "Safari" in user_agent:
+        browser = "Safari"
+    elif "Firefox" in user_agent:
+        browser = "Firefox"
+    elif "Edge" in user_agent:
+        browser = "Edge"
+        
+    device = "Desktop"
+    if "Mobi" in user_agent or "Android" in user_agent or "iPhone" in user_agent:
+        device = "Mobile"
+        
+    history = LoginHistory(
+        student_id=student_id,
+        ip_address=ip_address,
+        browser=browser,
+        device=device,
+        login_status=status_str
+    )
+    db.add(history)
+    db.commit()
 
 # --- Endpoints ---
 
@@ -61,55 +109,80 @@ def generate_and_save_otp(db: Session, roll_number: str, purpose: str) -> str:
 def activation_verify(payload: ActivationVerifyRequest, db: Session = Depends(get_db)):
     student = db.query(Student).filter(
         Student.roll_number == payload.roll_number,
-        Student.date_of_birth == payload.date_of_birth
+        Student.dob == payload.date_of_birth
     ).first()
     
     if not student:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail="Student not found with matching Roll Number and Date of Birth."
+            detail="Invalid Roll Number or Date of Birth."
         )
     
-    if student.is_activated:
+    if student.account_activated:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Account is already activated. Please login directly."
+            detail="Your account is already activated. Please login."
         )
     
     # Generate and save OTP
-    otp_code = generate_and_save_otp(db, student.roll_number, "activation")
+    otp_code = generate_and_save_otp(db, student.id, "activation")
     
-    # In development, return the OTP in the JSON so front-end testing is seamless
     return {
-        "message": f"6-digit OTP sent to registered email {student.personal_email}",
-        "email": student.personal_email,
+        "message": f"6-digit OTP sent to registered email {mask_email(student.email)}",
+        "student_name": student.student_name,
+        "email": mask_email(student.email),
         "dev_otp": otp_code  # Exposing dev_otp for developer verification
     }
 
 @router.post("/activation/verify-otp")
 def activation_verify_otp(payload: OTPVerifyRequest, db: Session = Depends(get_db)):
-    otp_record = db.query(OTP).filter(
-        OTP.roll_number == payload.roll_number,
-        OTP.otp_code == payload.otp_code,
-        OTP.purpose == payload.purpose
+    student = db.query(Student).filter(Student.roll_number == payload.roll_number).first()
+    if not student:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Student not found."
+        )
+
+    otp_record = db.query(OTPVerification).filter(
+        OTPVerification.student_id == student.id,
+        OTPVerification.purpose == payload.purpose,
+        OTPVerification.verified == False
     ).first()
     
     if not otp_record:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Invalid OTP code."
+            detail="No active OTP request found."
         )
+        
+    if otp_record.attempts >= 5:
+        db.delete(otp_record)
+        db.commit()
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Maximum verification attempts exceeded. Please request a new OTP."
+        )
+        
+    otp_record.attempts += 1
+    db.commit()
     
-    # Convert expires_at offset for comparison
-    expires_naive = otp_record.expires_at
-    # Make sure we compare correctly (e.g. UTC)
-    if datetime.now(timezone.utc).replace(tzinfo=None) > expires_naive:
+    if datetime.now(timezone.utc).replace(tzinfo=None) > otp_record.expires_at:
         db.delete(otp_record)
         db.commit()
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="OTP has expired (expires in 5 minutes)."
         )
+        
+    if not verify_password(payload.otp_code, otp_record.otp_hash):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Invalid OTP code. Attempts remaining: {5 - otp_record.attempts}"
+        )
+        
+    otp_record.verified = True
+    student.otp_verified = True
+    db.commit()
         
     return {"message": "OTP verified successfully."}
 
@@ -122,37 +195,84 @@ def activation_setup_password(payload: SetupPasswordRequest, db: Session = Depen
             detail="Student not found."
         )
         
-    if student.is_activated:
+    if student.account_activated:
          raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Account is already activated."
         )
          
-    student.hashed_password = get_password_hash(payload.password)
-    student.is_activated = True
-    student.email_verified = True
-    
-    # Remove all verified OTPs for this student
-    db.query(OTP).filter(OTP.roll_number == payload.roll_number).delete()
-    db.commit()
-    
-    return {"message": "Account activated successfully. You can now login."}
-
-@router.post("/login")
-def login(payload: LoginRequest, db: Session = Depends(get_db)):
-    student = db.query(Student).filter(Student.roll_number == payload.roll_number).first()
-    
-    if not student or not student.is_activated:
+    otp_record = db.query(OTPVerification).filter(
+        OTPVerification.student_id == student.id,
+        OTPVerification.purpose == "activation",
+        OTPVerification.verified == True
+    ).first()
+    if not otp_record:
         raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Incorrect Roll Number, or account not yet activated."
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="OTP verification required before password setup."
         )
         
-    if not verify_password(payload.password, student.hashed_password):
+    # Password rules verification
+    password = payload.password
+    if (len(password) < 8 or
+        not any(c.isupper() for c in password) or
+        not any(c.islower() for c in password) or
+        not any(c.isdigit() for c in password) or
+        not any(not c.isalnum() for c in password)):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Password must be at least 8 characters long and contain at least one uppercase letter, one lowercase letter, one number, and one special character."
+        )
+         
+    student.password_hash = get_password_hash(payload.password)
+    student.account_activated = True
+    student.otp_verified = True
+    
+    # Remove the OTP record
+    db.delete(otp_record)
+    db.commit()
+    
+    # Automatically log in
+    token = create_access_token(subject=student.roll_number)
+    
+    return {
+        "access_token": token,
+        "token_type": "bearer",
+        "student": {
+            "roll_number": student.roll_number,
+            "personal_email": student.email,
+            "department": student.department,
+            "semester": student.semester
+        }
+    }
+
+@router.post("/login")
+def login(payload: LoginRequest, request: Request, db: Session = Depends(get_db)):
+    student = db.query(Student).filter(Student.roll_number == payload.roll_number).first()
+    
+    if not student:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Incorrect Password."
+            detail="Incorrect Roll Number or Password."
         )
+        
+    if not student.account_activated:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Account not yet activated. Please activate your account first."
+        )
+        
+    if not student.password_hash or not verify_password(payload.password, student.password_hash):
+        log_login_attempt(db, student.id, request, "Failed")
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Incorrect Roll Number or Password."
+        )
+        
+    # Log successful attempt
+    student.last_login = datetime.now(timezone.utc).replace(tzinfo=None)
+    log_login_attempt(db, student.id, request, "Success")
+    db.commit()
         
     # Generate JWT
     token = create_access_token(subject=student.roll_number)
@@ -162,7 +282,7 @@ def login(payload: LoginRequest, db: Session = Depends(get_db)):
         "token_type": "bearer",
         "student": {
             "roll_number": student.roll_number,
-            "personal_email": student.personal_email,
+            "personal_email": student.email,
             "department": student.department,
             "semester": student.semester
         }
@@ -172,47 +292,71 @@ def login(payload: LoginRequest, db: Session = Depends(get_db)):
 def forgot_password_verify(payload: ActivationVerifyRequest, db: Session = Depends(get_db)):
     student = db.query(Student).filter(
         Student.roll_number == payload.roll_number,
-        Student.date_of_birth == payload.date_of_birth
+        Student.dob == payload.date_of_birth
     ).first()
     
     if not student:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail="Student not found with matching Roll Number and Date of Birth."
+            detail="Invalid Roll Number or Date of Birth."
         )
         
-    if not student.is_activated:
+    if not student.account_activated:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Account is not yet activated. Please activate it first."
         )
         
     # Generate and save OTP
-    otp_code = generate_and_save_otp(db, student.roll_number, "forgot_password")
+    otp_code = generate_and_save_otp(db, student.id, "forgot_password")
     
     return {
-        "message": f"6-digit OTP sent to registered email {student.personal_email}",
-        "email": student.personal_email,
+        "message": f"6-digit OTP sent to registered email {mask_email(student.email)}",
+        "student_name": student.student_name,
+        "email": mask_email(student.email),
         "dev_otp": otp_code
     }
 
 @router.post("/forgot-password/verify-otp")
 def forgot_password_verify_otp(payload: OTPVerifyRequest, db: Session = Depends(get_db)):
-    # This is identical to activation OTP check but uses "forgot_password" purpose
     return activation_verify_otp(payload, db)
 
 @router.post("/forgot-password/reset")
 def forgot_password_reset(payload: ResetPasswordRequest, db: Session = Depends(get_db)):
     student = db.query(Student).filter(Student.roll_number == payload.roll_number).first()
-    if not student or not student.is_activated:
+    if not student or not student.account_activated:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Student account is not active."
         )
         
-    student.hashed_password = get_password_hash(payload.password)
-    # Clear OTP records
-    db.query(OTP).filter(OTP.roll_number == payload.roll_number).delete()
+    otp_record = db.query(OTPVerification).filter(
+        OTPVerification.student_id == student.id,
+        OTPVerification.purpose == "forgot_password",
+        OTPVerification.verified == True
+    ).first()
+    if not otp_record:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="OTP verification required before password reset."
+        )
+        
+    # Password rules verification
+    password = payload.password
+    if (len(password) < 8 or
+        not any(c.isupper() for c in password) or
+        not any(c.islower() for c in password) or
+        not any(c.isdigit() for c in password) or
+        not any(not c.isalnum() for c in password)):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Password must be at least 8 characters long and contain at least one uppercase letter, one lowercase letter, one number, and one special character."
+        )
+        
+    student.password_hash = get_password_hash(payload.password)
+    
+    # Clear OTP record
+    db.delete(otp_record)
     db.commit()
     
     return {"message": "Password reset successfully. You can now login."}
@@ -226,8 +370,7 @@ def get_me(token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)):
     student = get_current_student(token, db)
     return {
         "roll_number": student.roll_number,
-        "personal_email": student.personal_email,
+        "personal_email": student.email,
         "department": student.department,
         "semester": student.semester
     }
-

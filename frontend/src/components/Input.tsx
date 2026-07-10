@@ -5,17 +5,18 @@ interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {
   label?: string;
   error?: string;
   helperText?: string;
+  dark?: boolean;
 }
 
 export const Input = forwardRef<HTMLInputElement, InputProps>(
-  ({ label, error, helperText, className = '', id, type, ...props }, ref) => {
+  ({ label, error, helperText, className = '', id, type, dark = false, ...props }, ref) => {
     const [showPassword, setShowPassword] = useState(false);
     const isPasswordType = type === 'password';
 
     return (
       <div className="w-full flex flex-col gap-1.5">
         {label && (
-          <label htmlFor={id} className="text-xs font-semibold text-slate-700 tracking-wide uppercase">
+          <label htmlFor={id} className={`text-xs font-semibold tracking-wide uppercase ${dark ? 'text-slate-300' : 'text-slate-700'}`}>
             {label}
           </label>
         )}
@@ -24,7 +25,11 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
             id={id}
             ref={ref}
             type={isPasswordType && showPassword ? 'text' : type}
-            className={`w-full pl-4 pr-10 py-3 rounded-xl border border-slate-200 bg-white/70 focus:bg-white focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none transition-smooth placeholder-slate-400 text-sm shadow-sm ${
+            className={`w-full pl-4 pr-10 py-3 rounded-xl border transition-smooth text-sm shadow-sm focus:ring-1 focus:outline-none ${
+              dark
+                ? 'border-white/10 bg-white/5 text-white placeholder-slate-500 focus:bg-white/10 focus:border-blue-500 focus:ring-blue-500/20'
+                : 'border-slate-200 bg-white/70 text-slate-800 placeholder-slate-400 focus:bg-white focus:border-primary focus:ring-primary'
+            } ${
               error ? 'border-red-500 focus:border-red-500 focus:ring-red-500' : ''
             } ${className}`}
             {...props}

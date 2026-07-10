@@ -34,7 +34,7 @@ app.include_router(analytics_router, prefix=settings.API_V1_STR)
 app.include_router(ai_admin_router, prefix=settings.API_V1_STR)
 app.include_router(admin_portal_router, prefix=settings.API_V1_STR)
 
-# Also expose health check on root-level "/health" as requested by user
+# Expose health check at root-level "/health" - db refresh reload
 app.include_router(health_router)
 
 @app.get("/")
