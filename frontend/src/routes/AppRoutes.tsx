@@ -17,8 +17,26 @@ import { ResumeBuilder } from '../pages/ResumeBuilder';
 import { Profile } from '../pages/Profile';
 import { Settings } from '../pages/Settings';
 import { AdminLogin } from '../pages/AdminLogin';
-import { AdminDashboard } from '../pages/AdminDashboard';
 import { NotFound } from '../pages/NotFound';
+
+// Modular Admin Pages
+import { AdminDashboardOverview } from '../pages/admin/AdminDashboardOverview';
+import { UsersModule } from '../pages/admin/UsersModule';
+import { StudentsModule } from '../pages/admin/StudentsModule';
+import { ResumeModule } from '../pages/admin/ResumeModule';
+import { DatasetsModule } from '../pages/admin/DatasetsModule';
+import { DepartmentsModule } from '../pages/admin/DepartmentsModule';
+import { SubjectsModule } from '../pages/admin/SubjectsModule';
+import { AnnouncementsModule } from '../pages/admin/AnnouncementsModule';
+import { EmailModule } from '../pages/admin/EmailModule';
+import { ReportsModule } from '../pages/admin/ReportsModule';
+import { BackupsModule } from '../pages/admin/BackupsModule';
+import { AdminRolesModule } from '../pages/admin/AdminRolesModule';
+import { MonitorModule } from '../pages/admin/MonitorModule';
+import { SecurityModule } from '../pages/admin/SecurityModule';
+import { LogsModule } from '../pages/admin/LogsModule';
+import { SettingsModule } from '../pages/admin/SettingsModule';
+import { AiGatewayModule } from '../pages/admin/AiGatewayModule';
 
 // Route Guards
 const ProtectedRoute: React.FC = () => {
@@ -112,25 +130,26 @@ export const AppRoutes: React.FC = () => {
         
         <Route element={<AdminProtectedRoute />}>
           <Route element={<AdminLayout />}>
-            <Route path="/admin/dashboard" element={<AdminDashboard />} />
-            <Route path="/admin/users" element={<AdminDashboard />} />
-            <Route path="/admin/resumes" element={<AdminDashboard />} />
-            <Route path="/admin/datasets" element={<AdminDashboard />} />
-            <Route path="/admin/departments" element={<AdminDashboard />} />
-            <Route path="/admin/subjects" element={<AdminDashboard />} />
-            <Route path="/admin/announcements" element={<AdminDashboard />} />
-            <Route path="/admin/email" element={<AdminDashboard />} />
-            <Route path="/admin/reports" element={<AdminDashboard />} />
-            <Route path="/admin/backups" element={<AdminDashboard />} />
-            <Route path="/admin/admins" element={<AdminDashboard />} />
-            <Route path="/admin/monitor" element={<AdminDashboard />} />
-            <Route path="/admin/notifications" element={<AdminDashboard />} />
-            <Route path="/admin/templates" element={<AdminDashboard />} />
-            <Route path="/admin/ai" element={<AdminDashboard />} />
-            <Route path="/admin/analytics" element={<AdminDashboard />} />
-            <Route path="/admin/security" element={<AdminDashboard />} />
-            <Route path="/admin/logs" element={<AdminDashboard />} />
-            <Route path="/admin/settings" element={<AdminDashboard />} />
+            <Route path="/admin/dashboard" element={<AdminDashboardOverview />} />
+            <Route path="/admin/users" element={<UsersModule />} />
+            <Route path="/admin/students" element={<StudentsModule />} />
+            <Route path="/admin/resumes" element={<ResumeModule />} />
+            <Route path="/admin/datasets" element={<DatasetsModule />} />
+            <Route path="/admin/departments" element={<DepartmentsModule />} />
+            <Route path="/admin/subjects" element={<SubjectsModule />} />
+            <Route path="/admin/announcements" element={<AnnouncementsModule />} />
+            <Route path="/admin/email" element={<EmailModule />} />
+            <Route path="/admin/reports" element={<ReportsModule />} />
+            <Route path="/admin/backups" element={<BackupsModule />} />
+            <Route path="/admin/admins" element={<AdminRolesModule />} />
+            <Route path="/admin/monitor" element={<MonitorModule />} />
+            <Route path="/admin/notifications" element={<MonitorModule />} />
+            <Route path="/admin/templates" element={<ResumeModule />} />
+            <Route path="/admin/ai" element={<AiGatewayModule />} />
+            <Route path="/admin/analytics" element={<ReportsModule />} />
+            <Route path="/admin/security" element={<SecurityModule />} />
+            <Route path="/admin/logs" element={<LogsModule />} />
+            <Route path="/admin/settings" element={<SettingsModule />} />
           </Route>
         </Route>
 

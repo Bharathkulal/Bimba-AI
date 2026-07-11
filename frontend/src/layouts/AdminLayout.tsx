@@ -3,9 +3,9 @@ import { Outlet, useNavigate, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Home, Users, FileText, LayoutTemplate, Cpu, BarChart3, 
-  Shield, FileSpreadsheet, Settings, LogOut,
+  Shield, FileSpreadsheet, Settings, LogOut, GraduationCap,
   Database, Building2, BookOpen, Megaphone, Mail, DownloadCloud,
-  UserCheck, Activity, Bell
+  UserCheck, Activity, Bell, ChevronRight, User
 } from 'lucide-react';
 import { adminService } from '../services/admin';
 
@@ -52,6 +52,7 @@ export const AdminLayout: React.FC = () => {
   const menuItems = [
     { label: 'Dashboard', path: '/admin/dashboard', icon: Home },
     { label: 'Users', path: '/admin/users', icon: Users },
+    { label: 'Students', path: '/admin/students', icon: GraduationCap },
     { label: 'Resumes', path: '/admin/resumes', icon: FileText },
     { label: 'Datasets', path: '/admin/datasets', icon: Database },
     { label: 'Departments', path: '/admin/departments', icon: Building2 },
@@ -78,6 +79,9 @@ export const AdminLayout: React.FC = () => {
     adminService.logout();
     navigate('/admin/login');
   };
+
+  // Build breadcrumbs path array
+  const pathParts = location.pathname.split('/').filter(Boolean);
 
   return (
     <div className="min-h-screen bg-[#F8FAFC] text-slate-800 flex overflow-x-hidden font-sans relative selection:bg-blue-600/10 w-full">
@@ -198,10 +202,37 @@ export const AdminLayout: React.FC = () => {
         </button>
       </motion.aside>
 
-      {/* Main Workspace Frame */}
-      <main className="flex-grow min-h-screen py-10 px-6 md:pl-28 transition-all duration-300 w-full relative z-10">
-        <Outlet />
-      </main>
+      {/* Main Workspace Frame with Sticky Header */}
+      <div className="flex-grow flex flex-col min-h-screen md:pl-28 w-full relative z-10">
+        {/* Sticky Header Topbar */}
+        <header className="sticky top-0 bg-white/80 backdrop-blur-md border-b border-slate-200/60 h-16 flex items-center justify-between px-6 z-30 shadow-sm">
+          {/* Breadcrumbs */}
+          <div className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-slate-400">
+            <span>Bimba AI</span>
+            {pathParts.map((part, index) => (
+              <React.Fragment key={index}>
+                <ChevronRight size={10} className="text-slate-350" />
+                <span className={index === pathParts.length - 1 ? 'text-slate-800 font-extrabold' : ''}>{part}</span>
+              </React.Fragment>
+            ))}
+          </div>
+
+          {/* Quick Info & Profile Info */}
+          <div className="flex items-center gap-4">
+            <span className="text-[10px] font-black uppercase text-blue-650 bg-blue-50 border border-blue-100 px-2 py-0.5 rounded-lg">
+              Super Admin
+            </span>
+            <div className="w-8 h-8 rounded-full bg-slate-100 border border-slate-200 flex items-center justify-center text-slate-500 shadow-sm">
+              <User size={14} />
+            </div>
+          </div>
+        </header>
+
+        {/* Content Body */}
+        <main className="flex-grow py-8 px-6 w-full">
+          <Outlet />
+        </main>
+      </div>
 
     </div>
   );

@@ -161,6 +161,7 @@ export interface SystemHealthData {
 }
 
 export const adminService = {
+  apiClient,
   login: async (username: string, password: string): Promise<{ success: boolean; token: string }> => {
     const res = await apiClient.post<{ success: boolean; token: string }>('/api/admin/login', { username, password });
     if (res.data.success && res.data.token) {
