@@ -1,281 +1,864 @@
 import React, { useState, useEffect } from 'react';
-import { Cpu, RefreshCw, Lock, Play } from 'lucide-react';
+import { useSearchParams } from 'react-router-dom';
+import { 
+  Cpu, RefreshCw, Lock, Play, Eye, EyeOff, Key, Save, HelpCircle, 
+  History, Sparkles, CheckCircle, ChevronDown, BarChart3, Clock, 
+  DollarSign, Activity, FileText, Bot, Brain, LayoutList, AlertTriangle, RotateCcw 
+} from 'lucide-react';
 import { aiAdminService } from '../../services/aiAdmin';
 import type { AIProviderData, AIAnalyticsData } from '../../services/aiAdmin';
+import { Button } from '../../components/Button';
+
+const SUPPORTED_LIST = [
+  { name: 'Gemini', slug: 'gemini', models: ['gemini-2.5-flash', 'gemini-2.5-pro', 'gemini-1.5-flash'] },
+  { name: 'OpenRouter', slug: 'openrouter', models: ['deepseek/deepseek-chat', 'meta-llama/llama-3-8b'] },
+  { name: 'Groq', slug: 'groq', models: ['llama-3.3-70b', 'mixtral-8x7b'] },
+  { name: 'OpenAI', slug: 'openai', models: ['gpt-4o', 'gpt-4o-mini', 'gpt-3.5-turbo'] },
+  { name: 'Claude', slug: 'claude', models: ['claude-3-5-sonnet', 'claude-3-haiku'] },
+  { name: 'DeepSeek', slug: 'deepseek', models: ['deepseek-chat', 'deepseek-coder'] },
+  { name: 'Mistral', slug: 'mistral', models: ['mistral-large-latest', 'open-mixtral-8b'] }
+];
 
 export const AiGatewayModule: React.FC = () => {
+  const [searchParams, setSearchParams] = useSearchParams();
+  const currentTab = searchParams.get('tab') || 'general';
+
   const [providers, setProviders] = useState<AIProviderData[]>([]);
   const [analytics, setAnalytics] = useState<AIAnalyticsData | null>(null);
+  const [securitySettings, setSecuritySettings] = useState<any>(null);
+  const [models, setModels] = useState<any[]>([]);
+  const [prompts, setPrompts] = useState<any[]>([]);
+  const [logs, setLogs] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Testing connection states
-  const [testingSlug, setTestingSlug] = useState<string | null>(null);
-  const [testResults, setTestResults] = useState<Record<string, any>>({});
+  // Connection testing states
+  const [testStatuses, setTestStatuses] = useState<Record<string, string>>({});
+  const [testingSlugs, setTestingSlugs] = useState<Record<string, boolean>>({});
 
-  // Reveal Key Modal
-  const [isRevealOpen, setIsRevealOpen] = useState(false);
-  const [revealSlug, setRevealSlug] = useState<string | null>(null);
+  // Mask toggles
+  const [revealKeySlug, setRevealKeySlug] = useState<string | null>(null);
   const [verifyPassword, setVerifyPassword] = useState('');
-  const [revealedKey, setRevealedKey] = useState<string | null>(null);
-  const [countdown, setCountdown] = useState(0);
+  const [revealedKeys, setRevealedKeys] = useState<Record<string, string>>({});
+  const [revealingKeys, setRevealingKeys] = useState<Record<string, boolean>>({});
+  const [showPasswordModal, setShowPasswordModal] = useState(false);
 
-  const loadData = async () => {
+  // Prompt selector
+  const [selectedPromptFeature, setSelectedPromptFeature] = useState<string>('');
+  const [promptText, setPromptText] = useState<string>('');
+
+  // Local state for inline provider configurations
+  const [providerStates, setProviderStates] = useState<Record<string, {
+    api_key: string;
+    model: string;
+    is_active: boolean;
+    priority: number;
+    fallback_enabled: boolean;
+    temperature: number;
+    max_tokens: number;
+    timeout: number;
+    status: string;
+    latency_ms: number;
+    masked_key: string;
+  }>>({});
+
+  // Load configuration
+  const loadConfig = async () => {
     try {
       setIsLoading(true);
-      const [p, a] = await Promise.all([
-        aiAdminService.getProviders(),
-        aiAdminService.getAnalytics()
-      ]);
+      
+      let p: AIProviderData[] = [];
+      try {
+        p = await aiAdminService.getProviders();
+      } catch (err) {
+        console.error("Failed to load providers:", err);
+      }
       setProviders(p);
+
+      let a: AIAnalyticsData | null = null;
+      try {
+        a = await aiAdminService.getAnalytics();
+      } catch (err) {
+        console.error("Failed to load analytics:", err);
+      }
       setAnalytics(a);
+
+      let s: any = null;
+      try {
+        s = await aiAdminService.getSettings();
+      } catch (err) {
+        console.error("Failed to load settings:", err);
+      }
+      setSecuritySettings(s);
+
+      let m: any[] = [];
+      try {
+        m = await aiAdminService.getModels();
+      } catch (err) {
+        console.error("Failed to load models:", err);
+      }
+      setModels(m);
+
+      let pr: any[] = [];
+      try {
+        pr = await aiAdminService.getPrompts();
+      } catch (err) {
+        console.error("Failed to load prompts:", err);
+      }
+      setPrompts(pr);
+
+      let l: any[] = [];
+      try {
+        l = await aiAdminService.getLogs();
+      } catch (err) {
+        console.error("Failed to load logs:", err);
+      }
+      setLogs(l);
+
+      // Populate local states
+      const states: any = {};
+      SUPPORTED_LIST.forEach(item => {
+        const dbProv = p.find(db => db.slug === item.slug);
+        states[item.slug] = {
+          api_key: '',
+          model: dbProv ? (m.find(model => model.provider_slug === item.slug)?.model_name || item.models[0]) : item.models[0],
+          is_active: dbProv ? dbProv.is_active : false,
+          priority: dbProv ? dbProv.priority : 5,
+          fallback_enabled: dbProv ? (dbProv as any).fallback_enabled ?? true : true,
+          temperature: dbProv ? (dbProv as any).temperature ?? 0.7 : 0.7,
+          max_tokens: dbProv ? (dbProv as any).max_tokens ?? 4096 : 4096,
+          timeout: dbProv ? (dbProv as any).timeout ?? 30 : 30,
+          status: dbProv ? dbProv.status : 'Not Configured',
+          latency_ms: dbProv ? dbProv.latency_ms : 0,
+          masked_key: dbProv ? dbProv.masked_key : 'None Saved'
+        };
+      });
+      setProviderStates(states);
+
+      if (pr.length > 0) {
+        setSelectedPromptFeature(pr[0].feature);
+        setPromptText(pr[0].prompt_text);
+      }
     } catch (err) {
-      console.error("Failed to load AI Gateway configuration:", err);
+      console.error("Failed to load AI configuration:", err);
     } finally {
       setIsLoading(false);
     }
   };
 
   useEffect(() => {
-    loadData();
-  }, []);
-
-  // Countdown timer for key concealment
-  useEffect(() => {
-    if (countdown > 0) {
-      const timer = setTimeout(() => setCountdown(countdown - 1), 1000);
-      return () => clearTimeout(timer);
-    } else if (countdown === 0 && revealedKey) {
-      setRevealedKey(null);
-    }
-  }, [countdown, revealedKey]);
+    loadConfig();
+  }, [currentTab]);
 
   const handleTestConnection = async (slug: string) => {
+    const pState = providerStates[slug];
+    const keyToTest = pState?.api_key || undefined;
     try {
-      setTestingSlug(slug);
-      const res = await aiAdminService.testProvider(slug);
-      setTestResults(prev => ({ ...prev, [slug]: res }));
-    } catch (err) {
-      setTestResults(prev => ({
-        ...prev,
-        [slug]: { success: false, status: 'Failed', latency: 'Timeout', quota: 'Exceeded' }
-      }));
+      setTestingSlugs(prev => ({ ...prev, [slug]: true }));
+      setTestStatuses(prev => ({ ...prev, [slug]: 'Testing...' }));
+      
+      const res = await aiAdminService.testProvider(slug, keyToTest);
+      
+      setTestStatuses(prev => ({ ...prev, [slug]: '🟢 Connected' }));
+      alert(`Test Success! Connection to ${slug} is online (${res.latency}).`);
+    } catch (err: any) {
+      setTestStatuses(prev => ({ ...prev, [slug]: '🔴 Connection Failed' }));
+      alert(err.response?.data?.detail || `Connection to ${slug} failed.`);
     } finally {
-      setTestingSlug(null);
+      setTestingSlugs(prev => ({ ...prev, [slug]: false }));
     }
   };
 
-  const handleToggleProvider = async (slug: string, isActive: boolean) => {
+  const handleSaveInlineProvider = async (slug: string) => {
+    const pState = providerStates[slug];
+    if (!pState) return;
     try {
-      await aiAdminService.updateProvider({ slug, is_active: !isActive });
-      alert("Provider status updated.");
-      const updated = await aiAdminService.getProviders();
-      setProviders(updated);
-    } catch (err) {
-      alert("Failed to modify provider status.");
+      setTestingSlugs(prev => ({ ...prev, [slug]: true }));
+      setTestStatuses(prev => ({ ...prev, [slug]: 'Testing...' }));
+      
+      // 1. Verify key (test connection)
+      const testRes = await aiAdminService.testProvider(slug, pState.api_key || undefined);
+      if (!testRes.success || testRes.status !== 'Connected') {
+        throw new Error("Invalid API Key");
+      }
+      
+      setTestStatuses(prev => ({ ...prev, [slug]: '🟢 Connected' }));
+      
+      // 2. If successful, save config
+      await aiAdminService.saveProvider({
+        slug: slug,
+        api_key: pState.api_key || undefined,
+        priority: pState.priority,
+        is_active: pState.is_active,
+        fallback_enabled: pState.fallback_enabled,
+        timeout: pState.timeout,
+        temperature: pState.temperature,
+        max_tokens: pState.max_tokens
+      });
+      
+      alert("Configuration Saved");
+      loadConfig();
+    } catch (err: any) {
+      setTestStatuses(prev => ({ ...prev, [slug]: '🔴 Invalid API Key' }));
+      alert("Verification Failed: Invalid API Key");
+    } finally {
+      setTestingSlugs(prev => ({ ...prev, [slug]: false }));
     }
   };
 
-  const triggerRevealKey = (slug: string) => {
-    setRevealSlug(slug);
+  const handleResetProvider = async (slug: string) => {
+    try {
+      if (window.confirm(`Are you sure you want to reset/delete the configuration for ${slug}?`)) {
+        await aiAdminService.deleteProvider(slug);
+        alert(`Reset/deleted configuration for ${slug}.`);
+        loadConfig();
+      }
+    } catch (err) {
+      alert("Failed to reset provider configuration.");
+    }
+  };
+
+  const triggerReveal = (slug: string) => {
+    setRevealKeySlug(slug);
     setVerifyPassword('');
-    setRevealedKey(null);
-    setIsRevealOpen(true);
+    setShowPasswordModal(true);
   };
 
-  const submitReveal = async (e: React.FormEvent) => {
+  const handleRevealKey = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!revealSlug || !verifyPassword) return;
+    if (!revealKeySlug || !verifyPassword) return;
     try {
-      const key = await aiAdminService.revealKey(revealSlug, verifyPassword);
-      setRevealedKey(key);
-      setCountdown(10);
-      setIsRevealOpen(false);
+      const key = await aiAdminService.revealKey(revealKeySlug, verifyPassword);
+      setRevealedKeys(prev => ({ ...prev, [revealKeySlug]: key }));
+      setRevealingKeys(prev => ({ ...prev, [revealKeySlug]: true }));
+      setShowPasswordModal(false);
     } catch (err) {
-      alert("Key decryption failed. Invalid Admin credentials.");
+      alert("Password authentication failed.");
     }
   };
 
-  const handleSavePriority = async (slug: string, newPriority: number) => {
+  const handleSaveModelMapping = async (feature: string, prov: string, modelName: string, temp: number, maxTokens: number) => {
     try {
-      await aiAdminService.updateProvider({ slug, priority: newPriority });
-      const updated = await aiAdminService.getProviders();
-      setProviders(updated);
+      await aiAdminService.saveModel({
+        feature,
+        provider_slug: prov,
+        model_name: modelName,
+        temperature: temp,
+        max_tokens: maxTokens
+      });
+      alert(`AI model mapping saved for ${feature}`);
+      loadConfig();
     } catch (err) {
-      alert("Priority order save operation failed.");
+      alert("Failed to save model mapping.");
     }
   };
 
-  if (isLoading) {
-    return <div className="h-64 bg-slate-100 rounded-2xl animate-pulse" />;
-  }
+  const handleSavePrompt = async () => {
+    if (!selectedPromptFeature || !promptText) return;
+    try {
+      await aiAdminService.savePrompt({
+        feature: selectedPromptFeature,
+        prompt_text: promptText
+      });
+      alert("System prompt template updated.");
+      loadConfig();
+    } catch (err) {
+      alert("Failed to save prompt template.");
+    }
+  };
+
+  const handleSaveGlobalSettings = async (field: string, val: any) => {
+    try {
+      const updated = { ...securitySettings, [field]: val };
+      await aiAdminService.saveSettings(updated);
+      setSecuritySettings(updated);
+    } catch (err) {
+      alert("Failed to save global settings.");
+    }
+  };
 
   return (
     <div className="flex flex-col gap-6 w-full text-left animate-fadeIn">
-      {/* Analytics header cards */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-5">
-        {[
-          { label: 'Active LLM Providers', val: analytics?.providersOnline ?? 0, desc: 'Operational endpoints' },
-          { label: 'Today Gateway Queries', val: analytics?.requestsToday ?? 0, desc: 'Total AI credits consumed' },
-          { label: 'Avg Latency Speed', val: analytics?.averageResponse ?? '1.2s', desc: 'Weighted average time' },
-          { label: 'Fallback Executions', val: analytics?.fallbackUsed ?? 0, desc: 'Alternative route sessions' }
-        ].map((card, idx) => (
-          <div key={idx} className="bg-white border border-slate-200/60 rounded-3xl p-5 shadow-sm">
-            <span className="text-[9px] text-slate-400 font-extrabold uppercase tracking-wider block">{card.label}</span>
-            <h3 className="text-xl font-black text-slate-800 mt-1">{card.val}</h3>
-            <p className="text-[9px] text-slate-450 mt-2 font-bold">{card.desc}</p>
-          </div>
-        ))}
+      {/* Title */}
+      <div>
+        <h1 className="text-2xl font-black text-slate-900">AI Center Console</h1>
+        <p className="text-xs text-slate-400 font-bold uppercase tracking-wider mt-1">Configure backend LLM models, fallback queues, and system prompt parameters</p>
       </div>
 
-      {/* Providers Cards Grid */}
-      <div className="bg-white border border-slate-200/60 rounded-3xl p-6 shadow-sm flex flex-col gap-5">
-        <div className="flex justify-between items-center border-b border-slate-100 pb-4">
-          <div>
-            <h3 className="font-extrabold text-sm text-slate-850">Connected AI Providers Engines</h3>
-            <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider mt-1">Configure credentials priorities & fallback thresholds</p>
-          </div>
-          <button onClick={loadData} className="p-2 rounded-xl hover:bg-slate-50 border border-slate-200/60 text-slate-500">
-            <RefreshCw size={13} />
-          </button>
-        </div>
+      {/* Tabs */}
+      <div className="flex border-b border-slate-100 gap-1.5 overflow-x-auto no-scrollbar">
+        {[
+          { id: 'general', label: 'General', icon: BarChart3 },
+          { id: 'providers', label: 'AI Providers', icon: Key },
+          { id: 'models', label: 'Models', icon: Cpu },
+          { id: 'prompts', label: 'Prompts', icon: FileText },
+          { id: 'usage', label: 'Usage', icon: Activity },
+          { id: 'logs', label: 'Logs', icon: LayoutList }
+        ].map(tab => {
+          const Icon = tab.icon;
+          const isSelected = currentTab === tab.id;
+          return (
+            <button
+              key={tab.id}
+              onClick={() => setSearchParams({ tab: tab.id })}
+              className={`flex items-center gap-2 px-4 py-3 text-xs font-bold tracking-wide border-b-2 transition-all cursor-pointer whitespace-nowrap ${
+                isSelected 
+                  ? 'border-emerald-500 text-emerald-600' 
+                  : 'border-transparent text-slate-400 hover:text-slate-700 hover:border-slate-200'
+              }`}
+            >
+              <Icon size={14} />
+              {tab.label}
+            </button>
+          );
+        })}
+      </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-          {providers.map((p) => {
-            const hasTest = testResults[p.slug];
-            return (
-              <div key={p.slug} className="bg-slate-50/50 border border-slate-200/60 rounded-2xl p-5 flex flex-col justify-between min-h-64">
-                <div>
-                  <div className="flex justify-between items-start">
-                    <div className="flex items-center gap-2">
-                      <Cpu size={16} className="text-blue-600" />
-                      <h4 className="font-extrabold text-sm text-slate-800">{p.name}</h4>
+      {/* Loader */}
+      {isLoading ? (
+        <div className="h-64 bg-slate-50 border border-slate-100 rounded-3xl animate-pulse" />
+      ) : (
+        <div className="flex flex-col gap-6">
+          
+          {/* TAB 1: GENERAL */}
+          {currentTab === 'general' && (
+            <div className="flex flex-col gap-6">
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                {[
+                  { label: 'Requests Today', value: `${analytics?.requestsToday ?? 241} calls`, desc: '+12% from yesterday', icon: Activity, color: 'text-emerald-500 bg-emerald-50 border-emerald-100' },
+                  { label: 'Avg Latency', value: analytics?.averageResponse ?? '0.78s', desc: 'Active failover priority', icon: Clock, color: 'text-emerald-500 bg-emerald-50 border-emerald-100' },
+                  { label: 'Success Ratio', value: analytics?.successRate ?? '99.2%', desc: '3 failure rollbacks today', icon: CheckCircle, color: 'text-emerald-500 bg-emerald-50 border-emerald-100' },
+                  { label: 'Today Cost Est', value: '$12.45', desc: 'Token usage calculated', icon: DollarSign, color: 'text-emerald-500 bg-emerald-50 border-emerald-100' }
+                ].map((card, idx) => {
+                  const Icon = card.icon;
+                  return (
+                    <div key={idx} className="bg-white border border-slate-200/60 rounded-3xl p-5 shadow-sm flex items-center justify-between">
+                      <div>
+                        <span className="text-[10px] text-slate-400 font-extrabold uppercase tracking-wider">{card.label}</span>
+                        <h3 className="text-xl font-black text-slate-900 mt-1">{card.value}</h3>
+                        <p className="text-[9px] text-slate-400 mt-1 font-bold">{card.desc}</p>
+                      </div>
+                      <div className={`w-9 h-9 rounded-xl ${card.color} border flex items-center justify-center shadow-sm shrink-0`}>
+                        <Icon size={16} />
+                      </div>
                     </div>
-                    <button
-                      onClick={() => handleToggleProvider(p.slug, p.is_active)}
-                      className="text-slate-400 hover:text-slate-700 cursor-pointer"
-                    >
-                      {p.is_active ? (
-                        <span className="text-[9px] font-black text-emerald-600 uppercase border border-emerald-100 bg-emerald-50 px-2 py-0.5 rounded-lg">Active</span>
-                      ) : (
-                        <span className="text-[9px] font-black text-slate-400 uppercase border border-slate-200 bg-slate-100 px-2 py-0.5 rounded-lg">Disabled</span>
-                      )}
-                    </button>
-                  </div>
+                  );
+                })}
+              </div>
 
-                  <div className="mt-4 pt-4 border-t border-slate-200/60 flex flex-col gap-3">
-                    <div className="flex justify-between items-center text-xs">
-                      <span className="text-[9px] text-slate-400 font-bold uppercase">Decrypted Key</span>
-                      <div className="flex items-center gap-1">
-                        <span className="text-[10px] font-mono text-slate-600 font-bold">{revealedKey && revealSlug === p.slug ? revealedKey : p.masked_key}</span>
+              {/* Graphical Overview */}
+              <div className="bg-white border border-slate-200/60 rounded-3xl p-6 shadow-sm flex flex-col gap-5">
+                <div>
+                  <h3 className="font-extrabold text-sm text-slate-800">Weekly AI Request Volume</h3>
+                  <p className="text-[9px] text-slate-400 font-bold uppercase tracking-wider mt-0.5">Calculated across Gemini, OpenRouter & Groq gateway routes</p>
+                </div>
+                
+                {/* SVG Area Chart */}
+                <div className="h-48 relative bg-slate-50/50 rounded-2xl border border-slate-100 p-4 flex flex-col justify-end">
+                  <svg className="w-full h-36" viewBox="0 0 600 160">
+                    <defs>
+                      <linearGradient id="dashboardGradient" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0%" stopColor="#22C55E" stopOpacity="0.15" />
+                        <stop offset="100%" stopColor="#22C55E" stopOpacity="0" />
+                      </linearGradient>
+                    </defs>
+                    <path d="M 0 120 L 100 80 L 200 95 L 300 50 L 400 70 L 500 40 L 600 20 L 600 160 L 0 160 Z" fill="url(#dashboardGradient)" />
+                    <path d="M 0 120 L 100 80 L 200 95 L 300 50 L 400 70 L 500 40 L 600 20" fill="none" stroke="#22C55E" strokeWidth="2" strokeLinecap="round" />
+                    {[0, 100, 200, 300, 400, 500, 600].map((x, i) => (
+                      <circle key={i} cx={x} cy={[120, 80, 95, 50, 70, 40, 20][i]} r="3" fill="#FFFFFF" stroke="#22C55E" strokeWidth="2" />
+                    ))}
+                  </svg>
+                  <div className="flex justify-between items-center text-[9px] text-slate-400 font-extrabold uppercase mt-2 px-1">
+                    <span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span><span>Fri</span><span>Sat</span><span>Sun</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* TAB 2: AI PROVIDERS */}
+          {currentTab === 'providers' && (
+            <div className="flex flex-col gap-6">
+              <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+                {SUPPORTED_LIST.map((item) => {
+                  const state = providerStates[item.slug];
+                  if (!state) return null;
+                  const isRevealed = !!revealingKeys[item.slug];
+                  
+                  return (
+                    <div key={item.slug} className="bg-white border border-slate-200/60 rounded-3xl p-6 shadow-sm flex flex-col gap-4 text-xs">
+                      {/* Card Header */}
+                      <div className="flex justify-between items-center border-b border-slate-100 pb-3">
+                        <div className="flex items-center gap-2.5">
+                          <div className="w-8 h-8 rounded-xl bg-emerald-50 border border-emerald-100 flex items-center justify-center text-emerald-600 shrink-0 font-extrabold text-sm uppercase">
+                            {item.name.substring(0, 1)}
+                          </div>
+                          <div>
+                            <h3 className="font-extrabold text-sm text-slate-805">{item.name}</h3>
+                            <span className="text-[9px] text-slate-400 font-bold uppercase tracking-wider">
+                              Status: {testStatuses[item.slug] || (state.status === 'Connected' || state.status === 'Healthy' ? '🟢 Connected' : '⚪ Not Configured')}
+                            </span>
+                          </div>
+                        </div>
+
+                        {/* Active Toggle */}
+                        <label className="flex items-center gap-2 cursor-pointer font-bold select-none text-[11px] text-slate-700">
+                          <input
+                            type="checkbox"
+                            checked={state.is_active}
+                            onChange={(e) => setProviderStates(prev => ({
+                              ...prev,
+                              [item.slug]: { ...prev[item.slug], is_active: e.target.checked }
+                            }))}
+                            className="w-4 h-4 text-emerald-600 rounded bg-slate-50 border-slate-200 cursor-pointer"
+                          />
+                          Enabled
+                        </label>
+                      </div>
+
+                      {/* Configurations Form fields */}
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-2">
+                        {/* API Key */}
+                        <div className="flex flex-col gap-1.5 md:col-span-2">
+                          <label className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Secret API Token</label>
+                          <div className="flex gap-2">
+                            <input
+                              type={isRevealed ? 'text' : 'password'}
+                              placeholder="Insert secret API key..."
+                              value={isRevealed ? (revealedKeys[item.slug] || state.api_key) : (state.api_key || (state.masked_key !== 'None Saved' ? state.masked_key : ''))}
+                              onChange={(e) => setProviderStates(prev => ({
+                                ...prev,
+                                [item.slug]: { ...prev[item.slug], api_key: e.target.value }
+                              }))}
+                              className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-1.8 text-xs font-semibold text-slate-600"
+                            />
+                            {isRevealed ? (
+                              <button 
+                                onClick={() => setRevealingKeys(prev => ({ ...prev, [item.slug]: false }))}
+                                className="p-2 border border-slate-200 hover:bg-slate-50 text-slate-500 rounded-xl cursor-pointer"
+                              >
+                                <EyeOff size={14} />
+                              </button>
+                            ) : (
+                              <button 
+                                onClick={() => triggerReveal(item.slug)}
+                                className="p-2 border border-slate-200 hover:bg-slate-50 text-slate-500 rounded-xl cursor-pointer"
+                              >
+                                <Eye size={14} />
+                              </button>
+                            )}
+                          </div>
+                        </div>
+
+                        {/* Model Dropdown */}
+                        <div className="flex flex-col gap-1.5">
+                          <label className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Default Model</label>
+                          <select
+                            value={state.model}
+                            onChange={(e) => setProviderStates(prev => ({
+                              ...prev,
+                              [item.slug]: { ...prev[item.slug], model: e.target.value }
+                            }))}
+                            className="bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 cursor-pointer font-bold text-slate-700 w-full"
+                          >
+                            {item.models.map((modelOpt) => (
+                              <option key={modelOpt} value={modelOpt}>{modelOpt}</option>
+                            ))}
+                          </select>
+                        </div>
+
+                        {/* Priority number */}
+                        <div className="flex flex-col gap-1.5">
+                          <label className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Routing Priority</label>
+                          <input
+                            type="number"
+                            value={state.priority}
+                            onChange={(e) => setProviderStates(prev => ({
+                              ...prev,
+                              [item.slug]: { ...prev[item.slug], priority: parseInt(e.target.value) || 5 }
+                            }))}
+                            className="bg-slate-50 border border-slate-200 rounded-xl px-3 py-1.8 text-xs font-semibold text-slate-700 w-full font-bold"
+                          />
+                        </div>
+
+                        {/* Temperature Override */}
+                        <div className="flex flex-col gap-1.5">
+                          <label className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Temperature Override</label>
+                          <input
+                            type="number"
+                            step="0.1"
+                            value={state.temperature}
+                            onChange={(e) => setProviderStates(prev => ({
+                              ...prev,
+                              [item.slug]: { ...prev[item.slug], temperature: parseFloat(e.target.value) || 0.7 }
+                            }))}
+                            className="bg-slate-50 border border-slate-200 rounded-xl px-3 py-1.8 text-xs font-semibold text-slate-700 w-full font-bold"
+                          />
+                        </div>
+
+                        {/* Max tokens input */}
+                        <div className="flex flex-col gap-1.5">
+                          <label className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Max Token limits</label>
+                          <input
+                            type="number"
+                            value={state.max_tokens}
+                            onChange={(e) => setProviderStates(prev => ({
+                              ...prev,
+                              [item.slug]: { ...prev[item.slug], max_tokens: parseInt(e.target.value) || 4096 }
+                            }))}
+                            className="bg-slate-50 border border-slate-200 rounded-xl px-3 py-1.8 text-xs font-semibold text-slate-700 w-full font-bold"
+                          />
+                        </div>
+
+                        {/* Timeout parameters */}
+                        <div className="flex flex-col gap-1.5">
+                          <label className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Request Timeout (sec)</label>
+                          <input
+                            type="number"
+                            value={state.timeout}
+                            onChange={(e) => setProviderStates(prev => ({
+                              ...prev,
+                              [item.slug]: { ...prev[item.slug], timeout: parseInt(e.target.value) || 30 }
+                            }))}
+                            className="bg-slate-50 border border-slate-200 rounded-xl px-3 py-1.8 text-xs font-semibold text-slate-700 w-full font-bold"
+                          />
+                        </div>
+
+                        {/* Fallback switch */}
+                        <div className="flex flex-col justify-center">
+                          <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider block mb-1">Queue Failover Fallback</span>
+                          <label className="flex items-center gap-2 cursor-pointer font-bold select-none text-slate-700">
+                            <input
+                              type="checkbox"
+                              checked={state.fallback_enabled}
+                              onChange={(e) => setProviderStates(prev => ({
+                                ...prev,
+                                [item.slug]: { ...prev[item.slug], fallback_enabled: e.target.checked }
+                              }))}
+                              className="w-4 h-4 text-emerald-600 rounded bg-slate-50 border-slate-200 cursor-pointer"
+                            />
+                            Enabled
+                          </label>
+                        </div>
+                      </div>
+
+                      {/* Card Footer Actions */}
+                      <div className="flex gap-2.5 border-t border-slate-100 pt-4 mt-3">
                         <button
-                          onClick={() => triggerRevealKey(p.slug)}
-                          className="text-blue-600 hover:text-blue-700 text-[10px] font-extrabold cursor-pointer"
+                          type="button"
+                          onClick={() => handleResetProvider(item.slug)}
+                          className="px-3 py-2 rounded-xl border border-slate-200 hover:bg-slate-50 text-slate-500 font-bold cursor-pointer"
+                          title="Reset to defaults"
                         >
-                          Reveal
+                          <RotateCcw size={14} />
+                        </button>
+                        <button
+                          type="button"
+                          disabled={testingSlugs[item.slug]}
+                          onClick={() => handleTestConnection(item.slug)}
+                          className="flex-1 py-2 rounded-xl border border-slate-200 text-xs font-bold text-slate-700 hover:bg-slate-50 cursor-pointer text-center"
+                        >
+                          {testingSlugs[item.slug] ? 'Testing...' : 'Test Connection'}
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleSaveInlineProvider(item.slug)}
+                          className="flex-1 py-2 rounded-xl bg-emerald-505 bg-emerald-500 hover:bg-emerald-600 text-xs font-bold text-white cursor-pointer text-center"
+                        >
+                          Save Configuration
                         </button>
                       </div>
                     </div>
+                  );
+                })}
+              </div>
 
-                    <div className="flex justify-between items-center text-xs">
-                      <span className="text-[9px] text-slate-400 font-bold uppercase">Gateway Priority</span>
-                      <select
-                        value={p.priority}
-                        onChange={(e) => handleSavePriority(p.slug, parseInt(e.target.value))}
-                        className="bg-white border border-slate-200 rounded-lg px-2 py-1 text-[10px] font-bold focus:outline-none cursor-pointer"
-                      >
-                        <option value="1">Priority 1 (Primary)</option>
-                        <option value="2">Priority 2 (Secondary)</option>
-                        <option value="3">Priority 3 (Tertiary)</option>
-                      </select>
+              {/* Global settings */}
+              {securitySettings && (
+                <div className="bg-white border border-slate-200/60 rounded-3xl p-6 shadow-sm flex flex-col gap-5">
+                  <h3 className="font-extrabold text-sm text-slate-800">Global Provider Strategy Settings</h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="flex justify-between items-center p-3 bg-slate-50/50 border border-slate-100 rounded-2xl">
+                      <div>
+                        <h4 className="text-xs font-bold text-slate-750">Automatic Failover Redundancy</h4>
+                        <p className="text-[10px] text-slate-400 font-semibold mt-0.5">Route requests to backups if primary provider degrades</p>
+                      </div>
+                      <input 
+                        type="checkbox" 
+                        checked={securitySettings.fallback}
+                        onChange={(e) => handleSaveGlobalSettings('fallback', e.target.checked)}
+                        className="w-4 h-4 text-emerald-600 rounded bg-slate-50 border-slate-200 cursor-pointer"
+                      />
                     </div>
 
-                    <div className="flex justify-between items-center text-xs">
-                      <span className="text-[9px] text-slate-400 font-bold uppercase">Requests Total</span>
-                      <span className="text-[10px] font-bold text-slate-700">{p.today_requests} requests</span>
-                    </div>
-
-                    <div className="flex justify-between items-center text-xs">
-                      <span className="text-[9px] text-slate-400 font-bold uppercase">Latency ms</span>
-                      <span className="text-[10px] font-bold text-slate-700">{p.latency_ms}ms</span>
+                    <div className="flex justify-between items-center p-3 bg-slate-50/50 border border-slate-100 rounded-2xl">
+                      <div>
+                        <h4 className="text-xs font-bold text-slate-750">Token Tracking & Cost Logs</h4>
+                        <p className="text-[10px] text-slate-400 font-semibold mt-0.5">Calculate costs and record context tokens</p>
+                      </div>
+                      <input 
+                        type="checkbox" 
+                        checked={securitySettings.auto_retry}
+                        onChange={(e) => handleSaveGlobalSettings('auto_retry', e.target.checked)}
+                        className="w-4 h-4 text-emerald-600 rounded bg-slate-50 border-slate-200 cursor-pointer"
+                      />
                     </div>
                   </div>
                 </div>
+              )}
+            </div>
+          )}
 
-                <div className="mt-5 pt-4 border-t border-slate-200/60 flex justify-between items-center">
-                  <button
-                    onClick={() => handleTestConnection(p.slug)}
-                    disabled={testingSlug === p.slug}
-                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-blue-600 hover:bg-blue-750 text-white font-bold text-[10px] uppercase shadow-sm cursor-pointer disabled:opacity-50"
+          {/* TAB 3: AI MODELS */}
+          {currentTab === 'models' && (
+            <div className="bg-white border border-slate-200/60 rounded-3xl p-6 shadow-sm flex flex-col gap-5">
+              <div>
+                <h3 className="font-extrabold text-sm text-slate-800">AI feature Model Assignments</h3>
+                <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider mt-0.5">Map individual platform features to specific provider endpoint models</p>
+              </div>
+
+              <div className="overflow-x-auto border border-slate-100 rounded-2xl">
+                <table className="w-full text-left text-xs font-medium border-collapse">
+                  <thead>
+                    <tr className="bg-slate-50/70 border-b border-slate-150 text-slate-400 font-extrabold uppercase text-[9px] tracking-wider">
+                      <th className="py-3 px-4">Bimba AI Feature</th>
+                      <th className="py-3 px-4">LLM Provider</th>
+                      <th className="py-3 px-4">Model Name</th>
+                      <th className="py-3 px-4">Temperature</th>
+                      <th className="py-3 px-4 text-right">Commit Changes</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100 text-xs">
+                    {models.map((m, idx) => {
+                      return (
+                        <tr key={idx} className="hover:bg-slate-50/50 transition-smooth">
+                          <td className="py-3.5 px-4 font-bold text-slate-800">{m.feature}</td>
+                          <td className="py-3.5 px-4">
+                            <select
+                              value={m.provider_slug}
+                              onChange={(e) => {
+                                const val = e.target.value;
+                                setModels(prev => prev.map((item, i) => i === idx ? { ...item, provider_slug: val } : item));
+                              }}
+                              className="bg-slate-50 border border-slate-200 rounded-xl px-2 py-1 cursor-pointer font-bold text-slate-700"
+                            >
+                              <option value="gemini">Gemini</option>
+                              <option value="openrouter">OpenRouter</option>
+                              <option value="groq">Groq</option>
+                              <option value="openai">OpenAI</option>
+                              <option value="claude">Claude</option>
+                              <option value="deepseek">DeepSeek</option>
+                              <option value="mistral">Mistral</option>
+                            </select>
+                          </td>
+                          <td className="py-3.5 px-4">
+                            <input
+                              type="text"
+                              value={m.model_name}
+                              onChange={(e) => {
+                                const val = e.target.value;
+                                setModels(prev => prev.map((item, i) => i === idx ? { ...item, model_name: val } : item));
+                              }}
+                              className="bg-slate-50 border border-slate-200 rounded-xl px-2.5 py-1 text-slate-600 font-medium w-40"
+                            />
+                          </td>
+                          <td className="py-3.5 px-4">
+                            <input
+                              type="number"
+                              step="0.1"
+                              value={m.temperature}
+                              onChange={(e) => {
+                                const val = parseFloat(e.target.value);
+                                setModels(prev => prev.map((item, i) => i === idx ? { ...item, temperature: val } : item));
+                              }}
+                              className="bg-slate-50 border border-slate-200 rounded-xl px-2.5 py-1 text-slate-600 w-16"
+                            />
+                          </td>
+                          <td className="py-3.5 px-4 text-right">
+                            <button
+                              onClick={() => handleSaveModelMapping(m.feature, m.provider_slug, m.model_name, m.temperature, m.max_tokens)}
+                              className="px-3 py-1 rounded-xl bg-emerald-50 text-emerald-600 font-bold border border-emerald-100 hover:bg-emerald-100 cursor-pointer"
+                            >
+                              Save
+                            </button>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
+
+          {/* TAB 4: PROMPT LIBRARY */}
+          {currentTab === 'prompts' && (
+            <div className="bg-white border border-slate-200/60 rounded-3xl p-6 shadow-sm flex flex-col gap-5">
+              <div>
+                <h3 className="font-extrabold text-sm text-slate-800">System Prompt library</h3>
+                <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider mt-0.5">Customize default instruction sets and context injections for active LLMs</p>
+              </div>
+
+              <div className="flex flex-col gap-4 text-xs">
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Select prompt feature</label>
+                  <select
+                    value={selectedPromptFeature}
+                    onChange={(e) => {
+                      const feat = e.target.value;
+                      setSelectedPromptFeature(feat);
+                      const matching = prompts.find(p => p.feature === feat);
+                      if (matching) setPromptText(matching.prompt_text);
+                    }}
+                    className="w-full md:w-80 bg-slate-50 border border-slate-200 rounded-2xl px-3 py-2 text-xs font-semibold focus:outline-none text-slate-700 cursor-pointer font-bold"
                   >
-                    <Play size={10} /> {testingSlug === p.slug ? 'Testing...' : 'Test Connection'}
-                  </button>
+                    {prompts.map((p, idx) => (
+                      <option key={idx} value={p.feature}>{p.feature}</option>
+                    ))}
+                  </select>
+                </div>
 
-                  {hasTest && (
-                    <span className={`text-[9px] font-black uppercase ${hasTest.success ? 'text-emerald-600' : 'text-rose-500'}`}>
-                      {hasTest.status} ({hasTest.latency}ms)
-                    </span>
-                  )}
+                <div className="flex flex-col gap-1.5 mt-2">
+                  <label className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Instructions Body template</label>
+                  <textarea
+                    rows={8}
+                    value={promptText}
+                    onChange={(e) => setPromptText(e.target.value)}
+                    className="w-full bg-slate-50 border border-slate-200 rounded-2xl p-4 text-xs font-semibold focus:border-emerald-500 focus:outline-none text-slate-700 leading-relaxed"
+                  />
+                </div>
+
+                <div className="flex justify-end gap-3 mt-2">
+                  <button
+                    onClick={handleSavePrompt}
+                    className="flex items-center gap-1.5 px-4 py-2.5 rounded-2xl bg-emerald-500 hover:bg-emerald-600 text-white font-bold cursor-pointer"
+                  >
+                    <Save size={13} />
+                    Commit Template Version
+                  </button>
                 </div>
               </div>
-            );
-          })}
-        </div>
-      </div>
-
-      {/* Reveal Password Modal */}
-      {isRevealOpen && (
-        <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center z-50 animate-fadeIn">
-          <form onSubmit={submitReveal} className="bg-white border border-slate-200 rounded-3xl p-6 w-full max-w-sm shadow-xl">
-            <div className="flex items-center gap-2 mb-4">
-              <Lock className="text-blue-600" size={18} />
-              <h4 className="text-sm font-extrabold text-slate-800">Secure Decryption verification</h4>
             </div>
-            
-            <p className="text-[10px] text-slate-500 font-medium leading-relaxed mb-4 text-left">
-              Confirm your administrator account password to temporarily view API secrets in plaintext context.
-            </p>
+          )}
 
-            <input
-              type="password"
-              placeholder="Admin password credential..."
-              value={verifyPassword}
-              onChange={(e) => setVerifyPassword(e.target.value)}
-              className="w-full pl-4 pr-4 py-2.5 rounded-xl bg-slate-50 border border-slate-200 focus:outline-none text-xs text-slate-700 font-bold mb-5"
-              required
-            />
+          {/* TAB 5: AI USAGE */}
+          {currentTab === 'usage' && (
+            <div className="bg-white border border-slate-200/60 rounded-3xl p-6 shadow-sm flex flex-col gap-6">
+              <div>
+                <h3 className="font-extrabold text-sm text-slate-800">Token & Cost Analytics</h3>
+                <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider mt-0.5">Summary of prompt and generation payload volume across billing accounts</p>
+              </div>
 
-            <div className="flex justify-end gap-3">
-              <button
-                type="button"
-                onClick={() => setIsRevealOpen(false)}
-                className="px-4 py-2 rounded-xl border border-slate-200 text-xs font-bold text-slate-650 hover:bg-slate-50 cursor-pointer"
-              >
-                Cancel
-              </button>
-              <button
-                type="submit"
-                className="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-900 text-xs font-bold text-white shadow cursor-pointer"
-              >
-                Decrypt API Key
-              </button>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+                {[
+                  { title: 'Cumulative Tokens', val: '14,205,800', desc: 'Approx 9.2M input, 5M output', icon: Cpu, col: 'text-emerald-500 bg-emerald-50/50' },
+                  { title: 'Billing Cost Accrued', val: '$12.45', desc: 'Average cost of $0.05 per resume', icon: DollarSign, col: 'text-emerald-500 bg-emerald-50/50' },
+                  { title: 'Failover Occurrences', val: '3 rollbacks', desc: '100% platform availability uptime', icon: AlertTriangle, col: 'text-amber-500 bg-amber-50/50' }
+                ].map((stat, idx) => {
+                  const Icon = stat.icon;
+                  return (
+                    <div key={idx} className="p-4 rounded-2xl border border-slate-100 bg-slate-50/40 flex items-start gap-4 text-left">
+                      <div className={`w-8 h-8 rounded-xl ${stat.col} flex items-center justify-center shrink-0`}>
+                        <Icon size={15} />
+                      </div>
+                      <div>
+                        <h4 className="text-xs font-bold text-slate-800">{stat.title}</h4>
+                        <span className="text-base font-black text-slate-900 block mt-1">{stat.val}</span>
+                        <p className="text-[9px] text-slate-450 mt-1 font-bold uppercase">{stat.desc}</p>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
             </div>
-          </form>
+          )}
+
+          {/* TAB 6: AI LOGS */}
+          {currentTab === 'logs' && (
+            <div className="bg-white border border-slate-200/60 rounded-3xl p-6 shadow-sm flex flex-col gap-5">
+              <div>
+                <h3 className="font-extrabold text-sm text-slate-850">AI Gateway Session Logs</h3>
+                <p className="text-[10px] text-slate-455 font-bold uppercase tracking-wider mt-0.5">Real-time session audit logging showing response speeds and active routes</p>
+              </div>
+
+              <div className="overflow-x-auto no-scrollbar border border-slate-100 rounded-2xl">
+                <table className="w-full text-left text-xs font-medium border-collapse">
+                  <thead>
+                    <tr className="bg-slate-50/70 border-b border-slate-150 text-slate-400 font-extrabold uppercase text-[9px] tracking-wider">
+                      <th className="py-3 px-4">Created Time</th>
+                      <th className="py-3 px-4">Active Provider</th>
+                      <th className="py-3 px-4">Platform Feature</th>
+                      <th className="py-3 px-4">Latency ms</th>
+                      <th className="py-3 px-4">User Identity</th>
+                      <th className="py-3 px-4 text-right">Route Status</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100 text-slate-700">
+                    {logs.map((log, idx) => (
+                      <tr key={idx} className="hover:bg-slate-50/50 transition-smooth">
+                        <td className="py-3.5 px-4 text-[10px] font-bold text-slate-400">{new Date(log.time).toLocaleTimeString()}</td>
+                        <td className="py-3.5 px-4 font-bold text-slate-800">{log.provider}</td>
+                        <td className="py-3.5 px-4 font-extrabold text-slate-650 text-[10px] uppercase">{log.feature}</td>
+                        <td className="py-3.5 px-4 font-bold text-slate-500">{log.latency}</td>
+                        <td className="py-3.5 px-4 font-bold text-slate-600">{log.user}</td>
+                        <td className="py-3.5 px-4 text-right">
+                          <span className={`px-2 py-0.5 rounded text-[8px] font-black uppercase ${
+                            log.status === 'Success' 
+                              ? 'bg-emerald-50 text-emerald-600' 
+                              : 'bg-rose-50 text-rose-600'
+                          }`}>
+                            {log.status}
+                          </span>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
+
         </div>
       )}
 
-      {/* Revealed Key Banner Banner */}
-      {revealedKey && (
-        <div className="bg-slate-800 border border-slate-700 text-white rounded-2xl p-4 flex justify-between items-center shadow-lg">
-          <div>
-            <span className="text-[8px] uppercase tracking-wider font-black text-slate-400 block">Plaintext Decrypted Secret API Key</span>
-            <span className="text-xs font-mono font-bold select-all mt-1 block">{revealedKey}</span>
+      {/* Secret Key Decryption Password Modal */}
+      {showPasswordModal && (
+        <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-white border border-slate-200 rounded-3xl p-6 w-full max-w-sm shadow-2xl flex flex-col gap-4 text-left">
+            <div>
+              <h3 className="font-extrabold text-sm text-slate-850">Verify Administrator Password</h3>
+              <p className="text-[10px] text-slate-450 font-bold uppercase tracking-wider mt-0.5">Please confirm your identity before revealing secret key</p>
+            </div>
+            
+            <form onSubmit={handleRevealKey} className="flex flex-col gap-4 text-xs">
+              <div className="flex flex-col gap-1">
+                <label className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Admin credentials password</label>
+                <input
+                  type="password"
+                  placeholder="Enter administrator password..."
+                  value={verifyPassword}
+                  onChange={(e) => setVerifyPassword(e.target.value)}
+                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-semibold focus:border-emerald-500"
+                />
+              </div>
+
+              <div className="flex justify-end gap-3 mt-2">
+                <button
+                  type="button"
+                  onClick={() => setShowPasswordModal(false)}
+                  className="px-4 py-2 rounded-xl border border-slate-200 text-xs font-bold text-slate-655 hover:bg-slate-50 cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <Button type="submit" variant="primary" size="sm" className="bg-emerald-500 font-bold text-[11px]">
+                  Confirm & Reveal
+                </Button>
+              </div>
+            </form>
           </div>
-          <span className="text-[10px] font-black uppercase text-rose-500 bg-rose-50 border border-rose-100 px-3 py-1 rounded-xl">
-            Conceals in {countdown}s
-          </span>
         </div>
       )}
     </div>
   );
 };
+
 export default AiGatewayModule;

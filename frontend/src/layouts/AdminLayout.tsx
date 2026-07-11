@@ -5,7 +5,7 @@ import {
   Home, Users, FileText, LayoutTemplate, Cpu, BarChart3, 
   Shield, FileSpreadsheet, Settings, LogOut, GraduationCap,
   Database, Building2, BookOpen, Megaphone, Mail, DownloadCloud,
-  UserCheck, Activity, Bell, ChevronRight, User
+  UserCheck, Activity, Bell, ChevronRight, User, ChevronDown
 } from 'lucide-react';
 import { adminService } from '../services/admin';
 
@@ -49,30 +49,79 @@ export const AdminLayout: React.FC = () => {
     };
   }, [navigate]);
 
-  const menuItems = [
+  const [expandedGroups, setExpandedGroups] = useState<Record<string, boolean>>({
+    'User Management': true, // Keep important ones expanded by default
+    'Academic Management': true
+  });
+
+  const menuGroups = [
     { label: 'Dashboard', path: '/admin/dashboard', icon: Home },
-    { label: 'Users', path: '/admin/users', icon: Users },
-    { label: 'Students', path: '/admin/students', icon: GraduationCap },
-    { label: 'Resumes', path: '/admin/resumes', icon: FileText },
-    { label: 'Datasets', path: '/admin/datasets', icon: Database },
-    { label: 'Departments', path: '/admin/departments', icon: Building2 },
-    { label: 'Subjects', path: '/admin/subjects', icon: BookOpen },
-    { label: 'Announcements', path: '/admin/announcements', icon: Megaphone },
-    { label: 'Email Center', path: '/admin/email', icon: Mail },
-    { label: 'Reports', path: '/admin/reports', icon: BarChart3 },
-    { label: 'Backups', path: '/admin/backups', icon: DownloadCloud },
-    { label: 'Admin Roles', path: '/admin/admins', icon: UserCheck },
-    { label: 'System Monitor', path: '/admin/monitor', icon: Activity },
-    { label: 'Notifications', path: '/admin/notifications', icon: Bell },
-    { label: 'Templates', path: '/admin/templates', icon: LayoutTemplate },
-    { label: 'AI Management', path: '/admin/ai', icon: Cpu },
-    { label: 'Security', path: '/admin/security', icon: Shield },
-    { label: 'Logs', path: '/admin/logs', icon: FileSpreadsheet },
-    { label: 'Settings', path: '/admin/settings', icon: Settings },
+    {
+      label: 'User Management',
+      icon: Users,
+      subItems: [
+        { label: 'Students', path: '/admin/users' },
+        { label: 'Admins', path: '/admin/admins' },
+        { label: 'Detailed Profile Logs', path: '/admin/students' }
+      ]
+    },
+    {
+      label: 'Resume Management',
+      icon: FileText,
+      subItems: [
+        { label: 'All Resumes', path: '/admin/resumes' },
+        { label: 'Resume Templates', path: '/admin/templates' }
+      ]
+    },
+    {
+      label: 'Academic Management',
+      icon: GraduationCap,
+      subItems: [
+        { label: 'Departments', path: '/admin/departments' },
+        { label: 'Subjects', path: '/admin/subjects' },
+        { label: 'Datasets Manager', path: '/admin/datasets' }
+      ]
+    },
+    {
+      label: 'AI Center',
+      icon: Cpu,
+      subItems: [
+        { label: 'AI Configuration', path: '/admin/ai' }
+      ]
+    },
+    {
+      label: 'Communication',
+      icon: Megaphone,
+      subItems: [
+        { label: 'Announcements', path: '/admin/announcements' },
+        { label: 'Email Center', path: '/admin/email' }
+      ]
+    },
+    {
+      label: 'Analytics',
+      icon: BarChart3,
+      subItems: [
+        { label: 'Reports & Stats', path: '/admin/reports' },
+        { label: 'System Monitor', path: '/admin/monitor' },
+        { label: 'Audit Logs', path: '/admin/logs' }
+      ]
+    },
+    {
+      label: 'System Settings',
+      icon: Settings,
+      subItems: [
+        { label: 'General Configuration', path: '/admin/settings' },
+        { label: 'Security & Access', path: '/admin/security' },
+        { label: 'Backups & Snapshots', path: '/admin/backups' }
+      ]
+    }
   ];
 
-  const handleNavClick = (path: string) => {
-    navigate(path);
+  const toggleGroup = (groupLabel: string) => {
+    setExpandedGroups(prev => ({
+      ...prev,
+      [groupLabel]: !prev[groupLabel]
+    }));
   };
 
   const handleLogout = () => {
@@ -121,53 +170,88 @@ export const AdminLayout: React.FC = () => {
 
           {/* Dock Navigation List */}
           <nav className="flex flex-col gap-1.5 overflow-y-auto no-scrollbar max-h-[calc(100vh-180px)] pr-1">
-            {menuItems.map((item) => {
-              const Icon = item.icon;
-              const isActive = location.pathname === item.path;
+            {menuGroups.map((group) => {
+              const Icon = group.icon;
+              const hasSubItems = !!group.subItems;
+              const isExpanded = !!expandedGroups[group.label];
+              
+              const isActive = group.path 
+                ? location.pathname === group.path
+                : group.subItems?.some(sub => location.pathname === sub.path);
 
               return (
-                <button
-                  key={item.label}
-                  onClick={() => handleNavClick(item.path)}
-                  className={`flex items-center w-full px-3 py-3 rounded-xl transition-all duration-250 relative group cursor-pointer ${
-                    isActive 
-                      ? 'text-emerald-500' 
-                      : 'text-slate-500 hover:text-slate-800 hover:bg-slate-100/50'
-                  }`}
-                >
-                  {/* Active Page Animated Glow Accent */}
-                  {isActive && (
-                    <motion.div 
-                      layoutId="activeGlowLightAdmin" 
-                      className="absolute inset-0 rounded-xl bg-emerald-50 border border-emerald-200/50 shadow-sm pointer-events-none"
-                    />
-                  )}
+                <div key={group.label} className="flex flex-col gap-0.5 w-full">
+                  <button
+                    onClick={() => {
+                      if (!isHovered) {
+                        setIsHovered(true);
+                        if (hasSubItems) {
+                          setExpandedGroups(prev => ({ ...prev, [group.label]: true }));
+                        } else if (group.path) {
+                          navigate(group.path);
+                        }
+                        return;
+                      }
+                      if (hasSubItems) {
+                        toggleGroup(group.label);
+                      } else if (group.path) {
+                        navigate(group.path);
+                      }
+                    }}
+                    className={`flex items-center justify-between w-full px-3 py-2.5 rounded-xl transition-all duration-200 relative group cursor-pointer ${
+                      isActive 
+                        ? 'text-emerald-600 font-bold' 
+                        : 'text-slate-500 hover:text-slate-800 hover:bg-slate-100/50'
+                    }`}
+                  >
+                    <div className="flex items-center z-10">
+                      <div className="flex items-center shrink-0 justify-center w-6 h-6 mr-3">
+                        <Icon size={18} className={isActive ? 'text-emerald-500' : 'text-slate-400 group-hover:text-slate-655'} />
+                      </div>
+                      
+                      {isHovered && (
+                        <span className="text-xs font-bold tracking-wide whitespace-nowrap">
+                          {group.label}
+                        </span>
+                      )}
+                    </div>
 
-                  <div className="flex items-center shrink-0 justify-center w-6 h-6 z-10 relative">
-                    <Icon size={20} className={isActive ? 'text-emerald-500' : 'text-slate-400 group-hover:text-slate-655'} />
-                  </div>
-                  
-                  <AnimatePresence>
-                    {isHovered && (
-                      <motion.span 
-                        initial={{ opacity: 0, x: -8 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        exit={{ opacity: 0, x: -8 }}
-                        transition={{ duration: 0.15 }}
-                        className="ml-3 text-xs font-bold tracking-wide whitespace-nowrap z-10"
-                      >
-                        {item.label}
-                      </motion.span>
+                    {isHovered && hasSubItems && (
+                      <ChevronDown 
+                        size={12} 
+                        className={`transition-transform duration-200 ${isExpanded ? 'rotate-180' : ''} text-slate-400`} 
+                      />
                     )}
-                  </AnimatePresence>
 
-                  {/* Icon tooltip when collapsed */}
-                  {!isHovered && (
-                    <div className="absolute left-20 bg-slate-900 border border-slate-800 text-white px-2.5 py-1.5 rounded-lg text-[10px] font-bold tracking-wider uppercase opacity-0 pointer-events-none group-hover:opacity-100 transition-opacity duration-200 shadow-xl whitespace-nowrap z-50">
-                      {item.label}
+                    {!isHovered && (
+                      <div className="absolute left-20 bg-slate-900 border border-slate-800 text-white px-2.5 py-1.5 rounded-lg text-[10px] font-bold tracking-wider uppercase opacity-0 pointer-events-none group-hover:opacity-100 transition-opacity duration-200 shadow-xl whitespace-nowrap z-50">
+                        {group.label}
+                      </div>
+                    )}
+                  </button>
+
+                  {/* Render Sub Items if expanded */}
+                  {hasSubItems && isExpanded && isHovered && (
+                    <div className="pl-9 pr-1 flex flex-col gap-0.5 border-l border-slate-100 ml-6 mt-0.5">
+                      {group.subItems.map((sub) => {
+                        const isSubActive = location.pathname === sub.path;
+                        return (
+                          <button
+                            key={sub.label}
+                            onClick={() => navigate(sub.path)}
+                            className={`w-full text-left py-1.5 px-3 rounded-lg text-[11px] font-semibold transition-smooth ${
+                              isSubActive 
+                                ? 'text-emerald-600 bg-emerald-50/60 font-extrabold' 
+                                : 'text-slate-500 hover:text-slate-800 hover:bg-slate-50'
+                            }`}
+                          >
+                            {sub.label}
+                          </button>
+                        );
+                      })}
                     </div>
                   )}
-                </button>
+                </div>
               );
             })}
           </nav>

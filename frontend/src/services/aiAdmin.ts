@@ -65,12 +65,12 @@ export const aiAdminService = {
     return res.data;
   },
 
-  createProvider: async (provider: { name: string; slug: string; api_key: string; priority: number }): Promise<void> => {
-    await apiClient.post('/api/admin/ai/provider', provider);
+  saveProvider: async (provider: { slug: string; [key: string]: any }): Promise<void> => {
+    await apiClient.post('/api/admin/ai/providers/save', provider);
   },
 
-  updateProvider: async (provider: { slug: string; api_key?: string; is_active?: boolean; priority?: number }): Promise<void> => {
-    await apiClient.put('/api/admin/ai/provider/update', provider);
+  updateProvider: async (provider: { slug: string; [key: string]: any }): Promise<void> => {
+    await apiClient.put('/api/admin/ai/providers/update', provider);
   },
 
   revealKey: async (slug: string, adminPassword: string): Promise<string> => {
@@ -78,9 +78,13 @@ export const aiAdminService = {
     return res.data.api_key;
   },
 
-  testProvider: async (slug: string): Promise<{ success: boolean; status: string; latency: string; quota: string }> => {
-    const res = await apiClient.post('/api/admin/ai/test', { slug });
+  testProvider: async (slug: string, api_key?: string): Promise<{ success: boolean; status: string; latency: string; quota: string }> => {
+    const res = await apiClient.post('/api/admin/ai/providers/test', { slug, api_key });
     return res.data;
+  },
+
+  deleteProvider: async (slug: string): Promise<void> => {
+    await apiClient.delete(`/api/admin/ai/providers/delete?slug=${slug}`);
   },
 
   getAnalytics: async (): Promise<AIAnalyticsData> => {
@@ -109,5 +113,28 @@ export const aiAdminService = {
 
   saveSettings: async (settings: Partial<AISecuritySettings>): Promise<void> => {
     await apiClient.post('/api/admin/ai/security', settings);
+  },
+
+  getModels: async (): Promise<any[]> => {
+    const res = await apiClient.get<any[]>('/api/admin/ai/models');
+    return res.data;
+  },
+
+  saveModel: async (model: { feature: string; provider_slug: string; model_name: string; temperature: number; max_tokens: number }): Promise<void> => {
+    await apiClient.put('/api/admin/ai/models', model);
+  },
+
+  getPrompts: async (): Promise<any[]> => {
+    const res = await apiClient.get<any[]>('/api/admin/ai/prompts');
+    return res.data;
+  },
+
+  savePrompt: async (prompt: { feature: string; prompt_text: string }): Promise<void> => {
+    await apiClient.put('/api/admin/ai/prompts', prompt);
+  },
+
+  getUsageStats: async (): Promise<any> => {
+    const res = await apiClient.get<any>('/api/admin/ai/usage');
+    return res.data;
   }
 };
