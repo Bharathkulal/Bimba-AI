@@ -1,13 +1,13 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.core.config import settings
-from app.api.health import router as health_router
-from app.api.auth import router as auth_router
-from app.api.analytics import router as analytics_router
-from app.api.ai_admin import router as ai_admin_router
-from app.api.admin_portal import router as admin_portal_router
-from app.api.resume_studio import router as resume_studio_router
-from app.database.session import init_db
+from app.api.v1.monitoring.monitoring_routes import router as health_router
+from app.api.v1.auth.auth_routes import router as auth_router
+from app.api.v1.analytics.analytics_routes import router as analytics_router
+from app.api.v1.ai.ai_routes import router as ai_admin_router
+from app.api.v1.users.users_routes import router as admin_portal_router
+from app.api.v1.resumes.resumes_routes import router as resume_studio_router
+from app.database.init_db import init_db
 
 app = FastAPI(
     title=settings.PROJECT_NAME,

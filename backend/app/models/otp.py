@@ -1,2 +1,1 @@
-# Legacy compatibility layer
-from app.models.otp_verification import OTPVerification as OTP
+from app.database.models.otp import *
