@@ -6,24 +6,51 @@ class AIProvider(Base):
     __tablename__ = "ai_providers"
 
     id = Column(Integer, primary_key=True, index=True)
-    name = Column(String, unique=True, index=True, nullable=False)
+    provider_name = Column(String, unique=True, index=True, nullable=False)
     slug = Column(String, unique=True, index=True, nullable=False)  # "gemini" | "openrouter" | "groq" etc.
     encrypted_api_key = Column(String, nullable=False)
+    model_name = Column(String, nullable=True, default="gemini-2.5-flash")
     priority = Column(Integer, default=1)
-    is_active = Column(Boolean, default=True)
-    status = Column(String, default="Connected")  # "Connected" | "Healthy" | "Disabled" | "Degraded"
-    today_requests = Column(Integer, default=0)
-    latency_ms = Column(Integer, default=0)
-    success_rate = Column(Integer, default=100)
-    
-    # Extended configuration parameters
-    fallback_enabled = Column(Boolean, default=True)
-    max_requests = Column(Integer, default=1000)
-    rate_limit = Column(Integer, default=60)
-    timeout = Column(Integer, default=30)
     temperature = Column(Float, default=0.7)
+    top_p = Column(Float, default=0.9)
     max_tokens = Column(Integer, default=4096)
+    timeout = Column(Integer, default=30)
     retry_attempts = Column(Integer, default=3)
+    rate_limit = Column(Integer, default=60)
+    fallback_enabled = Column(Boolean, default=True)
+    is_enabled = Column(Boolean, default=True)
+    connection_status = Column(String, default="Not Configured")
+    last_tested_at = Column(DateTime, nullable=True)
+    created_at = Column(DateTime, server_default=func.now())
+    updated_at = Column(DateTime, server_default=func.now(), onupdate=func.now())
+    updated_by = Column(String, nullable=True)
+
+    # Legacy/compatibility properties
+    @property
+    def name(self):
+        return self.provider_name
+    @name.setter
+    def name(self, val):
+        self.provider_name = val
+
+    @property
+    def is_active(self):
+        return self.is_enabled
+    @is_active.setter
+    def is_active(self, val):
+        self.is_enabled = val
+
+    @property
+    def status(self):
+        return self.connection_status
+    @status.setter
+    def status(self, val):
+        self.connection_status = val
+
+    # Compatibility attributes for statistics trackers
+    today_requests = 0
+    latency_ms = 0
+    success_rate = 100
 
 class AIGatewayLog(Base):
     __tablename__ = "ai_gateway_logs"

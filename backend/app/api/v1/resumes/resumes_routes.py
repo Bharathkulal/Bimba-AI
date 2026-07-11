@@ -22,6 +22,8 @@ from app.models.academic import Department, Subject
 from app.models.analytics import ActivityLog
 from app.api.analytics import get_current_student
 from app.api.admin_portal import log_audit
+from app.services.ai_gateway import run_ai_gateway_request
+
 
 router = APIRouter(prefix="/resume-studio", tags=["AI Resume Studio"])
 
@@ -370,16 +372,6 @@ def delete_certificate(cert_id: int, student: Student = Depends(get_current_stud
 # --- AI OPERATION ENDPOINTS ---
 
 def log_ai_event(resume_id: int, action: str, prompt: str, response: str, db: Session):
-    # Log to system gateway
-    gw = AIGatewayLog(
-        provider="Gemini",
-        feature=f"Resume Studio: {action.upper()}",
-        status="Success",
-        latency_ms=random.randint(400, 1200),
-        user_roll="BCA25008"
-    )
-    db.add(gw)
-    
     # Log to studio AI logs
     log = ResumeAILog(
         resume_id=resume_id,
@@ -394,35 +386,46 @@ def log_ai_event(resume_id: int, action: str, prompt: str, response: str, db: Se
 def ai_generate_summary(id: int, payload: AISummaryRequest, student: Student = Depends(get_current_student), db: Session = Depends(get_db)):
     verify_ownership(id, student.id, db)
     
-    # Generate mock AI summary based on role & skills
-    summary = f"Highly motivated {payload.role} with a strong foundation in {', '.join(payload.skills)}. Proven skills in building scalable software systems and solving complex algorithms. Passionate about leveraging cutting-edge web technologies to deliver robust and premium client applications."
-    log_ai_event(id, "summary", f"Generate summary for {payload.role}", summary, db)
+    prompt = f"Generate a professional, high-impact resume summary for a {payload.role} with skills: {', '.join(payload.skills)} and experience: {payload.experience or 'None'}. Return only the paragraph description."
+    summary = run_ai_gateway_request(db, prompt, f"Resume Studio: SUMMARY", student.roll_number)
     
+    log_ai_event(id, "summary", prompt, summary, db)
     return {"summary": summary}
 
 @router.post("/{id}/ai/rewrite")
 def ai_rewrite_text(id: int, payload: AIRewriteRequest, student: Student = Depends(get_current_student), db: Session = Depends(get_db)):
     verify_ownership(id, student.id, db)
     
-    # Mock AI rewrite bullet improver
-    rewritten = f"Architected and optimized scalable {payload.target_role or 'system'} applications, enhancing computational performance by 24% and driving double-digit engagement metrics."
-    log_ai_event(id, "rewrite", payload.text, rewritten, db)
+    prompt = f"Improve and rewrite this resume bullet point text to make it sound professional and high-impact. Target role: {payload.target_role or 'software engineer'}. Text: {payload.text}. Return only the improved text."
+    rewritten = run_ai_gateway_request(db, prompt, f"Resume Studio: REWRITE", student.roll_number)
     
+    log_ai_event(id, "rewrite", prompt, rewritten, db)
     return {"rewritten": rewritten}
 
 @router.post("/{id}/ai/roadmap")
 def ai_generate_roadmap(id: int, payload: CareerRoadmapRequest, student: Student = Depends(get_current_student), db: Session = Depends(get_db)):
     verify_ownership(id, student.id, db)
     
-    roadmap = {
-        "roadmap": f"1. Master Core System Architecture & Advanced Web Tech.\n2. Complete professional certification in AWS Cloud Practitioner.\n3. Build and deploy 2 fullstack open-source projects using Docker.\n4. Solve 150+ LeetCode problems focusing on graphs/dynamic programming.",
-        "skills_gap": "AWS, Docker, Microservices, CI/CD",
-        "recommended_courses": "Udemy: Microservices with Node.js & React; Coursera: AWS Cloud Fundamentals",
-        "recommended_certifications": "AWS Certified Solutions Architect, Oracle Java SE Certified Associate",
-        "interview_prep": "Q1: Explain REST API constraints.\nQ2: What is database indexing and how does it work?\nQ3: What is the difference between Docker container and VM?"
-    }
+    prompt = f"Generate a detailed career roadmap and study plan for a {payload.role} with current skills: {', '.join(payload.skills)}. Return a JSON object with keys: roadmap, skills_gap, recommended_courses, recommended_certifications, interview_prep (with 3 sample questions)."
     
-    # Check if career readiness exists, otherwise create
+    raw_response = run_ai_gateway_request(db, prompt, f"Resume Studio: ROADMAP", student.roll_number)
+    
+    try:
+        cleaned = raw_response.strip()
+        if cleaned.startswith("```json"):
+            cleaned = cleaned[7:]
+        if cleaned.endswith("```"):
+            cleaned = cleaned[:-3]
+        roadmap = json.loads(cleaned.strip())
+    except Exception:
+        roadmap = {
+            "roadmap": raw_response,
+            "skills_gap": "AWS, Docker, Microservices, CI/CD",
+            "recommended_courses": "Udemy: Microservices with Node.js & React",
+            "recommended_certifications": "AWS Certified Solutions Architect",
+            "interview_prep": "Q1: Explain REST API constraints.\nQ2: What is database indexing?\nQ3: What is the difference between Docker and VM?"
+        }
+        
     readiness = db.query(CareerReadiness).filter(CareerReadiness.resume_id == id).first()
     if not readiness:
         readiness = CareerReadiness(
@@ -430,21 +433,22 @@ def ai_generate_roadmap(id: int, payload: CareerRoadmapRequest, student: Student
             resume_id=id,
             readiness_score=85,
             job_readiness="Ready",
-            skill_gap=roadmap["skills_gap"],
-            recommended_certifications=roadmap["recommended_certifications"],
-            recommended_courses=roadmap["recommended_courses"],
+            skill_gap=roadmap.get("skills_gap", ""),
+            recommended_certifications=roadmap.get("recommended_certifications", ""),
+            recommended_courses=roadmap.get("recommended_courses", ""),
             interview_readiness=88,
-            learning_roadmap=roadmap["roadmap"]
+            learning_roadmap=roadmap.get("roadmap", "")
         )
         db.add(readiness)
     else:
         readiness.readiness_score = 85
-        readiness.learning_roadmap = roadmap["roadmap"]
-        readiness.skill_gap = roadmap["skills_gap"]
+        readiness.learning_roadmap = roadmap.get("roadmap", "")
+        readiness.skill_gap = roadmap.get("skills_gap", "")
     db.commit()
     
-    log_ai_event(id, "career_roadmap", f"Roadmap for {payload.role}", json.dumps(roadmap), db)
+    log_ai_event(id, "career_roadmap", prompt, raw_response, db)
     return roadmap
+
 
 @router.post("/{id}/ai/full-generate")
 def ai_full_generate(id: int, student: Student = Depends(get_current_student), db: Session = Depends(get_db)):

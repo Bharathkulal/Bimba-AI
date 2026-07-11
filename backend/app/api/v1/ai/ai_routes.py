@@ -1,42 +1,43 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+import json
+import urllib.request
+import urllib.error
+import random
+from datetime import datetime, timezone
+from typing import List, Optional
+from fastapi import APIRouter, Depends, HTTPException, status, Request
 from sqlalchemy.orm import Session
 from sqlalchemy import func
 from pydantic import BaseModel
-from typing import List, Optional
-import random
 
 from app.database.session import get_db
 from app.models.student import Student
 from app.models.ai_admin import AIProvider, AIGatewayLog, AISystemSettings, AIModel, AIPrompt, AIUsage
+from app.models.system import AuditLog
 from app.utils.crypto import encrypt_key, decrypt_key
-from app.core.security import verify_password
+from app.api.v1.users.users_routes import get_current_admin, AdminUser
 from app.api.analytics import get_current_student
 
 router = APIRouter(prefix="/admin/ai", tags=["AI Admin"])
 
-# Schemas
-class CreateProviderRequest(BaseModel):
-    name: str
-    slug: str
-    api_key: str
-    priority: int
+# --- SCHEMAS ---
 
-class UpdateProviderRequest(BaseModel):
+class SaveProviderRequest(BaseModel):
+    provider_name: str
     slug: str
     api_key: Optional[str] = None
-    is_active: Optional[bool] = None
-    priority: Optional[int] = None
-    fallback_enabled: Optional[bool] = None
-    timeout: Optional[int] = None
-    temperature: Optional[float] = None
-    max_tokens: Optional[int] = None
-
-class RevealKeyRequest(BaseModel):
-    slug: str
-    password: str
+    model_name: Optional[str] = None
+    priority: Optional[int] = 5
+    temperature: Optional[float] = 0.7
+    top_p: Optional[float] = 0.9
+    max_tokens: Optional[int] = 4096
+    timeout: Optional[int] = 30
+    retry_attempts: Optional[int] = 3
+    rate_limit: Optional[int] = 60
+    fallback_enabled: Optional[bool] = True
+    is_enabled: Optional[bool] = True
 
 class TestProviderRequest(BaseModel):
-    slug: str
+    api_key: Optional[str] = None
 
 class PriorityOrderRequest(BaseModel):
     priority_order: List[str]  # List of slugs in order
@@ -58,89 +59,318 @@ class UpdateSettingsRequest(BaseModel):
     xss_protected: Optional[bool] = None
     sql_injection_protected: Optional[bool] = None
 
-# Helper to mask API keys
-def mask_api_key(key: str) -> str:
-    if len(key) <= 8:
-        return "****"
-    return f"{key[:4]}****************{key[-4:]}"
+# --- AUDIT LOGGING HELPER ---
 
-# Endpoints
+def log_ai_audit(db: Session, admin_username: str, operation: str, status_val: str, affected_record: str = None, request: Request = None):
+    ip = "127.0.0.1"
+    browser = "Unknown"
+    device = "Unknown"
+    if request:
+        ip = request.client.host if request.client else "127.0.0.1"
+        user_agent = request.headers.get("user-agent", "Unknown")
+        browser = user_agent.split(" ")[0] if " " in user_agent else user_agent
+        device = "Mobile" if "Mobile" in user_agent else "Desktop"
+    
+    audit = AuditLog(
+        admin_username=admin_username,
+        operation=operation,
+        status=status_val,
+        affected_record=affected_record,
+        ip_address=ip,
+        browser=browser,
+        device=device
+    )
+    db.add(audit)
+    db.commit()
+
+# --- CONNECTION TESTER ---
+
+def test_provider_api(slug: str, api_key: str, timeout: int = 10) -> tuple[bool, str]:
+    if not api_key:
+        return False, "API Key is empty"
+        
+    if api_key.startswith("mock_") or "mock" in api_key.lower():
+        return True, "🟢 Connected (Mock Verification)"
+        
+    url = ""
+    headers = {}
+    
+    if slug == "gemini":
+        url = f"https://generativelanguage.googleapis.com/v1beta/models?key={api_key}"
+    elif slug == "openai":
+        url = "https://api.openai.com/v1/models"
+        headers = {"Authorization": f"Bearer {api_key}"}
+    elif slug == "groq":
+        url = "https://api.groq.com/openai/v1/models"
+        headers = {"Authorization": f"Bearer {api_key}"}
+    elif slug == "openrouter":
+        url = "https://openrouter.ai/api/v1/models"
+        headers = {"Authorization": f"Bearer {api_key}"}
+    elif slug == "claude":
+        url = "https://api.anthropic.com/v1/models"
+        headers = {
+            "x-api-key": api_key,
+            "anthropic-version": "2023-06-01"
+        }
+    elif slug == "deepseek":
+        url = "https://api.deepseek.com/models"
+        headers = {"Authorization": f"Bearer {api_key}"}
+    elif slug == "mistral":
+        url = "https://api.mistral.ai/v1/models"
+        headers = {"Authorization": f"Bearer {api_key}"}
+    else:
+        return False, "🔴 Unknown provider"
+        
+    req = urllib.request.Request(url, headers=headers, method="GET")
+    try:
+        with urllib.request.urlopen(req, timeout=timeout) as response:
+            if response.status == 200:
+                return True, "🟢 Connected"
+            else:
+                return False, f"🔴 HTTP {response.status}"
+    except urllib.error.HTTPError as e:
+        if e.code in [401, 403]:
+            return False, "🔴 Invalid API Key"
+        return False, f"🔴 HTTP Error {e.code}"
+    except urllib.error.URLError as e:
+        return False, f"🔴 Network Timeout / Offline: {e.reason}"
+    except Exception as e:
+        return False, f"🔴 Connection Failed: {str(e)}"
+
+# --- ENDPOINTS ---
+
 @router.get("/providers")
-def list_providers(student: Student = Depends(get_current_student), db: Session = Depends(get_db)):
+def list_providers(
+    request: Request,
+    admin: AdminUser = Depends(get_current_admin),
+    db: Session = Depends(get_db)
+):
     providers = db.query(AIProvider).order_by(AIProvider.priority.asc()).all()
     
+    # Regular admins can only see status/metadata, no configuration details
+    if admin.role != "super_admin":
+        result = []
+        for p in providers:
+            result.append({
+                "id": p.id,
+                "provider_name": p.provider_name,
+                "slug": p.slug,
+                "connection_status": p.connection_status,
+                "is_enabled": p.is_enabled,
+                "last_tested_at": p.last_tested_at.isoformat() if p.last_tested_at else None
+            })
+        return result
+        
+    # Super Admin gets the config fields but the API key must be masked
     result = []
     for p in providers:
-        # Decrypt to mask it correctly
-        decrypted = decrypt_key(p.encrypted_api_key)
-        masked = mask_api_key(decrypted)
-        
+        masked = ""
+        if p.encrypted_api_key:
+            try:
+                decrypted = decrypt_key(p.encrypted_api_key)
+                if decrypted and decrypted != "placeholder_key":
+                    masked = "*" * 20 + decrypted[-4:] if len(decrypted) > 4 else "****"
+                else:
+                    masked = "Not Configured"
+            except Exception:
+                masked = "Decryption Error"
+        else:
+            masked = "Not Configured"
+            
         result.append({
-            "name": p.name,
+            "id": p.id,
+            "provider_name": p.provider_name,
             "slug": p.slug,
             "masked_key": masked,
+            "model_name": p.model_name,
             "priority": p.priority,
-            "is_active": p.is_active,
-            "status": p.status,
-            "today_requests": p.today_requests,
-            "latency_ms": p.latency_ms,
-            "success_rate": p.success_rate
+            "temperature": p.temperature,
+            "top_p": p.top_p,
+            "max_tokens": p.max_tokens,
+            "timeout": p.timeout,
+            "retry_attempts": p.retry_attempts,
+            "rate_limit": p.rate_limit,
+            "fallback_enabled": p.fallback_enabled,
+            "is_enabled": p.is_enabled,
+            "connection_status": p.connection_status,
+            "last_tested_at": p.last_tested_at.isoformat() if p.last_tested_at else None,
+            "created_at": p.created_at.isoformat() if p.created_at else None,
+            "updated_at": p.updated_at.isoformat() if p.updated_at else None,
+            "updated_by": p.updated_by
         })
     return result
 
-@router.post("/provider")
-def create_provider(payload: CreateProviderRequest, student: Student = Depends(get_current_student), db: Session = Depends(get_db)):
+@router.post("/providers")
+def save_provider(
+    payload: SaveProviderRequest,
+    request: Request,
+    admin: AdminUser = Depends(get_current_admin),
+    db: Session = Depends(get_db)
+):
+    if admin.role != "super_admin":
+        raise HTTPException(status_code=403, detail="Permission Denied. Super Admin access required.")
+        
     existing = db.query(AIProvider).filter(AIProvider.slug == payload.slug).first()
     if existing:
-        raise HTTPException(status_code=400, detail="Provider with this slug already exists.")
+        raise HTTPException(status_code=400, detail="Provider configuration already exists. Use PUT to update.")
         
-    encrypted = encrypt_key(payload.api_key)
+    if not payload.api_key or payload.api_key.startswith("***") or payload.api_key.strip() == "":
+        raise HTTPException(status_code=400, detail="A valid API Key is required for new configurations.")
+        
     provider = AIProvider(
-        name=payload.name,
+        provider_name=payload.provider_name,
         slug=payload.slug,
-        encrypted_api_key=encrypted,
-        priority=payload.priority
+        encrypted_api_key=encrypt_key(payload.api_key),
+        model_name=payload.model_name,
+        priority=payload.priority,
+        temperature=payload.temperature,
+        top_p=payload.top_p,
+        max_tokens=payload.max_tokens,
+        timeout=payload.timeout,
+        retry_attempts=payload.retry_attempts,
+        rate_limit=payload.rate_limit,
+        fallback_enabled=payload.fallback_enabled,
+        is_enabled=payload.is_enabled,
+        connection_status="Not Configured",
+        updated_by=admin.username
     )
     db.add(provider)
     db.commit()
-    return {"success": True, "message": "Provider created successfully."}
+    
+    log_ai_audit(db, admin.username, f"Saved provider config: {payload.slug}", "Success", payload.slug, request)
+    return {"success": True, "message": "Configuration Saved"}
 
-@router.put("/provider/update")
-def update_provider(payload: UpdateProviderRequest, student: Student = Depends(get_current_student), db: Session = Depends(get_db)):
-    provider = db.query(AIProvider).filter(AIProvider.slug == payload.slug).first()
-    if not provider:
-        # Auto-create if not exists in DB yet
-        provider = AIProvider(
-            name=payload.slug.title(),
-            slug=payload.slug,
-            encrypted_api_key=encrypt_key(payload.api_key or "placeholder_key"),
-            priority=payload.priority or 5
-        )
-        db.add(provider)
+@router.put("/providers/{id}")
+def update_provider(
+    id: int,
+    payload: SaveProviderRequest,
+    request: Request,
+    admin: AdminUser = Depends(get_current_admin),
+    db: Session = Depends(get_db)
+):
+    if admin.role != "super_admin":
+        raise HTTPException(status_code=403, detail="Permission Denied. Super Admin access required.")
         
-    if payload.api_key is not None and payload.api_key != "":
+    provider = db.query(AIProvider).filter(AIProvider.id == id).first()
+    if not provider:
+        raise HTTPException(status_code=404, detail="Provider config not found.")
+        
+    # Track actions for audit logging
+    old_enabled = provider.is_enabled
+    
+    provider.provider_name = payload.provider_name
+    provider.model_name = payload.model_name
+    provider.priority = payload.priority
+    provider.temperature = payload.temperature
+    provider.top_p = payload.top_p
+    provider.max_tokens = payload.max_tokens
+    provider.timeout = payload.timeout
+    provider.retry_attempts = payload.retry_attempts
+    provider.rate_limit = payload.rate_limit
+    provider.fallback_enabled = payload.fallback_enabled
+    provider.is_enabled = payload.is_enabled
+    provider.updated_by = admin.username
+    
+    # Update API key if provided and not masked
+    if payload.api_key and not payload.api_key.startswith("***") and payload.api_key.strip() != "":
         provider.encrypted_api_key = encrypt_key(payload.api_key)
-    if payload.is_active is not None:
-        provider.is_active = payload.is_active
-        provider.status = "Connected" if payload.is_active else "Disabled"
-    if payload.priority is not None:
-        provider.priority = payload.priority
-    if getattr(payload, 'fallback_enabled', None) is not None:
-        provider.fallback_enabled = payload.fallback_enabled
-    if getattr(payload, 'timeout', None) is not None:
-        provider.timeout = payload.timeout
-    if getattr(payload, 'temperature', None) is not None:
-        provider.temperature = payload.temperature
-    if getattr(payload, 'max_tokens', None) is not None:
-        provider.max_tokens = payload.max_tokens
+        log_ai_audit(db, admin.username, f"Changed API Key for provider: {provider.slug}", "Success", provider.slug, request)
         
     db.commit()
-    return {"success": True, "message": "Provider updated successfully."}
+    
+    # Audit log state toggle
+    if old_enabled != provider.is_enabled:
+        op = f"Enabled provider: {provider.slug}" if provider.is_enabled else f"Disabled provider: {provider.slug}"
+        log_ai_audit(db, admin.username, op, "Success", provider.slug, request)
+    else:
+        log_ai_audit(db, admin.username, f"Updated provider config: {provider.slug}", "Success", provider.slug, request)
+        
+    return {"success": True, "message": "Configuration Updated"}
+
+@router.delete("/providers/{id}")
+def delete_provider(
+    id: int,
+    request: Request,
+    admin: AdminUser = Depends(get_current_admin),
+    db: Session = Depends(get_db)
+):
+    if admin.role != "super_admin":
+        raise HTTPException(status_code=403, detail="Permission Denied. Super Admin access required.")
+        
+    provider = db.query(AIProvider).filter(AIProvider.id == id).first()
+    if not provider:
+        raise HTTPException(status_code=404, detail="Provider config not found.")
+        
+    slug = provider.slug
+    db.delete(provider)
+    db.commit()
+    
+    log_ai_audit(db, admin.username, f"Deleted provider config: {slug}", "Success", slug, request)
+    return {"success": True, "message": "Provider configuration deleted."}
+
+@router.post("/providers/{id}/test")
+def test_provider_connection(
+    id: int,
+    payload: TestProviderRequest,
+    request: Request,
+    admin: AdminUser = Depends(get_current_admin),
+    db: Session = Depends(get_db)
+):
+    if admin.role != "super_admin":
+        raise HTTPException(status_code=403, detail="Permission Denied. Super Admin access required.")
+        
+    provider = db.query(AIProvider).filter(AIProvider.id == id).first()
+    if not provider:
+        raise HTTPException(status_code=404, detail="Provider config not found.")
+        
+    key_to_test = payload.api_key
+    if not key_to_test or key_to_test.startswith("***") or key_to_test.strip() == "":
+        try:
+            key_to_test = decrypt_key(provider.encrypted_api_key)
+        except Exception:
+            key_to_test = ""
+            
+    if not key_to_test:
+        raise HTTPException(status_code=400, detail="No API Key configured to test.")
+        
+    # Execute actual connection test
+    success, status_msg = test_provider_api(provider.slug, key_to_test, timeout=provider.timeout or 10)
+    
+    provider.connection_status = status_msg
+    provider.last_tested_at = func.now()
+    db.commit()
+    
+    log_ai_audit(
+        db, 
+        admin.username, 
+        f"Tested connection for: {provider.slug}", 
+        status_msg, 
+        provider.slug, 
+        request
+    )
+    
+    if success:
+        return {"success": True, "status": status_msg}
+    else:
+        raise HTTPException(status_code=400, detail=status_msg)
+
+# --- REVEAL KEY ---
+class RevealKeyRequest(BaseModel):
+    slug: str
+    password: str
 
 @router.post("/provider/reveal")
-def reveal_provider_key(payload: RevealKeyRequest, student: Student = Depends(get_current_student), db: Session = Depends(get_db)):
-    # Verify Admin Password against student hashed_password
-    if not verify_password(payload.password, student.hashed_password):
+def reveal_provider_key(
+    payload: RevealKeyRequest, 
+    admin: AdminUser = Depends(get_current_admin), 
+    db: Session = Depends(get_db)
+):
+    if admin.role != "super_admin":
+        raise HTTPException(status_code=403, detail="Permission Denied. Super Admin access required.")
+        
+    from app.core.security import verify_password
+    # Verify Admin Password against logged-in admin password_hash
+    if not verify_password(payload.password, admin.password_hash):
         raise HTTPException(status_code=401, detail="Incorrect administrator password.")
         
     provider = db.query(AIProvider).filter(AIProvider.slug == payload.slug).first()
@@ -150,35 +380,10 @@ def reveal_provider_key(payload: RevealKeyRequest, student: Student = Depends(ge
     decrypted = decrypt_key(provider.encrypted_api_key)
     return {"success": True, "api_key": decrypted}
 
-@router.post("/test")
-def test_provider_connection(payload: TestProviderRequest, student: Student = Depends(get_current_student), db: Session = Depends(get_db)):
-    provider = db.query(AIProvider).filter(AIProvider.slug == payload.slug).first()
-    if not provider:
-        raise HTTPException(status_code=404, detail="Provider not found.")
-        
-    # Simulate connection tests
-    latency = random.randint(300, 1100)
-    provider.latency_ms = latency
-    
-    # Randomly fail 2% of times for testing failover logs
-    success = random.random() > 0.05
-    if success:
-        provider.status = "Healthy"
-        db.commit()
-        return {
-            "success": True,
-            "status": "Healthy",
-            "latency": f"{latency}ms",
-            "quota": "Available"
-        }
-    else:
-        provider.status = "Degraded"
-        db.commit()
-        raise HTTPException(status_code=502, detail="Quota Exceeded. Switching to OpenRouter fallback.")
+# --- ANALYTICS ---
 
 @router.get("/analytics")
 def get_ai_analytics(student: Student = Depends(get_current_student), db: Session = Depends(get_db)):
-    # Aggregated calculations from AIGatewayLogs
     total_requests = db.query(AIGatewayLog).count()
     success_requests = db.query(AIGatewayLog).filter(AIGatewayLog.status == "Success").count()
     
@@ -187,19 +392,16 @@ def get_ai_analytics(student: Student = Depends(get_current_student), db: Sessio
         success_rate = round((success_requests / total_requests) * 100, 1)
         
     avg_latency = db.query(func.avg(AIGatewayLog.latency_ms)).scalar() or 820
-    avg_latency = round(avg_latency / 1000, 2)  # response in seconds
+    avg_latency = round(avg_latency / 1000, 2)
     
-    # Providers active online
-    providers_online = db.query(AIProvider).filter(AIProvider.is_active == True).count()
+    providers_online = db.query(AIProvider).filter(AIProvider.is_enabled == True).count()
     
-    # Provider usage counts
     usage_breakdown = {}
     providers = db.query(AIProvider).all()
     for p in providers:
-        count = db.query(AIGatewayLog).filter(AIGatewayLog.provider == p.name).count()
-        usage_breakdown[p.slug] = count if count > 0 else p.today_requests
+        count = db.query(AIGatewayLog).filter(AIGatewayLog.provider == p.provider_name).count()
+        usage_breakdown[p.slug] = count if count > 0 else 0
         
-    # Features distribution
     feature_counts = {
         "Resume Generator": 42,
         "Resume Improve": 21,
@@ -208,7 +410,6 @@ def get_ai_analytics(student: Student = Depends(get_current_student), db: Sessio
         "Cover Letter": 7
     }
     
-    # Fallback logs count
     fallback_used = db.query(AIGatewayLog).filter(AIGatewayLog.status == "Failed").count()
     
     return {
@@ -221,6 +422,8 @@ def get_ai_analytics(student: Student = Depends(get_current_student), db: Sessio
         "usage": usage_breakdown,
         "features": feature_counts
     }
+
+# --- LOGS ---
 
 @router.get("/logs")
 def list_gateway_logs(student: Student = Depends(get_current_student), db: Session = Depends(get_db)):
@@ -238,38 +441,59 @@ def list_gateway_logs(student: Student = Depends(get_current_student), db: Sessi
         })
     return result
 
+# --- HEALTH ---
+
 @router.get("/health")
 def get_ai_health(student: Student = Depends(get_current_student), db: Session = Depends(get_db)):
-    providers = db.query(AIProvider).filter(AIProvider.is_active == True).all()
+    providers = db.query(AIProvider).filter(AIProvider.is_enabled == True).all()
     
     result = []
     for p in providers:
         result.append({
-            "provider": p.name,
+            "provider": p.provider_name,
             "slug": p.slug,
-            "status": "Healthy" if p.status == "Healthy" or p.status == "Connected" else p.status,
-            "latency": f"{p.latency_ms or random.randint(300, 800)} ms",
+            "status": "Healthy" if p.connection_status == "🟢 Connected" or p.connection_status == "Healthy" else p.connection_status,
+            "latency": f"{random.randint(300, 800)} ms",
             "api": "Working",
             "lastCheck": "20 sec ago",
             "quota": "Available"
         })
     return result
 
+# --- PRIORITY ---
+
 @router.put("/priority")
-def update_priority_order(payload: PriorityOrderRequest, student: Student = Depends(get_current_student), db: Session = Depends(get_db)):
+def update_priority_order(
+    payload: PriorityOrderRequest, 
+    admin: AdminUser = Depends(get_current_admin), 
+    db: Session = Depends(get_db)
+):
+    if admin.role != "super_admin":
+        raise HTTPException(status_code=403, detail="Permission Denied. Super Admin access required.")
+        
     try:
         for idx, slug in enumerate(payload.priority_order):
             provider = db.query(AIProvider).filter(AIProvider.slug == slug).first()
             if provider:
                 provider.priority = idx + 1
         db.commit()
+        log_ai_audit(db, admin.username, "Updated providers priority order", "Success", "all")
         return {"success": True, "message": "Provider priorities updated successfully."}
     except Exception as e:
         db.rollback()
         raise HTTPException(status_code=500, detail=str(e))
 
+# --- SETTINGS ---
+
 @router.post("/security")
-def update_security_settings(payload: UpdateSettingsRequest, student: Student = Depends(get_current_student), db: Session = Depends(get_db)):
+def update_security_settings(
+    payload: UpdateSettingsRequest, 
+    admin: AdminUser = Depends(get_current_admin), 
+    db: Session = Depends(get_db)
+):
+    if admin.role != "super_admin":
+        raise HTTPException(status_code=403, detail="Permission Denied. Super Admin access required.")
+        
     settings = db.query(AISystemSettings).first()
     if not settings:
         settings = AISystemSettings()
@@ -279,6 +503,7 @@ def update_security_settings(payload: UpdateSettingsRequest, student: Student = 
         setattr(settings, k, v)
         
     db.commit()
+    log_ai_audit(db, admin.username, "Updated AI Security Settings", "Success")
     return {"success": True, "message": "AI configuration updated successfully."}
 
 @router.get("/settings")
@@ -306,7 +531,8 @@ def get_security_settings(student: Student = Depends(get_current_student), db: S
         "sql_injection_protected": settings.sql_injection_protected
     }
 
-# Models endpoints
+# --- MODELS ---
+
 class UpdateModelRequest(BaseModel):
     feature: str
     provider_slug: str
@@ -317,7 +543,6 @@ class UpdateModelRequest(BaseModel):
 @router.get("/models")
 def get_ai_models(student: Student = Depends(get_current_student), db: Session = Depends(get_db)):
     models = db.query(AIModel).all()
-    # If empty, seed default ones for Bimba AI features
     if len(models) == 0:
         features = [
             "Resume Builder", "ATS Checker", "Resume Reviewer", "Career Advisor",
@@ -331,7 +556,14 @@ def get_ai_models(student: Student = Depends(get_current_student), db: Session =
     return models
 
 @router.put("/models")
-def update_ai_model(payload: UpdateModelRequest, student: Student = Depends(get_current_student), db: Session = Depends(get_db)):
+def update_ai_model(
+    payload: UpdateModelRequest, 
+    admin: AdminUser = Depends(get_current_admin), 
+    db: Session = Depends(get_db)
+):
+    if admin.role != "super_admin":
+        raise HTTPException(status_code=403, detail="Permission Denied. Super Admin access required.")
+        
     model = db.query(AIModel).filter(AIModel.feature == payload.feature).first()
     if not model:
         model = AIModel(feature=payload.feature)
@@ -341,9 +573,11 @@ def update_ai_model(payload: UpdateModelRequest, student: Student = Depends(get_
     model.temperature = payload.temperature
     model.max_tokens = payload.max_tokens
     db.commit()
+    log_ai_audit(db, admin.username, f"Updated AI Model Mapping for: {payload.feature}", "Success", payload.feature)
     return {"success": True, "message": "Feature model mapping updated."}
 
-# Prompts library endpoints
+# --- PROMPTS ---
+
 class UpdatePromptRequest(BaseModel):
     feature: str
     prompt_text: str
@@ -364,7 +598,14 @@ def get_ai_prompts(student: Student = Depends(get_current_student), db: Session 
     return prompts
 
 @router.put("/prompts")
-def update_ai_prompt(payload: UpdatePromptRequest, student: Student = Depends(get_current_student), db: Session = Depends(get_db)):
+def update_ai_prompt(
+    payload: UpdatePromptRequest, 
+    admin: AdminUser = Depends(get_current_admin), 
+    db: Session = Depends(get_db)
+):
+    if admin.role != "super_admin":
+        raise HTTPException(status_code=403, detail="Permission Denied. Super Admin access required.")
+        
     prompt = db.query(AIPrompt).filter(AIPrompt.feature == payload.feature).first()
     if not prompt:
         prompt = AIPrompt(feature=payload.feature, version=1)
@@ -373,13 +614,13 @@ def update_ai_prompt(payload: UpdatePromptRequest, student: Student = Depends(ge
         prompt.version += 1
     prompt.prompt_text = payload.prompt_text
     db.commit()
+    log_ai_audit(db, admin.username, f"Updated AI Prompt Template for: {payload.feature}", "Success", payload.feature)
     return {"success": True, "message": "System prompt template saved."}
 
-# Usage endpoint
+# --- USAGE ---
+
 @router.get("/usage")
 def get_ai_usage_stats(student: Student = Depends(get_current_student), db: Session = Depends(get_db)):
-    # Calculate mock/real analytics
-    # We can seed some daily records if empty
     days = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
     usage_data = []
     for d in days:
@@ -400,184 +641,3 @@ def get_ai_usage_stats(student: Student = Depends(get_current_student), db: Sess
         "active_provider": "Gemini",
         "usage_by_day": usage_data
     }
-
-# Helper logic for environment and database swapping
-def save_provider_api_key(slug: str, api_key: str, db: Session):
-    import os
-    app_env = os.getenv("APP_ENV", "development")
-    
-    # Audit log config change
-    print(f"[AUDIT LOG] Configuration change: API Key updated for {slug} (APP_ENV={app_env})")
-    
-    if app_env == "production":
-        # Production mode: AES-256 encrypt & save to database
-        provider = db.query(AIProvider).filter(AIProvider.slug == slug).first()
-        if not provider:
-            provider = AIProvider(name=slug.title(), slug=slug, encrypted_api_key=encrypt_key(api_key), priority=5)
-            db.add(provider)
-        else:
-            provider.encrypted_api_key = encrypt_key(api_key)
-        db.commit()
-    else:
-        # Development mode: Save to backend/.env
-        env_key = f"{slug.upper()}_API_KEY"
-        env_path = "d:/Bimba AI/backend/.env"
-        lines = []
-        if os.path.exists(env_path):
-            with open(env_path, "r") as f:
-                lines = f.readlines()
-        
-        updated = False
-        for idx, line in enumerate(lines):
-            if line.strip().startswith(f"{env_key}="):
-                lines[idx] = f"{env_key}={api_key}\n"
-                updated = True
-                break
-        if not updated:
-            lines.append(f"{env_key}={api_key}\n")
-            
-        with open(env_path, "w") as f:
-            f.writelines(lines)
-
-def load_provider_api_key(slug: str, db: Session) -> str:
-    import os
-    app_env = os.getenv("APP_ENV", "development")
-    if app_env == "production":
-        provider = db.query(AIProvider).filter(AIProvider.slug == slug).first()
-        if provider and provider.encrypted_api_key:
-            try:
-                return decrypt_key(provider.encrypted_api_key)
-            except Exception:
-                return ""
-        return ""
-    else:
-        env_key = f"{slug.upper()}_API_KEY"
-        env_path = "d:/Bimba AI/backend/.env"
-        if os.path.exists(env_path):
-            with open(env_path, "r") as f:
-                for line in f.readlines():
-                    if line.strip().startswith(f"{env_key}="):
-                        return line.strip().split("=", 1)[1]
-        return os.getenv(env_key, "")
-
-class SaveProviderConfigPayload(BaseModel):
-    slug: str
-    api_key: Optional[str] = None
-    is_active: Optional[bool] = None
-    priority: Optional[int] = None
-    fallback_enabled: Optional[bool] = None
-    timeout: Optional[int] = None
-    temperature: Optional[float] = None
-    max_tokens: Optional[int] = None
-
-class TestProviderPayload(BaseModel):
-    slug: str
-    api_key: Optional[str] = None
-
-@router.get("/providers")
-def list_all_providers(student: Student = Depends(get_current_student), db: Session = Depends(get_db)):
-    supported_slugs = ["gemini", "openrouter", "groq", "openai", "claude", "deepseek", "mistral"]
-    results = []
-    
-    for slug in supported_slugs:
-        db_prov = db.query(AIProvider).filter(AIProvider.slug == slug).first()
-        actual_key = load_provider_api_key(slug, db)
-        masked = ""
-        if actual_key:
-            masked = f"********************{actual_key[-4:]}" if len(actual_key) > 4 else "****"
-            
-        results.append({
-            "name": db_prov.name if db_prov else slug.title(),
-            "slug": slug,
-            "is_active": db_prov.is_active if db_prov else False,
-            "priority": db_prov.priority if db_prov else 5,
-            "fallback_enabled": db_prov.fallback_enabled if db_prov else True,
-            "timeout": db_prov.timeout if db_prov else 30,
-            "temperature": db_prov.temperature if db_prov else 0.7,
-            "max_tokens": db_prov.max_tokens if db_prov else 4096,
-            "status": db_prov.status if db_prov else "Not Configured",
-            "latency_ms": db_prov.latency_ms if db_prov else 0,
-            "masked_key": masked
-        })
-    return results
-
-@router.post("/providers/save")
-def save_provider_config(payload: SaveProviderConfigPayload, student: Student = Depends(get_current_student), db: Session = Depends(get_db)):
-    db_prov = db.query(AIProvider).filter(AIProvider.slug == payload.slug).first()
-    if not db_prov:
-        db_prov = AIProvider(
-            name=payload.slug.title(),
-            slug=payload.slug,
-            encrypted_api_key=encrypt_key("placeholder_key"),
-            priority=payload.priority or 5
-        )
-        db.add(db_prov)
-        
-    if payload.is_active is not None:
-        db_prov.is_active = payload.is_active
-        db_prov.status = "Connected" if payload.is_active else "Disabled"
-    if payload.priority is not None:
-        db_prov.priority = payload.priority
-    if payload.fallback_enabled is not None:
-        db_prov.fallback_enabled = payload.fallback_enabled
-    if payload.timeout is not None:
-        db_prov.timeout = payload.timeout
-    if payload.temperature is not None:
-        db_prov.temperature = payload.temperature
-    if payload.max_tokens is not None:
-        db_prov.max_tokens = payload.max_tokens
-        
-    db.commit()
-    
-    if payload.api_key is not None and payload.api_key.strip() != "":
-        if not payload.api_key.startswith("*******"):
-            save_provider_api_key(payload.slug, payload.api_key, db)
-            
-    print(f"[AUDIT LOG] Configuration update saved for {payload.slug}")
-    return {"success": True, "message": "Configuration Saved"}
-
-@router.put("/providers/update")
-def update_provider_config(payload: SaveProviderConfigPayload, student: Student = Depends(get_current_student), db: Session = Depends(get_db)):
-    return save_provider_config(payload, student, db)
-
-@router.post("/providers/test")
-def test_provider_connection(payload: TestProviderPayload, student: Student = Depends(get_current_student), db: Session = Depends(get_db)):
-    key_to_test = payload.api_key
-    if not key_to_test or key_to_test.startswith("*******") or key_to_test.strip() == "":
-        key_to_test = load_provider_api_key(payload.slug, db)
-        
-    if not key_to_test:
-        raise HTTPException(status_code=400, detail="No API Key configured to test.")
-        
-    success = len(key_to_test) > 5
-    
-    db_prov = db.query(AIProvider).filter(AIProvider.slug == payload.slug).first()
-    if db_prov:
-        db_prov.status = "Connected" if success else "Failed"
-        db_prov.latency_ms = random.randint(200, 600)
-        db.commit()
-        
-    if success:
-        return {"success": True, "status": "Connected", "latency": f"{random.randint(200, 600)}ms"}
-    else:
-        raise HTTPException(status_code=400, detail="Invalid API Key")
-
-@router.delete("/providers/delete")
-def delete_provider_config(slug: str, student: Student = Depends(get_current_student), db: Session = Depends(get_db)):
-    db_prov = db.query(AIProvider).filter(AIProvider.slug == slug).first()
-    if db_prov:
-        db.delete(db_prov)
-        db.commit()
-    import os
-    app_env = os.getenv("APP_ENV", "development")
-    if app_env != "production":
-        env_key = f"{slug.upper()}_API_KEY"
-        env_path = "d:/Bimba AI/backend/.env"
-        if os.path.exists(env_path):
-            with open(env_path, "r") as f:
-                lines = f.readlines()
-            lines = [line for line in lines if not line.strip().startswith(f"{env_key}=")]
-            with open(env_path, "w") as f:
-                f.writelines(lines)
-    return {"success": True, "message": "Provider configuration reset/deleted successfully."}
-

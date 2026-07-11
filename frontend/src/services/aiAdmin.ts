@@ -1,15 +1,25 @@
 import { apiClient } from './api';
 
 export interface AIProviderData {
-  name: string;
+  id?: number;
+  provider_name: string;
   slug: string;
   masked_key: string;
+  model_name: string;
   priority: number;
-  is_active: boolean;
-  status: string;
-  today_requests: number;
-  latency_ms: number;
-  success_rate: number;
+  temperature: number;
+  top_p: number;
+  max_tokens: number;
+  timeout: number;
+  retry_attempts: number;
+  rate_limit: number;
+  fallback_enabled: boolean;
+  is_enabled: boolean;
+  connection_status: string;
+  last_tested_at?: string;
+  created_at?: string;
+  updated_at?: string;
+  updated_by?: string;
 }
 
 export interface AIAnalyticsData {
@@ -65,12 +75,12 @@ export const aiAdminService = {
     return res.data;
   },
 
-  saveProvider: async (provider: { slug: string; [key: string]: any }): Promise<void> => {
-    await apiClient.post('/api/admin/ai/providers/save', provider);
+  saveProvider: async (provider: Partial<AIProviderData>): Promise<void> => {
+    await apiClient.post('/api/admin/ai/providers', provider);
   },
 
-  updateProvider: async (provider: { slug: string; [key: string]: any }): Promise<void> => {
-    await apiClient.put('/api/admin/ai/providers/update', provider);
+  updateProvider: async (id: number, provider: Partial<AIProviderData>): Promise<void> => {
+    await apiClient.put(`/api/admin/ai/providers/${id}`, provider);
   },
 
   revealKey: async (slug: string, adminPassword: string): Promise<string> => {
@@ -78,13 +88,13 @@ export const aiAdminService = {
     return res.data.api_key;
   },
 
-  testProvider: async (slug: string, api_key?: string): Promise<{ success: boolean; status: string; latency: string; quota: string }> => {
-    const res = await apiClient.post('/api/admin/ai/providers/test', { slug, api_key });
+  testProvider: async (id: number, api_key?: string): Promise<{ success: boolean; status: string }> => {
+    const res = await apiClient.post<{ success: boolean; status: string }>(`/api/admin/ai/providers/${id}/test`, { api_key });
     return res.data;
   },
 
-  deleteProvider: async (slug: string): Promise<void> => {
-    await apiClient.delete(`/api/admin/ai/providers/delete?slug=${slug}`);
+  deleteProvider: async (id: number): Promise<void> => {
+    await apiClient.delete(`/api/admin/ai/providers/${id}`);
   },
 
   getAnalytics: async (): Promise<AIAnalyticsData> => {
