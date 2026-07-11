@@ -223,7 +223,7 @@ export const Dashboard: React.FC = () => {
   const bestResume = resumes.find(r => r.atsScore === Math.max(...resumes.map(x => x.atsScore))) || resumes[0];
 
   return (
-    <div id="top" className="flex flex-col gap-10 min-h-screen bg-[#F8FAFC] text-slate-800 font-sans selection:bg-blue-500/15 select-none pb-12 relative z-10 w-full">
+    <div id="top" className="flex flex-col gap-10 min-h-screen bg-slate-50 text-slate-800 font-sans selection:bg-blue-500/15 select-none pb-12 relative z-10 w-full">
       
       {/* 1. TOP HEADER - REAL DATA */}
       <header className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-4 bg-white border border-slate-200/60 rounded-3xl p-4.5 shadow-sm shadow-slate-100/50">

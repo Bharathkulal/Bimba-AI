@@ -166,7 +166,7 @@ export const Login: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-[#F8FAFC] text-slate-800 flex flex-col items-center justify-center px-6 py-12 relative overflow-hidden font-sans select-none">
+    <div className="min-h-screen flex flex-col items-center justify-center px-6 py-12 relative overflow-hidden font-sans select-none">
       {/* Decorative blurred background shapes */}
       <div className="absolute top-1/4 left-1/4 w-[400px] h-[400px] rounded-full bg-blue-500/5 blur-[120px] pointer-events-none" />
       <div className="absolute bottom-1/4 right-1/4 w-[450px] h-[450px] rounded-full bg-indigo-500/5 blur-[120px] pointer-events-none" />

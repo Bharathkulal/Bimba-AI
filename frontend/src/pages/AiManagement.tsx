@@ -186,7 +186,7 @@ export const AiManagement: React.FC = () => {
   }
 
   return (
-    <div className="flex flex-col gap-8 min-h-screen bg-[#F8FAFC] text-slate-800 font-sans selection:bg-blue-500/15 pb-12 w-full select-none relative z-10">
+    <div className="flex flex-col gap-8 min-h-screen bg-slate-50 text-slate-800 font-sans selection:bg-blue-500/15 pb-12 w-full select-none relative z-10">
       
       {/* HEADER SECTION */}
       <header className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-4 bg-white border border-slate-200/60 rounded-3xl p-5 shadow-sm">

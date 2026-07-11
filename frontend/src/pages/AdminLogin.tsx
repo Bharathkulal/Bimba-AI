@@ -36,7 +36,7 @@ export const AdminLogin: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-[#F8FAFC] flex items-center justify-center font-sans px-6 select-none relative overflow-hidden">
+    <div className="min-h-screen flex items-center justify-center font-sans px-6 select-none relative overflow-hidden">
       {/* Decorative blurred background shapes */}
       <div className="absolute top-[-20%] left-[-20%] w-[60%] h-[60%] rounded-full bg-blue-500/5 blur-[120px] pointer-events-none" />
       <div className="absolute bottom-[-20%] right-[-20%] w-[55%] h-[55%] rounded-full bg-indigo-500/5 blur-[120px] pointer-events-none" />

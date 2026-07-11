@@ -8,6 +8,8 @@ import {
   UserCheck, Activity, Bell, ChevronRight, User, ChevronDown
 } from 'lucide-react';
 import { adminService } from '../services/admin';
+import { ThemeToggle } from '../components/ThemeToggle';
+
 
 export const AdminLayout: React.FC = () => {
   const navigate = useNavigate();
@@ -133,7 +135,7 @@ export const AdminLayout: React.FC = () => {
   const pathParts = location.pathname.split('/').filter(Boolean);
 
   return (
-    <div className="min-h-screen bg-[#F8FAFC] text-slate-800 flex overflow-x-hidden font-sans relative selection:bg-blue-600/10 w-full">
+    <div className="min-h-screen bg-slate-50 text-slate-800 flex overflow-x-hidden font-sans relative selection:bg-blue-600/10 w-full">
       {/* Decorative background glows */}
       <div className="absolute top-[-10%] left-[-10%] w-[50%] h-[50%] rounded-full bg-blue-500/5 blur-[120px] pointer-events-none z-0" />
       <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] rounded-full bg-indigo-500/5 blur-[120px] pointer-events-none z-0" />
@@ -303,6 +305,7 @@ export const AdminLayout: React.FC = () => {
 
           {/* Quick Info & Profile Info */}
           <div className="flex items-center gap-4">
+            <ThemeToggle />
             <span className="text-[10px] font-black uppercase text-emerald-600 bg-emerald-50 border border-emerald-100 px-2 py-0.5 rounded-lg">
               Super Admin
             </span>

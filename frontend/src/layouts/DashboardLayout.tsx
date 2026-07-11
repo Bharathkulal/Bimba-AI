@@ -6,6 +6,8 @@ import {
   User, LogOut
 } from 'lucide-react';
 import { useUserStore } from '../store/userStore';
+import { ThemeToggle } from '../components/ThemeToggle';
+
 
 export const DashboardLayout: React.FC = () => {
   const location = useLocation();
@@ -42,7 +44,7 @@ export const DashboardLayout: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-[#F8FAFC] text-slate-800 flex overflow-x-hidden font-sans relative selection:bg-blue-600/10">
+    <div className="min-h-screen bg-slate-50 text-slate-800 flex overflow-x-hidden font-sans relative selection:bg-blue-600/10">
       {/* Decorative blurred glow elements */}
       <div className="absolute top-[-10%] left-[-10%] w-[50%] h-[50%] rounded-full bg-blue-500/5 blur-[120px] pointer-events-none z-0" />
       <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] rounded-full bg-indigo-500/5 blur-[120px] pointer-events-none z-0" />
@@ -195,6 +197,14 @@ export const DashboardLayout: React.FC = () => {
 
       {/* Content wrapper */}
       <div className="flex-grow pl-0 md:pl-[84px] min-h-screen flex flex-col z-10 w-full">
+        <header className="bg-white/80 backdrop-blur-md border-b border-slate-200/60 h-16 flex items-center justify-between px-6 z-30 shadow-sm sticky top-0">
+          <div className="flex items-center gap-1.5 text-xs font-bold text-slate-800">
+            <span>Student Dashboard</span>
+          </div>
+          <div className="flex items-center gap-3">
+            <ThemeToggle />
+          </div>
+        </header>
         <main className="p-4 md:p-8 flex-grow pb-24 md:pb-8 w-full">
           <Outlet />
         </main>

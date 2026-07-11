@@ -154,6 +154,37 @@ def init_db():
             db.commit()
             print("Successfully seeded default AI configuration!")
 
+        # Seed default students
+        student_count = db.query(Student).count()
+        if student_count == 0:
+            print("Seeding students...")
+            s1 = Student(
+                roll_number="BCA24001",
+                student_name="John Doe",
+                email="student@bimba.ai",
+                dob="15-08-2005",
+                department="BCA",
+                semester=3,
+                status="Active",
+                account_activated=False,
+                otp_verified=False
+            )
+            s2 = Student(
+                roll_number="BCA24002",
+                student_name="Jane Smith",
+                email="jane@bimba.ai",
+                dob="01-01-2005",
+                department="BCA",
+                semester=3,
+                status="Active",
+                password_hash=get_password_hash("Test@12345"),
+                account_activated=True,
+                otp_verified=True
+            )
+            db.add_all([s1, s2])
+            db.commit()
+            print("Successfully seeded student data!")
+            
     except Exception as e:
         print(f"Error seeding database in init_db: {e}")
     finally:

@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { Link, NavLink, useNavigate } from 'react-router-dom';
 import { Menu, X } from 'lucide-react';
 import { Button } from './Button';
+import { ThemeToggle } from './ThemeToggle';
+
 
 export const Navbar: React.FC = () => {
   const [isOpen, setIsOpen] = useState(false);
@@ -72,6 +74,7 @@ export const Navbar: React.FC = () => {
 
         {/* Desktop Call to Actions */}
         <div className="hidden md:flex items-center gap-3">
+          <ThemeToggle />
           <NavLink to="/login">
             <Button variant="ghost" size="sm">
               Log In
@@ -84,13 +87,16 @@ export const Navbar: React.FC = () => {
           </NavLink>
         </div>
 
-        {/* Mobile Menu Button */}
-        <button
-          onClick={() => setIsOpen(!isOpen)}
-          className="md:hidden p-1 text-slate-600 hover:text-slate-900 transition-smooth cursor-pointer"
-        >
-          {isOpen ? <X size={24} /> : <Menu size={24} />}
-        </button>
+        {/* Mobile Menu & Theme Button */}
+        <div className="flex items-center gap-3.5 md:hidden">
+          <ThemeToggle />
+          <button
+            onClick={() => setIsOpen(!isOpen)}
+            className="p-1 text-slate-600 hover:text-slate-900 transition-smooth cursor-pointer"
+          >
+            {isOpen ? <X size={24} /> : <Menu size={24} />}
+          </button>
+        </div>
       </div>
 
       {/* Mobile Sidebar Navigation */}
