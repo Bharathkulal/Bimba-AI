@@ -76,11 +76,11 @@ const floatingVariants: any = {
 export const LandingPage: React.FC = () => {
 
   return (
-    <div className="overflow-hidden bg-slate-50/50">
+    <div className="overflow-hidden bg-white">
       {/* Background soft blurs */}
       <div className="absolute top-0 inset-x-0 h-[1000px] pointer-events-none overflow-hidden z-0">
-        <div className="absolute top-[-10%] left-[-20%] w-[60%] h-[50%] rounded-full bg-blue-200/20 blur-[130px]" />
-        <div className="absolute top-[30%] right-[-20%] w-[50%] h-[50%] rounded-full bg-cyan-200/20 blur-[140px]" />
+        <div className="absolute top-[-10%] left-[-20%] w-[60%] h-[50%] rounded-full bg-emerald-100/10 blur-[130px]" />
+        <div className="absolute top-[30%] right-[-20%] w-[50%] h-[50%] rounded-full bg-emerald-50/10 blur-[140px]" />
       </div>
 
       {/* 1. HERO SECTION */}
@@ -106,7 +106,7 @@ export const LandingPage: React.FC = () => {
             </div>
 
             <h1 className="text-4xl md:text-6xl font-extrabold text-slate-800 tracking-tight leading-[1.1] !my-0">
-              Your <span className="text-primary">professional AI resume</span>, ready in minutes
+              Your <span className="text-emerald-500">professional AI resume</span>, ready in minutes
             </h1>
 
             <p className="text-base md:text-lg text-slate-500 leading-relaxed max-w-lg">
@@ -115,12 +115,12 @@ export const LandingPage: React.FC = () => {
 
             <div className="flex flex-wrap items-center gap-4 mt-2">
               <Link to="/activate">
-                <Button variant="primary" size="lg" className="shadow-lg shadow-blue-500/20 font-semibold gap-2">
+                <Button variant="primary" size="lg" className="shadow-lg shadow-emerald-500/20 font-semibold gap-2">
                   Create AI Resume Now <ArrowRight size={18} />
                 </Button>
               </Link>
               <a href="#templates">
-                <Button variant="outline" size="lg" className="font-semibold border-slate-200 hover:bg-slate-50">
+                <Button variant="outline" size="lg" className="font-semibold border-slate-250 hover:bg-slate-50">
                   Improve My Resume
                 </Button>
               </a>
@@ -188,7 +188,7 @@ export const LandingPage: React.FC = () => {
 
                 {/* Floating "Generate with AI" button on resume */}
                 <div className="absolute bottom-2 left-1/2 -translate-x-1/2 z-20">
-                  <button className="bg-primary hover:bg-blue-700 text-white font-bold text-[9px] px-3.5 py-1.5 rounded-full shadow-md flex items-center gap-1.5 transition-smooth uppercase tracking-wider cursor-pointer">
+                  <button className="bg-emerald-500 hover:bg-emerald-600 text-white font-bold text-[9px] px-3.5 py-1.5 rounded-full shadow-md flex items-center gap-1.5 transition-smooth uppercase tracking-wider cursor-pointer">
                     <Sparkles size={9} /> Generate with AI
                   </button>
                 </div>

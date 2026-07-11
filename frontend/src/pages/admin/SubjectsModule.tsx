@@ -110,7 +110,7 @@ export const SubjectsModule: React.FC = () => {
           <button onClick={fetchData} className="p-2 rounded-xl hover:bg-slate-50 border border-slate-200 text-slate-500 cursor-pointer">
             <RefreshCw size={13} />
           </button>
-          <Button onClick={handleCreateNew} variant="primary" size="sm" className="bg-blue-600 font-bold gap-1 text-[11px]">
+          <Button onClick={handleCreateNew} variant="primary" size="sm" className="bg-emerald-500 font-bold gap-1 text-[11px]">
             <Plus size={14} /> Add Subject
           </Button>
         </div>
@@ -154,7 +154,7 @@ export const SubjectsModule: React.FC = () => {
                   <td className="py-3.5 px-4 text-slate-500 font-bold">{sub.faculty_name || 'Not assigned'}</td>
                   <td className="py-3.5 px-4 text-right">
                     <div className="flex justify-end gap-2 items-center">
-                      <button onClick={() => handleEdit(sub)} className="text-[10px] text-blue-600 font-bold hover:underline cursor-pointer">Edit</button>
+                      <button onClick={() => handleEdit(sub)} className="text-[10px] text-emerald-600 font-bold hover:underline cursor-pointer">Edit</button>
                       <button onClick={() => handleArchive(sub.id)} className="text-[10px] text-orange-500 font-bold hover:underline cursor-pointer" title="Archive Subject">Archive</button>
                       <button onClick={() => handleDelete(sub.id)} className="text-[10px] text-red-650 font-bold hover:underline cursor-pointer">Delete</button>
                     </div>
@@ -254,7 +254,7 @@ export const SubjectsModule: React.FC = () => {
               >
                 Cancel
               </button>
-              <Button type="submit" variant="primary" size="sm" className="bg-blue-600 font-bold text-[11px]">
+              <Button type="submit" variant="primary" size="sm" className="bg-emerald-500 font-bold text-[11px]">
                 Save Subject
               </Button>
             </div>

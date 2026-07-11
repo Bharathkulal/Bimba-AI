@@ -126,8 +126,8 @@ export const AdminDashboardOverview: React.FC = () => {
             <svg className="w-full h-40" viewBox="0 0 600 160">
               <defs>
                 <linearGradient id="chartGradient" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor="#2563EB" stopOpacity="0.2" />
-                  <stop offset="100%" stopColor="#2563EB" stopOpacity="0" />
+                  <stop offset="0%" stopColor="#22C55E" stopOpacity="0.2" />
+                  <stop offset="100%" stopColor="#22C55E" stopOpacity="0" />
                 </linearGradient>
               </defs>
               {/* Grid Lines */}
@@ -144,7 +144,7 @@ export const AdminDashboardOverview: React.FC = () => {
               <path
                 d="M 0 140 L 100 110 L 200 130 L 300 80 L 400 95 L 500 50 L 600 30"
                 fill="none"
-                stroke="#2563EB"
+                stroke="#22C55E"
                 strokeWidth="2.5"
                 strokeLinecap="round"
                 strokeLinejoin="round"
@@ -154,7 +154,7 @@ export const AdminDashboardOverview: React.FC = () => {
                 { x: 0, y: 140 }, { x: 100, y: 110 }, { x: 200, y: 130 },
                 { x: 300, y: 80 }, { x: 400, y: 95 }, { x: 500, y: 50 }, { x: 600, y: 30 }
               ].map((pt, i) => (
-                <circle key={i} cx={pt.x} cy={pt.y} r="4" fill="#FFFFFF" stroke="#2563EB" strokeWidth="2.5" />
+                <circle key={i} cx={pt.x} cy={pt.y} r="4" fill="#FFFFFF" stroke="#22C55E" strokeWidth="2.5" />
               ))}
             </svg>
 
@@ -179,12 +179,12 @@ export const AdminDashboardOverview: React.FC = () => {
 
           <div className="grid grid-cols-2 gap-3 my-5">
             {[
-              { label: 'View Students', path: '/admin/users', icon: Users, color: 'text-blue-600 bg-blue-50 hover:bg-blue-100/70 border-blue-100' },
-              { label: 'AI Provider settings', path: '/admin/ai', icon: Cpu, color: 'text-purple-600 bg-purple-50 hover:bg-purple-100/70 border-purple-100' },
+              { label: 'View Students', path: '/admin/users', icon: Users, color: 'text-slate-800 bg-slate-50 hover:bg-slate-100/70 border-slate-200' },
+              { label: 'AI Provider settings', path: '/admin/ai', icon: Cpu, color: 'text-slate-800 bg-slate-50 hover:bg-slate-100/70 border-slate-200' },
               { label: 'Import Datasets', path: '/admin/datasets', icon: Database, color: 'text-emerald-600 bg-emerald-50 hover:bg-emerald-100/70 border-emerald-100' },
-              { label: 'System Health', path: '/admin/monitor', icon: Server, color: 'text-orange-600 bg-orange-50 hover:bg-orange-100/70 border-orange-100' },
-              { label: 'Manage Roles', path: '/admin/admins', icon: ShieldCheck, color: 'text-rose-600 bg-rose-50 hover:bg-rose-100/70 border-rose-100' },
-              { label: 'Email Logs', path: '/admin/email', icon: Mail, color: 'text-cyan-600 bg-cyan-50 hover:bg-cyan-100/70 border-cyan-100' }
+              { label: 'System Health', path: '/admin/monitor', icon: Server, color: 'text-slate-800 bg-slate-50 hover:bg-slate-100/70 border-slate-200' },
+              { label: 'Manage Roles', path: '/admin/admins', icon: ShieldCheck, color: 'text-slate-800 bg-slate-50 hover:bg-slate-100/70 border-slate-200' },
+              { label: 'Email Logs', path: '/admin/email', icon: Mail, color: 'text-slate-800 bg-slate-50 hover:bg-slate-100/70 border-slate-200' }
             ].map((btn, idx) => {
               const Icon = btn.icon;
               return (

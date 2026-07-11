@@ -76,7 +76,7 @@ export const StudentsModule: React.FC = () => {
           {/* left column: General identity card */}
           <div className="flex flex-col gap-6">
             <div className="bg-white border border-slate-200/60 rounded-3xl p-6 shadow-sm flex flex-col items-center text-center">
-              <div className="w-16 h-16 rounded-full bg-blue-50 border border-blue-200 text-blue-600 flex items-center justify-center font-black text-xl shadow-sm mb-4">
+              <div className="w-16 h-16 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-600 flex items-center justify-center font-black text-xl shadow-sm mb-4">
                 {selectedStudent.roll_number.substring(0, 2).toUpperCase()}
               </div>
               <h3 className="font-extrabold text-base text-slate-800">{selectedStudent.roll_number}</h3>
@@ -87,7 +87,7 @@ export const StudentsModule: React.FC = () => {
                   <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Account state</span>
                   <span className={`px-2 py-0.5 rounded text-[9px] font-black uppercase border ${
                     selectedStudent.status === 'Active' 
-                      ? 'bg-emerald-50 border-emerald-100 text-emerald-600' 
+                      ? 'bg-emerald-55 border-emerald-100 text-emerald-600' 
                       : 'bg-rose-50 border-rose-100 text-rose-600'
                   }`}>
                     {selectedStudent.status}
@@ -108,7 +108,7 @@ export const StudentsModule: React.FC = () => {
             <div className="bg-white border border-slate-200/60 rounded-3xl p-6 shadow-sm flex flex-col gap-4">
               <h4 className="font-extrabold text-xs text-slate-800 uppercase tracking-wider">Resume Analytics</h4>
               <div className="flex items-center gap-4 bg-slate-50 border border-slate-100 p-3.5 rounded-2xl">
-                <div className="w-10 h-10 rounded-xl bg-blue-50 border border-blue-100 flex items-center justify-center text-blue-600 shrink-0">
+                <div className="w-10 h-10 rounded-xl bg-emerald-50 border border-emerald-100 flex items-center justify-center text-emerald-600 shrink-0">
                   <GraduationCap size={18} />
                 </div>
                 <div>
@@ -180,7 +180,7 @@ export const StudentsModule: React.FC = () => {
                       </div>
                     </div>
                     <div className="text-right shrink-0">
-                      <span className="text-[9px] font-black uppercase text-blue-600 bg-blue-50/50 border border-blue-100 px-2 py-0.5 rounded-lg">
+                      <span className="text-[9px] font-black uppercase text-emerald-600 bg-emerald-50 border border-emerald-100 px-2 py-0.5 rounded-lg">
                         {act.type}
                       </span>
                       <span className="text-[9px] text-slate-400 font-bold block mt-1">{act.time}</span>

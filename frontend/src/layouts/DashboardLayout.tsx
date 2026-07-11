@@ -59,7 +59,7 @@ export const DashboardLayout: React.FC = () => {
         <div className="flex flex-col gap-8">
           {/* Logo / Bimba Dock Header */}
           <div className="flex items-center gap-3.5 px-2.5 overflow-hidden">
-            <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-blue-600 to-indigo-600 flex items-center justify-center text-white font-black text-xl shadow-lg shadow-blue-500/20 shrink-0">
+            <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-emerald-500 to-emerald-600 flex items-center justify-center text-white font-black text-xl shadow-lg shadow-emerald-500/20 shrink-0">
               B
             </div>
             <AnimatePresence>
@@ -91,7 +91,7 @@ export const DashboardLayout: React.FC = () => {
                   onClick={() => handleNavClick(item)}
                   className={`flex items-center w-full px-3 py-3 rounded-xl transition-all duration-250 relative group cursor-pointer ${
                     isActive 
-                      ? 'text-blue-600' 
+                      ? 'text-emerald-600' 
                       : 'text-slate-500 hover:text-slate-800 hover:bg-slate-100/50'
                   }`}
                 >
@@ -99,12 +99,12 @@ export const DashboardLayout: React.FC = () => {
                   {isActive && (
                     <motion.div 
                       layoutId="activeGlowLight" 
-                      className="absolute inset-0 rounded-xl bg-blue-50 border border-blue-200/50 shadow-sm pointer-events-none"
+                      className="absolute inset-0 rounded-xl bg-emerald-50 border border-emerald-200/50 shadow-sm pointer-events-none"
                     />
                   )}
 
                   <div className="flex items-center shrink-0 justify-center w-6 h-6 z-10 relative">
-                    <Icon size={20} className={isActive ? 'text-blue-600' : 'text-slate-400 group-hover:text-slate-650'} />
+                    <Icon size={20} className={isActive ? 'text-emerald-600' : 'text-slate-400 group-hover:text-slate-655'} />
                   </div>
                   
                   <AnimatePresence>
@@ -177,9 +177,9 @@ export const DashboardLayout: React.FC = () => {
               onClick={() => handleNavClick(item)}
               className="flex flex-col items-center justify-center p-2 relative cursor-pointer"
             >
-              <Icon size={18} className={isActive ? 'text-blue-600' : 'text-slate-400'} />
+              <Icon size={18} className={isActive ? 'text-emerald-600' : 'text-slate-400'} />
               {isActive && (
-                <span className="absolute bottom-[-2px] w-1.5 h-1.5 rounded-full bg-blue-600" />
+                <span className="absolute bottom-[-2px] w-1.5 h-1.5 rounded-full bg-emerald-600" />
               )}
             </button>
           );
@@ -189,7 +189,7 @@ export const DashboardLayout: React.FC = () => {
           onClick={() => navigate('/settings')}
           className="flex flex-col items-center justify-center p-2 cursor-pointer"
         >
-          <Settings size={18} className={location.pathname === '/settings' ? 'text-blue-600' : 'text-slate-400'} />
+          <Settings size={18} className={location.pathname === '/settings' ? 'text-emerald-600' : 'text-slate-400'} />
         </button>
       </nav>
 

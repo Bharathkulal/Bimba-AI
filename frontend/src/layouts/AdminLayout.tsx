@@ -131,7 +131,7 @@ export const AdminLayout: React.FC = () => {
                   onClick={() => handleNavClick(item.path)}
                   className={`flex items-center w-full px-3 py-3 rounded-xl transition-all duration-250 relative group cursor-pointer ${
                     isActive 
-                      ? 'text-blue-600' 
+                      ? 'text-emerald-500' 
                       : 'text-slate-500 hover:text-slate-800 hover:bg-slate-100/50'
                   }`}
                 >
@@ -139,12 +139,12 @@ export const AdminLayout: React.FC = () => {
                   {isActive && (
                     <motion.div 
                       layoutId="activeGlowLightAdmin" 
-                      className="absolute inset-0 rounded-xl bg-blue-50 border border-blue-200/50 shadow-sm pointer-events-none"
+                      className="absolute inset-0 rounded-xl bg-emerald-50 border border-emerald-200/50 shadow-sm pointer-events-none"
                     />
                   )}
 
                   <div className="flex items-center shrink-0 justify-center w-6 h-6 z-10 relative">
-                    <Icon size={20} className={isActive ? 'text-blue-600' : 'text-slate-400 group-hover:text-slate-650'} />
+                    <Icon size={20} className={isActive ? 'text-emerald-500' : 'text-slate-400 group-hover:text-slate-655'} />
                   </div>
                   
                   <AnimatePresence>
@@ -219,7 +219,7 @@ export const AdminLayout: React.FC = () => {
 
           {/* Quick Info & Profile Info */}
           <div className="flex items-center gap-4">
-            <span className="text-[10px] font-black uppercase text-blue-650 bg-blue-50 border border-blue-100 px-2 py-0.5 rounded-lg">
+            <span className="text-[10px] font-black uppercase text-emerald-600 bg-emerald-50 border border-emerald-100 px-2 py-0.5 rounded-lg">
               Super Admin
             </span>
             <div className="w-8 h-8 rounded-full bg-slate-100 border border-slate-200 flex items-center justify-center text-slate-500 shadow-sm">

@@ -147,7 +147,7 @@ export const UsersModule: React.FC = () => {
                     </div>
                   </td>
                   <td className="py-3.5 px-4">
-                    <span className="bg-blue-50/60 border border-blue-100 text-blue-650 px-2 py-0.5 rounded-lg text-[10px] font-black">
+                    <span className="bg-emerald-50 border border-emerald-100 text-emerald-600 px-2 py-0.5 rounded-lg text-[10px] font-black">
                       {user.resumes_count} resumes
                     </span>
                   </td>

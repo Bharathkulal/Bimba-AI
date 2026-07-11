@@ -2,15 +2,15 @@
 @import "tailwindcss";
 
 @theme {
-  --color-primary: #2563EB;
-  --color-secondary: #3B82F6;
-  --color-accent: #60A5FA;
-  --color-bg-base: #F8FAFC;
+  --color-primary: #22C55E;
+  --color-secondary: #16A34A;
+  --color-accent: #DCFCE7;
+  --color-bg-base: #FFFFFF;
   --color-card-bg: #FFFFFF;
   
   --font-sans: 'Inter', sans-serif;
   
-  --radius-card: 20px;
+  --radius-card: 18px;
 }
 
 html {
@@ -21,7 +21,7 @@ html {
 @layer base {
   body {
     background-color: var(--color-bg-base);
-    color: #1E293B; /* Slate 800 */
+    color: #111827; /* Primary Text */
     font-family: 'Inter', sans-serif;
     overflow-x: hidden;
     -webkit-font-smoothing: antialiased;

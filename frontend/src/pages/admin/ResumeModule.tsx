@@ -60,10 +60,10 @@ export const ResumeModule: React.FC = () => {
 
         <div className="grid grid-cols-1 md:grid-cols-3 xl:grid-cols-5 gap-5">
           {templates.map((tpl) => (
-            <div key={tpl.id} className="bg-slate-50/50 p-4 border border-slate-150 rounded-2xl flex flex-col justify-between min-h-36 hover:border-blue-300 transition-all duration-200">
+            <div key={tpl.id} className="bg-slate-50/50 p-4 border border-slate-150 rounded-2xl flex flex-col justify-between min-h-36 hover:border-emerald-300 transition-all duration-200">
               <div>
                 <div className="flex justify-between items-start">
-                  <span className="bg-blue-50/70 border border-blue-100 text-blue-650 px-2 py-0.5 rounded text-[8px] font-black uppercase">
+                  <span className="bg-emerald-50/70 border border-emerald-100 text-emerald-650 px-2 py-0.5 rounded text-[8px] font-black uppercase">
                     {tpl.category}
                   </span>
                   <span className="text-[9px] font-black text-slate-400">ATS: {tpl.score}%</span>
@@ -132,7 +132,7 @@ export const ResumeModule: React.FC = () => {
                     <td className="py-3.5 px-4 font-bold text-slate-550">{resume.student_roll}</td>
                     <td className="py-3.5 px-4 font-semibold text-slate-450">{resume.template}</td>
                     <td className="py-3.5 px-4">
-                      <span className="bg-blue-50/60 border border-blue-100 text-blue-650 px-2 py-0.5 rounded-lg text-[9px] font-black">
+                      <span className="bg-emerald-50 border border-emerald-100 text-emerald-600 px-2 py-0.5 rounded-lg text-[9px] font-black">
                         ATS {resume.ats_score}%
                       </span>
                     </td>
