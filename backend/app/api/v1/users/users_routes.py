@@ -55,11 +55,8 @@ def log_audit(db: Session, admin_username: str, operation: str, status_val: str,
 def get_current_admin(request: Request, db: Session = Depends(get_db)) -> AdminUser:
     auth_header = request.headers.get("Authorization")
     if not auth_header or not auth_header.startswith("Bearer "):
-        # Local development convenience fallback
-        admin = db.query(AdminUser).filter(AdminUser.username == settings.ADMIN_USERNAME).first()
-        if admin:
-            return admin
         raise HTTPException(status_code=401, detail="Unauthorized")
+
     
     token = auth_header.split(" ")[1]
     username = verify_token(token)

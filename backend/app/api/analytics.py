@@ -17,14 +17,11 @@ oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/auth/login", auto_error=Fals
 
 def get_current_student(token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)) -> Student:
     if not token:
-        # Fallback to dev student for local development
-        dev_student = db.query(Student).filter(Student.roll_number == "BCA25008").first()
-        if dev_student:
-            return dev_student
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Not authenticated",
         )
+
     roll_number = verify_token(token)
     if not roll_number:
         raise HTTPException(
