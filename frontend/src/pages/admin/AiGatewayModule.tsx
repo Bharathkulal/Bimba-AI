@@ -203,76 +203,7 @@ export const AiGatewayModule: React.FC = () => {
     }
   };
 
-  const handleSaveInlineProvider = async (slug: string) => {
-    const pState = providerStates[slug];
-    if (!pState) return;
-    try {
-      setTestingSlugs(prev => ({ ...prev, [slug]: true }));
-      
-      const payload: any = {
-        provider_name: slug.charAt(0).toUpperCase() + slug.slice(1),
-        slug: slug,
-        api_key: pState.api_key || undefined,
-        model_name: pState.model,
-        priority: pState.priority,
-        temperature: pState.temperature,
-        max_tokens: pState.max_tokens,
-        timeout: pState.timeout,
-        retry_attempts: pState.retry_attempts,
-        rate_limit: pState.rate_limit,
-        fallback_enabled: pState.fallback_enabled,
-        is_enabled: pState.is_active
-      };
 
-      if (pState.id) {
-        await aiAdminService.updateProvider(pState.id, payload);
-        showToast(`Configuration updated for ${slug}.`, 'success');
-      } else {
-        await aiAdminService.saveProvider(payload);
-        showToast(`Configuration saved for ${slug}.`, 'success');
-      }
-      
-      loadConfig();
-    } catch (err: any) {
-      showToast(err.response?.data?.detail || "Failed to save configuration.", 'error');
-    } finally {
-      setTestingSlugs(prev => ({ ...prev, [slug]: false }));
-    }
-  };
-
-  const handleDeleteProvider = async (slug: string) => {
-    const pState = providerStates[slug];
-    if (!pState || !pState.id) return;
-    try {
-      if (window.confirm(`Are you sure you want to completely delete the configuration for ${slug}?`)) {
-        await aiAdminService.deleteProvider(pState.id);
-        showToast(`Deleted configuration for ${slug}.`, 'success');
-        loadConfig();
-      }
-    } catch (err) {
-      showToast("Failed to delete configuration.", 'error');
-    }
-  };
-
-  const triggerReveal = (slug: string) => {
-    setRevealKeySlug(slug);
-    setVerifyPassword('');
-    setShowPasswordModal(true);
-  };
-
-  const handleRevealKey = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!revealKeySlug || !verifyPassword) return;
-    try {
-      const key = await aiAdminService.revealKey(revealKeySlug, verifyPassword);
-      setRevealedKeys(prev => ({ ...prev, [revealKeySlug]: key }));
-      setRevealingKeys(prev => ({ ...prev, [revealKeySlug]: true }));
-      setShowPasswordModal(false);
-      showToast("Key decrypted and revealed.", 'success');
-    } catch (err) {
-      showToast("Incorrect password.", 'error');
-    }
-  };
 
   const handleSaveModelMapping = async (feature: string, prov: string, modelName: string, temp: number, maxTokens: number) => {
     try {
@@ -532,52 +463,14 @@ export const AiGatewayModule: React.FC = () => {
                       {/* Fields Form */}
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-1">
                         
-                        {/* API Key */}
-                        <div className="flex flex-col gap-1 md:col-span-2">
-                          <label className="text-[10px] text-slate-400 font-extrabold uppercase tracking-wider">Secret API Key</label>
-                          <div className="flex gap-2">
-                            <input
-                              type={isRevealed ? 'text' : 'password'}
-                              disabled={!isSuperAdmin}
-                              placeholder="Insert API key..."
-                              value={isRevealed ? (revealedKeys[item.slug] || state.api_key) : (state.api_key || (state.masked_key !== 'Not Configured' ? state.masked_key : ''))}
-                              onChange={(e) => setProviderStates(prev => ({
-                                ...prev,
-                                [item.slug]: { ...prev[item.slug], api_key: e.target.value }
-                              }))}
-                              className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-semibold text-slate-700 disabled:opacity-75 focus:outline-emerald-600"
-                            />
-                            {isSuperAdmin && (
-                              isRevealed ? (
-                                <button 
-                                  onClick={() => setRevealingKeys(prev => ({ ...prev, [item.slug]: false }))}
-                                  className="p-2 border border-slate-200 hover:bg-slate-50 text-slate-500 rounded-xl cursor-pointer shrink-0"
-                                >
-                                  <EyeOff size={14} />
-                                </button>
-                              ) : (
-                                <button 
-                                  onClick={() => triggerReveal(item.slug)}
-                                  className="p-2 border border-slate-200 hover:bg-slate-50 text-slate-500 rounded-xl cursor-pointer shrink-0"
-                                >
-                                  <Eye size={14} />
-                                </button>
-                              )
-                            )}
-                          </div>
-                        </div>
-
                         {/* Model Dropdown */}
                         <div className="flex flex-col gap-1">
                           <label className="text-[10px] text-slate-400 font-extrabold uppercase tracking-wider">Default Model</label>
                           <select
-                            disabled={!isSuperAdmin}
+                            disabled={true}
                             value={state.model}
-                            onChange={(e) => setProviderStates(prev => ({
-                              ...prev,
-                              [item.slug]: { ...prev[item.slug], model: e.target.value }
-                            }))}
-                            className="bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 cursor-pointer font-bold text-slate-700 w-full focus:outline-emerald-600"
+                            onChange={() => {}}
+                            className="bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 cursor-not-allowed font-bold text-slate-500 w-full focus:outline-none"
                           >
                             {item.models.map((mOpt) => (
                               <option key={mOpt} value={mOpt}>{mOpt}</option>
@@ -590,29 +483,23 @@ export const AiGatewayModule: React.FC = () => {
                           <label className="text-[10px] text-slate-400 font-extrabold uppercase tracking-wider">Routing Priority</label>
                           <input
                             type="number"
-                            disabled={!isSuperAdmin}
+                            disabled={true}
                             value={state.priority}
-                            onChange={(e) => setProviderStates(prev => ({
-                              ...prev,
-                              [item.slug]: { ...prev[item.slug], priority: parseInt(e.target.value) || 5 }
-                            }))}
-                            className="bg-slate-50 border border-slate-200 rounded-xl px-3 py-1.8 text-xs font-bold text-slate-700 w-full focus:outline-emerald-600"
+                            onChange={() => {}}
+                            className="bg-slate-50 border border-slate-200 rounded-xl px-3 py-1.8 text-xs font-bold text-slate-500 w-full focus:outline-none cursor-not-allowed"
                           />
                         </div>
 
                         {/* Fallback Toggle */}
                         <div className="flex flex-col gap-1 justify-center sm:col-span-2">
                           <span className="text-[10px] text-slate-400 font-extrabold uppercase tracking-wider">Fallback / Failover Route</span>
-                          <label className="flex items-center gap-2 cursor-pointer font-bold select-none text-[11px] text-slate-700 mt-1">
+                          <label className="flex items-center gap-2 cursor-not-allowed font-bold select-none text-[11px] text-slate-500 mt-1">
                             <input
                               type="checkbox"
-                              disabled={!isSuperAdmin}
+                              disabled={true}
                               checked={state.fallback_enabled}
-                              onChange={(e) => setProviderStates(prev => ({
-                                ...prev,
-                                [item.slug]: { ...prev[item.slug], fallback_enabled: e.target.checked }
-                              }))}
-                              className="w-4 h-4 text-emerald-600 rounded bg-slate-50 border-slate-200 cursor-pointer disabled:opacity-50"
+                              onChange={() => {}}
+                              className="w-4 h-4 text-emerald-600 rounded bg-slate-50 border-slate-200 cursor-not-allowed disabled:opacity-50"
                             />
                             Failover routing fallback enabled
                           </label>
@@ -624,13 +511,10 @@ export const AiGatewayModule: React.FC = () => {
                           <input
                             type="number"
                             step="0.1"
-                            disabled={!isSuperAdmin}
+                            disabled={true}
                             value={state.temperature}
-                            onChange={(e) => setProviderStates(prev => ({
-                              ...prev,
-                              [item.slug]: { ...prev[item.slug], temperature: parseFloat(e.target.value) || 0.7 }
-                            }))}
-                            className="bg-slate-50 border border-slate-200 rounded-xl px-3 py-1.8 text-xs font-bold text-slate-700 w-full focus:outline-emerald-600"
+                            onChange={() => {}}
+                            className="bg-slate-50 border border-slate-200 rounded-xl px-3 py-1.8 text-xs font-bold text-slate-500 w-full focus:outline-none cursor-not-allowed"
                           />
                         </div>
 
@@ -639,13 +523,10 @@ export const AiGatewayModule: React.FC = () => {
                           <label className="text-[10px] text-slate-400 font-extrabold uppercase tracking-wider">Max Tokens Limit</label>
                           <input
                             type="number"
-                            disabled={!isSuperAdmin}
+                            disabled={true}
                             value={state.max_tokens}
-                            onChange={(e) => setProviderStates(prev => ({
-                              ...prev,
-                              [item.slug]: { ...prev[item.slug], max_tokens: parseInt(e.target.value) || 4096 }
-                            }))}
-                            className="bg-slate-50 border border-slate-200 rounded-xl px-3 py-1.8 text-xs font-bold text-slate-700 w-full focus:outline-emerald-600"
+                            onChange={() => {}}
+                            className="bg-slate-50 border border-slate-200 rounded-xl px-3 py-1.8 text-xs font-bold text-slate-500 w-full focus:outline-none cursor-not-allowed"
                           />
                         </div>
 
@@ -654,13 +535,10 @@ export const AiGatewayModule: React.FC = () => {
                           <label className="text-[10px] text-slate-400 font-extrabold uppercase tracking-wider">Timeout (sec)</label>
                           <input
                             type="number"
-                            disabled={!isSuperAdmin}
+                            disabled={true}
                             value={state.timeout}
-                            onChange={(e) => setProviderStates(prev => ({
-                              ...prev,
-                              [item.slug]: { ...prev[item.slug], timeout: parseInt(e.target.value) || 30 }
-                            }))}
-                            className="bg-slate-50 border border-slate-200 rounded-xl px-3 py-1.8 text-xs font-bold text-slate-700 w-full focus:outline-emerald-600"
+                            onChange={() => {}}
+                            className="bg-slate-50 border border-slate-200 rounded-xl px-3 py-1.8 text-xs font-bold text-slate-500 w-full focus:outline-none cursor-not-allowed"
                           />
                         </div>
 
@@ -669,13 +547,10 @@ export const AiGatewayModule: React.FC = () => {
                           <label className="text-[10px] text-slate-400 font-extrabold uppercase tracking-wider">Retry Attempts</label>
                           <input
                             type="number"
-                            disabled={!isSuperAdmin}
+                            disabled={true}
                             value={state.retry_attempts}
-                            onChange={(e) => setProviderStates(prev => ({
-                              ...prev,
-                              [item.slug]: { ...prev[item.slug], retry_attempts: parseInt(e.target.value) || 3 }
-                            }))}
-                            className="bg-slate-50 border border-slate-200 rounded-xl px-3 py-1.8 text-xs font-bold text-slate-700 w-full focus:outline-emerald-600"
+                            onChange={() => {}}
+                            className="bg-slate-50 border border-slate-200 rounded-xl px-3 py-1.8 text-xs font-bold text-slate-500 w-full focus:outline-none cursor-not-allowed"
                           />
                         </div>
 
@@ -684,13 +559,10 @@ export const AiGatewayModule: React.FC = () => {
                           <label className="text-[10px] text-slate-400 font-extrabold uppercase tracking-wider">Rate Limit (req/min)</label>
                           <input
                             type="number"
-                            disabled={!isSuperAdmin}
+                            disabled={true}
                             value={state.rate_limit}
-                            onChange={(e) => setProviderStates(prev => ({
-                              ...prev,
-                              [item.slug]: { ...prev[item.slug], rate_limit: parseInt(e.target.value) || 60 }
-                            }))}
-                            className="bg-slate-50 border border-slate-200 rounded-xl px-3 py-1.8 text-xs font-bold text-slate-700 w-full focus:outline-emerald-600"
+                            onChange={() => {}}
+                            className="bg-slate-50 border border-slate-200 rounded-xl px-3 py-1.8 text-xs font-bold text-slate-500 w-full focus:outline-none cursor-not-allowed"
                           />
                         </div>
 
@@ -701,26 +573,11 @@ export const AiGatewayModule: React.FC = () => {
                         <div className="flex gap-2 border-t border-slate-100 pt-4 mt-2">
                           <button
                             type="button"
-                            onClick={() => handleDeleteProvider(item.slug)}
-                            className="p-2.5 rounded-xl border border-red-100 hover:bg-red-50 text-red-500 font-bold cursor-pointer shrink-0 transition-colors"
-                            title="Delete Configuration"
-                          >
-                            <Trash2 size={14} />
-                          </button>
-                          <button
-                            type="button"
                             disabled={testingSlugs[item.slug]}
                             onClick={() => handleTestConnection(item.slug)}
-                            className="flex-1 py-2 rounded-xl border border-slate-200 text-xs font-bold text-slate-700 hover:bg-slate-50 cursor-pointer text-center"
+                            className="w-full py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-xs font-bold text-white cursor-pointer text-center transition-colors"
                           >
-                            {testingSlugs[item.slug] ? 'Testing...' : 'Test Connection'}
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => handleSaveInlineProvider(item.slug)}
-                            className="flex-1 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-xs font-bold text-white cursor-pointer text-center transition-colors"
-                          >
-                            Save Config
+                            {testingSlugs[item.slug] ? 'Testing Connection...' : 'Test Connection'}
                           </button>
                         </div>
                       )}
@@ -1019,45 +876,7 @@ export const AiGatewayModule: React.FC = () => {
         </div>
       )}
 
-      {/* Password Prompt Verification Modal */}
-      {showPasswordModal && (
-        <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <form onSubmit={handleRevealKey} className="bg-white border border-slate-200 rounded-3xl p-6 w-full max-w-sm flex flex-col gap-4 shadow-2xl">
-            <div>
-              <h3 className="font-extrabold text-sm text-slate-900">Security Verification</h3>
-              <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider mt-1">Please insert your administrative password to decrypt key</p>
-            </div>
-            
-            <div className="flex flex-col gap-1">
-              <label className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Admin Password</label>
-              <input
-                type="password"
-                required
-                value={verifyPassword}
-                onChange={(e) => setVerifyPassword(e.target.value)}
-                placeholder="Insert administrator password..."
-                className="bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-700 font-semibold focus:outline-emerald-600"
-              />
-            </div>
 
-            <div className="flex gap-2 justify-end mt-2">
-              <button 
-                type="button" 
-                onClick={() => setShowPasswordModal(false)}
-                className="px-3.5 py-1.8 bg-slate-100 hover:bg-slate-200 rounded-xl text-xs font-bold text-slate-600 cursor-pointer"
-              >
-                Cancel
-              </button>
-              <button 
-                type="submit" 
-                className="px-3.5 py-1.8 bg-emerald-600 hover:bg-emerald-700 rounded-xl text-xs font-bold text-white cursor-pointer"
-              >
-                Decrypt & Reveal
-              </button>
-            </div>
-          </form>
-        </div>
-      )}
 
     </div>
   );

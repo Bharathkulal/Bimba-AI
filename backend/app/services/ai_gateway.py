@@ -86,9 +86,11 @@ def call_claude(api_key: str, model: str, prompt: str, temperature: float, max_t
         return res_data["content"][0]["text"]
 
 def execute_llm_call(provider: AIProvider, prompt: str) -> str:
-    api_key = decrypt_key(provider.encrypted_api_key)
+    import os
+    env_key = f"{provider.slug.upper()}_API_KEY"
+    api_key = os.getenv(env_key, "").strip()
     if not api_key:
-        raise ValueError("API key decryption failed or empty")
+        raise ValueError(f"API key for {provider.slug} is missing in backend .env configuration")
         
     model = provider.model_name or "default"
     temp = provider.temperature if provider.temperature is not None else 0.7
@@ -152,8 +154,9 @@ def run_ai_gateway_request(
         
         for attempt in range(retries):
             try:
-                # If key is mock, return simulated response to avoid live calls blocking
-                decrypted_key = decrypt_key(provider.encrypted_api_key)
+                import os
+                env_key = f"{provider.slug.upper()}_API_KEY"
+                decrypted_key = os.getenv(env_key, "").strip()
                 if decrypted_key.startswith("mock_") or "mock" in decrypted_key.lower():
                     # Simulate successful response
                     latency = int((time.time() - start_time) * 1000)

@@ -105,12 +105,11 @@ def init_db():
         providers_count = db.query(AIProvider).count()
         if providers_count == 0:
             print("Seeding AI Providers and Admin settings...")
-            from app.utils.crypto import encrypt_key
             
             p1 = AIProvider(
                 name="Gemini",
                 slug="gemini",
-                encrypted_api_key=encrypt_key("AIzaSyB1-mockGeminiKey92348572"),
+                encrypted_api_key=None,
                 priority=1,
                 is_active=True,
                 status="Healthy",
@@ -121,7 +120,7 @@ def init_db():
             p2 = AIProvider(
                 name="OpenRouter",
                 slug="openrouter",
-                encrypted_api_key=encrypt_key("sk-or-v1-mockOpenRouterKey2384723"),
+                encrypted_api_key=None,
                 priority=2,
                 is_active=True,
                 status="Connected",
@@ -132,7 +131,7 @@ def init_db():
             p3 = AIProvider(
                 name="Groq",
                 slug="groq",
-                encrypted_api_key=encrypt_key("gsk_mockGroqAPIKey238472938479"),
+                encrypted_api_key=None,
                 priority=3,
                 is_active=True,
                 status="Connected",

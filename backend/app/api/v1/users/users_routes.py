@@ -66,7 +66,13 @@ def get_current_admin(request: Request, db: Session = Depends(get_db)) -> AdminU
         raise HTTPException(status_code=401, detail="Invalid token")
         
     admin = db.query(AdminUser).filter(AdminUser.username == username).first()
-    if not admin or not admin.is_active:
+    if not admin:
+        student = db.query(Student).filter(Student.roll_number == username).first()
+        if student:
+            raise HTTPException(status_code=403, detail="Forbidden: Students are not allowed to access AI Settings")
+        raise HTTPException(status_code=401, detail="Unauthorized")
+        
+    if not admin.is_active:
         raise HTTPException(status_code=401, detail="Admin account is disabled")
         
     if admin.force_logout:

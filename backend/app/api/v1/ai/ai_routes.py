@@ -139,6 +139,11 @@ def test_provider_api(slug: str, api_key: str, timeout: int = 10) -> tuple[bool,
 
 # --- ENDPOINTS ---
 
+def get_key_from_env(slug: str) -> str:
+    import os
+    env_key = f"{slug.upper()}_API_KEY"
+    return os.getenv(env_key, "").strip()
+
 @router.get("/providers")
 def list_providers(
     request: Request,
@@ -147,41 +152,20 @@ def list_providers(
 ):
     providers = db.query(AIProvider).order_by(AIProvider.priority.asc()).all()
     
-    # Regular admins can only see status/metadata, no configuration details
-    if admin.role != "super_admin":
-        result = []
-        for p in providers:
-            result.append({
-                "id": p.id,
-                "provider_name": p.provider_name,
-                "slug": p.slug,
-                "connection_status": p.connection_status,
-                "is_enabled": p.is_enabled,
-                "last_tested_at": p.last_tested_at.isoformat() if p.last_tested_at else None
-            })
-        return result
-        
-    # Super Admin gets the config fields but the API key must be masked
     result = []
     for p in providers:
-        masked = ""
-        if p.encrypted_api_key:
-            try:
-                decrypted = decrypt_key(p.encrypted_api_key)
-                if decrypted and decrypted != "placeholder_key":
-                    masked = "*" * 20 + decrypted[-4:] if len(decrypted) > 4 else "****"
-                else:
-                    masked = "Not Configured"
-            except Exception:
-                masked = "Decryption Error"
-        else:
-            masked = "Not Configured"
-            
+        has_key = len(get_key_from_env(p.slug)) > 0
+        status_text = p.connection_status
+        if not has_key:
+            status_text = "🔴 Not Configured"
+        elif status_text == "Not Configured":
+            status_text = "🟢 Configured (.env)"
+
         result.append({
             "id": p.id,
             "provider_name": p.provider_name,
             "slug": p.slug,
-            "masked_key": masked,
+            "masked_key": "",
             "model_name": p.model_name,
             "priority": p.priority,
             "temperature": p.temperature,
@@ -192,121 +176,13 @@ def list_providers(
             "rate_limit": p.rate_limit,
             "fallback_enabled": p.fallback_enabled,
             "is_enabled": p.is_enabled,
-            "connection_status": p.connection_status,
+            "connection_status": status_text,
             "last_tested_at": p.last_tested_at.isoformat() if p.last_tested_at else None,
             "created_at": p.created_at.isoformat() if p.created_at else None,
             "updated_at": p.updated_at.isoformat() if p.updated_at else None,
             "updated_by": p.updated_by
         })
     return result
-
-@router.post("/providers")
-def save_provider(
-    payload: SaveProviderRequest,
-    request: Request,
-    admin: AdminUser = Depends(get_current_admin),
-    db: Session = Depends(get_db)
-):
-    if admin.role != "super_admin":
-        raise HTTPException(status_code=403, detail="Permission Denied. Super Admin access required.")
-        
-    existing = db.query(AIProvider).filter(AIProvider.slug == payload.slug).first()
-    if existing:
-        raise HTTPException(status_code=400, detail="Provider configuration already exists. Use PUT to update.")
-        
-    if not payload.api_key or payload.api_key.startswith("***") or payload.api_key.strip() == "":
-        raise HTTPException(status_code=400, detail="A valid API Key is required for new configurations.")
-        
-    provider = AIProvider(
-        provider_name=payload.provider_name,
-        slug=payload.slug,
-        encrypted_api_key=encrypt_key(payload.api_key),
-        model_name=payload.model_name,
-        priority=payload.priority,
-        temperature=payload.temperature,
-        top_p=payload.top_p,
-        max_tokens=payload.max_tokens,
-        timeout=payload.timeout,
-        retry_attempts=payload.retry_attempts,
-        rate_limit=payload.rate_limit,
-        fallback_enabled=payload.fallback_enabled,
-        is_enabled=payload.is_enabled,
-        connection_status="Not Configured",
-        updated_by=admin.username
-    )
-    db.add(provider)
-    db.commit()
-    
-    log_ai_audit(db, admin.username, f"Saved provider config: {payload.slug}", "Success", payload.slug, request)
-    return {"success": True, "message": "Configuration Saved"}
-
-@router.put("/providers/{id}")
-def update_provider(
-    id: int,
-    payload: SaveProviderRequest,
-    request: Request,
-    admin: AdminUser = Depends(get_current_admin),
-    db: Session = Depends(get_db)
-):
-    if admin.role != "super_admin":
-        raise HTTPException(status_code=403, detail="Permission Denied. Super Admin access required.")
-        
-    provider = db.query(AIProvider).filter(AIProvider.id == id).first()
-    if not provider:
-        raise HTTPException(status_code=404, detail="Provider config not found.")
-        
-    # Track actions for audit logging
-    old_enabled = provider.is_enabled
-    
-    provider.provider_name = payload.provider_name
-    provider.model_name = payload.model_name
-    provider.priority = payload.priority
-    provider.temperature = payload.temperature
-    provider.top_p = payload.top_p
-    provider.max_tokens = payload.max_tokens
-    provider.timeout = payload.timeout
-    provider.retry_attempts = payload.retry_attempts
-    provider.rate_limit = payload.rate_limit
-    provider.fallback_enabled = payload.fallback_enabled
-    provider.is_enabled = payload.is_enabled
-    provider.updated_by = admin.username
-    
-    # Update API key if provided and not masked
-    if payload.api_key and not payload.api_key.startswith("***") and payload.api_key.strip() != "":
-        provider.encrypted_api_key = encrypt_key(payload.api_key)
-        log_ai_audit(db, admin.username, f"Changed API Key for provider: {provider.slug}", "Success", provider.slug, request)
-        
-    db.commit()
-    
-    # Audit log state toggle
-    if old_enabled != provider.is_enabled:
-        op = f"Enabled provider: {provider.slug}" if provider.is_enabled else f"Disabled provider: {provider.slug}"
-        log_ai_audit(db, admin.username, op, "Success", provider.slug, request)
-    else:
-        log_ai_audit(db, admin.username, f"Updated provider config: {provider.slug}", "Success", provider.slug, request)
-        
-    return {"success": True, "message": "Configuration Updated"}
-
-@router.delete("/providers/{id}")
-def delete_provider(
-    id: int,
-    request: Request,
-    admin: AdminUser = Depends(get_current_admin),
-    db: Session = Depends(get_db)
-):
-    if admin.role != "super_admin":
-        raise HTTPException(status_code=403, detail="Permission Denied. Super Admin access required.")
-        
-    provider = db.query(AIProvider).filter(AIProvider.id == id).first()
-    if not provider:
-        raise HTTPException(status_code=404, detail="Provider config not found.")
-        
-    slug = provider.slug
-    db.delete(provider)
-    db.commit()
-    
-    log_ai_audit(db, admin.username, f"Deleted provider config: {slug}", "Success", slug, request)
-    return {"success": True, "message": "Provider configuration deleted."}
 
 @router.post("/providers/{id}/test")
 def test_provider_connection(
@@ -323,15 +199,9 @@ def test_provider_connection(
     if not provider:
         raise HTTPException(status_code=404, detail="Provider config not found.")
         
-    key_to_test = payload.api_key
-    if not key_to_test or key_to_test.startswith("***") or key_to_test.strip() == "":
-        try:
-            key_to_test = decrypt_key(provider.encrypted_api_key)
-        except Exception:
-            key_to_test = ""
-            
+    key_to_test = get_key_from_env(provider.slug)
     if not key_to_test:
-        raise HTTPException(status_code=400, detail="No API Key configured to test.")
+        raise HTTPException(status_code=400, detail="🔴 Invalid Configuration: API Key not found in backend .env file.")
         
     # Execute actual connection test
     success, status_msg = test_provider_api(provider.slug, key_to_test, timeout=provider.timeout or 10)
@@ -352,33 +222,8 @@ def test_provider_connection(
     if success:
         return {"success": True, "status": status_msg}
     else:
-        raise HTTPException(status_code=400, detail=status_msg)
+        raise HTTPException(status_code=400, detail="🔴 Invalid Configuration" if "invalid" in status_msg.lower() else "🔴 Provider Offline")
 
-# --- REVEAL KEY ---
-class RevealKeyRequest(BaseModel):
-    slug: str
-    password: str
-
-@router.post("/provider/reveal")
-def reveal_provider_key(
-    payload: RevealKeyRequest, 
-    admin: AdminUser = Depends(get_current_admin), 
-    db: Session = Depends(get_db)
-):
-    if admin.role != "super_admin":
-        raise HTTPException(status_code=403, detail="Permission Denied. Super Admin access required.")
-        
-    from app.core.security import verify_password
-    # Verify Admin Password against logged-in admin password_hash
-    if not verify_password(payload.password, admin.password_hash):
-        raise HTTPException(status_code=401, detail="Incorrect administrator password.")
-        
-    provider = db.query(AIProvider).filter(AIProvider.slug == payload.slug).first()
-    if not provider:
-        raise HTTPException(status_code=404, detail="Provider not found.")
-        
-    decrypted = decrypt_key(provider.encrypted_api_key)
-    return {"success": True, "api_key": decrypted}
 
 # --- ANALYTICS ---
 

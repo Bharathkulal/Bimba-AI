@@ -82,27 +82,11 @@ export const aiAdminService = {
     return res.data;
   },
 
-  saveProvider: async (provider: Partial<AIProviderData>): Promise<void> => {
-    await apiClient.post('/api/admin/ai/providers', provider);
-  },
-
-  updateProvider: async (id: number, provider: Partial<AIProviderData>): Promise<void> => {
-    await apiClient.put(`/api/admin/ai/providers/${id}`, provider);
-  },
-
-  revealKey: async (slug: string, adminPassword: string): Promise<string> => {
-    const res = await apiClient.post<{ api_key: string }>('/api/admin/ai/provider/reveal', { slug, password: adminPassword });
-    return res.data.api_key;
-  },
-
   testProvider: async (id: number, api_key?: string): Promise<{ success: boolean; status: string }> => {
     const res = await apiClient.post<{ success: boolean; status: string }>(`/api/admin/ai/providers/${id}/test`, { api_key });
     return res.data;
   },
 
-  deleteProvider: async (id: number): Promise<void> => {
-    await apiClient.delete(`/api/admin/ai/providers/${id}`);
-  },
 
   getAnalytics: async (): Promise<AIAnalyticsData> => {
     const res = await apiClient.get<AIAnalyticsData>('/api/admin/ai/analytics');

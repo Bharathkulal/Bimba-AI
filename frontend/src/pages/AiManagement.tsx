@@ -105,36 +105,7 @@ export const AiManagement: React.FC = () => {
     }
   };
 
-  // Secret verify
-  const handleVerifySecret = async () => {
-    if (!targetSecretSlug || !secretPassword.trim()) return;
-    try {
-      if (secretAction === 'reveal') {
-        const key = await aiAdminService.revealKey(targetSecretSlug, secretPassword);
-        setRevealedKey(key);
-        setKeyCountdown(10);
-        setIsSecretModalOpen(false);
-        setSecretPassword('');
-      } else {
-        // Update key
-        const provider = providers.find(p => p.slug === targetSecretSlug);
-        if (provider && provider.id) {
-          await aiAdminService.updateProvider(provider.id, { slug: targetSecretSlug, api_key: newApiKey });
-          alert("API Key updated securely in database.");
-        } else {
-          alert("Provider not found.");
-        }
-        setIsSecretModalOpen(false);
-        setSecretPassword('');
-        setNewApiKey('');
-        const p = await aiAdminService.getProviders();
-        setProviders(p);
-      }
-    } catch (err) {
-      alert("Verification failed. Incorrect Admin password.");
 
-    }
-  };
 
   // Move priority Order
   const handleMovePriority = async (index: number, direction: 'up' | 'down') => {
@@ -376,38 +347,8 @@ export const AiManagement: React.FC = () => {
                       </span>
                     </div>
 
-                    {/* API Key Box */}
-                    <div className="bg-slate-50 border border-slate-200/60 rounded-2xl p-4.5 my-4.5">
-                      <span className="text-[9px] font-black text-slate-400 uppercase tracking-wider">Encrypted API Key</span>
-                      <div className="flex items-center justify-between gap-3 mt-1.5">
-                        <code className="text-xs font-bold text-slate-650 tracking-wider truncate flex-grow">
-                          {isKeyShown ? revealedKey : p.masked_key}
-                        </code>
-                        <button
-                          onClick={() => {
-                            if (isKeyShown) {
-                              setRevealedKey(null);
-                            } else {
-                              setTargetSecretSlug(p.slug);
-                              setSecretAction('reveal');
-                              setIsSecretModalOpen(true);
-                            }
-                          }}
-                          className="text-slate-400 hover:text-slate-800 transition-smooth p-1 cursor-pointer"
-                          title={isKeyShown ? "Hide Key" : "Reveal Key (requires admin auth)"}
-                        >
-                          {isKeyShown ? <EyeOff size={14} /> : <Eye size={14} />}
-                        </button>
-                      </div>
-                      {isKeyShown && (
-                        <p className="text-[9px] text-orange-600 font-bold mt-2 uppercase tracking-wide">
-                          ⏳ Auto-hiding key in {keyCountdown}s
-                        </p>
-                      )}
-                    </div>
-
                     {/* Stats List */}
-                    <div className="grid grid-cols-2 gap-4 border-t border-slate-100 pt-3">
+                    <div className="grid grid-cols-2 gap-4 border-t border-slate-100 pt-3 my-4">
                       <div>
                         <span className="text-[9px] font-black text-slate-400 uppercase">Latency</span>
                         <p className="text-xs font-bold text-slate-700 mt-0.5">{p.latency_ms} ms</p>
@@ -420,28 +361,15 @@ export const AiManagement: React.FC = () => {
                   </div>
 
                   {/* Actions Grid */}
-                  <div className="grid grid-cols-2 gap-3 mt-5">
-                    <Button 
-                      onClick={() => {
-                        setTargetSecretSlug(p.slug);
-                        setSecretAction('update');
-                        setIsSecretModalOpen(true);
-                      }}
-                      variant="outline" 
-                      size="sm" 
-                      className="border-slate-200 text-slate-650 hover:bg-slate-50 font-bold"
-                    >
-                      Update Key
-                    </Button>
+                  <div className="mt-5">
                     <Button 
                       onClick={() => runProviderTest(p.id || 0, p.slug)}
                       variant="primary" 
                       size="sm" 
-                      className="bg-blue-600 hover:bg-blue-700 font-bold gap-1"
+                      className="w-full bg-blue-600 hover:bg-blue-700 font-bold gap-1 justify-center"
                     >
-                      Test Conn
+                      Test Connection
                     </Button>
-
                   </div>
 
                   {/* Latency / Test Status Banner */}
@@ -839,72 +767,6 @@ export const AiManagement: React.FC = () => {
         )}
 
       </div>
-
-      {/* MANAGE SECRET / UPDATE KEY VERIFY PASSWORD MODAL */}
-      {isSecretModalOpen && (
-        <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center z-50 animate-fadeIn">
-          <div className="bg-white border border-slate-200 rounded-3xl p-6 w-full max-w-md shadow-xl text-left">
-            <div className="flex items-center gap-3 text-blue-600">
-              <Lock size={20} />
-              <h4 className="text-base font-extrabold text-slate-800">Security Verification Required</h4>
-            </div>
-            
-            <p className="text-slate-500 text-xs mt-2.5 leading-relaxed">
-              {secretAction === 'reveal' 
-                ? "You must verify your Administrator credentials to reveal the raw API key secret."
-                : "Enter your Administrator password and the new key value to update the provider key securely."}
-            </p>
-
-            <div className="flex flex-col gap-3 mt-4.5">
-              <div>
-                <label className="text-[10px] font-black text-slate-400 uppercase">Admin Password</label>
-                <input 
-                  type="password"
-                  placeholder="Enter admin password..."
-                  value={secretPassword}
-                  onChange={(e) => setSecretPassword(e.target.value)}
-                  className="w-full pl-4 pr-4 py-2.5 rounded-xl bg-slate-50 border border-slate-200/80 focus:border-blue-500 focus:outline-none text-xs text-slate-700 placeholder:text-slate-400 mt-1"
-                />
-              </div>
-
-              {secretAction === 'update' && (
-                <div>
-                  <label className="text-[10px] font-black text-slate-400 uppercase">New API Key Value</label>
-                  <input 
-                    type="text"
-                    placeholder="Enter new API key..."
-                    value={newApiKey}
-                    onChange={(e) => setNewApiKey(e.target.value)}
-                    className="w-full pl-4 pr-4 py-2.5 rounded-xl bg-slate-50 border border-slate-200/80 focus:border-blue-500 focus:outline-none text-xs text-slate-700 placeholder:text-slate-400 mt-1"
-                  />
-                </div>
-              )}
-            </div>
-
-            <div className="flex justify-end gap-3 mt-6">
-              <button 
-                onClick={() => {
-                  setIsSecretModalOpen(false);
-                  setSecretPassword('');
-                  setNewApiKey('');
-                }}
-                className="px-4 py-2 rounded-xl border border-slate-200 text-xs font-bold text-slate-600 hover:bg-slate-50 cursor-pointer"
-              >
-                Cancel
-              </button>
-              <Button 
-                onClick={handleVerifySecret}
-                variant="primary" 
-                size="sm" 
-                className="bg-blue-600 hover:bg-blue-700 font-bold"
-              >
-                Verify & Proceed
-              </Button>
-            </div>
-          </div>
-        </div>
-      )}
-
     </div>
   );
 };

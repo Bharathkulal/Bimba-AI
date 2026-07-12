@@ -8,7 +8,7 @@ class AIProvider(Base):
     id = Column(Integer, primary_key=True, index=True)
     provider_name = Column(String, unique=True, index=True, nullable=False)
     slug = Column(String, unique=True, index=True, nullable=False)  # "gemini" | "openrouter" | "groq" etc.
-    encrypted_api_key = Column(String, nullable=False)
+    encrypted_api_key = Column(String, nullable=True)
     model_name = Column(String, nullable=True, default="gemini-2.5-flash")
     priority = Column(Integer, default=1)
     temperature = Column(Float, default=0.7)
