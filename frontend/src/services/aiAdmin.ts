@@ -20,7 +20,14 @@ export interface AIProviderData {
   created_at?: string;
   updated_at?: string;
   updated_by?: string;
+  name?: string;
+  status?: string;
+  latency_ms?: number;
+  today_requests?: number;
+  api_key?: string;
 }
+
+
 
 export interface AIAnalyticsData {
   providersOnline: number;

@@ -84,12 +84,16 @@ export const AiManagement: React.FC = () => {
   }, [keyCountdown, revealedKey]);
 
   // Test provider connection
-  const runProviderTest = async (slug: string) => {
+  const runProviderTest = async (id: number, slug: string) => {
     try {
       setTestingProvider(slug);
       setTestResult(null);
-      const result = await aiAdminService.testProvider(slug);
-      setTestResult(result);
+      const result = await aiAdminService.testProvider(id);
+      setTestResult({
+        status: result.status,
+        latency: "Connected",
+        quota: "Unlimited"
+      });
     } catch (err: any) {
       setTestResult({
         status: "Quota Exceeded",
@@ -113,8 +117,13 @@ export const AiManagement: React.FC = () => {
         setSecretPassword('');
       } else {
         // Update key
-        await aiAdminService.updateProvider({ slug: targetSecretSlug, api_key: newApiKey });
-        alert("API Key updated securely in database.");
+        const provider = providers.find(p => p.slug === targetSecretSlug);
+        if (provider && provider.id) {
+          await aiAdminService.updateProvider(provider.id, { slug: targetSecretSlug, api_key: newApiKey });
+          alert("API Key updated securely in database.");
+        } else {
+          alert("Provider not found.");
+        }
         setIsSecretModalOpen(false);
         setSecretPassword('');
         setNewApiKey('');
@@ -123,6 +132,7 @@ export const AiManagement: React.FC = () => {
       }
     } catch (err) {
       alert("Verification failed. Incorrect Admin password.");
+
     }
   };
 
@@ -424,13 +434,14 @@ export const AiManagement: React.FC = () => {
                       Update Key
                     </Button>
                     <Button 
-                      onClick={() => runProviderTest(p.slug)}
+                      onClick={() => runProviderTest(p.id || 0, p.slug)}
                       variant="primary" 
                       size="sm" 
                       className="bg-blue-600 hover:bg-blue-700 font-bold gap-1"
                     >
                       Test Conn
                     </Button>
+
                   </div>
 
                   {/* Latency / Test Status Banner */}
