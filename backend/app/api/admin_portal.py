@@ -15,7 +15,9 @@ import shutil
 # Database and security imports
 from app.database.session import get_db, engine
 from app.models.student import Student
-from app.models.analytics import Resume, ResumeVersion, AIUsageLog, EditingSession, DownloadLog, ActivityLog
+from app.models.analytics import AIUsageLog, EditingSession, DownloadLog, ActivityLog
+from app.models.resume_studio import ResumeMaster
+
 from app.models.ai_admin import AIProvider, AIGatewayLog, AISystemSettings
 from app.models.admin_user import AdminUser
 from app.models.academic import Department, Subject
@@ -194,9 +196,9 @@ def get_admin_dashboard(admin: AdminUser = Depends(get_current_admin), db: Sessi
     today_signups = db.query(Student).filter(Student.created_at >= datetime.now() - timedelta(days=1)).count()
     active_users = db.query(Student).filter(Student.account_activated == True).count()
     ai_requests = db.query(AIGatewayLog).count()
-    total_resumes = db.query(Resume).count()
+    total_resumes = db.query(ResumeMaster).count()
     downloads = db.query(DownloadLog).count()
-    avg_ats = db.query(func.avg(Resume.ats_score)).scalar() or 75
+    avg_ats = db.query(func.avg(ResumeMaster.ats_score)).scalar() or 75
     avg_ats = round(avg_ats, 1)
     
     return {
@@ -215,8 +217,9 @@ def get_admin_users(admin: AdminUser = Depends(get_current_admin), db: Session =
     students = db.query(Student).all()
     result = []
     for s in students:
-        resumes_count = db.query(Resume).filter(Resume.student_id == s.id).count()
+        resumes_count = db.query(ResumeMaster).filter(ResumeMaster.student_id == s.id).count()
         last_act = db.query(ActivityLog).filter(ActivityLog.student_id == s.id).order_by(ActivityLog.created_at.desc()).first()
+
         
         result.append({
             "id": s.id,
