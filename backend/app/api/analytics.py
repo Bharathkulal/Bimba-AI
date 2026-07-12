@@ -7,7 +7,9 @@ from typing import List, Optional
 
 from app.database.session import get_db
 from app.models.student import Student
-from app.models.analytics import Resume, ResumeVersion, AIUsageLog, EditingSession, DownloadLog, ActivityLog
+from app.models.analytics import AIUsageLog, EditingSession, DownloadLog, ActivityLog
+from app.models.resume_studio import ResumeMaster, ResumeVersion, ResumeEducation, ResumeExperience, ResumeProject, ResumeSkill, ResumeCertificate
+
 from app.core.security import verify_token
 from fastapi.security import OAuth2PasswordBearer
 
@@ -47,21 +49,33 @@ class TrackActionRequest(BaseModel):
 @router.get("/dashboard")
 def get_dashboard_analytics(student: Student = Depends(get_current_student), db: Session = Depends(get_db)):
     # Resumes counts
-    total_resumes = db.query(Resume).filter(Resume.student_id == student.id).count()
-    draft_resumes = db.query(Resume).filter(Resume.student_id == student.id, Resume.status == "Draft").count()
-    completed_resumes = db.query(Resume).filter(Resume.student_id == student.id, Resume.status == "Completed").count()
-    archived_resumes = db.query(Resume).filter(Resume.student_id == student.id, Resume.status == "Archived").count()
+    total_resumes = db.query(ResumeMaster).filter(ResumeMaster.student_id == student.id).count()
+    draft_resumes = db.query(ResumeMaster).filter(ResumeMaster.student_id == student.id, ResumeMaster.status == "Draft").count()
+    completed_resumes = db.query(ResumeMaster).filter(ResumeMaster.student_id == student.id, ResumeMaster.status == "Completed").count()
+    archived_resumes = db.query(ResumeMaster).filter(ResumeMaster.student_id == student.id, ResumeMaster.status == "Archived").count()
     
     # Average completion percentage across all resumes
-    resumes = db.query(Resume).filter(Resume.student_id == student.id).all()
+    resumes = db.query(ResumeMaster).filter(ResumeMaster.student_id == student.id).all()
     avg_completion = 0
     if resumes:
         total_comp = 0
         for r in resumes:
+            edu_exists = db.query(ResumeEducation).filter(ResumeEducation.resume_id == r.id).count() > 0
+            exp_exists = db.query(ResumeExperience).filter(ResumeExperience.resume_id == r.id).count() > 0 or r.resume_type == "Fresher"
+            proj_exists = db.query(ResumeProject).filter(ResumeProject.resume_id == r.id).count() > 0
+            skill_exists = db.query(ResumeSkill).filter(ResumeSkill.resume_id == r.id).count() > 0
+            cert_exists = db.query(ResumeCertificate).filter(ResumeCertificate.resume_id == r.id).count() > 0
+            
             sections = [
-                r.personal_info_completed, r.summary_completed, r.experience_completed,
-                r.education_completed, r.skills_completed, r.projects_completed,
-                r.certifications_completed, r.languages_completed, r.achievements_completed
+                bool(r.phone or r.address or r.linkedin),  # personal info
+                bool(r.summary or r.career_objective),     # summary
+                exp_exists,                                # experience
+                edu_exists,                                # education
+                skill_exists,                              # skills
+                proj_exists,                               # projects
+                cert_exists,                               # certifications
+                bool(r.languages_list or r.language),      # languages
+                bool(r.achievements_list)                  # achievements
             ]
             completed_count = sum(1 for s in sections if s)
             total_comp += (completed_count / len(sections)) * 100
@@ -110,6 +124,7 @@ def get_dashboard_analytics(student: Student = Depends(get_current_student), db:
             "date": date_check.isoformat(),
             "count": count
         })
+
         
     return {
         "resumes": {
@@ -136,22 +151,28 @@ def get_dashboard_analytics(student: Student = Depends(get_current_student), db:
 @router.get("/ats")
 def get_ats_analytics(student: Student = Depends(get_current_student), db: Session = Depends(get_db)):
     # Fetch active resumes
-    resumes = db.query(Resume).filter(Resume.student_id == student.id).all()
+    resumes = db.query(ResumeMaster).filter(ResumeMaster.student_id == student.id).all()
     if not resumes:
         return {"has_resumes": False}
         
     # Get highest scoring resume
     best_resume = max(resumes, key=lambda r: r.ats_score)
     
+    edu_exists = db.query(ResumeEducation).filter(ResumeEducation.resume_id == best_resume.id).count() > 0
+    exp_exists = db.query(ResumeExperience).filter(ResumeExperience.resume_id == best_resume.id).count() > 0 or best_resume.resume_type == "Fresher"
+    proj_exists = db.query(ResumeProject).filter(ResumeProject.resume_id == best_resume.id).count() > 0
+    skill_exists = db.query(ResumeSkill).filter(ResumeSkill.resume_id == best_resume.id).count() > 0
+    cert_exists = db.query(ResumeCertificate).filter(ResumeCertificate.resume_id == best_resume.id).count() > 0
+
     # Dynamic section analysis based on completed flags
     section_breakdown = {
-        "personalInfo": 95 if best_resume.personal_info_completed else 0,
-        "summary": 90 if best_resume.summary_completed else 0,
-        "experience": 95 if best_resume.experience_completed else 0,
-        "education": 90 if best_resume.education_completed else 0,
-        "skills": 95 if best_resume.skills_completed else 0,
-        "projects": 90 if best_resume.projects_completed else 0,
-        "certifications": 85 if best_resume.certifications_completed else 0,
+        "personalInfo": 95 if (best_resume.phone or best_resume.address or best_resume.linkedin) else 0,
+        "summary": 90 if (best_resume.summary or best_resume.career_objective) else 0,
+        "experience": 95 if exp_exists else 0,
+        "education": 90 if edu_exists else 0,
+        "skills": 95 if skill_exists else 0,
+        "projects": 90 if proj_exists else 0,
+        "certifications": 85 if cert_exists else 0,
     }
     
     # Formatting, Readability and Keyword matches are dynamically calculated
@@ -163,13 +184,13 @@ def get_ats_analytics(student: Student = Depends(get_current_student), db: Sessi
     recommendations = []
     missing_keywords = []
     
-    if not best_resume.skills_completed:
+    if not skill_exists:
         recommendations.append("Add more technical skills to clear automatic keywords scanners.")
         missing_keywords.extend(["React", "TypeScript", "Node.js"])
-    if not best_resume.projects_completed:
+    if not proj_exists:
         recommendations.append("Include at least 2 detailed project descriptions with GitHub links.")
         missing_keywords.extend(["Git", "Web APIs", "CI/CD"])
-    if not best_resume.certifications_completed:
+    if not cert_exists:
         recommendations.append("List relevant certifications (e.g. AWS, Scrum Master, Google Analytics).")
     if best_resume.ats_score < 90:
         recommendations.append("Increase bullet points density under experience and use action verbs.")
@@ -199,6 +220,7 @@ def get_ats_analytics(student: Student = Depends(get_current_student), db: Sessi
 
     return {
         "has_resumes": True,
+
         "bestResume": {
             "id": best_resume.id,
             "name": best_resume.name,
@@ -229,20 +251,26 @@ def get_activity_timeline(student: Student = Depends(get_current_student), db: S
 
 @router.get("/resumes")
 def get_resumes_analytics(student: Student = Depends(get_current_student), db: Session = Depends(get_db)):
-    resumes = db.query(Resume).filter(Resume.student_id == student.id).all()
+    resumes = db.query(ResumeMaster).filter(ResumeMaster.student_id == student.id).all()
     result = []
     
     for r in resumes:
+        edu_exists = db.query(ResumeEducation).filter(ResumeEducation.resume_id == r.id).count() > 0
+        exp_exists = db.query(ResumeExperience).filter(ResumeExperience.resume_id == r.id).count() > 0 or r.resume_type == "Fresher"
+        proj_exists = db.query(ResumeProject).filter(ResumeProject.resume_id == r.id).count() > 0
+        skill_exists = db.query(ResumeSkill).filter(ResumeSkill.resume_id == r.id).count() > 0
+        cert_exists = db.query(ResumeCertificate).filter(ResumeCertificate.resume_id == r.id).count() > 0
+
         sections = {
-            "Personal Info": r.personal_info_completed,
-            "Summary": r.summary_completed,
-            "Experience": r.experience_completed,
-            "Education": r.education_completed,
-            "Skills": r.skills_completed,
-            "Projects": r.projects_completed,
-            "Certifications": r.certifications_completed,
-            "Languages": r.languages_completed,
-            "Achievements": r.achievements_completed
+            "Personal Info": bool(r.phone or r.address or r.linkedin),
+            "Summary": bool(r.summary or r.career_objective),
+            "Experience": exp_exists,
+            "Education": edu_exists,
+            "Skills": skill_exists,
+            "Projects": proj_exists,
+            "Certifications": cert_exists,
+            "Languages": bool(r.languages_list or r.language),
+            "Achievements": bool(r.achievements_list)
         }
         completed_count = sum(1 for k, v in sections.items() if v)
         completion_percent = int((completed_count / len(sections)) * 100)
@@ -253,16 +281,17 @@ def get_resumes_analytics(student: Student = Depends(get_current_student), db: S
         result.append({
             "id": r.id,
             "name": r.name,
-            "template": r.template,
+            "template": r.template_id,
             "atsScore": r.ats_score,
             "completion": completion_percent,
             "sections": sections,
             "versionsCount": versions_count,
             "status": r.status,
-            "lastEdited": r.last_edited.isoformat()
+            "lastEdited": r.updated_at.isoformat()
         })
         
     return result
+
 
 @router.get("/downloads")
 def get_downloads_analytics(student: Student = Depends(get_current_student), db: Session = Depends(get_db)):

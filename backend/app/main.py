@@ -46,3 +46,5 @@ def root():
         "docs": "/docs",
         "health": "/health"
     }
+# Hot reload trigger comment
+

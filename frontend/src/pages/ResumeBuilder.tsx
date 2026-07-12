@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { 
   ChevronLeft, Eye, Download, Plus, Trash2, Sparkles, CheckCircle2, 
   ArrowLeft, ArrowRight, Lock, Globe, Search, Award, Briefcase, 
@@ -10,6 +10,8 @@ import { Button } from '../components/Button';
 import { Card } from '../components/Card';
 import { Input } from '../components/Input';
 import { adminService } from '../services/admin';
+import { useUserStore } from '../store/userStore';
+
 
 // Static categories for searchable skills
 const PRESET_SKILLS = [
@@ -47,6 +49,9 @@ const PRESET_SKILLS = [
 
 export const ResumeBuilder: React.FC = () => {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const queryId = searchParams.get('id');
+  const { user } = useUserStore();
 
   // Mode state: 'wizard' | 'studio'
   const [builderMode, setBuilderMode] = useState<'wizard' | 'studio'>('wizard');
@@ -56,6 +61,7 @@ export const ResumeBuilder: React.FC = () => {
   
   // Wizard creation ID
   const [resumeId, setResumeId] = useState<number | null>(null);
+
 
   // --- STATE MODELS ---
   const [masterForm, setMasterForm] = useState({
@@ -178,6 +184,71 @@ export const ResumeBuilder: React.FC = () => {
     fetchTemplates();
   }, []);
 
+  useEffect(() => {
+    const loadResumeDetail = async () => {
+      if (!queryId) {
+        // Pre-populate student details from user store
+        if (user) {
+          setPersonalInfo(prev => ({
+            ...prev,
+            roll_number: user.roll_number || prev.roll_number,
+            email: user.personal_email || prev.email,
+            department: user.department || prev.department,
+            semester: user.semester || prev.semester,
+          }));
+        }
+        return;
+      }
+      try {
+        const rId = parseInt(queryId);
+        setResumeId(rId);
+        const res = await adminService.apiClient.get(`/api/resume-studio/${rId}`);
+        const data = res.data;
+        if (data.master) {
+          setMasterForm(data.master);
+          setPersonalInfo({
+            name: data.master.name || '',
+            roll_number: user?.roll_number || '',
+            email: user?.personal_email || '',
+            department: user?.department || '',
+            semester: user?.semester || 1,
+            course: 'BCA',
+            college_name: 'Bimba University',
+            expected_graduation: '2026',
+            phone: data.master.phone || '',
+            address: data.master.address || '',
+
+            linkedin: data.master.linkedin || '',
+            github: data.master.github || '',
+            portfolio: data.master.portfolio || '',
+            website: data.master.website || '',
+            profile_photo: data.master.profile_photo || '',
+            summary: data.master.summary || ''
+          });
+          if (data.master.achievements_list) {
+            try {
+              setAchievements(JSON.parse(data.master.achievements_list));
+            } catch (e) {
+              console.error("Error parsing achievements:", e);
+            }
+          }
+          setBuilderMode('studio');
+        }
+        if (data.education) setEducationList(data.education);
+        if (data.experience) setExperienceList(data.experience);
+        if (data.projects) setProjectList(data.projects);
+        if (data.skills) setSkillList(data.skills);
+        if (data.certificates) setCertificateList(data.certificates);
+        if (data.ats) setAtsScorecard(data.ats);
+        if (data.career_readiness) setReadinessReport(data.career_readiness);
+      } catch (err) {
+        console.error("Failed to load resume details:", err);
+      }
+    };
+    loadResumeDetail();
+  }, [queryId, user]);
+
+
   // Auto-Save Effect (Every 30 seconds when in Studio Mode)
   useEffect(() => {
     if (builderMode !== 'studio' || !resumeId) return;
@@ -258,24 +329,76 @@ export const ResumeBuilder: React.FC = () => {
     }
 
     try {
+      // Merge master form with personalInfo and achievements
+      const payload = {
+        ...masterForm,
+        phone: personalInfo.phone,
+        address: personalInfo.address,
+        linkedin: personalInfo.linkedin,
+        github: personalInfo.github,
+        portfolio: personalInfo.portfolio,
+        website: personalInfo.website,
+        profile_photo: personalInfo.profile_photo,
+        summary: personalInfo.summary,
+        achievements_list: JSON.stringify(achievements)
+      };
+
       // Commit Master Form to database
-      const createRes = await adminService.apiClient.post('/api/resume-studio/create', masterForm);
+      const createRes = await adminService.apiClient.post('/api/resume-studio/create', payload);
       const newId = createRes.data.id;
       setResumeId(newId);
 
-      // Populate child components via AI endpoint
-      await adminService.apiClient.post(`/api/resume-studio/${newId}/ai/full-generate`);
+      // Post all items sequentially to backend child endpoints
+      for (const edu of educationList) {
+        await adminService.apiClient.post(`/api/resume-studio/${newId}/education`, {
+          institution: edu.institution,
+          degree: edu.degree,
+          passing_year: edu.passing_year,
+          cgpa: edu.cgpa,
+          achievements: edu.achievements
+        });
+      }
+      for (const exp of experienceList) {
+        await adminService.apiClient.post(`/api/resume-studio/${newId}/experience`, {
+          company: exp.company,
+          position: exp.position,
+          duration: exp.duration,
+          description: exp.description,
+          achievements: exp.achievements
+        });
+      }
+      for (const proj of projectList) {
+        await adminService.apiClient.post(`/api/resume-studio/${newId}/project`, {
+          name: proj.name,
+          description: proj.description,
+          tech_stack: proj.tech_stack,
+          role: proj.role,
+          duration: proj.duration,
+          github_link: proj.github_link,
+          live_demo: proj.live_demo,
+          achievements: proj.achievements
+        });
+      }
+      for (const skill of skillList) {
+        await adminService.apiClient.post(`/api/resume-studio/${newId}/skill`, {
+          category: skill.category,
+          name: skill.name,
+          level: skill.level
+        });
+      }
+      for (const cert of certificateList) {
+        await adminService.apiClient.post(`/api/resume-studio/${newId}/certificate`, {
+          name: cert.name,
+          organization: cert.organization,
+          issue_date: cert.issue_date,
+          credential_id: cert.credential_id,
+          credential_url: cert.credential_url
+        });
+      }
 
       // Add default records in UI state
-      const detail = await adminService.apiClient.get(`/api/resume-studio/${newId}`);
-      setMasterForm(detail.data.master);
-      setEducationList(detail.data.education);
-      setExperienceList(detail.data.experience);
-      setProjectList(detail.data.projects);
-      setSkillList(detail.data.skills);
-      setCertificateList(detail.data.certificates);
-      if (detail.data.ats) setAtsScorecard(detail.data.ats);
-      if (detail.data.career_readiness) setReadinessReport(detail.data.career_readiness);
+      await reloadResumeDetails(newId);
+
 
       setIsGenerating(false);
       setBuilderMode('studio');
@@ -389,30 +512,182 @@ export const ResumeBuilder: React.FC = () => {
     }
   };
 
+  // Helper to reload details from database
+  const reloadResumeDetails = async (id: number) => {
+    try {
+      const detail = await adminService.apiClient.get(`/api/resume-studio/${id}`);
+      setMasterForm(detail.data.master);
+      setEducationList(detail.data.education);
+      setExperienceList(detail.data.experience);
+      setProjectList(detail.data.projects);
+      setSkillList(detail.data.skills);
+      setCertificateList(detail.data.certificates);
+      if (detail.data.ats) setAtsScorecard(detail.data.ats);
+      if (detail.data.career_readiness) setReadinessReport(detail.data.career_readiness);
+    } catch (err) {
+      console.error("Failed to reload details:", err);
+    }
+  };
+
   // Add Item Triggers
-  const addEducationItem = () => {
+  const addEducationItem = async () => {
     if (!newEdu.institution) return;
-    setEducationList([...educationList, { ...newEdu, id: Date.now() }]);
-    setNewEdu({ institution: '', degree: '', passing_year: 2025, cgpa: 8.5, achievements: '' });
+    try {
+      if (resumeId) {
+        await adminService.apiClient.post(`/api/resume-studio/${resumeId}/education`, newEdu);
+        await reloadResumeDetails(resumeId);
+      } else {
+        setEducationList([...educationList, { ...newEdu, id: Date.now() }]);
+      }
+      setNewEdu({ institution: '', degree: '', passing_year: 2025, cgpa: 8.5, achievements: '' });
+    } catch (err) {
+      alert("Failed to add education record.");
+    }
   };
 
-  const addExperienceItem = () => {
+  const deleteEducationItem = async (eduId: number) => {
+    try {
+      if (resumeId) {
+        await adminService.apiClient.delete(`/api/resume-studio/education/${eduId}`);
+        await reloadResumeDetails(resumeId);
+      } else {
+        setEducationList(educationList.filter(e => e.id !== eduId));
+      }
+    } catch (err) {
+      alert("Failed to delete education record.");
+    }
+  };
+
+  const addExperienceItem = async () => {
     if (!newExp.company) return;
-    setExperienceList([...experienceList, { ...newExp, id: Date.now() }]);
-    setNewExp({ company: '', position: '', duration: '3 Months', description: '', achievements: '' });
+    try {
+      if (resumeId) {
+        await adminService.apiClient.post(`/api/resume-studio/${resumeId}/experience`, newExp);
+        await reloadResumeDetails(resumeId);
+      } else {
+        setExperienceList([...experienceList, { ...newExp, id: Date.now() }]);
+      }
+      setNewExp({ company: '', position: '', duration: '3 Months', description: '', achievements: '' });
+    } catch (err) {
+      alert("Failed to add experience record.");
+    }
   };
 
-  const addProjectItem = () => {
+  const deleteExperienceItem = async (expId: number) => {
+    try {
+      if (resumeId) {
+        await adminService.apiClient.delete(`/api/resume-studio/experience/${expId}`);
+        await reloadResumeDetails(resumeId);
+      } else {
+        setExperienceList(experienceList.filter(e => e.id !== expId));
+      }
+    } catch (err) {
+      alert("Failed to delete experience record.");
+    }
+  };
+
+  const addProjectItem = async () => {
     if (!newProj.name) return;
-    setProjectList([...projectList, { ...newProj, id: Date.now() }]);
-    setNewProj({ name: '', description: '', tech_stack: '', role: 'Developer', duration: '1 Month', github_link: '', live_demo: '', achievements: '' });
+    try {
+      if (resumeId) {
+        await adminService.apiClient.post(`/api/resume-studio/${resumeId}/project`, newProj);
+        await reloadResumeDetails(resumeId);
+      } else {
+        setProjectList([...projectList, { ...newProj, id: Date.now() }]);
+      }
+      setNewProj({ name: '', description: '', tech_stack: '', role: 'Developer', duration: '1 Month', github_link: '', live_demo: '', achievements: '' });
+    } catch (err) {
+      alert("Failed to add project.");
+    }
   };
 
-  const addCertificateItem = () => {
-    if (!newCert.name) return;
-    setCertificateList([...certificateList, { ...newCert, id: Date.now() }]);
-    setNewCert({ name: '', organization: '', issue_date: '', credential_id: '', credential_url: '' });
+  const deleteProjectItem = async (projId: number) => {
+    try {
+      if (resumeId) {
+        await adminService.apiClient.delete(`/api/resume-studio/project/${projId}`);
+        await reloadResumeDetails(resumeId);
+      } else {
+        setProjectList(projectList.filter(p => p.id !== projId));
+      }
+    } catch (err) {
+      alert("Failed to delete project.");
+    }
   };
+
+  const addCertificateItem = async () => {
+    if (!newCert.name) return;
+    try {
+      if (resumeId) {
+        await adminService.apiClient.post(`/api/resume-studio/${resumeId}/certificate`, newCert);
+        await reloadResumeDetails(resumeId);
+      } else {
+        setCertificateList([...certificateList, { ...newCert, id: Date.now() }]);
+      }
+      setNewCert({ name: '', organization: '', issue_date: '', credential_id: '', credential_url: '' });
+    } catch (err) {
+      alert("Failed to add certificate.");
+    }
+  };
+
+  const deleteCertificateItem = async (certId: number) => {
+    try {
+      if (resumeId) {
+        await adminService.apiClient.delete(`/api/resume-studio/certificate/${certId}`);
+        await reloadResumeDetails(resumeId);
+      } else {
+        setCertificateList(certificateList.filter(c => c.id !== certId));
+      }
+    } catch (err) {
+      alert("Failed to delete certificate.");
+    }
+  };
+
+  const handleToggleSkill = async (s: any) => {
+    const isAdded = skillList.some(sk => sk.name.toLowerCase() === s.name.toLowerCase());
+    try {
+      if (isAdded) {
+        const target = skillList.find(sk => sk.name.toLowerCase() === s.name.toLowerCase());
+        if (target) {
+          if (resumeId && target.id) {
+            await adminService.apiClient.delete(`/api/resume-studio/skill/${target.id}`);
+            await reloadResumeDetails(resumeId);
+          } else {
+            setSkillList(skillList.filter(sk => sk.name.toLowerCase() !== s.name.toLowerCase()));
+          }
+        }
+      } else {
+        const newSkill = { category: s.category, name: s.name, level: 3 };
+        if (resumeId) {
+          await adminService.apiClient.post(`/api/resume-studio/${resumeId}/skill`, newSkill);
+          await reloadResumeDetails(resumeId);
+        } else {
+          setSkillList([...skillList, { ...newSkill, id: Date.now() }]);
+        }
+      }
+    } catch (err) {
+      alert("Failed to update skill.");
+    }
+  };
+
+  const handleRateSkill = async (skillName: string, level: number) => {
+    const target = skillList.find(s => s.name === skillName);
+    if (!target) return;
+    try {
+      if (resumeId) {
+        await adminService.apiClient.post(`/api/resume-studio/${resumeId}/skill`, {
+          category: target.category,
+          name: target.name,
+          level: level
+        });
+        await reloadResumeDetails(resumeId);
+      } else {
+        setSkillList(skillList.map(s => s.name === skillName ? { ...s, level } : s));
+      }
+    } catch (err) {
+      alert("Failed to rate skill.");
+    }
+  };
+
 
   return (
     <div className="flex flex-col gap-6 min-h-screen text-left">
@@ -574,7 +849,7 @@ export const ResumeBuilder: React.FC = () => {
                       <h5 className="font-bold text-slate-800">{edu.institution}</h5>
                       <p className="text-[10px] text-slate-450 mt-0.5">{edu.degree} • Passed: {edu.passing_year} • Grade: {edu.cgpa}% / CGPA</p>
                     </div>
-                    <button onClick={() => setEducationList(educationList.filter(e => e.id !== edu.id))} className="text-red-650 hover:bg-red-50 p-1.5 rounded-lg">
+                    <button onClick={() => deleteEducationItem(edu.id)} className="text-red-650 hover:bg-red-50 p-1.5 rounded-lg">
                       <Trash2 size={14} />
                     </button>
                   </div>
@@ -606,13 +881,7 @@ export const ResumeBuilder: React.FC = () => {
                     return (
                       <button 
                         key={s.name}
-                        onClick={() => {
-                          if (isAdded) {
-                            setSkillList(skillList.filter(sk => sk.name !== s.name));
-                          } else {
-                            setSkillList([...skillList, { category: s.category, name: s.name, level: 3 }]);
-                          }
-                        }}
+                        onClick={() => handleToggleSkill(s)}
                         className={`px-3 py-1.5 rounded-xl text-[10px] font-bold border transition-smooth ${
                           isAdded 
                             ? 'bg-blue-600 border-blue-600 text-white shadow-sm' 
@@ -639,10 +908,7 @@ export const ResumeBuilder: React.FC = () => {
                           <button
                             key={idx}
                             type="button"
-                            onClick={() => {
-                              const updated = skillList.map(s => s.name === sk.name ? { ...s, level: idx + 1 } : s);
-                              setSkillList(updated);
-                            }}
+                            onClick={() => handleRateSkill(sk.name, idx + 1)}
                             className={`w-3.5 h-3.5 rounded ${idx + 1 <= sk.level ? 'bg-amber-400' : 'bg-slate-200'}`}
                           />
                         ))}
@@ -691,7 +957,7 @@ export const ResumeBuilder: React.FC = () => {
                         <h5 className="font-bold text-xs text-slate-800">{p.name}</h5>
                         <span className="text-[9px] font-bold text-slate-400 uppercase mt-0.5 block">Tech: {p.tech_stack}</span>
                       </div>
-                      <button onClick={() => setProjectList(projectList.filter(pr => pr.id !== p.id))} className="text-red-650 hover:bg-red-50 p-1.5 rounded-lg">
+                      <button onClick={() => deleteProjectItem(p.id)} className="text-red-650 hover:bg-red-50 p-1.5 rounded-lg">
                         <Trash2 size={14} />
                       </button>
                     </div>
@@ -743,7 +1009,7 @@ export const ResumeBuilder: React.FC = () => {
                       <h5 className="font-bold text-xs text-slate-800">{e.position} at {e.company}</h5>
                       <span className="text-[10px] text-slate-450">{e.duration}</span>
                     </div>
-                    <button onClick={() => setExperienceList(experienceList.filter(exp => exp.id !== e.id))} className="text-red-650 p-1 rounded-lg">
+                    <button onClick={() => deleteExperienceItem(e.id)} className="text-red-650 p-1 rounded-lg">
                       <Trash2 size={14} />
                     </button>
                   </div>
@@ -782,7 +1048,7 @@ export const ResumeBuilder: React.FC = () => {
                     <h5 className="font-bold text-slate-800">{c.name}</h5>
                     <p className="text-[10px] text-slate-450 mt-0.5">{c.organization} • ID: {c.credential_id || 'N/A'} • {c.issue_date}</p>
                   </div>
-                  <button onClick={() => setCertificateList(certificateList.filter(ce => ce.id !== c.id))} className="text-red-650 p-1 rounded-lg">
+                  <button onClick={() => deleteCertificateItem(c.id)} className="text-red-650 p-1 rounded-lg">
                     <Trash2 size={14} />
                   </button>
                 </div>

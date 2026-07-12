@@ -38,6 +38,18 @@ class ResumeCreateRequest(BaseModel):
     language: str
     expected_salary: Optional[str] = None
     visibility: str  # "Public" | "Private"
+    phone: Optional[str] = None
+    address: Optional[str] = None
+    linkedin: Optional[str] = None
+    github: Optional[str] = None
+    portfolio: Optional[str] = None
+    website: Optional[str] = None
+    profile_photo: Optional[str] = None
+    summary: Optional[str] = None
+    languages_list: Optional[str] = None
+    achievements_list: Optional[str] = None
+    custom_sections: Optional[str] = None
+
 
 class EducationSchema(BaseModel):
     institution: str
@@ -151,6 +163,17 @@ def get_resume_detail(id: int, student: Student = Depends(get_current_student), 
             "color_theme": resume.color_theme,
             "status": resume.status,
             "ats_score": resume.ats_score,
+            "phone": resume.phone,
+            "address": resume.address,
+            "linkedin": resume.linkedin,
+            "github": resume.github,
+            "portfolio": resume.portfolio,
+            "website": resume.website,
+            "profile_photo": resume.profile_photo,
+            "summary": resume.summary,
+            "languages_list": resume.languages_list,
+            "achievements_list": resume.achievements_list,
+            "custom_sections": resume.custom_sections,
             "updated_at": resume.updated_at.isoformat()
         },
         "education": education,
@@ -175,8 +198,20 @@ def create_resume(payload: ResumeCreateRequest, student: Student = Depends(get_c
         language=payload.language,
         expected_salary=payload.expected_salary,
         visibility=payload.visibility,
+        phone=payload.phone,
+        address=payload.address,
+        linkedin=payload.linkedin,
+        github=payload.github,
+        portfolio=payload.portfolio,
+        website=payload.website,
+        profile_photo=payload.profile_photo,
+        summary=payload.summary,
+        languages_list=payload.languages_list,
+        achievements_list=payload.achievements_list,
+        custom_sections=payload.custom_sections,
         status="Draft"
     )
+
     db.add(resume)
     db.commit()
     db.refresh(resume)

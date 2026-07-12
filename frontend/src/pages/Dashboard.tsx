@@ -9,6 +9,8 @@ import {
 import { Button } from '../components/Button';
 import { useUserStore } from '../store/userStore';
 import { analyticsService } from '../services/analytics';
+import { apiClient } from '../services/api';
+
 import type { DashboardData, AtsData, ActivityTimelineItem, ResumeAnalyticsItem } from '../services/analytics';
 
 export const Dashboard: React.FC = () => {
@@ -101,16 +103,29 @@ export const Dashboard: React.FC = () => {
 
   const deleteResume = async (id: number) => {
     if (confirm("Are you sure you want to delete this resume?")) {
-      await handleTrackAction('activity', `Deleted Resume ID: ${id}`);
+      try {
+        await apiClient.delete(`/api/resume-studio/${id}`);
+        await handleTrackAction('activity', `Deleted Resume ID: ${id}`);
+        fetchAnalytics();
+      } catch (err) {
+        alert("Failed to delete resume.");
+      }
     }
   };
 
   const duplicateResume = async (id: number) => {
     const original = resumes.find(r => r.id === id);
     if (original) {
-      await handleTrackAction('activity', `Duplicated Resume: ${original.name}`);
+      try {
+        await apiClient.post(`/api/resume-studio/${id}/duplicate`);
+        await handleTrackAction('activity', `Duplicated Resume: ${original.name}`);
+        fetchAnalytics();
+      } catch (err) {
+        alert("Failed to duplicate resume.");
+      }
     }
   };
+
 
   const handleSendChat = async () => {
     if (!chatInput.trim()) return;
@@ -456,12 +471,13 @@ export const Dashboard: React.FC = () => {
 
                 <div className="flex items-center gap-2 shrink-0">
                   <button 
-                    onClick={() => navigate('/resume-builder')}
+                    onClick={() => navigate(`/resume-builder?id=${res.id}`)}
                     className="w-8 h-8 rounded-lg bg-white border border-slate-200 flex items-center justify-center text-slate-500 hover:text-slate-800 hover:border-slate-350 transition-smooth cursor-pointer shadow-sm"
                     title="Continue Editing"
                   >
                     <Edit3 size={12} />
                   </button>
+
                   <button 
                     onClick={() => duplicateResume(res.id)}
                     className="w-8 h-8 rounded-lg bg-white border border-slate-200 flex items-center justify-center text-slate-500 hover:text-slate-800 hover:border-slate-350 transition-smooth cursor-pointer shadow-sm"

@@ -19,8 +19,23 @@ class ResumeMaster(Base):
     color_theme = Column(String, default="blue")
     status = Column(String, default="Draft")  # "Draft" | "Completed" | "Archived"
     ats_score = Column(Integer, default=0)
+    
+    # Personal & Custom Metadata fields
+    phone = Column(String, nullable=True)
+    address = Column(String, nullable=True)
+    linkedin = Column(String, nullable=True)
+    github = Column(String, nullable=True)
+    portfolio = Column(String, nullable=True)
+    website = Column(String, nullable=True)
+    profile_photo = Column(Text, nullable=True)
+    summary = Column(Text, nullable=True)
+    languages_list = Column(Text, nullable=True)
+    achievements_list = Column(Text, nullable=True)
+    custom_sections = Column(Text, nullable=True)
+
     created_at = Column(DateTime(timezone=True), default=func.now())
     updated_at = Column(DateTime(timezone=True), default=func.now(), onupdate=func.now())
+
 
 class ResumeVersion(Base):
     __tablename__ = "resume_studio_versions"
