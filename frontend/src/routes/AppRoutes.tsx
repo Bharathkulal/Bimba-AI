@@ -18,6 +18,8 @@ import { Profile } from '../pages/Profile';
 import { Settings } from '../pages/Settings';
 import { AdminLogin } from '../pages/AdminLogin';
 import { NotFound } from '../pages/NotFound';
+import { Notifications } from '../pages/Notifications';
+
 
 // Modular Admin Pages
 import { AdminDashboardOverview } from '../pages/admin/AdminDashboardOverview';
@@ -120,6 +122,7 @@ export const AppRoutes: React.FC = () => {
             <Route path="/resume-builder" element={<ResumeBuilder />} />
             <Route path="/profile" element={<Profile />} />
             <Route path="/settings" element={<Settings />} />
+            <Route path="/notifications" element={<Notifications />} />
           </Route>
         </Route>
 

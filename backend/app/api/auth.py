@@ -9,6 +9,8 @@ from app.database.session import get_db
 from app.models.student import Student
 from app.models.otp_verification import OTPVerification
 from app.models.login_history import LoginHistory
+from app.models.communications import Notification
+
 from app.core.security import get_password_hash, verify_password, create_access_token
 
 router = APIRouter(prefix="/auth", tags=["Authentication"])
@@ -440,6 +442,14 @@ def update_profile(payload: ProfileUpdateRequest, token: str = Depends(oauth2_sc
     if payload.semester is not None:
         student.semester = payload.semester
         
+    # Generate Notification
+    notif = Notification(
+        student_id=student.id,
+        category="Profile",
+        type="Profile Updated",
+        message="Your placement profile details have been updated."
+    )
+    db.add(notif)
     db.commit()
     return {"message": "Profile updated successfully"}
 
@@ -452,6 +462,15 @@ def upload_profile_photo(payload: PhotoUploadRequest, token: str = Depends(oauth
     student = get_current_student(token, db)
     
     student.profile_photo = payload.photo
+    
+    # Generate Notification
+    notif = Notification(
+        student_id=student.id,
+        category="Profile",
+        type="Profile Photo Updated",
+        message="Your profile display photo has been updated."
+    )
+    db.add(notif)
     db.commit()
     return {"message": "Profile photo updated successfully"}
 
@@ -475,6 +494,15 @@ def change_password(payload: PasswordChangeRequest, token: str = Depends(oauth2_
         )
         
     student.password_hash = get_password_hash(payload.new_password)
+    
+    # Generate Notification
+    notif = Notification(
+        student_id=student.id,
+        category="System",
+        type="Password Changed",
+        message="Your account password was updated successfully. If this wasn't you, please alert administration."
+    )
+    db.add(notif)
     db.commit()
     return {"message": "Password changed successfully"}
 

@@ -671,8 +671,33 @@ def create_announcement(payload: AnnouncementCreate, request: Request, admin: Ad
     )
     db.add(ann)
     db.commit()
+    db.refresh(ann)
+    
+    if ann.status == "Published":
+        # Send Notification to target students
+        students_query = db.query(Student)
+        if ann.target_audience == "Department":
+            students_query = students_query.filter(Student.department == ann.target_value)
+        elif ann.target_audience == "Semester":
+            try:
+                students_query = students_query.filter(Student.semester == int(ann.target_value))
+            except ValueError:
+                pass
+        elif ann.target_audience == "Individual Student":
+            students_query = students_query.filter(Student.roll_number == ann.target_value)
+            
+        for s in students_query.all():
+            db.add(Notification(
+                student_id=s.id,
+                category="Announcement",
+                type="Announcement Published",
+                message=f"New Announcement: '{ann.title}' has been published."
+            ))
+        db.commit()
+
     log_audit(db, admin.username, "Announcement Published", "Success", affected_record=payload.title, request=request)
     return ann
+
 
 @router.put("/announcements/{id}")
 def edit_announcement(id: int, payload: AnnouncementCreate, request: Request, admin: AdminUser = Depends(require_role(["super_admin", "admin"])), db: Session = Depends(get_db)):

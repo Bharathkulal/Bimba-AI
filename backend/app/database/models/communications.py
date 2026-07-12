@@ -42,7 +42,10 @@ class Notification(Base):
     __tablename__ = "notifications"
 
     id = Column(Integer, primary_key=True, index=True)
-    type = Column(String, nullable=False)  # "Student Activated" | "Dataset Imported" | "Announcement Published" | "Backup Completed" | "AI Provider Error" | "SMTP Failure" | "Server Error"
+    student_id = Column(Integer, nullable=True, index=True)
+    category = Column(String, nullable=True, default="System")
+    type = Column(String, nullable=False)
     message = Column(Text, nullable=False)
     is_read = Column(Boolean, default=False)
     created_at = Column(DateTime(timezone=True), default=func.now())
+

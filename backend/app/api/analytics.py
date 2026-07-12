@@ -9,6 +9,8 @@ from app.database.session import get_db
 from app.models.student import Student
 from app.models.analytics import AIUsageLog, EditingSession, DownloadLog, ActivityLog
 from app.models.resume_studio import ResumeMaster, ResumeVersion, ResumeEducation, ResumeExperience, ResumeProject, ResumeSkill, ResumeCertificate
+from app.models.communications import Notification, Announcement
+
 
 from app.core.security import verify_token
 from fastapi.security import OAuth2PasswordBearer
@@ -454,3 +456,114 @@ def track_user_action(payload: TrackActionRequest, student: Student = Depends(ge
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Tracking failed: {str(e)}"
         )
+
+# --- STUDENT NOTIFICATIONS & ANNOUNCEMENTS ---
+
+@router.get("/notifications", response_model=None)
+def list_student_notifications(
+    category: Optional[str] = None,
+    search: Optional[str] = None,
+    student: Student = Depends(get_current_student),
+    db: Session = Depends(get_db)
+):
+    query = db.query(Notification).filter(Notification.student_id == student.id)
+    
+    if category:
+        query = query.filter(Notification.category == category)
+    if search:
+        query = query.filter(Notification.message.icontains(search))
+        
+    notifications = query.order_by(Notification.created_at.desc()).all()
+    
+    # Calculate unread count
+    unread_count = db.query(Notification).filter(
+        Notification.student_id == student.id,
+        Notification.is_read == False
+    ).count()
+    
+    return {
+        "notifications": notifications,
+        "unread_count": unread_count
+    }
+
+@router.put("/notifications/{id}/read")
+def read_student_notification(
+    id: int,
+    student: Student = Depends(get_current_student),
+    db: Session = Depends(get_db)
+):
+    notif = db.query(Notification).filter(
+        Notification.id == id,
+        Notification.student_id == student.id
+    ).first()
+    
+    if not notif:
+        raise HTTPException(status_code=404, detail="Notification not found")
+        
+    notif.is_read = True
+    db.commit()
+    return {"message": "Notification marked as read"}
+
+@router.put("/notifications/read-all")
+def read_all_student_notifications(
+    student: Student = Depends(get_current_student),
+    db: Session = Depends(get_db)
+):
+    db.query(Notification).filter(
+        Notification.student_id == student.id,
+        Notification.is_read == False
+    ).update({"is_read": True}, synchronize_session=False)
+    db.commit()
+    return {"message": "All notifications marked as read"}
+
+@router.delete("/notifications/{id}")
+def delete_student_notification(
+    id: int,
+    student: Student = Depends(get_current_student),
+    db: Session = Depends(get_db)
+):
+    notif = db.query(Notification).filter(
+        Notification.id == id,
+        Notification.student_id == student.id
+    ).first()
+    
+    if not notif:
+        raise HTTPException(status_code=404, detail="Notification not found")
+        
+    db.delete(notif)
+    db.commit()
+    return {"message": "Notification deleted"}
+
+@router.get("/announcements")
+def list_student_announcements(
+    search: Optional[str] = None,
+    student: Student = Depends(get_current_student),
+    db: Session = Depends(get_db)
+):
+    # Fetch announcements published and matching target audience
+    query = db.query(Announcement).filter(Announcement.status == "Published")
+    
+    # Filter announcements by student details (e.g., target_audience matches department/semester or Entire College)
+    announcements = query.order_by(Announcement.created_at.desc()).all()
+    
+    filtered = []
+    for a in announcements:
+        # Check target audience
+        aud = a.target_audience
+        val = a.target_value
+        
+        if aud == "Entire College":
+            filtered.append(a)
+        elif aud == "Department" and val == student.department:
+            filtered.append(a)
+        elif aud == "Semester" and str(val) == str(student.semester):
+            filtered.append(a)
+        elif aud == "Individual Student" and val == student.roll_number:
+            filtered.append(a)
+            
+    if search:
+        search_lower = search.lower()
+        filtered = [a for a in filtered if search_lower in a.title.lower() or search_lower in a.content.lower()]
+        
+    return filtered
+

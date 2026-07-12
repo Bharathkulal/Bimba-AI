@@ -50,16 +50,18 @@ export const Dashboard: React.FC = () => {
   const fetchAnalytics = async () => {
     try {
       setIsLoading(true);
-      const [dash, ats, act, resList] = await Promise.all([
+      const [dash, ats, act, resList, notifRes] = await Promise.all([
         analyticsService.getDashboard(),
         analyticsService.getAts(),
         analyticsService.getActivity(),
-        analyticsService.getResumes()
+        analyticsService.getResumes(),
+        apiClient.get('/api/analytics/notifications')
       ]);
       setDashboardData(dash);
       setAtsData(ats);
       setActivities(act);
       setResumes(resList);
+      setNotificationCount(notifRes.data.unread_count || 0);
     } catch (err) {
       console.error("Error loading real-time user analytics:", err);
     } finally {
@@ -266,7 +268,7 @@ export const Dashboard: React.FC = () => {
         <div className="flex items-center justify-end gap-3.5">
           {/* Notifications */}
           <button 
-            onClick={() => setNotificationCount(0)}
+            onClick={() => navigate('/notifications')}
             className="w-10 h-10 rounded-xl bg-white border border-slate-200 flex items-center justify-center text-slate-500 hover:text-slate-800 hover:bg-slate-50 transition-smooth relative cursor-pointer shadow-sm"
           >
             <Bell size={16} />

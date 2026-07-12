@@ -23,6 +23,8 @@ from app.models.analytics import ActivityLog
 from app.api.analytics import get_current_student
 from app.api.admin_portal import log_audit
 from app.services.ai_gateway import run_ai_gateway_request
+from app.models.communications import Notification
+
 
 # ReportLab PDF imports
 from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle, KeepTogether, PageBreak
@@ -251,6 +253,15 @@ def create_resume(payload: ResumeCreateRequest, student: Student = Depends(get_c
     # Log action
     log = ActivityLog(student_id=student.id, activity=f"Created Resume Studio: {payload.name}")
     db.add(log)
+    
+    # Generate Notification
+    notif = Notification(
+        student_id=student.id,
+        category="Resume",
+        type="Resume Created",
+        message=f"Your new resume '{payload.name}' has been created successfully."
+    )
+    db.add(notif)
     db.commit()
 
     return {"success": True, "id": resume.id}
@@ -263,13 +274,32 @@ def update_resume(id: int, payload: dict, student: Student = Depends(get_current
     for key, val in payload.items():
         if hasattr(resume, key):
             setattr(resume, key, val)
+            
+    # Generate Notification
+    notif = Notification(
+        student_id=student.id,
+        category="Resume",
+        type="Resume Updated",
+        message=f"Your resume '{resume.name}' details were updated successfully."
+    )
+    db.add(notif)
     db.commit()
     return {"success": True}
 
 @router.delete("/{id}")
 def delete_resume(id: int, student: Student = Depends(get_current_student), db: Session = Depends(get_db)):
     resume = verify_ownership(id, student.id, db)
+    r_name = resume.name
     db.delete(resume)
+    
+    # Generate Notification
+    notif = Notification(
+        student_id=student.id,
+        category="Resume",
+        type="Resume Deleted",
+        message=f"Your resume '{r_name}' was deleted successfully."
+    )
+    db.add(notif)
     db.commit()
     return {"success": True}
 
@@ -309,6 +339,14 @@ def duplicate_resume(id: int, student: Student = Depends(get_current_student), d
     for cert in db.query(ResumeCertificate).filter(ResumeCertificate.resume_id == id).all():
         db.add(ResumeCertificate(resume_id=new_master.id, name=cert.name, organization=cert.organization, issue_date=cert.issue_date, credential_id=cert.credential_id, credential_url=cert.credential_url))
     
+    # Generate Notification
+    notif = Notification(
+        student_id=student.id,
+        category="Resume",
+        type="Resume Duplicated",
+        message=f"Your resume '{resume.name}' has been duplicated as 'Copy of {resume.name}' successfully."
+    )
+    db.add(notif)
     db.commit()
     return {"success": True, "new_id": new_master.id}
 
@@ -399,6 +437,15 @@ def add_certificate(id: int, payload: CertificateSchema, student: Student = Depe
     verify_ownership(id, student.id, db)
     cert = ResumeCertificate(resume_id=id, **payload.model_dump())
     db.add(cert)
+    
+    # Generate Notification
+    notif = Notification(
+        student_id=student.id,
+        category="Certificates",
+        type="Certificate Added",
+        message=f"New certification '{payload.name}' issued by {payload.organization} was added to your profile."
+    )
+    db.add(notif)
     db.commit()
     return {"success": True}
 
