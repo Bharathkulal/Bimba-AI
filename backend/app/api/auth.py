@@ -362,7 +362,27 @@ def forgot_password_reset(payload: ResetPasswordRequest, db: Session = Depends(g
     return {"message": "Password reset successfully. You can now login."}
 
 from fastapi.security import OAuth2PasswordBearer
+from typing import Optional
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/auth/login", auto_error=False)
+
+class ProfileUpdateRequest(BaseModel):
+    student_name: Optional[str] = None
+    phone: Optional[str] = None
+    gender: Optional[str] = None
+    address: Optional[str] = None
+    bio: Optional[str] = None
+    linkedin: Optional[str] = None
+    github: Optional[str] = None
+    portfolio_website: Optional[str] = None
+    skills: Optional[str] = None
+    languages: Optional[str] = None
+    career_objective: Optional[str] = None
+    department: Optional[str] = None
+    semester: Optional[int] = None
+
+class PasswordChangeRequest(BaseModel):
+    current_password: str
+    new_password: str
 
 @router.get("/me")
 def get_me(token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)):
@@ -372,5 +392,89 @@ def get_me(token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)):
         "roll_number": student.roll_number,
         "personal_email": student.email,
         "department": student.department,
-        "semester": student.semester
+        "semester": student.semester,
+        "student_name": student.student_name,
+        "dob": student.dob,
+        "phone": student.phone,
+        "gender": student.gender,
+        "address": student.address,
+        "bio": student.bio,
+        "linkedin": student.linkedin,
+        "github": student.github,
+        "portfolio_website": student.portfolio_website,
+        "skills": student.skills,
+        "languages": student.languages,
+        "career_objective": student.career_objective,
+        "profile_photo": student.profile_photo
     }
+
+@router.put("/profile/update")
+def update_profile(payload: ProfileUpdateRequest, token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)):
+    from app.api.analytics import get_current_student
+    student = get_current_student(token, db)
+    
+    if payload.student_name is not None:
+        student.student_name = payload.student_name
+    if payload.phone is not None:
+        student.phone = payload.phone
+    if payload.gender is not None:
+        student.gender = payload.gender
+    if payload.address is not None:
+        student.address = payload.address
+    if payload.bio is not None:
+        student.bio = payload.bio
+    if payload.linkedin is not None:
+        student.linkedin = payload.linkedin
+    if payload.github is not None:
+        student.github = payload.github
+    if payload.portfolio_website is not None:
+        student.portfolio_website = payload.portfolio_website
+    if payload.skills is not None:
+        student.skills = payload.skills
+    if payload.languages is not None:
+        student.languages = payload.languages
+    if payload.career_objective is not None:
+        student.career_objective = payload.career_objective
+    if payload.department is not None:
+        student.department = payload.department
+    if payload.semester is not None:
+        student.semester = payload.semester
+        
+    db.commit()
+    return {"message": "Profile updated successfully"}
+
+class PhotoUploadRequest(BaseModel):
+    photo: str
+
+@router.post("/profile/upload-photo")
+def upload_profile_photo(payload: PhotoUploadRequest, token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)):
+    from app.api.analytics import get_current_student
+    student = get_current_student(token, db)
+    
+    student.profile_photo = payload.photo
+    db.commit()
+    return {"message": "Profile photo updated successfully"}
+
+@router.post("/profile/change-password")
+def change_password(payload: PasswordChangeRequest, token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)):
+    from app.api.analytics import get_current_student
+    student = get_current_student(token, db)
+    
+    if not student.password_hash or not verify_password(payload.current_password, student.password_hash):
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Current password is incorrect")
+        
+    password = payload.new_password
+    if (len(password) < 8 or
+        not any(c.isupper() for c in password) or
+        not any(c.islower() for c in password) or
+        not any(c.isdigit() for c in password) or
+        not any(not c.isalnum() for c in password)):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Password must be at least 8 characters long and contain at least one uppercase letter, one lowercase letter, one number, and one special character."
+        )
+        
+    student.password_hash = get_password_hash(payload.new_password)
+    db.commit()
+    return {"message": "Password changed successfully"}
+

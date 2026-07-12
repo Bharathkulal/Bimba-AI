@@ -6,7 +6,21 @@ interface UserState {
     personal_email: string;
     department: string;
     semester: number;
+    student_name?: string;
+    dob?: string;
+    phone?: string;
+    gender?: string;
+    address?: string;
+    bio?: string;
+    linkedin?: string;
+    github?: string;
+    portfolio_website?: string;
+    skills?: string;
+    languages?: string;
+    career_objective?: string;
+    profile_photo?: string;
   } | null;
+
   token: string | null;
   isAuthenticated: boolean;
   setUser: (user: UserState['user'], token: string) => void;

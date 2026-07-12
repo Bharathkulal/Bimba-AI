@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Boolean, DateTime
+from sqlalchemy import Column, Integer, String, Boolean, DateTime, Text
 from sqlalchemy.sql import func
 from app.database.base import Base
 
@@ -19,8 +19,23 @@ class Student(Base):
     account_activated = Column(Boolean, default=False)
     otp_verified = Column(Boolean, default=False)
     last_login = Column(DateTime, nullable=True)
+    
+    # Profile management fields
+    phone = Column(String, nullable=True)
+    gender = Column(String, nullable=True)
+    address = Column(String, nullable=True)
+    bio = Column(Text, nullable=True)
+    linkedin = Column(String, nullable=True)
+    github = Column(String, nullable=True)
+    portfolio_website = Column(String, nullable=True)
+    skills = Column(Text, nullable=True)
+    languages = Column(String, nullable=True)
+    career_objective = Column(Text, nullable=True)
+    profile_photo = Column(Text, nullable=True)
+
     created_at = Column(DateTime, server_default=func.now())
     updated_at = Column(DateTime, server_default=func.now(), onupdate=func.now())
+
 
     # Compatibility properties for old code if any exists
     @property

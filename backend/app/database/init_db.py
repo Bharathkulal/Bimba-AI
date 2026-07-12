@@ -166,8 +166,9 @@ def init_db():
                 department="BCA",
                 semester=3,
                 status="Active",
-                account_activated=False,
-                otp_verified=False
+                password_hash=get_password_hash("Test@12345"),
+                account_activated=True,
+                otp_verified=True
             )
             s2 = Student(
                 roll_number="BCA24002",
