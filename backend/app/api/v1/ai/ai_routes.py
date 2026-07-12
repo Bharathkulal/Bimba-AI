@@ -93,31 +93,31 @@ def test_provider_api(slug: str, api_key: str, timeout: int = 10) -> tuple[bool,
         return True, "🟢 Connected (Mock Verification)"
         
     url = ""
-    headers = {}
+    headers = {
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+    }
     
     if slug == "gemini":
         url = f"https://generativelanguage.googleapis.com/v1beta/models?key={api_key}"
     elif slug == "openai":
         url = "https://api.openai.com/v1/models"
-        headers = {"Authorization": f"Bearer {api_key}"}
+        headers["Authorization"] = f"Bearer {api_key}"
     elif slug == "groq":
         url = "https://api.groq.com/openai/v1/models"
-        headers = {"Authorization": f"Bearer {api_key}"}
+        headers["Authorization"] = f"Bearer {api_key}"
     elif slug == "openrouter":
         url = "https://openrouter.ai/api/v1/models"
-        headers = {"Authorization": f"Bearer {api_key}"}
+        headers["Authorization"] = f"Bearer {api_key}"
     elif slug == "claude":
         url = "https://api.anthropic.com/v1/models"
-        headers = {
-            "x-api-key": api_key,
-            "anthropic-version": "2023-06-01"
-        }
+        headers["x-api-key"] = api_key
+        headers["anthropic-version"] = "2023-06-01"
     elif slug == "deepseek":
         url = "https://api.deepseek.com/models"
-        headers = {"Authorization": f"Bearer {api_key}"}
+        headers["Authorization"] = f"Bearer {api_key}"
     elif slug == "mistral":
         url = "https://api.mistral.ai/v1/models"
-        headers = {"Authorization": f"Bearer {api_key}"}
+        headers["Authorization"] = f"Bearer {api_key}"
     else:
         return False, "🔴 Unknown provider"
         

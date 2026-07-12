@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, Request
 from sqlalchemy.orm import Session
 from sqlalchemy import func
 from datetime import datetime, timedelta, timezone
@@ -19,7 +19,11 @@ router = APIRouter(prefix="/analytics", tags=["Analytics"])
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/auth/login", auto_error=False)
 
-def get_current_student(token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)) -> Student:
+def get_current_student(request: Request, token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)) -> Student:
+    if not token:
+        # Check query parameters (e.g. for window.open downloads)
+        token = request.query_params.get("token")
+        
     if not token:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,

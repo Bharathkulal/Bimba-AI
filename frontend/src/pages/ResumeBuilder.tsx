@@ -1398,7 +1398,16 @@ export const ResumeBuilder: React.FC = () => {
                         <p className="text-xs text-slate-500 mt-2 bg-slate-50 border border-slate-100 p-2.5 rounded-xl leading-relaxed">{exp.desc}</p>
                       </div>
                       <div className="pt-3 border-t border-slate-100">
-                        <Button onClick={() => window.open(`/api/resume-studio/${resumeId}/${exp.type === 'print' ? 'pdf' : exp.type}`, '_blank')} variant="primary" size="sm" className="bg-blue-600 font-bold w-full justify-center">
+                        <Button 
+                          onClick={() => {
+                            const token = localStorage.getItem('auth_token');
+                            const url = `/api/resume-studio/${resumeId}/${exp.type === 'print' ? 'pdf' : exp.type}${token ? `?token=${token}` : ''}`;
+                            window.open(url, '_blank');
+                          }} 
+                          variant="primary" 
+                          size="sm" 
+                          className="bg-blue-600 font-bold w-full justify-center"
+                        >
                           Generate File
                         </Button>
                       </div>

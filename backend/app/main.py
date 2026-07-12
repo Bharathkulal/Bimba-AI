@@ -1,5 +1,11 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from dotenv import load_dotenv
+import os
+
+# Load env variables from .env
+load_dotenv(os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), ".env"))
+
 from app.core.config import settings
 from app.api.v1.monitoring.monitoring_routes import router as health_router
 from app.api.v1.auth.auth_routes import router as auth_router
