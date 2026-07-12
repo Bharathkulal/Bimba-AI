@@ -1,0 +1,28 @@
+# Environment variables
+.env
+.env.*
+*.env
+
+# Python caching
+__pycache__/
+*.pyc
+
+# Local Virtual Environments
+venv/
+.venv/
+env/
+
+# IDE / Editor configuration
+.vscode/
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# Node dependencies & builds
+node_modules/
+dist/
+build/
+out/
