@@ -24,6 +24,13 @@ from app.api.analytics import get_current_student
 from app.api.admin_portal import log_audit
 from app.services.ai_gateway import run_ai_gateway_request
 
+# ReportLab PDF imports
+from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle, KeepTogether, PageBreak
+from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+from reportlab.lib import colors
+from reportlab.lib.pagesizes import letter
+
+
 
 router = APIRouter(prefix="/resume-studio", tags=["AI Resume Studio"])
 
@@ -639,29 +646,254 @@ def restore_version(version_id: int, student: Student = Depends(get_current_stud
     return {"success": True}
 
 # --- PDF / DOWNLOAD EXPORTS ---
-
 @router.get("/{id}/pdf")
 def get_pdf_export(id: int, student: Student = Depends(get_current_student), db: Session = Depends(get_db)):
     verify_ownership(id, student.id, db)
     
-    # Create simple printable CSV/text mock representation of PDF stream
-    output = io.StringIO()
-    output.write(f"=== BIMBA AI RESUME EXPORT (PDF) ===\n")
-    output.write(f"Student: {student.student_name} ({student.roll_number})\n")
-    output.write(f"Target Role: {db.query(ResumeMaster.target_role).filter(ResumeMaster.id == id).scalar()}\n")
-    output.write(f"Generated at: {datetime.now(timezone.utc).isoformat()}\n")
+    # Fetch all details
+    resume = db.query(ResumeMaster).filter(ResumeMaster.id == id).first()
+    education = db.query(ResumeEducation).filter(ResumeEducation.resume_id == id).all()
+    experience = db.query(ResumeExperience).filter(ResumeExperience.resume_id == id).all()
+    projects = db.query(ResumeProject).filter(ResumeProject.resume_id == id).all()
+    skills = db.query(ResumeSkill).filter(ResumeSkill.resume_id == id).all()
+    certificates = db.query(ResumeCertificate).filter(ResumeCertificate.resume_id == id).all()
     
-    # Add download log
+    # Log download action
     dl = ResumeDownload(resume_id=id, format="PDF")
     db.add(dl)
     db.commit()
     
-    output.seek(0)
+    # Setup reportlab document
+    buffer = io.BytesIO()
+    doc = SimpleDocTemplate(
+        buffer,
+        pagesize=letter,
+        rightMargin=40,
+        leftMargin=40,
+        topMargin=40,
+        bottomMargin=40
+    )
+    
+    styles = getSampleStyleSheet()
+    
+    # Custom styles
+    title_style = ParagraphStyle(
+        'DocTitle',
+        parent=styles['Heading1'],
+        fontName='Helvetica-Bold',
+        fontSize=20,
+        leading=24,
+        textColor=colors.HexColor('#1E3A8A'),
+        alignment=1, # Centered
+        spaceAfter=6
+    )
+    
+    subtitle_style = ParagraphStyle(
+        'DocSub',
+        parent=styles['Normal'],
+        fontName='Helvetica',
+        fontSize=9,
+        leading=12,
+        textColor=colors.HexColor('#4B5563'),
+        alignment=1,
+        spaceAfter=12
+    )
+    
+    section_title = ParagraphStyle(
+        'SecTitle',
+        parent=styles['Heading2'],
+        fontName='Helvetica-Bold',
+        fontSize=12,
+        leading=16,
+        textColor=colors.HexColor('#1E3A8A'),
+        spaceBefore=12,
+        spaceAfter=4,
+        keepWithNext=True
+    )
+    
+    body_style = ParagraphStyle(
+        'DocBody',
+        parent=styles['Normal'],
+        fontName='Helvetica',
+        fontSize=9.5,
+        leading=13.5,
+        textColor=colors.HexColor('#1F2937'),
+        spaceAfter=4
+    )
+    
+    meta_style = ParagraphStyle(
+        'DocMeta',
+        parent=styles['Normal'],
+        fontName='Helvetica-Bold',
+        fontSize=9.5,
+        leading=13.5,
+        textColor=colors.HexColor('#374151')
+    )
+
+    meta_right = ParagraphStyle(
+        'DocMetaRight',
+        parent=meta_style,
+        alignment=2 # Right align
+    )
+
+    story = []
+    
+    # Header block
+    name = student.student_name
+    contact_parts = []
+    if student.email:
+        contact_parts.append(student.email)
+    if resume.phone:
+        contact_parts.append(resume.phone)
+    if resume.address:
+        contact_parts.append(resume.address)
+        
+    sub_parts = []
+    if resume.linkedin:
+        sub_parts.append(f"LinkedIn: {resume.linkedin}")
+    if resume.github:
+        sub_parts.append(f"GitHub: {resume.github}")
+    if resume.portfolio:
+        sub_parts.append(f"Portfolio: {resume.portfolio}")
+        
+    story.append(Paragraph(name, title_style))
+    story.append(Paragraph(" • ".join(contact_parts) + "<br/>" + " | ".join(sub_parts), subtitle_style))
+    
+    # Divider line
+    story.append(Table([['']], colWidths=[532], rowHeights=[1], style=TableStyle([
+        ('LINEBELOW', (0,0), (-1,-1), 1.5, colors.HexColor('#1E3A8A')),
+        ('BOTTOMPADDING', (0,0), (-1,-1), 0),
+        ('TOPPADDING', (0,0), (-1,-1), 0),
+    ])))
+    story.append(Spacer(1, 10))
+    
+    # Professional Summary
+    summary_text = resume.summary or resume.career_objective
+    if summary_text:
+        story.append(Paragraph("PROFESSIONAL SUMMARY", section_title))
+        story.append(Paragraph(summary_text, body_style))
+        story.append(Spacer(1, 8))
+        
+    # Education
+    if education:
+        story.append(Paragraph("EDUCATION", section_title))
+        for edu in education:
+            edu_table_data = [
+                [Paragraph(f"<b>{edu.institution}</b>", body_style), Paragraph(str(edu.passing_year), meta_right)],
+                [Paragraph(f"{edu.degree} — CGPA: {edu.cgpa}% / CGPA" if edu.cgpa else edu.degree, body_style), Paragraph(edu.achievements or '', meta_right)]
+            ]
+            t = Table(edu_table_data, colWidths=[400, 132])
+            t.setStyle(TableStyle([
+                ('VALIGN', (0,0), (-1,-1), 'TOP'),
+                ('BOTTOMPADDING', (0,0), (-1,-1), 2),
+                ('TOPPADDING', (0,0), (-1,-1), 2),
+                ('LEFTPADDING', (0,0), (-1,-1), 0),
+                ('RIGHTPADDING', (0,0), (-1,-1), 0),
+            ]))
+            story.append(t)
+        story.append(Spacer(1, 8))
+        
+    # Experience
+    if experience:
+        story.append(Paragraph("PROFESSIONAL EXPERIENCE", section_title))
+        for exp in experience:
+            exp_table_data = [
+                [Paragraph(f"<b>{exp.position}</b> at <b>{exp.company}</b>", body_style), Paragraph(exp.duration, meta_right)],
+                [Paragraph(exp.description, body_style), '']
+            ]
+            t = Table(exp_table_data, colWidths=[400, 132])
+            t.setStyle(TableStyle([
+                ('SPAN', (0,1), (1,1)),
+                ('VALIGN', (0,0), (-1,-1), 'TOP'),
+                ('BOTTOMPADDING', (0,0), (-1,-1), 2),
+                ('TOPPADDING', (0,0), (-1,-1), 2),
+                ('LEFTPADDING', (0,0), (-1,-1), 0),
+                ('RIGHTPADDING', (0,0), (-1,-1), 0),
+            ]))
+            story.append(t)
+        story.append(Spacer(1, 8))
+        
+    # Projects
+    if projects:
+        story.append(Paragraph("ACADEMIC & PERSONAL PROJECTS", section_title))
+        for proj in projects:
+            proj_header = f"<b>{proj.name}</b>"
+            if proj.tech_stack:
+                proj_header += f" (Tech: {proj.tech_stack})"
+            proj_table_data = [
+                [Paragraph(proj_header, body_style), Paragraph(proj.duration or '', meta_right)],
+                [Paragraph(proj.description, body_style), '']
+            ]
+            t = Table(proj_table_data, colWidths=[400, 132])
+            t.setStyle(TableStyle([
+                ('SPAN', (0,1), (1,1)),
+                ('VALIGN', (0,0), (-1,-1), 'TOP'),
+                ('BOTTOMPADDING', (0,0), (-1,-1), 2),
+                ('TOPPADDING', (0,0), (-1,-1), 2),
+                ('LEFTPADDING', (0,0), (-1,-1), 0),
+                ('RIGHTPADDING', (0,0), (-1,-1), 0),
+            ]))
+            story.append(t)
+        story.append(Spacer(1, 8))
+        
+    # Skills
+    if skills:
+        story.append(Paragraph("TECHNICAL SKILLS", section_title))
+        skills_by_category = {}
+        for s in skills:
+            skills_by_category.setdefault(s.category, []).append(f"{s.name} (Lvl {s.level})")
+        
+        skill_lines = []
+        for cat, sks in skills_by_category.items():
+            skill_lines.append(f"<b>{cat}:</b> {', '.join(sks)}")
+        story.append(Paragraph("<br/>".join(skill_lines), body_style))
+        story.append(Spacer(1, 8))
+        
+    # Certificates
+    if certificates:
+        story.append(Paragraph("CERTIFICATIONS", section_title))
+        for cert in certificates:
+            cert_table_data = [
+                [Paragraph(f"<b>{cert.name}</b> — {cert.organization}", body_style), Paragraph(cert.issue_date or '', meta_right)]
+            ]
+            t = Table(cert_table_data, colWidths=[400, 132])
+            t.setStyle(TableStyle([
+                ('VALIGN', (0,0), (-1,-1), 'TOP'),
+                ('BOTTOMPADDING', (0,0), (-1,-1), 2),
+                ('TOPPADDING', (0,0), (-1,-1), 2),
+                ('LEFTPADDING', (0,0), (-1,-1), 0),
+                ('RIGHTPADDING', (0,0), (-1,-1), 0),
+            ]))
+            story.append(t)
+        story.append(Spacer(1, 8))
+        
+    # Achievements
+    if resume.achievements_list:
+        try:
+            ach_json = json.loads(resume.achievements_list)
+            story.append(Paragraph("ACHIEVEMENTS & EXTRACURRICULARS", section_title))
+            ach_lines = []
+            if ach_json.get("hackathons"):
+                ach_lines.append(f"<b>Hackathons:</b> {ach_json['hackathons']}")
+            if ach_json.get("awards"):
+                ach_lines.append(f"<b>Awards:</b> {ach_json['awards']}")
+            if ach_json.get("soft_skills"):
+                ach_lines.append(f"<b>Soft Skills:</b> {ach_json['soft_skills']}")
+            if ach_json.get("extracurricular"):
+                ach_lines.append(f"<b>Extracurricular:</b> {ach_json['extracurricular']}")
+            story.append(Paragraph("<br/>".join(ach_lines), body_style))
+        except Exception:
+            pass
+
+    doc.build(story)
+    buffer.seek(0)
+    
     return StreamingResponse(
-        io.BytesIO(output.getvalue().encode('utf-8')),
+        buffer,
         media_type="application/pdf",
         headers={"Content-Disposition": f"attachment; filename=bimba_resume_{id}.pdf"}
     )
+
 
 @router.get("/public/{id}")
 def get_public_resume(id: int, db: Session = Depends(get_db)):
