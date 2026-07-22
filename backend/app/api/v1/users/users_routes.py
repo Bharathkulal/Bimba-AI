@@ -16,7 +16,7 @@ import shutil
 from app.database.session import get_db, engine
 from app.models.student import Student
 from app.models.analytics import AIUsageLog, EditingSession, DownloadLog, ActivityLog
-from app.models.resume_studio import ResumeMaster
+from app.models.resume_studio import ResumeMaster, ResumeTemplate
 
 from app.models.ai_admin import AIProvider, AIGatewayLog, AISystemSettings
 from app.models.admin_user import AdminUser
@@ -289,15 +289,110 @@ def delete_resume_admin(id: int, request: Request, admin: AdminUser = Depends(re
     log_audit(db, admin.username, "Delete Resume", "Success", affected_record=str(id), request=request)
     return {"success": True, "message": "Resume deleted successfully."}
 
+class TemplateAdminSchema(BaseModel):
+    slug: str
+    name: str
+    category: str
+    ats_rating: int = 95
+    popularity: int = 100
+    color_theme: str = "blue"
+    thumbnail: Optional[str] = None
+    is_enabled: bool = True
+    is_premium: bool = False
+    is_ats_optimized: bool = True
+    html_content: Optional[str] = None
+    reportlab_code: Optional[str] = None
+
 @router.get("/templates")
 def get_admin_templates(admin: AdminUser = Depends(get_current_admin), db: Session = Depends(get_db)):
-    return [
-        {"id": 1, "name": "Cosmos Pro", "category": "Modern", "score": 98, "is_active": True, "description": "Best for Tech CVs"},
-        {"id": 2, "name": "Celestial ATS", "category": "ATS", "score": 99, "is_active": True, "description": "High compliance parsing layout"},
-        {"id": 3, "name": "Galaxy Professional", "category": "Professional", "score": 97, "is_active": True, "description": "Engineering heavy structure"},
-        {"id": 4, "name": "Astral Creative", "category": "Creative", "score": 95, "is_active": True, "description": "Design standard accent color"},
-        {"id": 5, "name": "Minimal Minimalist", "category": "Minimal", "score": 94, "is_active": True, "description": "Clean simple spacing"}
-    ]
+    tpls = db.query(ResumeTemplate).all()
+    result = []
+    for t in tpls:
+        result.append({
+            "id": t.id,
+            "slug": t.slug,
+            "name": t.name,
+            "category": t.category,
+            "score": t.ats_rating,
+            "is_active": t.is_enabled,
+            "is_premium": t.is_premium,
+            "color_theme": t.color_theme,
+            "description": f"{t.category} layout. ATS Scorecard: {t.ats_rating}%",
+            "html_content": t.html_content,
+            "reportlab_code": t.reportlab_code
+        })
+    return result
+
+@router.post("/templates")
+def create_admin_template(payload: TemplateAdminSchema, request: Request, admin: AdminUser = Depends(require_role(["super_admin", "admin"])), db: Session = Depends(get_db)):
+    # Check duplicate
+    existing = db.query(ResumeTemplate).filter(ResumeTemplate.slug == payload.slug).first()
+    if existing:
+        raise HTTPException(status_code=400, detail="Template with this slug already exists.")
+        
+    tpl = ResumeTemplate(
+        slug=payload.slug,
+        name=payload.name,
+        category=payload.category,
+        ats_rating=payload.ats_rating,
+        popularity=payload.popularity,
+        color_theme=payload.color_theme,
+        thumbnail=payload.thumbnail,
+        is_enabled=payload.is_enabled,
+        is_premium=payload.is_premium,
+        is_ats_optimized=payload.is_ats_optimized,
+        html_content=payload.html_content,
+        reportlab_code=payload.reportlab_code
+    )
+    db.add(tpl)
+    db.commit()
+    db.refresh(tpl)
+    log_audit(db, admin.username, "Template Created", "Success", affected_record=payload.slug, request=request)
+    return {"success": True, "id": tpl.id}
+
+@router.put("/templates/{id}")
+def edit_admin_template(id: int, payload: TemplateAdminSchema, request: Request, admin: AdminUser = Depends(require_role(["super_admin", "admin"])), db: Session = Depends(get_db)):
+    tpl = db.query(ResumeTemplate).filter(ResumeTemplate.id == id).first()
+    if not tpl:
+        raise HTTPException(status_code=404, detail="Template not found.")
+        
+    tpl.name = payload.name
+    tpl.category = payload.category
+    tpl.ats_rating = payload.ats_rating
+    tpl.popularity = payload.popularity
+    tpl.color_theme = payload.color_theme
+    tpl.thumbnail = payload.thumbnail
+    tpl.is_enabled = payload.is_enabled
+    tpl.is_premium = payload.is_premium
+    tpl.is_ats_optimized = payload.is_ats_optimized
+    tpl.html_content = payload.html_content
+    tpl.reportlab_code = payload.reportlab_code
+    
+    db.commit()
+    log_audit(db, admin.username, "Template Edited", "Success", affected_record=tpl.slug, request=request)
+    return {"success": True}
+
+@router.delete("/templates/{id}")
+def delete_admin_template(id: int, request: Request, admin: AdminUser = Depends(require_role(["super_admin"])), db: Session = Depends(get_db)):
+    tpl = db.query(ResumeTemplate).filter(ResumeTemplate.id == id).first()
+    if not tpl:
+        raise HTTPException(status_code=404, detail="Template not found.")
+    slug = tpl.slug
+    db.delete(tpl)
+    db.commit()
+    log_audit(db, admin.username, "Template Deleted", "Success", affected_record=slug, request=request)
+    return {"success": True}
+
+@router.post("/templates/{id}/toggle")
+def toggle_admin_template(id: int, request: Request, admin: AdminUser = Depends(require_role(["super_admin", "admin"])), db: Session = Depends(get_db)):
+    tpl = db.query(ResumeTemplate).filter(ResumeTemplate.id == id).first()
+    if not tpl:
+        raise HTTPException(status_code=404, detail="Template not found.")
+    tpl.is_enabled = not tpl.is_enabled
+    db.commit()
+    log_audit(db, admin.username, f"Template Status Toggled: {tpl.is_enabled}", "Success", affected_record=tpl.slug, request=request)
+    return {"success": True, "is_enabled": tpl.is_enabled}
+
 
 # --- MODULE 1: DATASET MANAGER ---
 

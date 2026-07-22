@@ -16,7 +16,8 @@ def init_db():
     from app.models.resume_studio import (
         ResumeMaster, ResumeVersion as ResumeStudioVersion, ResumeEducation, 
         ResumeExperience, ResumeProject, ResumeSkill, ResumeCertificate, 
-        ResumeTemplate, ResumeDownload, ResumeATS, ResumeAILog, CareerReadiness
+        ResumeTemplate, ResumeDownload, ResumeATS, ResumeAILog, CareerReadiness,
+        ResumeAnalysis, ResumeImprovementHistory, JobDescriptionOptimization
     )
     from datetime import datetime, timedelta, timezone
     from app.core.security import get_password_hash
@@ -220,6 +221,81 @@ def init_db():
             db.add_all([s1, s2, s3, s4, s5])
             db.commit()
             print("Successfully seeded student data!")
+
+        # Seed default templates
+        tpl_count = db.query(ResumeTemplate).count()
+        if tpl_count == 0:
+            print("Seeding default resume templates...")
+            templates = [
+                ResumeTemplate(
+                    slug="celestial",
+                    name="Celestial ATS",
+                    category="Minimal ATS",
+                    ats_rating=99,
+                    popularity=150,
+                    color_theme="blue",
+                    is_enabled=True,
+                    is_premium=False,
+                    is_ats_optimized=True,
+                    html_content="<div class='theme-blue font-serif'>...</div>",
+                    reportlab_code='{"margins": [40, 40, 40, 40], "primary_color": "#1E3A8A"}'
+                ),
+                ResumeTemplate(
+                    slug="cosmos",
+                    name="Cosmos Pro",
+                    category="Modern",
+                    ats_rating=98,
+                    popularity=120,
+                    color_theme="indigo",
+                    is_enabled=True,
+                    is_premium=True,
+                    is_ats_optimized=True,
+                    html_content="<div class='theme-indigo font-sans'>...</div>",
+                    reportlab_code='{"margins": [30, 30, 30, 30], "primary_color": "#4F46E5"}'
+                ),
+                ResumeTemplate(
+                    slug="galaxy",
+                    name="Galaxy Professional",
+                    category="Professional",
+                    ats_rating=97,
+                    popularity=110,
+                    color_theme="blue",
+                    is_enabled=True,
+                    is_premium=False,
+                    is_ats_optimized=True,
+                    html_content="<div class='theme-blue font-sans'>...</div>",
+                    reportlab_code='{"margins": [40, 40, 40, 40], "primary_color": "#0F172A"}'
+                ),
+                ResumeTemplate(
+                    slug="astral",
+                    name="Astral Creative",
+                    category="Creative",
+                    ats_rating=95,
+                    popularity=95,
+                    color_theme="emerald",
+                    is_enabled=True,
+                    is_premium=False,
+                    is_ats_optimized=False,
+                    html_content="<div class='theme-emerald font-sans'>...</div>",
+                    reportlab_code='{"margins": [35, 35, 35, 35], "primary_color": "#059669"}'
+                ),
+                ResumeTemplate(
+                    slug="minimal",
+                    name="Minimal Minimalist",
+                    category="Minimal ATS",
+                    ats_rating=96,
+                    popularity=85,
+                    color_theme="slate",
+                    is_enabled=True,
+                    is_premium=False,
+                    is_ats_optimized=True,
+                    html_content="<div class='theme-slate font-sans-narrow'>...</div>",
+                    reportlab_code='{"margins": [45, 45, 45, 45], "primary_color": "#334155"}'
+                )
+            ]
+            db.add_all(templates)
+            db.commit()
+            print("Successfully seeded resume templates!")
             
     except Exception as e:
         print(f"Error seeding database in init_db: {e}")

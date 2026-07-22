@@ -4,7 +4,8 @@ import {
   ChevronLeft, Eye, Download, Plus, Trash2, Sparkles, CheckCircle2, 
   ArrowLeft, ArrowRight, Lock, Globe, Search, Award, Briefcase, 
   GraduationCap, Wrench, Terminal, QrCode, Printer, Share2, History,
-  ArrowUpRight, AlertCircle, Check, ZoomIn, ZoomOut, CheckSquare, Square, RefreshCw
+  ArrowUpRight, AlertCircle, Check, ZoomIn, ZoomOut, CheckSquare, Square, RefreshCw,
+  UploadCloud, Copy
 } from 'lucide-react';
 import { Button } from '../components/Button';
 import { Card } from '../components/Card';
@@ -125,7 +126,7 @@ export const ResumeBuilder: React.FC = () => {
 
   // MOCK DATA AND SETTINGS FOR PREVIEW
   const [zoomLevel, setZoomLevel] = useState(1);
-  const [activeStudioTab, setActiveStudioTab] = useState<'editor' | 'templates' | 'ats' | 'readiness' | 'versions' | 'export'>('editor');
+  const [activeStudioTab, setActiveStudioTab] = useState<'editor' | 'templates' | 'ats' | 'readiness' | 'versions' | 'export' | 'jd_optimizer' | 'ai_improve'>('editor');
   const [templates, setTemplates] = useState<any[]>([]);
   
   // Section layout visibility
@@ -179,6 +180,120 @@ export const ResumeBuilder: React.FC = () => {
   const [newCert, setNewCert] = useState({ name: '', organization: '', issue_date: '', credential_id: '', credential_url: '' });
   const [skillSearch, setSkillSearch] = useState('');
 
+  // AI Platform States
+  const [showParserVerification, setShowParserVerification] = useState(searchParams.get('is_parsed') === 'true');
+  const [improvementGoal, setImprovementGoal] = useState('Software Engineer');
+  const [isImproving, setIsImproving] = useState(false);
+  const [improvementData, setImprovementData] = useState<{ original: any; improved: any } | null>(null);
+  
+  const [jobDescription, setJobDescription] = useState('');
+  const [isOptimizingJd, setIsOptimizingJd] = useState(false);
+  const [jdOptimizeData, setJdOptimizeData] = useState<{ match_metrics: any; optimized_resume: any } | null>(null);
+
+  // Save Final Resume
+  const handleSaveFinalResume = async (silent = false) => {
+    if (!resumeId) return;
+    try {
+      const payload = {
+        master: masterForm,
+        personal_info: personalInfo,
+        education: educationList,
+        experience: experienceList,
+        projects: projectList,
+        skills: skillList,
+        certifications: certificateList,
+        achievements
+      };
+      await adminService.apiClient.post(`/api/resume-studio/${resumeId}/save-final`, payload);
+      if (!silent) {
+        showToast("Resume saved successfully!", "success");
+      }
+    } catch (err) {
+      console.error(err);
+      if (!silent) {
+        showToast("Failed to save resume details.", "error");
+      }
+    }
+  };
+
+  // Verify Parser
+  const handleVerifyParser = async () => {
+    try {
+      setIsAutoSaving(true);
+      setSaveStatus('Saving verification data...');
+      await handleSaveFinalResume(true);
+      
+      // Recalculate ATS
+      await adminService.apiClient.post(`/api/resume-studio/${resumeId}/analyze`);
+      const detail = await adminService.apiClient.get(`/api/resume-studio/${resumeId}`);
+      if (detail.data.ats) setAtsScorecard(detail.data.ats);
+      
+      showToast("Resume parsed and verified successfully!", "success");
+      setShowParserVerification(false);
+      setBuilderMode('studio');
+      setActiveStudioTab('editor');
+    } catch (err) {
+      console.error(err);
+      showToast("Verification failed.", "error");
+    } finally {
+      setIsAutoSaving(false);
+      setSaveStatus('Changes saved');
+    }
+  };
+
+  // Run AI Improvement Rewrite
+  const handleAIImproveRewrite = async () => {
+    if (!resumeId) return;
+    try {
+      setIsImproving(true);
+      showToast("Gemini AI rewriting resume sections...", "success");
+      const res = await adminService.apiClient.post(`/api/resume-studio/${resumeId}/improve`, {
+        improvement_goal: improvementGoal
+      });
+      setImprovementData(res.data);
+      showToast("Rewrite suggestions generated!", "success");
+    } catch (err) {
+      console.error(err);
+      showToast("AI rewrite failed.", "error");
+    } finally {
+      setIsImproving(false);
+    }
+  };
+
+  // Run JD Optimization
+  const handleJdOptimize = async () => {
+    if (!resumeId) return;
+    if (!jobDescription.trim()) {
+      alert("Please paste a Job Description first.");
+      return;
+    }
+    try {
+      setIsOptimizingJd(true);
+      showToast("Gemini AI matching Job Description...", "success");
+      const res = await adminService.apiClient.post(`/api/resume-studio/${resumeId}/optimize-jd`, {
+        job_description: jobDescription
+      });
+      setJdOptimizeData(res.data);
+      showToast("JD match completed!", "success");
+    } catch (err) {
+      console.error(err);
+      showToast("JD optimization failed.", "error");
+    } finally {
+      setIsOptimizingJd(false);
+    }
+  };
+
+  const getThemeColors = () => {
+    const theme = masterForm.color_theme || 'blue';
+    if (theme === 'indigo') return { primary: 'text-indigo-600', border: 'border-indigo-100', bg: 'bg-indigo-50', line: 'bg-indigo-600' };
+    if (theme === 'emerald' || theme === 'green') return { primary: 'text-emerald-600', border: 'border-emerald-100', bg: 'bg-emerald-50', line: 'bg-emerald-600' };
+    if (theme === 'slate' || theme === 'charcoal') return { primary: 'text-slate-700', border: 'border-slate-200', bg: 'bg-slate-50', line: 'bg-slate-700' };
+    if (theme === 'red') return { primary: 'text-red-650', border: 'border-red-100', bg: 'bg-red-50', line: 'bg-red-600' };
+    if (theme === 'orange') return { primary: 'text-orange-650', border: 'border-orange-100', bg: 'bg-orange-50', line: 'bg-orange-600' };
+    return { primary: 'text-blue-650', border: 'border-blue-100', bg: 'bg-blue-50', line: 'bg-blue-650' };
+  };
+  const themeColors = getThemeColors();
+
   // Fetch templates and current resume details if editing
   useEffect(() => {
     const fetchTemplates = async () => {
@@ -195,7 +310,6 @@ export const ResumeBuilder: React.FC = () => {
   useEffect(() => {
     const loadResumeDetail = async () => {
       if (!queryId) {
-        // Pre-populate student details from user store
         if (user) {
           setPersonalInfo(prev => ({
             ...prev,
@@ -225,7 +339,6 @@ export const ResumeBuilder: React.FC = () => {
             expected_graduation: '2026',
             phone: data.master.phone || '',
             address: data.master.address || '',
-
             linkedin: data.master.linkedin || '',
             github: data.master.github || '',
             portfolio: data.master.portfolio || '',
@@ -256,24 +369,38 @@ export const ResumeBuilder: React.FC = () => {
     loadResumeDetail();
   }, [queryId, user]);
 
-
-  // Auto-Save Effect (Every 30 seconds when in Studio Mode)
+  // Debounced Auto-Save Engine (Saves on any model updates)
   useEffect(() => {
-    if (builderMode !== 'studio' || !resumeId) return;
-    const interval = setInterval(async () => {
-      setIsAutoSaving(true);
-      setSaveStatus('Saving changes...');
+    if (builderMode !== 'studio' || !resumeId || showParserVerification) return;
+    
+    setIsAutoSaving(true);
+    setSaveStatus('Saving changes...');
+    
+    const delay = setTimeout(async () => {
       try {
-        await adminService.apiClient.put(`/api/resume-studio/${resumeId}/update`, masterForm);
-        setSaveStatus('Draft saved');
+        await handleSaveFinalResume(true);
+        setSaveStatus('Changes saved');
       } catch (err) {
         setSaveStatus('Save failed');
       } finally {
         setIsAutoSaving(false);
       }
-    }, 30000);
-    return () => clearInterval(interval);
-  }, [builderMode, resumeId, masterForm]);
+    }, 1500);
+    
+    return () => clearTimeout(delay);
+  }, [
+    builderMode,
+    resumeId,
+    masterForm,
+    personalInfo,
+    educationList,
+    experienceList,
+    projectList,
+    skillList,
+    certificateList,
+    achievements,
+    showParserVerification
+  ]);
 
   // Load versions list
   const loadVersions = async () => {
@@ -700,8 +827,166 @@ export const ResumeBuilder: React.FC = () => {
   return (
     <div className="flex flex-col gap-6 min-h-screen text-left">
       
-      {/* 1. CREATION WIZARD SCREEN */}
-      {builderMode === 'wizard' && (
+      {/* AI PARSER VERIFICATION WIZARD */}
+      {showParserVerification ? (
+        <div className="flex flex-col gap-6 max-w-4xl mx-auto w-full bg-white border border-slate-205 rounded-3xl p-6.5 shadow-xl font-sans mt-4">
+          <div className="border-b border-slate-100 pb-4">
+            <h2 className="text-2xl font-black text-slate-800 flex items-center gap-2">
+              <Sparkles className="text-blue-600 animate-pulse" size={24} /> Bimba AI Parser Verification Form
+            </h2>
+            <p className="text-xs text-slate-450 mt-1.5 leading-relaxed">
+              Gemini AI has extracted the following information from your resume. Review and edit any field before saving to your workspace.
+            </p>
+          </div>
+
+          <div className="flex flex-col gap-6 max-h-[70vh] overflow-y-auto pr-2 no-scrollbar">
+            {/* Personal Details */}
+            <div className="border border-slate-150 p-4.5 rounded-2xl flex flex-col gap-4">
+              <h3 className="font-extrabold text-sm text-slate-800">1. Contact & Bio Details</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <Input label="Name" value={personalInfo.name} onChange={(e) => setPersonalInfo({ ...personalInfo, name: e.target.value })} />
+                <Input label="Phone" value={personalInfo.phone} onChange={(e) => setPersonalInfo({ ...personalInfo, phone: e.target.value })} />
+                <Input label="Linkedin" value={personalInfo.linkedin} onChange={(e) => setPersonalInfo({ ...personalInfo, linkedin: e.target.value })} />
+                <Input label="Github" value={personalInfo.github} onChange={(e) => setPersonalInfo({ ...personalInfo, github: e.target.value })} />
+              </div>
+              <div>
+                <label className="text-[10px] font-black text-slate-400 uppercase block mb-1">Professional Summary Bio</label>
+                <textarea 
+                  value={personalInfo.summary}
+                  onChange={(e) => setPersonalInfo({ ...personalInfo, summary: e.target.value })}
+                  className="w-full p-3 rounded-xl bg-slate-50 border border-slate-200 text-xs text-slate-700 focus:outline-none"
+                  rows={3}
+                />
+              </div>
+            </div>
+
+            {/* Education details */}
+            <div className="border border-slate-150 p-4.5 rounded-2xl flex flex-col gap-4">
+              <h3 className="font-extrabold text-sm text-slate-800">2. Academic History</h3>
+              {educationList.map((edu, idx) => (
+                <div key={idx} className="grid grid-cols-1 md:grid-cols-3 gap-3 bg-slate-50/50 p-3 rounded-xl border border-slate-100">
+                  <Input label="Institution" value={edu.institution} onChange={(e) => {
+                    const updated = educationList.map((ed, i) => i === idx ? { ...ed, institution: e.target.value } : ed);
+                    setEducationList(updated);
+                  }} />
+                  <Input label="Degree / Course" value={edu.degree} onChange={(e) => {
+                    const updated = educationList.map((ed, i) => i === idx ? { ...ed, degree: e.target.value } : ed);
+                    setEducationList(updated);
+                  }} />
+                  <Input label="Graduation Year" value={edu.passing_year} onChange={(e) => {
+                    const updated = educationList.map((ed, i) => i === idx ? { ...ed, passing_year: parseInt(e.target.value) || 2026 } : ed);
+                    setEducationList(updated);
+                  }} />
+                </div>
+              ))}
+            </div>
+
+            {/* Experience details */}
+            <div className="border border-slate-150 p-4.5 rounded-2xl flex flex-col gap-4">
+              <h3 className="font-extrabold text-sm text-slate-800">3. Work Experience</h3>
+              {experienceList.length === 0 ? (
+                <p className="text-xs text-slate-400">No professional experience extracted. Add items in builder if needed.</p>
+              ) : (
+                experienceList.map((exp, idx) => (
+                  <div key={idx} className="flex flex-col gap-3 bg-slate-50/50 p-3 rounded-xl border border-slate-100">
+                    <div className="grid grid-cols-2 gap-3">
+                      <Input label="Company" value={exp.company} onChange={(e) => {
+                        const updated = experienceList.map((ex, i) => i === idx ? { ...ex, company: e.target.value } : ex);
+                        setExperienceList(updated);
+                      }} />
+                      <Input label="Position" value={exp.position} onChange={(e) => {
+                        const updated = experienceList.map((ex, i) => i === idx ? { ...ex, position: e.target.value } : ex);
+                        setExperienceList(updated);
+                      }} />
+                    </div>
+                    <textarea 
+                      value={exp.description}
+                      onChange={(e) => {
+                        const updated = experienceList.map((ex, i) => i === idx ? { ...ex, description: e.target.value } : ex);
+                        setExperienceList(updated);
+                      }}
+                      className="w-full p-2.5 rounded-lg bg-white border border-slate-200 text-xs text-slate-700 focus:outline-none"
+                      rows={2}
+                    />
+                  </div>
+                ))
+              )}
+            </div>
+
+            {/* Projects details */}
+            <div className="border border-slate-150 p-4.5 rounded-2xl flex flex-col gap-4">
+              <h3 className="font-extrabold text-sm text-slate-800">4. Projects</h3>
+              {projectList.length === 0 ? (
+                <p className="text-xs text-slate-400">No projects extracted.</p>
+              ) : (
+                projectList.map((proj, idx) => (
+                  <div key={idx} className="flex flex-col gap-3 bg-slate-50/50 p-3 rounded-xl border border-slate-100">
+                    <div className="grid grid-cols-2 gap-3">
+                      <Input label="Project Name" value={proj.name} onChange={(e) => {
+                        const updated = projectList.map((pr, i) => i === idx ? { ...pr, name: e.target.value } : pr);
+                        setProjectList(updated);
+                      }} />
+                      <Input label="Tech Stack" value={proj.tech_stack} onChange={(e) => {
+                        const updated = projectList.map((pr, i) => i === idx ? { ...pr, tech_stack: e.target.value } : pr);
+                        setProjectList(updated);
+                      }} />
+                    </div>
+                    <textarea 
+                      value={proj.description}
+                      onChange={(e) => {
+                        const updated = projectList.map((pr, i) => i === idx ? { ...pr, description: e.target.value } : pr);
+                        setProjectList(updated);
+                      }}
+                      className="w-full p-2.5 rounded-lg bg-white border border-slate-200 text-xs text-slate-700 focus:outline-none"
+                      rows={2}
+                    />
+                  </div>
+                ))
+              )}
+            </div>
+
+            {/* Skills Details */}
+            <div className="border border-slate-150 p-4.5 rounded-2xl flex flex-col gap-4">
+              <h3 className="font-extrabold text-sm text-slate-800">5. Skills Tagged</h3>
+              <div className="flex flex-wrap gap-2">
+                {skillList.map((sk, idx) => (
+                  <span key={idx} className="px-3 py-1.5 bg-slate-100 border border-slate-205 text-slate-705 text-xs font-bold rounded-xl flex items-center gap-1.5">
+                    {sk.name}
+                    <button 
+                      onClick={() => setSkillList(skillList.filter((_, i) => i !== idx))}
+                      className="text-slate-400 hover:text-red-500 font-extrabold"
+                    >
+                      ×
+                    </button>
+                  </span>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          <div className="flex justify-end gap-3 pt-4 border-t border-slate-100">
+            <button 
+              onClick={() => {
+                setShowParserVerification(false);
+                setBuilderMode('studio');
+                setActiveStudioTab('editor');
+              }}
+              className="px-5 py-2.5 rounded-xl border border-slate-200 text-slate-550 text-xs font-bold hover:bg-slate-50 cursor-pointer"
+            >
+              Skip & Open Workspace
+            </button>
+            <button 
+              onClick={handleVerifyParser}
+              className="px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold shadow-md shadow-blue-500/10 cursor-pointer"
+            >
+              Verify & Launch Studio
+            </button>
+          </div>
+        </div>
+      ) : (
+        <>
+          {/* 1. CREATION WIZARD SCREEN */}
+          {builderMode === 'wizard' && (
         <div className="w-full max-w-3xl mx-auto bg-white border border-slate-200/60 rounded-3xl p-6 md:p-8 shadow-xl animate-fadeIn">
           
           {/* Header Progress Track */}
@@ -1143,12 +1428,14 @@ export const ResumeBuilder: React.FC = () => {
             </div>
 
             {/* Top Toolbar Tabs */}
-            <div className="flex gap-1.5">
+            <div className="flex gap-1.5 flex-wrap">
               {[
                 { id: 'editor', label: 'Resume Editor' },
                 { id: 'templates', label: 'Design Layouts' },
                 { id: 'ats', label: 'ATS Scorecard' },
-                { id: 'readiness', label: 'Roadmap recommendations' },
+                { id: 'jd_optimizer', label: 'JD Optimizer' },
+                { id: 'ai_improve', label: 'Before vs After' },
+                { id: 'readiness', label: 'Career Roadmap' },
                 { id: 'versions', label: 'Backup Versions' },
                 { id: 'export', label: 'Export files' }
               ].map((tab) => (
@@ -1158,7 +1445,7 @@ export const ResumeBuilder: React.FC = () => {
                   className={`px-3 py-1.8 rounded-xl text-[10px] font-bold transition-smooth ${
                     activeStudioTab === tab.id 
                       ? 'bg-slate-800 text-white shadow' 
-                      : 'bg-white border border-slate-200/60 text-slate-500 hover:bg-slate-50'
+                      : 'bg-white border border-slate-250 text-slate-500 hover:bg-slate-50'
                   }`}
                 >
                   {tab.label}
@@ -1257,6 +1544,30 @@ export const ResumeBuilder: React.FC = () => {
               {/* DESIGN TEMPLATE TAB */}
               {activeStudioTab === 'templates' && (
                 <div className="grid grid-cols-2 gap-5">
+                  <div className="col-span-2 bg-slate-50 border border-slate-200/60 p-4.5 rounded-2xl flex flex-col gap-3">
+                    <h4 className="font-extrabold text-xs text-slate-850">Select Accent Color Theme</h4>
+                    <div className="flex gap-3">
+                      {[
+                        { name: 'blue', color: 'bg-blue-600' },
+                        { name: 'indigo', color: 'bg-indigo-600' },
+                        { name: 'emerald', color: 'bg-emerald-605' },
+                        { name: 'slate', color: 'bg-slate-700' },
+                        { name: 'red', color: 'bg-red-600' },
+                        { name: 'orange', color: 'bg-orange-600' }
+                      ].map((c) => (
+                        <button
+                          key={c.name}
+                          type="button"
+                          onClick={() => setMasterForm({ ...masterForm, color_theme: c.name })}
+                          className={`w-7 h-7 rounded-full ${c.color} border-2 ${
+                            masterForm.color_theme === c.name ? 'border-slate-800 scale-110 shadow-md' : 'border-white hover:scale-105'
+                          } transition-all duration-150 cursor-pointer`}
+                          title={c.name}
+                        />
+                      ))}
+                    </div>
+                  </div>
+
                   {templates.map((tpl) => (
                     <div 
                       key={tpl.slug}
@@ -1278,46 +1589,320 @@ export const ResumeBuilder: React.FC = () => {
                   ))}
                 </div>
               )}
-
-              {/* ATS SCORECARD TAB */}
+                {/* ATS SCORECARD TAB */}
               {activeStudioTab === 'ats' && (
                 <div className="flex flex-col gap-6 text-left">
                   <div className="bg-white border border-slate-200/60 rounded-3xl p-5 shadow-sm">
                     <div className="flex justify-between items-center border-b border-slate-100 pb-3 mb-5">
-                      <h3 className="font-extrabold text-sm text-slate-800">ATS Analyzer scorecard</h3>
-                      <button onClick={handleATSAutoFix} className="text-[10px] bg-emerald-50 border border-emerald-200 text-emerald-600 px-3 py-1.5 rounded-xl font-bold hover:bg-emerald-100 transition-smooth">
-                        One-Click Auto Fix
+                      <h3 className="font-extrabold text-sm text-slate-800 font-sans flex items-center gap-2">
+                        <Award size={16} className="text-blue-600" /> ATS Analyzer Scorecard
+                      </h3>
+                      <button 
+                        onClick={async () => {
+                          setIsAutoSaving(true);
+                          setSaveStatus('Running audit...');
+                          try {
+                            await adminService.apiClient.post(`/api/resume-studio/${resumeId}/analyze`);
+                            const detail = await adminService.apiClient.get(`/api/resume-studio/${resumeId}`);
+                            if (detail.data.ats) setAtsScorecard(detail.data.ats);
+                            showToast("ATS Audit complete!", "success");
+                          } catch (e) {
+                            showToast("ATS Audit failed.", "error");
+                          } finally {
+                            setIsAutoSaving(false);
+                            setSaveStatus('Changes saved');
+                          }
+                        }} 
+                        className="text-[10px] bg-blue-50 border border-blue-200 text-blue-600 px-3 py-1.5 rounded-xl font-bold hover:bg-blue-100 transition-smooth cursor-pointer"
+                      >
+                        Recalculate ATS Score
                       </button>
                     </div>
 
-                    <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-5 mb-6">
                       {[
-                        { label: 'Overall Score', score: atsScorecard.overall_score },
-                        { label: 'Formatting Audit', score: atsScorecard.formatting_score },
-                        { label: 'Keyword Compliance', score: atsScorecard.keyword_match },
-                        { label: 'Grammar Accuracy', score: atsScorecard.grammar_score },
-                        { label: 'Readability Score', score: atsScorecard.readability_score },
-                        { label: 'Recruiter Score', score: atsScorecard.recruiter_score }
+                        { label: 'Overall Score', score: atsScorecard.overall_score || 72, color: 'stroke-blue-600' },
+                        { label: 'Formatting Audit', score: atsScorecard.formatting_score || 75, color: 'stroke-teal-500' },
+                        { label: 'Keyword Match', score: atsScorecard.keyword_match || 68, color: 'stroke-purple-500' },
+                        { label: 'Grammar Accuracy', score: atsScorecard.grammar_score || 80, color: 'stroke-emerald-500' },
+                        { label: 'Readability Score', score: atsScorecard.readability_score || 70, color: 'stroke-amber-500' },
+                        { label: 'Recruiter Score', score: atsScorecard.recruiter_score || 68, color: 'stroke-rose-500' }
                       ].map((item) => (
-                        <div key={item.label} className="p-3 bg-slate-50 border border-slate-150 rounded-2xl text-center">
-                          <span className="text-[9px] text-slate-400 font-bold uppercase tracking-wider block">{item.label}</span>
-                          <h4 className="text-xl font-black text-slate-800 mt-1.5">{item.score}%</h4>
+                        <div key={item.label} className="p-4 bg-slate-50/50 border border-slate-100 rounded-2xl flex flex-col items-center gap-2">
+                          <div className="relative w-16 h-16 flex items-center justify-center">
+                            <svg className="absolute w-full h-full transform -rotate-90">
+                              <circle cx="32" cy="32" r="26" className="stroke-slate-100 fill-none" strokeWidth="5" />
+                              <circle cx="32" cy="32" r="26" className={`${item.color} fill-none`} strokeWidth="5" strokeDasharray="163" strokeDashoffset={163 - (163 * (item.score || 0)) / 100} strokeLinecap="round" />
+                            </svg>
+                            <span className="text-xs font-black text-slate-800">{item.score}%</span>
+                          </div>
+                          <span className="text-[9px] text-slate-400 font-extrabold uppercase text-center mt-1 leading-snug">{item.label}</span>
                         </div>
                       ))}
                     </div>
 
-                    <div className="mt-5 bg-rose-50/50 border border-rose-100 rounded-2xl p-4 flex flex-col gap-2">
-                      <span className="text-[10px] text-rose-500 font-black uppercase tracking-wider block">Missing Keywords suggestions</span>
-                      <p className="text-xs font-semibold text-slate-700 leading-relaxed">
-                        {atsScorecard.missing_keywords || 'No missing keywords identified. Your resume matches perfectly!'}
-                      </p>
+                    <div className="flex flex-col gap-4">
+                      <div className="bg-rose-50/50 border border-rose-100 rounded-2xl p-4 flex flex-col gap-2">
+                        <span className="text-[10px] text-rose-500 font-black uppercase tracking-wider block">Missing Keywords & Skills</span>
+                        <p className="text-xs font-semibold text-slate-700 leading-relaxed">
+                          {atsScorecard.missing_keywords || 'No missing keywords identified. Your resume matches perfectly!'}
+                        </p>
+                      </div>
+
+                      <div className="bg-slate-50 border border-slate-150 rounded-2xl p-4 flex flex-col gap-2">
+                        <span className="text-[10px] text-slate-400 font-black uppercase tracking-wider block">AI Improvement Checklist Suggestions</span>
+                        <p className="text-xs font-semibold text-slate-650 leading-relaxed whitespace-pre-line">
+                          {atsScorecard.suggestions || 'Optimize bullet points to include achievements metrics.'}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* JD OPTIMIZER TAB */}
+              {activeStudioTab === 'jd_optimizer' && (
+                <div className="flex flex-col gap-6 text-left">
+                  <div className="bg-white border border-slate-200/60 rounded-3xl p-5 shadow-sm">
+                    <div className="border-b border-slate-100 pb-3 mb-5">
+                      <h3 className="font-extrabold text-sm text-slate-800 font-sans flex items-center gap-2">
+                        <Sparkles size={16} className="text-blue-600" /> AI Job Description Optimizer
+                      </h3>
+                      <p className="text-xs text-slate-450 mt-1">Paste the target Job Description to see match scorecard, missing skills checklist, and AI optimized suggestion blocks.</p>
                     </div>
 
-                    <div className="mt-4 bg-slate-50 border border-slate-150 rounded-2xl p-4 flex flex-col gap-2">
-                      <span className="text-[10px] text-slate-400 font-black uppercase tracking-wider block">Formatting Suggestions</span>
-                      <p className="text-xs font-semibold text-slate-650 leading-relaxed">
-                        {atsScorecard.suggestions}
-                      </p>
+                    <div className="flex flex-col gap-4">
+                      <div>
+                        <label className="text-[10px] font-black text-slate-400 uppercase block mb-1">Paste Job Description</label>
+                        <textarea 
+                          value={jobDescription}
+                          onChange={(e) => setJobDescription(e.target.value)}
+                          placeholder="Paste target job role requirements, skills, and qualifications details here..."
+                          className="w-full p-3 rounded-xl bg-slate-50 border border-slate-200 text-xs text-slate-700 focus:outline-none focus:border-blue-500"
+                          rows={6}
+                        />
+                      </div>
+
+                      <Button 
+                        onClick={handleJdOptimize}
+                        disabled={isOptimizingJd || !jobDescription.trim()}
+                        className="bg-blue-600 hover:bg-blue-700 font-bold justify-center w-full shadow-md shadow-blue-500/10"
+                      >
+                        {isOptimizingJd ? 'Analyzing Match...' : '🎯 Scan & Optimize Resume'}
+                      </Button>
+
+                      {jdOptimizeData && (
+                        <div className="flex flex-col gap-6 mt-4 pt-4 border-t border-slate-100">
+                          {/* Match Score Progress Ring */}
+                          <div className="bg-slate-50 border border-slate-150 p-4.5 rounded-2xl flex items-center gap-4.5">
+                            <div className="relative w-18 h-18 flex items-center justify-center shrink-0">
+                              <svg className="absolute w-full h-full transform -rotate-90">
+                                <circle cx="36" cy="36" r="30" className="stroke-slate-200 fill-none" strokeWidth="5" />
+                                <circle cx="36" cy="36" r="30" className="stroke-blue-600 fill-none" strokeWidth="5" strokeDasharray="188" strokeDashoffset={188 - (188 * (jdOptimizeData.match_metrics?.overall_match_score || 0)) / 100} strokeLinecap="round" />
+                              </svg>
+                              <span className="text-sm font-black text-slate-800">{jdOptimizeData.match_metrics?.overall_match_score || 0}%</span>
+                            </div>
+                            <div>
+                              <h4 className="text-sm font-black text-slate-800">Job Description Match Score</h4>
+                              <p className="text-xs text-slate-450 mt-1 leading-snug">Average rating match for target requirements. Review recommendation details below.</p>
+                            </div>
+                          </div>
+
+                          {/* Missing Skills Checklist */}
+                          <div className="flex flex-col gap-2.5">
+                            <span className="text-[10px] text-slate-400 font-black uppercase tracking-wider block">Missing Skills & Keywords Checklist</span>
+                            <div className="flex flex-wrap gap-2.5">
+                              {jdOptimizeData.match_metrics?.missing_skills && jdOptimizeData.match_metrics.missing_skills.map((sk: string) => (
+                                <button 
+                                  key={sk}
+                                  onClick={() => {
+                                    if (sk && !skillList.some(s => s.name.toLowerCase() === sk.toLowerCase())) {
+                                      setSkillList([...skillList, { category: 'Tools', name: sk, level: 3 }]);
+                                      showToast(`Added ${sk} to technical skills!`, "success");
+                                    }
+                                  }}
+                                  className="px-3 py-1.5 bg-rose-50 border border-rose-100 rounded-xl text-xs font-bold text-rose-600 hover:bg-rose-100 transition-smooth flex items-center gap-1.5"
+                                  title="Add skill to resume"
+                                >
+                                  + {sk}
+                                </button>
+                              ))}
+                              {(!jdOptimizeData.match_metrics?.missing_skills || jdOptimizeData.match_metrics.missing_skills.length === 0) && (
+                                <span className="text-xs text-emerald-600 font-semibold bg-emerald-50 px-3 py-1.5 rounded-xl border border-emerald-100">All matching skills satisfied!</span>
+                              )}
+                            </div>
+                          </div>
+
+                          {/* Optimized Suggestion blocks (Before vs After) */}
+                          <div className="flex flex-col gap-3">
+                            <span className="text-[10px] text-slate-400 font-black uppercase tracking-wider block">Suggested Optimizations</span>
+                            
+                            {/* Summary optimization block */}
+                            {jdOptimizeData.optimized_resume?.personal_info?.summary && (
+                              <div className="bg-slate-50 border border-slate-150 p-4.5 rounded-2xl flex flex-col gap-3">
+                                <div>
+                                  <h5 className="font-extrabold text-xs text-slate-800">Optimized Summary Bio</h5>
+                                  <p className="text-[10px] text-slate-450 mt-0.5 leading-snug">Rewritten summary containing missing keywords.</p>
+                                </div>
+                                <p className="text-xs font-medium text-slate-650 bg-white border border-slate-200 p-3 rounded-xl leading-relaxed">
+                                  {jdOptimizeData.optimized_resume.personal_info.summary}
+                                </p>
+                                <div className="flex gap-2 justify-end">
+                                  <button 
+                                    onClick={() => {
+                                      setPersonalInfo({ ...personalInfo, summary: jdOptimizeData.optimized_resume.personal_info.summary });
+                                      showToast("Accepted JD-Optimized Summary!", "success");
+                                    }}
+                                    className="px-3 py-1 text-[10px] font-bold bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-smooth shadow-sm cursor-pointer"
+                                  >
+                                    Accept Rewrite
+                                  </button>
+                                </div>
+                              </div>
+                            )}
+
+                            {/* Projects optimization suggestion */}
+                            {jdOptimizeData.optimized_resume?.projects && jdOptimizeData.optimized_resume.projects.map((op: any, idx: number) => {
+                              const matchLocal = projectList[idx];
+                              if (!matchLocal) return null;
+                              return (
+                                <div key={idx} className="bg-slate-50 border border-slate-155 p-4.5 rounded-2xl flex flex-col gap-3">
+                                  <div>
+                                    <h5 className="font-extrabold text-xs text-slate-800">Optimized Project description: {op.name}</h5>
+                                    <p className="text-[10px] text-slate-455 mt-0.5 leading-snug">Highlighted bullets rewritten for impact alignment.</p>
+                                  </div>
+                                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
+                                    <div className="bg-white border border-slate-200 p-3 rounded-xl text-[11px] leading-relaxed text-slate-455">
+                                      <span className="text-[9px] font-bold block mb-1 uppercase tracking-widest text-slate-400">Current</span>
+                                      {matchLocal.description}
+                                    </div>
+                                    <div className="bg-emerald-50/20 border border-emerald-250 p-3 rounded-xl text-[11px] leading-relaxed text-slate-800 font-medium">
+                                      <span className="text-[9px] font-bold block mb-1 uppercase tracking-widest text-emerald-600">JD Wording Suggestion</span>
+                                      {op.description}
+                                    </div>
+                                  </div>
+                                  <div className="flex gap-2 justify-end">
+                                    <button 
+                                      onClick={() => {
+                                        const updated = projectList.map((p, pIdx) => pIdx === idx ? { ...p, description: op.description } : p);
+                                        setProjectList(updated);
+                                        showToast(`Accepted rewrite for project ${op.name}!`, "success");
+                                      }}
+                                      className="px-3 py-1 text-[10px] font-bold bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-smooth cursor-pointer"
+                                    >
+                                      Accept Rewrite
+                                    </button>
+                                  </div>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* AI BEFORE VS AFTER TAB */}
+              {activeStudioTab === 'ai_improve' && (
+                <div className="flex flex-col gap-6 text-left">
+                  <div className="bg-white border border-slate-200/60 rounded-3xl p-5 shadow-sm">
+                    <div className="border-b border-slate-100 pb-3 mb-5">
+                      <h3 className="font-extrabold text-sm text-slate-800 font-sans flex items-center gap-2">
+                        <History size={16} className="text-blue-600" /> Side-by-Side Rewrite Suggestions
+                      </h3>
+                      <p className="text-xs text-slate-450 mt-1">Review the original wording next to the AI-improved suggestions, and accept or reject individual blocks.</p>
+                    </div>
+
+                    <div className="flex flex-col gap-4">
+                      <div className="flex items-center gap-3">
+                        <input 
+                          type="text"
+                          value={improvementGoal}
+                          onChange={(e) => setImprovementGoal(e.target.value)}
+                          placeholder="Describe target role or improvement (e.g. SDE at high growth startup)"
+                          className="flex-grow p-2.5 rounded-xl bg-slate-50 border border-slate-200 text-xs text-slate-700 focus:outline-none focus:border-blue-500"
+                        />
+                        <button 
+                          onClick={handleAIImproveRewrite}
+                          disabled={isImproving || !improvementGoal.trim()}
+                          className="bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold px-4 py-2.5 rounded-xl transition-smooth shadow-sm cursor-pointer whitespace-nowrap"
+                        >
+                          {isImproving ? 'Improving...' : 'Run Rewrite Check'}
+                        </button>
+                      </div>
+
+                      {improvementData && (
+                        <div className="flex flex-col gap-6 mt-4 pt-4 border-t border-slate-100">
+                          {/* Summary comparison */}
+                          {improvementData.improved?.personal_info?.summary && (
+                            <div className="bg-slate-50 border border-slate-150 p-4.5 rounded-2xl flex flex-col gap-3">
+                              <div>
+                                <h5 className="font-extrabold text-xs text-slate-800">Summary Bio Comparison</h5>
+                                <p className="text-[10px] text-slate-450 mt-0.5 leading-snug">Accept or reject rewritten summary bio.</p>
+                              </div>
+                              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div className="bg-white border border-slate-200 p-3 rounded-xl text-[11px] leading-relaxed text-slate-455">
+                                  <span className="text-[9px] font-bold block mb-1 uppercase tracking-widest text-slate-400">Original</span>
+                                  {improvementData.original.personal_info.summary}
+                                </div>
+                                <div className="bg-emerald-50/20 border border-emerald-250 p-3 rounded-xl text-[11px] leading-relaxed text-slate-800 font-medium">
+                                  <span className="text-[9px] font-bold block mb-1 uppercase tracking-widest text-emerald-600">Improved Rewrite</span>
+                                  {improvementData.improved.personal_info.summary}
+                                </div>
+                              </div>
+                              <div className="flex gap-2 justify-end">
+                                <button 
+                                  onClick={() => {
+                                    setPersonalInfo({ ...personalInfo, summary: improvementData.improved.personal_info.summary });
+                                    showToast("Accepted Summary suggestion!", "success");
+                                  }}
+                                  className="px-3 py-1 text-[10px] font-bold bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-smooth cursor-pointer"
+                                >
+                                  Accept Rewrite
+                                </button>
+                              </div>
+                            </div>
+                          )}
+
+                          {/* Projects comparison */}
+                          {improvementData.improved?.projects && improvementData.improved.projects.map((op: any, idx: number) => {
+                            const matchLocal = projectList[idx];
+                            if (!matchLocal) return null;
+                            return (
+                              <div key={idx} className="bg-slate-50 border border-slate-150 p-4.5 rounded-2xl flex flex-col gap-3">
+                                <div>
+                                  <h5 className="font-extrabold text-xs text-slate-800">Project rewrite suggestion: {op.name}</h5>
+                                  <p className="text-[10px] text-slate-450 mt-0.5 leading-snug">Reviews impact modifications and numeric metrics additions.</p>
+                                </div>
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                  <div className="bg-white border border-slate-200 p-3 rounded-xl text-[11px] leading-relaxed text-slate-455">
+                                    <span className="text-[9px] font-bold block mb-1 uppercase tracking-widest text-slate-400">Original</span>
+                                    {matchLocal.description}
+                                  </div>
+                                  <div className="bg-emerald-50/20 border border-emerald-250 p-3 rounded-xl text-[11px] leading-relaxed text-slate-800 font-medium">
+                                    <span className="text-[9px] font-bold block mb-1 uppercase tracking-widest text-emerald-600">Improved Rewrite</span>
+                                    {op.description}
+                                  </div>
+                                </div>
+                                <div className="flex gap-2 justify-end">
+                                  <button 
+                                    onClick={() => {
+                                      const updated = projectList.map((p, pIdx) => pIdx === idx ? { ...p, description: op.description } : p);
+                                      setProjectList(updated);
+                                      showToast(`Accepted rewrite for project ${op.name}!`, "success");
+                                    }}
+                                    className="px-3 py-1 text-[10px] font-bold bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-smooth cursor-pointer"
+                                  >
+                                    Accept Rewrite
+                                  </button>
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -1473,14 +2058,8 @@ export const ResumeBuilder: React.FC = () => {
                 style={{ transform: `scale(${zoomLevel})` }}
               >
                 {/* Header Title block */}
-                <div className={`text-center pb-4 border-b ${
-                  masterForm.color_theme === 'blue' ? 'border-blue-100' :
-                  masterForm.color_theme === 'indigo' ? 'border-indigo-100' : 'border-slate-200'
-                }`}>
-                  <h2 className={`text-2xl font-black ${
-                    masterForm.color_theme === 'blue' ? 'text-blue-650' :
-                    masterForm.color_theme === 'indigo' ? 'text-indigo-650' : 'text-slate-800'
-                  }`}>{personalInfo.name}</h2>
+                <div className={`text-center pb-4 border-b ${themeColors.border}`}>
+                  <h2 className={`text-2xl font-black ${themeColors.primary}`}>{personalInfo.name}</h2>
                   
                   <p className="text-[10px] text-slate-500 font-semibold mt-1">
                     {personalInfo.email} • {personalInfo.phone} • {personalInfo.address}
@@ -1569,6 +2148,8 @@ export const ResumeBuilder: React.FC = () => {
           </div>
         </div>
       )}
+    </>
+  )}
 
       {/* 3. AI LOADER OVERLAY */}
       {isGenerating && (

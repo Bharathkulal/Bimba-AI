@@ -9,7 +9,8 @@ from app.models.system import Backup, DatasetImport, AuditLog, SystemHealth
 from app.models.resume_studio import (
     ResumeMaster, ResumeVersion as ResumeStudioVersion, ResumeEducation, 
     ResumeExperience, ResumeProject, ResumeSkill, ResumeCertificate, 
-    ResumeTemplate, ResumeDownload, ResumeATS, ResumeAILog, CareerReadiness
+    ResumeTemplate, ResumeDownload, ResumeATS, ResumeAILog, CareerReadiness,
+    ResumeAnalysis, ResumeImprovementHistory, JobDescriptionOptimization
 )
 
 __all__ = [
@@ -39,6 +40,9 @@ __all__ = [
     "ResumeDownload",
     "ResumeATS",
     "ResumeAILog",
-    "CareerReadiness"
+    "CareerReadiness",
+    "ResumeAnalysis",
+    "ResumeImprovementHistory",
+    "JobDescriptionOptimization"
 ]
 

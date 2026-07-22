@@ -4,7 +4,7 @@ import {
   Sparkles, FileText, Plus, Award, LayoutTemplate, 
   Bot, BarChart3, Settings, Flame, Search, Bell, 
   Edit3, Copy, Download, Trash2,
-  SendHorizontal, Lock, ListTodo
+  SendHorizontal, Lock, ListTodo, UploadCloud
 } from 'lucide-react';
 import { Button } from '../components/Button';
 import { useUserStore } from '../store/userStore';
@@ -37,6 +37,12 @@ export const Dashboard: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [notificationCount, setNotificationCount] = useState(3);
   const [chatMessages, setChatMessages] = useState<Array<{ sender: string; text: string }>>([]);
+  
+  // Upload and Sorting/Filtering State
+  const [isUploading, setIsUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState('');
+  const [sortBy, setSortBy] = useState<'updated_at' | 'ats_score' | 'name'>('updated_at');
+  const [filterBy, setFilterBy] = useState<string>('all');
 
   useEffect(() => {
     setChatMessages([
@@ -128,7 +134,6 @@ export const Dashboard: React.FC = () => {
     }
   };
 
-
   const handleSendChat = async () => {
     if (!chatInput.trim()) return;
     const userMsg = { sender: 'user', text: chatInput };
@@ -149,6 +154,82 @@ export const Dashboard: React.FC = () => {
       }
       setChatMessages(prev => [...prev, { sender: 'ai', text: replyText }]);
     }, 1000);
+  };
+
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    
+    const ext = file.name.split('.').pop()?.toLowerCase();
+    if (ext !== 'pdf' && ext !== 'docx') {
+      alert("Unsupported file format. Please upload PDF or DOCX.");
+      return;
+    }
+    
+    try {
+      setIsUploading(true);
+      setUploadProgress('Uploading file to secure server...');
+      
+      const formData = new FormData();
+      formData.append('file', file);
+      
+      const uploadRes = await apiClient.post('/api/resume-studio/upload', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+      });
+      
+      const parsedData = uploadRes.data.parsed_data;
+      setUploadProgress('Extracting and parsing sections with Gemini AI...');
+      
+      const createRes = await apiClient.post('/api/resume-studio/create', {
+        name: `AI Parsed - ${parsedData.personal_info?.name || 'Resume'}`,
+        resume_type: parsedData.experience?.length > 0 ? 'Experienced' : 'Fresher',
+        target_role: parsedData.personal_info?.title || parsedData.projects?.[0]?.role || 'Software Engineer',
+        career_objective: parsedData.personal_info?.summary || 'ATS friendly resume.',
+        preferred_industry: 'Technology',
+        language: 'English',
+        visibility: 'Private'
+      });
+      
+      const newResumeId = createRes.data.id;
+      setUploadProgress('Analyzing resume structure & creating details...');
+      
+      await apiClient.post(`/api/resume-studio/${newResumeId}/save-final`, {
+        master: {
+          name: `AI Parsed - ${parsedData.personal_info?.name || 'Resume'}`,
+          resume_type: parsedData.experience?.length > 0 ? 'Experienced' : 'Fresher',
+          target_role: parsedData.personal_info?.title || parsedData.projects?.[0]?.role || 'Software Engineer',
+          career_objective: parsedData.personal_info?.summary || 'ATS friendly resume.',
+          preferred_industry: 'Technology',
+          language: 'English',
+          visibility: 'Private',
+          phone: parsedData.personal_info?.phone || '',
+          address: parsedData.personal_info?.address || '',
+          linkedin: parsedData.personal_info?.linkedin || '',
+          github: parsedData.personal_info?.github || '',
+          portfolio: parsedData.personal_info?.portfolio || '',
+          website: parsedData.personal_info?.website || '',
+          summary: parsedData.personal_info?.summary || '',
+          achievements_list: JSON.stringify(parsedData.achievements || {})
+        },
+        personal_info: parsedData.personal_info,
+        education: parsedData.education || [],
+        experience: parsedData.experience || [],
+        projects: parsedData.projects || [],
+        skills: parsedData.skills || [],
+        certifications: parsedData.certifications || parsedData.certificates || [],
+        achievements: parsedData.achievements || {}
+      });
+      
+      setUploadProgress('Conducting AI Resume Intelligence Audit...');
+      await apiClient.post(`/api/resume-studio/${newResumeId}/analyze`);
+      
+      setIsUploading(false);
+      navigate(`/resume-builder?id=${newResumeId}&is_parsed=true`);
+    } catch (err) {
+      console.error(err);
+      alert("Failed to parse and save resume.");
+      setIsUploading(false);
+    }
   };
 
   // Quick Action Config
@@ -208,36 +289,7 @@ export const Dashboard: React.FC = () => {
     );
   }
 
-  // Fallback to empty state if no resumes
-  if (resumes.length === 0) {
-    return (
-      <div className="flex flex-col items-center justify-center min-h-[70vh] gap-6 text-center max-w-xl mx-auto px-6 font-sans">
-        <div className="w-20 h-20 bg-slate-50 border border-slate-200 rounded-3xl flex items-center justify-center text-slate-400 shadow-md">
-          <FileText size={36} />
-        </div>
-        <h2 className="text-2xl font-black text-slate-800">Create your first professional resume</h2>
-        <p className="text-slate-550 text-sm leading-relaxed">
-          It looks like you don't have any resumes built yet. Select from our library of recruiter-approved templates to land interview callbacks seamlessly.
-        </p>
-        <div className="flex gap-4">
-          <Button onClick={() => navigate('/resume-builder')} variant="primary" size="lg" className="bg-blue-600 hover:bg-blue-700 font-bold gap-2">
-            Create Resume <Plus size={18} />
-          </Button>
-          <button 
-            onClick={() => {
-              const el = document.getElementById('templates-section');
-              if (el) el.scrollIntoView({ behavior: 'smooth' });
-            }}
-            className="px-6 py-3 rounded-xl border border-slate-200 text-slate-650 font-bold hover:bg-slate-50 transition-smooth"
-          >
-            Browse Templates
-          </button>
-        </div>
-      </div>
-    );
-  }
-
-  const bestResume = resumes.find(r => r.atsScore === Math.max(...resumes.map(x => x.atsScore))) || resumes[0];
+  const bestResume = resumes.find(r => r.atsScore === Math.max(...resumes.map(x => x.atsScore))) || resumes[0] || { id: 0, atsScore: 70, completion: 50, name: "My Resume", sections: {}, template: "modern", status: "Draft" };
 
   return (
     <div id="top" className="flex flex-col gap-10 min-h-screen bg-slate-50 text-slate-800 font-sans selection:bg-blue-500/15 select-none pb-12 relative z-10 w-full">
@@ -307,18 +359,88 @@ export const Dashboard: React.FC = () => {
         <div className="z-10">
           <h2 className="text-3xl md:text-4xl font-extrabold text-slate-900 tracking-tight mb-2">👋 Good Morning, {displayName}</h2>
           <p className="text-slate-555 text-sm md:text-base leading-relaxed max-w-xl">
-            Workspace active. You currently have <span className="font-bold text-blue-600">{dashboardData?.resumes?.total} resumes</span>. Average completion is <span className="font-bold text-blue-600">{dashboardData?.resumes?.averageCompletion}%</span>.
+            Welcome to the AI Resume Studio. Launch your job search with high impact summaries, job description optimization, and circular ATS scoring.
           </p>
         </div>
-        <Button 
-          onClick={() => navigate('/resume-builder')} 
-          variant="primary" 
-          size="lg" 
-          className="bg-blue-600 hover:bg-blue-700 shadow-md shadow-blue-500/10 font-bold gap-2 shrink-0 z-10"
-        >
-          <Plus size={18} /> Create Resume
-        </Button>
+        <div className="flex gap-3 text-xs font-bold text-slate-400">
+          <div>Resumes: <span className="text-blue-600 font-extrabold">{resumes.length}</span></div>
+          <span>•</span>
+          <div>Avg ATS: <span className="text-blue-600 font-extrabold">{dashboardData?.resumes?.averageCompletion || 75}%</span></div>
+        </div>
       </section>
+
+      {/* 2b. DYNAMIC WORKSPACE ENTRY OPTIONS */}
+      <section className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        {/* Card 1: Upload Existing Resume */}
+        <div 
+          onClick={() => document.getElementById('resume-upload-input')?.click()}
+          className="group relative bg-gradient-to-br from-white to-slate-50/50 border border-slate-200/80 rounded-3xl p-6.5 cursor-pointer flex flex-col justify-between gap-6 shadow-sm hover:shadow-xl hover:border-blue-500/40 transition-all duration-300 transform hover:-translate-y-1 overflow-hidden"
+        >
+          <div className="absolute right-0 top-0 w-24 h-24 bg-blue-500/5 blur-2xl rounded-full group-hover:scale-150 transition-all duration-500" />
+          <div className="flex justify-between items-start">
+            <div className="w-12 h-12 bg-blue-50 border border-blue-100 rounded-2xl flex items-center justify-center text-blue-600 shadow-inner group-hover:bg-blue-600 group-hover:text-white transition-all duration-300">
+              <UploadCloud size={22} className="group-hover:animate-bounce" />
+            </div>
+            <span className="bg-blue-50 border border-blue-100 text-blue-600 text-[9px] font-black px-2 py-0.8 rounded-md uppercase tracking-wider">
+              AI Powered
+            </span>
+          </div>
+
+          <div>
+            <h4 className="text-lg font-black text-slate-800 group-hover:text-blue-600 transition-smooth">📄 Upload Existing Resume</h4>
+            <p className="text-xs text-slate-500 mt-2 leading-relaxed">
+              Upload your current resume and let AI analyze, improve, and convert it into an ATS-friendly professional resume in seconds.
+            </p>
+          </div>
+        </div>
+
+        {/* Card 2: Create New Resume */}
+        <div 
+          onClick={() => navigate('/resume-builder')}
+          className="group relative bg-gradient-to-br from-white to-slate-50/50 border border-slate-200/80 rounded-3xl p-6.5 cursor-pointer flex flex-col justify-between gap-6 shadow-sm hover:shadow-xl hover:border-indigo-500/40 transition-all duration-300 transform hover:-translate-y-1 overflow-hidden"
+        >
+          <div className="absolute right-0 top-0 w-24 h-24 bg-indigo-500/5 blur-2xl rounded-full group-hover:scale-150 transition-all duration-500" />
+          <div className="flex justify-between items-start">
+            <div className="w-12 h-12 bg-indigo-50 border border-indigo-100 rounded-2xl flex items-center justify-center text-indigo-600 shadow-inner group-hover:bg-indigo-600 group-hover:text-white transition-all duration-300">
+              <Sparkles size={22} />
+            </div>
+            <span className="bg-indigo-50 border border-indigo-100 text-indigo-600 text-[9px] font-black px-2 py-0.8 rounded-md uppercase tracking-wider">
+              From Scratch
+            </span>
+          </div>
+
+          <div>
+            <h4 className="text-lg font-black text-slate-800 group-hover:text-indigo-600 transition-smooth">✨ Create New Resume</h4>
+            <p className="text-xs text-slate-500 mt-2 leading-relaxed">
+              Build a brand-new resume from scratch using high-compliance, recruiter-approved professional templates.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      {/* Hidden Upload File Input and Loader overlay */}
+      <input 
+        type="file" 
+        id="resume-upload-input" 
+        accept=".pdf,.docx" 
+        className="hidden" 
+        onChange={handleFileUpload} 
+      />
+
+      {isUploading && (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-md z-50 flex items-center justify-center p-6 animate-fade-in">
+          <div className="bg-white border border-slate-200 rounded-3xl p-8 max-w-sm w-full text-center shadow-2xl flex flex-col items-center gap-5">
+            <div className="relative w-16 h-16 flex items-center justify-center">
+              <div className="absolute inset-0 rounded-full border-4 border-slate-100 border-t-blue-600 animate-spin" />
+              <Bot size={24} className="text-blue-600 animate-pulse" />
+            </div>
+            <div>
+              <h3 className="font-extrabold text-slate-800 text-lg">AI Resume Parsing</h3>
+              <p className="text-xs text-slate-450 mt-2 font-semibold leading-relaxed">{uploadProgress}</p>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* 3. HERO STATS CARD ROW */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -433,16 +555,67 @@ export const Dashboard: React.FC = () => {
 
       {/* 5. CONTINUE WORKING (REAL RESUMES LIST) */}
       <section id="resumes-section" className="flex flex-col gap-4">
-        <div className="flex justify-between items-end">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end gap-3 border-b border-slate-100 pb-3">
           <div>
             <span className="text-[9px] font-black text-slate-400 tracking-wider uppercase">Active Resumes</span>
             <h3 className="text-xl font-extrabold text-slate-900 mt-1">My Resumes</h3>
           </div>
-          <span className="text-xs text-slate-400 font-semibold">{resumes.length} active resume(s)</span>
+          
+          <div className="flex flex-wrap items-center gap-3 w-full sm:w-auto">
+            {/* Search Input */}
+            <input 
+              type="text"
+              placeholder="Filter by name..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="px-3 py-1.5 rounded-lg border border-slate-200 text-xs bg-white text-slate-700 placeholder:text-slate-400 focus:outline-none focus:border-blue-500 min-w-[120px]"
+            />
+            {/* Sort Control */}
+            <select
+              value={sortBy}
+              onChange={(e: any) => setSortBy(e.target.value)}
+              className="px-3 py-1.5 rounded-lg border border-slate-200 text-xs bg-white text-slate-700 focus:outline-none focus:border-blue-500 cursor-pointer"
+            >
+              <option value="updated_at">Last Updated</option>
+              <option value="ats_score">ATS Score</option>
+              <option value="name">Name</option>
+            </select>
+            
+            {/* Filter Control */}
+            <select
+              value={filterBy}
+              onChange={(e) => setFilterBy(e.target.value)}
+              className="px-3 py-1.5 rounded-lg border border-slate-200 text-xs bg-white text-slate-700 focus:outline-none focus:border-blue-500 cursor-pointer"
+            >
+              <option value="all">All Statuses</option>
+              <option value="draft">Draft</option>
+              <option value="completed">Completed</option>
+              <option value="archived">Archived</option>
+            </select>
+            
+            <span className="text-xs text-slate-400 font-semibold ml-auto sm:ml-0">
+              {resumes.length} active
+            </span>
+          </div>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-          {resumes.map((res) => (
+          {resumes
+            .filter(res => {
+              const matchesSearch = res.name.toLowerCase().includes(searchQuery.toLowerCase());
+              const matchesFilter = filterBy === 'all' || res.status.toLowerCase() === filterBy.toLowerCase();
+              return matchesSearch && matchesFilter;
+            })
+            .sort((a, b) => {
+              if (sortBy === 'ats_score') {
+                return b.atsScore - a.atsScore;
+              } else if (sortBy === 'name') {
+                return a.name.localeCompare(b.name);
+              } else {
+                return b.id - a.id;
+              }
+            })
+            .map((res) => (
             <div 
               key={res.id} 
               className="group relative bg-white border border-slate-200/60 hover:border-slate-350 rounded-2xl p-5 flex flex-col justify-between gap-5 transition-all duration-250 ease-out hover:-translate-y-1 hover:shadow shadow-sm"

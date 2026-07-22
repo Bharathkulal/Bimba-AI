@@ -1,3 +1,4 @@
+import uuid
 from sqlalchemy import Column, Integer, String, Boolean, DateTime, Text, ForeignKey, Float
 from sqlalchemy.sql import func
 from app.database.base import Base
@@ -117,6 +118,11 @@ class ResumeTemplate(Base):
     popularity = Column(Integer, default=100)
     color_theme = Column(String, default="blue")
     thumbnail = Column(String, nullable=True)
+    is_enabled = Column(Boolean, default=True)
+    is_premium = Column(Boolean, default=False)
+    is_ats_optimized = Column(Boolean, default=True)
+    html_content = Column(Text, nullable=True)
+    reportlab_code = Column(Text, nullable=True)
 
 class ResumeDownload(Base):
     __tablename__ = "resume_downloads"
@@ -165,3 +171,56 @@ class CareerReadiness(Base):
     recommended_courses = Column(Text, nullable=True)
     interview_readiness = Column(Integer, default=70)
     learning_roadmap = Column(Text, nullable=True)
+
+
+class ResumeAnalysis(Base):
+    __tablename__ = "resume_analysis"
+
+    id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
+    resume_id = Column(Integer, ForeignKey("resume_master.id", ondelete="CASCADE"), nullable=False)
+    
+    overall_score = Column(Integer, default=70)
+    ats_score = Column(Integer, default=70)
+    professional_writing_score = Column(Integer, default=70)
+    formatting_score = Column(Integer, default=70)
+    grammar_score = Column(Integer, default=70)
+    keyword_match_score = Column(Integer, default=70)
+    project_quality_score = Column(Integer, default=70)
+    experience_strength = Column(Integer, default=70)
+    education_completeness = Column(Integer, default=70)
+    technical_skills_score = Column(Integer, default=70)
+    soft_skills_score = Column(Integer, default=70)
+    resume_length = Column(String(50), default="1 Page")
+    readability = Column(String(50), default="Good")
+    
+    suggestions = Column(Text, nullable=True)  # JSON text
+    created_at = Column(DateTime(timezone=True), default=func.now())
+
+
+class ResumeImprovementHistory(Base):
+    __tablename__ = "resume_improvement_history"
+
+    id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
+    resume_id = Column(Integer, ForeignKey("resume_master.id", ondelete="CASCADE"), nullable=False)
+    improvement_type = Column(String(100), nullable=False)  # "ATS", "Rewrite", "custom_role", etc.
+    original_data = Column(Text, nullable=False)  # JSON string dump
+    improved_data = Column(Text, nullable=False)  # JSON string dump
+    created_at = Column(DateTime(timezone=True), default=func.now())
+
+
+class JobDescriptionOptimization(Base):
+    __tablename__ = "job_description_optimization"
+
+    id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
+    resume_id = Column(Integer, ForeignKey("resume_master.id", ondelete="CASCADE"), nullable=False)
+    job_description = Column(Text, nullable=False)
+    
+    overall_match_score = Column(Integer, default=0)
+    missing_skills = Column(Text, nullable=True)
+    missing_keywords = Column(Text, nullable=True)
+    recommended_improvements = Column(Text, nullable=True)
+    important_technologies = Column(Text, nullable=True)
+    required_certifications = Column(Text, nullable=True)
+    optimized_resume_data = Column(Text, nullable=True)  # JSON dump of optimized resume
+    created_at = Column(DateTime(timezone=True), default=func.now())
+
