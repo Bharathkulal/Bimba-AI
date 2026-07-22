@@ -181,7 +181,43 @@ def init_db():
                 account_activated=True,
                 otp_verified=True
             )
-            db.add_all([s1, s2])
+            s3 = Student(
+                roll_number="BCA24003",
+                student_name="Alice Johnson",
+                email="alice@bimba.ai",
+                dob="10-10-2005",
+                department="BCA",
+                semester=3,
+                status="Active",
+                password_hash=get_password_hash("Test@12345"),
+                account_activated=True,
+                otp_verified=True
+            )
+            s4 = Student(
+                roll_number="BCA24004",
+                student_name="Bob Wilson",
+                email="bob@bimba.ai",
+                dob="12-12-2005",
+                department="BCA",
+                semester=3,
+                status="Active",
+                password_hash=get_password_hash("Test@12345"),
+                account_activated=True,
+                otp_verified=True
+            )
+            s5 = Student(
+                roll_number="BCA24005",
+                student_name="Charlie Brown",
+                email="charlie@bimba.ai",
+                dob="20-05-2005",
+                department="BCA",
+                semester=3,
+                status="Active",
+                password_hash=get_password_hash("Test@12345"),
+                account_activated=True,
+                otp_verified=True
+            )
+            db.add_all([s1, s2, s3, s4, s5])
             db.commit()
             print("Successfully seeded student data!")
             

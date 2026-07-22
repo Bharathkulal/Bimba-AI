@@ -9,7 +9,7 @@ load_dotenv(os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file_
 from app.core.config import settings
 from app.api.v1.monitoring.monitoring_routes import router as health_router
 from app.api.v1.auth.auth_routes import router as auth_router
-from app.api.v1.analytics.analytics_routes import router as analytics_router
+from app.api.analytics import router as analytics_router
 from app.api.v1.ai.ai_routes import router as ai_admin_router
 from app.api.v1.users.users_routes import router as admin_portal_router
 from app.api.v1.resumes.resumes_routes import router as resume_studio_router

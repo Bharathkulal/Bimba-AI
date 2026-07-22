@@ -144,7 +144,7 @@ def get_ats_analytics(student: Student = Depends(get_current_student), db: Sessi
         return {"has_resumes": False}
         
     # Get highest scoring resume
-    best_resume = max(resumes, key=lambda r: r.ats_score)
+    best_resume = max(resumes, key=lambda r: (r.ats_score or 0))
     
     # Dynamic section analysis based on completed flags
     section_breakdown = {
@@ -174,7 +174,7 @@ def get_ats_analytics(student: Student = Depends(get_current_student), db: Sessi
         missing_keywords.extend(["Git", "Web APIs", "CI/CD"])
     if not best_resume.certifications_completed:
         recommendations.append("List relevant certifications (e.g. AWS, Scrum Master, Google Analytics).")
-    if best_resume.ats_score < 90:
+    if (best_resume.ats_score or 0) < 90:
         recommendations.append("Increase bullet points density under experience and use action verbs.")
         
     if not recommendations:

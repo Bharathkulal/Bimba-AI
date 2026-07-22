@@ -162,7 +162,7 @@ def get_ats_analytics(student: Student = Depends(get_current_student), db: Sessi
         return {"has_resumes": False}
         
     # Get highest scoring resume
-    best_resume = max(resumes, key=lambda r: r.ats_score)
+    best_resume = max(resumes, key=lambda r: (r.ats_score or 0))
     
     edu_exists = db.query(ResumeEducation).filter(ResumeEducation.resume_id == best_resume.id).count() > 0
     exp_exists = db.query(ResumeExperience).filter(ResumeExperience.resume_id == best_resume.id).count() > 0 or best_resume.resume_type == "Fresher"
@@ -198,7 +198,7 @@ def get_ats_analytics(student: Student = Depends(get_current_student), db: Sessi
         missing_keywords.extend(["Git", "Web APIs", "CI/CD"])
     if not cert_exists:
         recommendations.append("List relevant certifications (e.g. AWS, Scrum Master, Google Analytics).")
-    if best_resume.ats_score < 90:
+    if (best_resume.ats_score or 0) < 90:
         recommendations.append("Increase bullet points density under experience and use action verbs.")
         
     if not recommendations:

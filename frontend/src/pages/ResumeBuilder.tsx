@@ -11,6 +11,7 @@ import { Card } from '../components/Card';
 import { Input } from '../components/Input';
 import { adminService } from '../services/admin';
 import { useUserStore } from '../store/userStore';
+import { API_BASE_URL } from '../services/api';
 
 
 // Static categories for searchable skills
@@ -61,6 +62,13 @@ export const ResumeBuilder: React.FC = () => {
   
   // Wizard creation ID
   const [resumeId, setResumeId] = useState<number | null>(null);
+  
+  // Toast notifications state
+  const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
+  const showToast = (message: string, type: 'success' | 'error') => {
+    setToast({ message, type });
+    setTimeout(() => setToast(null), 3000);
+  };
 
 
   // --- STATE MODELS ---
@@ -1399,10 +1407,39 @@ export const ResumeBuilder: React.FC = () => {
                       </div>
                       <div className="pt-3 border-t border-slate-100">
                         <Button 
-                          onClick={() => {
-                            const token = localStorage.getItem('auth_token');
-                            const url = `/api/resume-studio/${resumeId}/${exp.type === 'print' ? 'pdf' : exp.type}${token ? `?token=${token}` : ''}`;
-                            window.open(url, '_blank');
+                          onClick={async () => {
+                            if (exp.type === 'print') {
+                              const token = localStorage.getItem('auth_token');
+                              const url = `${API_BASE_URL}/api/resume-studio/${resumeId}/pdf${token ? `?token=${token}` : ''}`;
+                              window.open(url, '_blank');
+                              return;
+                            }
+                            
+                            try {
+                              const response = await adminService.apiClient.get(
+                                `/api/resume-studio/${resumeId}/${exp.type}`,
+                                { responseType: 'blob' }
+                              );
+                              
+                              const blob = new Blob([response.data], { 
+                                type: exp.type === 'pdf' ? 'application/pdf' : 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' 
+                              });
+                              const downloadUrl = window.URL.createObjectURL(blob);
+                              
+                              const a = document.createElement('a');
+                              a.href = downloadUrl;
+                              const formattedName = personalInfo.name.trim().replace(/\s+/g, '_');
+                              a.download = `${formattedName}_Resume.${exp.type}`;
+                              document.body.appendChild(a);
+                              a.click();
+                              document.body.removeChild(a);
+                              window.URL.revokeObjectURL(downloadUrl);
+                              
+                              showToast("Resume downloaded successfully.", "success");
+                            } catch (err) {
+                              console.error(err);
+                              showToast("Unable to generate resume.", "error");
+                            }
                           }} 
                           variant="primary" 
                           size="sm" 
@@ -1561,6 +1598,17 @@ export const ResumeBuilder: React.FC = () => {
               ))}
             </div>
           </div>
+        </div>
+      )}
+
+      {toast && (
+        <div className={`fixed bottom-6 right-6 z-50 flex items-center gap-2 px-4.5 py-3 rounded-2xl shadow-lg border text-xs font-bold animate-fadeIn transition-all duration-300 ${
+          toast.type === 'success'
+            ? 'bg-emerald-50 border-emerald-200 text-emerald-700'
+            : 'bg-rose-50 border-rose-200 text-rose-700'
+        }`}>
+          {toast.type === 'success' ? <Check size={14} /> : <AlertCircle size={14} />}
+          <span>{toast.message}</span>
         </div>
       )}
 

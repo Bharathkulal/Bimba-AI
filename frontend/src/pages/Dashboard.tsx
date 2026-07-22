@@ -9,7 +9,7 @@ import {
 import { Button } from '../components/Button';
 import { useUserStore } from '../store/userStore';
 import { analyticsService } from '../services/analytics';
-import { apiClient } from '../services/api';
+import { apiClient, API_BASE_URL } from '../services/api';
 
 import type { DashboardData, AtsData, ActivityTimelineItem, ResumeAnalyticsItem } from '../services/analytics';
 
@@ -490,7 +490,14 @@ export const Dashboard: React.FC = () => {
                   <button 
                     onClick={async () => {
                       await handleTrackAction('download', 'download_pdf', 'PDF');
-                      alert(`Downloading PDF for: ${res.name}`);
+                      const token = localStorage.getItem('auth_token');
+                      const url = `${API_BASE_URL}/api/resume-studio/${res.id}/pdf${token ? `?token=${token}` : ''}`;
+                      const a = document.createElement('a');
+                      a.href = url;
+                      a.download = `${res.name}.pdf`;
+                      document.body.appendChild(a);
+                      a.click();
+                      document.body.removeChild(a);
                     }}
                     className="w-8 h-8 rounded-lg bg-white border border-slate-200 flex items-center justify-center text-slate-500 hover:text-slate-800 hover:border-slate-350 transition-smooth cursor-pointer shadow-sm"
                     title="Download PDF"
