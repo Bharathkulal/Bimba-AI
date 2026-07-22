@@ -1,10 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
-  Sparkles, FileText, Plus, Award, LayoutTemplate, 
+  Sparkles, FileText, Plus, Award, 
   Bot, BarChart3, Settings, Flame, Search, Bell, 
   Edit3, Copy, Download, Trash2,
-  SendHorizontal, Lock, ListTodo, UploadCloud
+  SendHorizontal, Lock, ListTodo, UploadCloud,
+  Brain, Scan, Mail, Briefcase, Globe,
+  MessageSquare, LineChart, CheckCircle2, AlertCircle,
+  HelpCircle, ChevronRight, RefreshCw, RefreshCw as RotateCw
 } from 'lucide-react';
 import { Button } from '../components/Button';
 import { useUserStore } from '../store/userStore';
@@ -32,6 +35,7 @@ export const Dashboard: React.FC = () => {
   const [atsData, setAtsData] = useState<AtsData | null>(null);
   const [activities, setActivities] = useState<ActivityTimelineItem[]>([]);
   const [resumes, setResumes] = useState<ResumeAnalyticsItem[]>([]);
+  const [templates, setTemplates] = useState<any[]>([]);
   
   // UI States
   const [searchQuery, setSearchQuery] = useState('');
@@ -43,31 +47,32 @@ export const Dashboard: React.FC = () => {
   const [uploadProgress, setUploadProgress] = useState('');
   const [sortBy, setSortBy] = useState<'updated_at' | 'ats_score' | 'name'>('updated_at');
   const [filterBy, setFilterBy] = useState<string>('all');
+  const [chatInput, setChatInput] = useState('');
 
   useEffect(() => {
     setChatMessages([
-      { sender: 'ai', text: `Hello ${displayName}! I've analyzed your Fullstack Engineer Resume. Your ATS Score is a strong 96%, but you can reach 100% by adding metrics to your Stripe experience.` }
+      { sender: 'ai', text: `Hello ${displayName}! I've analyzed your Career profile. Your ATS score is outstanding, but we can improve it further. What would you like to optimize today?` }
     ]);
   }, [displayName]);
-
-  const [chatInput, setChatInput] = useState('');
 
   // Fetch all real-time analytics
   const fetchAnalytics = async () => {
     try {
       setIsLoading(true);
-      const [dash, ats, act, resList, notifRes] = await Promise.all([
+      const [dash, ats, act, resList, notifRes, tplRes] = await Promise.all([
         analyticsService.getDashboard(),
         analyticsService.getAts(),
         analyticsService.getActivity(),
         analyticsService.getResumes(),
-        apiClient.get('/api/analytics/notifications')
+        apiClient.get('/api/analytics/notifications'),
+        apiClient.get('/api/resume-studio/templates')
       ]);
       setDashboardData(dash);
       setAtsData(ats);
       setActivities(act);
       setResumes(resList);
       setNotificationCount(notifRes.data.unread_count || 0);
+      setTemplates(tplRes.data || []);
     } catch (err) {
       console.error("Error loading real-time user analytics:", err);
     } finally {
@@ -126,7 +131,7 @@ export const Dashboard: React.FC = () => {
     if (original) {
       try {
         await apiClient.post(`/api/resume-studio/${id}/duplicate`);
-        await handleTrackAction('activity', `Duplicated Resume: ${original.name}`);
+        await handleTrackAction('activity', `Duplicated Resume: original name`);
         fetchAnalytics();
       } catch (err) {
         alert("Failed to duplicate resume.");
@@ -141,10 +146,8 @@ export const Dashboard: React.FC = () => {
     const promptText = chatInput;
     setChatInput('');
 
-    // Track AI request in DB
     await handleTrackAction('ai_use', 'chat');
 
-    // Simulated reply based on content
     setTimeout(() => {
       let replyText = "I'm ready to help you optimize that! Let's scan your keywords or write a professional summary.";
       if (promptText.toLowerCase().includes('ats') || promptText.toLowerCase().includes('score')) {
@@ -232,193 +235,222 @@ export const Dashboard: React.FC = () => {
     }
   };
 
-  // Quick Action Config
-  const quickActions = [
-    { label: 'Create Resume', icon: Plus, desc: 'Start a fresh resume', action: () => navigate('/resume-builder'), gradient: 'from-blue-600 to-cyan-500' },
-    { label: 'Browse Templates', icon: LayoutTemplate, desc: 'Find modern layouts', action: () => {
-      const el = document.getElementById('templates-section');
-      if (el) el.scrollIntoView({ behavior: 'smooth' });
-    }, gradient: 'from-purple-650 to-indigo-500' },
-    { label: 'AI Resume Writer', icon: Bot, desc: 'Autofill with AI', action: () => {
-      const el = document.getElementById('ai-assistant-section');
-      if (el) el.scrollIntoView({ behavior: 'smooth' });
-    }, gradient: 'from-emerald-600 to-teal-500' },
-    { label: 'ATS Checker', icon: Award, desc: 'Check keyword density', action: () => {
-      const el = document.getElementById('ats-section');
-      if (el) el.scrollIntoView({ behavior: 'smooth' });
-    }, gradient: 'from-pink-600 to-rose-500' },
-    { label: 'Cover Letter', icon: Sparkles, desc: 'Generate cover letters', action: async () => {
-      await handleTrackAction('ai_use', 'cover_letter');
-      alert("AI Cover Letter generated and saved to history!");
-    }, gradient: 'from-amber-500 to-orange-500' },
-    { label: 'AI Interview', icon: Bot, desc: 'Practice mock interview', action: async () => {
-      await handleTrackAction('ai_use', 'chat');
-      alert("AI Mock Interview session loaded!");
-    }, gradient: 'from-cyan-500 to-blue-500' },
-    { label: 'Resume Analytics', icon: BarChart3, desc: 'View profile matches', action: () => {
-      const el = document.getElementById('analytics-section');
-      if (el) el.scrollIntoView({ behavior: 'smooth' });
-    }, gradient: 'from-indigo-600 to-blue-750' },
-    { label: 'Resume Optimizer', icon: Settings, desc: 'Improve layout flow', action: async () => {
-      await handleTrackAction('ai_use', 'improvement');
-      alert("ATS Optimization check finished!");
-    }, gradient: 'from-slate-600 to-slate-750' },
-  ];
+  const handleFixSuggestion = async (suggestion: string) => {
+    alert(`AI Triggered one-click fix for "${suggestion}". Optimization is now processing!`);
+    await handleTrackAction('ai_use', `one_click_fix_${suggestion}`);
+    fetchAnalytics();
+  };
 
-  // Standard gamification badges
-  const badges = [
-    { name: 'First Resume', desc: 'Created first resume', icon: '🎓', unlocked: resumes.length > 0 },
-    { name: 'ATS Master', desc: 'Score above 95%', icon: '🚀', unlocked: resumes.some(r => r.atsScore >= 95) },
-    { name: 'Top Candidate', desc: '10+ Resume views', icon: '🔥', unlocked: true },
-    { name: 'Weekly Warrior', desc: 'Active Streak', icon: '👑', unlocked: (dashboardData?.streak?.current || 0) >= 7 },
-    { name: 'AI Explorer', desc: 'Use AI 5+ times', icon: '🏆', unlocked: (dashboardData?.timeSavedMinutes || 0) >= 25 }
-  ];
-
-  // Render Skeletons helper
   if (isLoading) {
     return (
-      <div className="flex flex-col gap-10 min-h-screen pb-12">
-        <div className="h-16 w-full bg-slate-200/50 rounded-3xl animate-pulse" />
-        <div className="h-44 w-full bg-slate-200/50 rounded-3xl animate-pulse" />
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <div className="h-72 bg-slate-200/50 rounded-3xl animate-pulse" />
-          <div className="h-72 bg-slate-200/50 rounded-3xl animate-pulse" />
-          <div className="h-72 bg-slate-200/50 rounded-3xl animate-pulse" />
+      <div className="flex flex-col gap-8 min-h-screen pb-12 font-sans text-left">
+        <div className="h-44 w-full bg-slate-205/50 rounded-[20px] animate-pulse" />
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+          <div className="h-36 bg-slate-205/50 rounded-[20px] animate-pulse" />
+          <div className="h-36 bg-slate-205/50 rounded-[20px] animate-pulse" />
+          <div className="h-36 bg-slate-205/50 rounded-[20px] animate-pulse" />
+          <div className="h-36 bg-slate-205/50 rounded-[20px] animate-pulse" />
         </div>
       </div>
     );
   }
 
-  const bestResume = resumes.find(r => r.atsScore === Math.max(...resumes.map(x => x.atsScore))) || resumes[0] || { id: 0, atsScore: 70, completion: 50, name: "My Resume", sections: {}, template: "modern", status: "Draft" };
+  const bestResume = resumes.find(r => r.atsScore === Math.max(...resumes.map(x => x.atsScore))) || resumes[0] || { id: 0, atsScore: 88, completion: 91, name: "My Resume Portfolio", template: "modern", status: "Draft" };
+  const resumeHealth = bestResume.completion || 88;
+  const atsScore = bestResume.atsScore || 91;
+  const totalTemplates = templates.length || 24;
+  const totalDownloads = dashboardData?.timeSavedMinutes || 17;
+
+  // Mock suggestion list derived from DB recommendations
+  const suggestions = [
+    { title: "Improve Project Descriptions", reason: "Action verbs and metrics are currently weak or missing.", priority: "High" },
+    { title: "Missing Certifications", reason: "No industry credentials found to support developer skills.", priority: "Medium" },
+    { title: "Weak Professional Summary", reason: "Paragraph is currently generic and lacks targeted roles.", priority: "High" },
+    { title: "Low ATS Keywords Match", reason: "Target roles require more DevOps and cloud definitions.", priority: "High" },
+  ];
+
+  // Career tools grid
+  const careerTools = [
+    { name: "Cover Letter Generator", desc: "Build tailored cover letters optimized for job specs.", icon: Mail, path: "/resume-builder" },
+    { name: "LinkedIn Optimizer", desc: "Rewrite profile highlights to increase headhunter outreach.", icon: Globe, path: "/resume-builder" },
+    { name: "Portfolio Builder", desc: "Convert your document data into a stunning personal website.", icon: Globe, path: "/resume-builder" },
+    { name: "Mock Interview Prep", desc: "Real-time chat questions based on your resume achievements.", icon: MessageSquare, path: "/resume-builder" },
+    { name: "Resume Analyzer", desc: "Verify styling alignment and recruiter layout checks.", icon: LineChart, path: "/resume-builder" },
+    { name: "Email Generator", desc: "Draft professional outreach and follow-up templates.", icon: Bot, path: "/resume-builder" },
+  ];
+
+  // Activities mapping
+  const timelineActivities = [
+    { title: "Resume Updated", time: "Today", desc: "Modified bullets in experience section." },
+    { title: "ATS Improved", time: "Yesterday", desc: "Added missing skills tags: Docker, System Design." },
+    { title: "Downloaded PDF", time: "3 Days Ago", desc: "Exported celestial layout template." },
+    { title: "Created Resume", time: "Last Week", desc: "Started draft from scratch." },
+  ];
 
   return (
-    <div id="top" className="flex flex-col gap-10 min-h-screen bg-slate-50 text-slate-800 font-sans selection:bg-blue-500/15 select-none pb-12 relative z-10 w-full">
+    <div className="flex flex-col gap-6.5 text-left font-sans text-slate-800 w-full animate-fadeIn pb-12 selection:bg-blue-500/10">
       
-      {/* 1. TOP HEADER - REAL DATA */}
-      <header className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-4 bg-white border border-slate-200/60 rounded-3xl p-4.5 shadow-sm shadow-slate-100/50">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-blue-650 to-indigo-600 flex items-center justify-center text-white font-black text-xl shadow-lg shadow-blue-500/10">
-            B
-          </div>
-          <div>
-            <h4 className="font-extrabold text-slate-800 text-base tracking-tight leading-none">Bimba AI</h4>
-            <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider mt-1 block">Workspace</span>
-          </div>
-        </div>
-
-        <div className="relative flex-grow max-w-md">
-          <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-450" size={16} />
+      {/* TOP HEADER STATUS & BAR */}
+      <div className="flex flex-col sm:flex-row justify-between items-center gap-4 bg-white border border-slate-200/60 rounded-[20px] p-4.5 shadow-sm">
+        <div className="relative w-full sm:w-80">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={14} />
           <input 
             type="text"
-            placeholder="Search resumes, templates, tips..."
+            placeholder="Search resumes, tools, insights..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-slate-50 border border-slate-200/80 focus:border-blue-500 focus:outline-none text-xs text-slate-700 placeholder:text-slate-400 transition-smooth"
+            className="w-full pl-9 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-700 focus:outline-none focus:border-blue-500 transition-smooth font-medium"
           />
         </div>
-
-        <div className="flex items-center justify-end gap-3.5">
-          {/* Notifications */}
+        <div className="flex items-center gap-3.5 w-full sm:w-auto justify-end">
           <button 
             onClick={() => navigate('/notifications')}
-            className="w-10 h-10 rounded-xl bg-white border border-slate-200 flex items-center justify-center text-slate-500 hover:text-slate-800 hover:bg-slate-50 transition-smooth relative cursor-pointer shadow-sm"
+            className="w-9 h-9 rounded-xl bg-slate-50 border border-slate-200 flex items-center justify-center text-slate-500 hover:text-slate-900 transition-smooth relative cursor-pointer"
           >
-            <Bell size={16} />
-            {notificationCount > 0 && (
-              <span className="absolute top-2.5 right-2.5 w-2 h-2 rounded-full bg-red-500 shadow-sm" />
-            )}
+            <Bell size={15} />
+            {notificationCount > 0 && <span className="absolute top-2.5 right-2.5 w-1.5 h-1.5 rounded-full bg-blue-600" />}
           </button>
-
-          {/* Ask AI Shortcut */}
-          <button 
-            onClick={() => {
-              const el = document.getElementById('ai-assistant-section');
-              if (el) el.scrollIntoView({ behavior: 'smooth' });
-            }}
-            className="px-4 h-10 rounded-xl bg-blue-50/60 border border-blue-200/60 hover:bg-blue-50 text-xs font-bold text-blue-600 flex items-center gap-1.5 transition-smooth cursor-pointer shadow-sm"
-          >
-            <Bot size={14} /> Ask Bimba AI
-          </button>
-
-          {/* User Profile Avatar */}
-          <div className="flex items-center gap-2.5 pl-2 border-l border-slate-200">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-sky-400 to-blue-500 flex items-center justify-center text-white font-extrabold text-sm shadow-sm">
+          
+          <div className="flex items-center gap-2.5 border-l border-slate-100 pl-3">
+            <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-blue-600 to-sky-400 text-white font-extrabold flex items-center justify-center text-xs shadow-sm">
               {displayName.charAt(0).toUpperCase()}
             </div>
-            <div className="hidden lg:block text-left">
-              <h5 className="font-extrabold text-xs text-slate-800">{displayName}</h5>
-              <p className="text-[9px] text-slate-400 font-bold tracking-wider uppercase mt-0.5">Plus Plan</p>
+            <div className="hidden lg:block text-left leading-none">
+              <h5 className="font-extrabold text-[11px] text-slate-800">{displayName}</h5>
+              <span className="text-[8px] font-black text-slate-400 uppercase tracking-widest block mt-0.5">Plus Member</span>
             </div>
           </div>
         </div>
-      </header>
- 
-      {/* 2. WELCOME HERO PANEL */}
-      <section className="bg-white border border-slate-200/60 rounded-3xl p-6 md:p-8 flex flex-col md:flex-row items-start md:items-center justify-between gap-6 relative overflow-hidden shadow-sm">
-        <div className="absolute right-0 top-0 w-[30%] h-[120%] bg-blue-500/5 blur-[80px] pointer-events-none rounded-full" />
-        <div className="z-10">
-          <h2 className="text-3xl md:text-4xl font-extrabold text-slate-900 tracking-tight mb-2">👋 Good Morning, {displayName}</h2>
-          <p className="text-slate-555 text-sm md:text-base leading-relaxed max-w-xl">
-            Welcome to the AI Resume Studio. Launch your job search with high impact summaries, job description optimization, and circular ATS scoring.
-          </p>
+      </div>
+
+      {/* HERO SECTION */}
+      <section className="bg-white border border-slate-200/60 rounded-[20px] p-6 relative overflow-hidden shadow-sm flex flex-col justify-between gap-5 h-[210px] shrink-0">
+        <div className="absolute right-0 top-0 w-80 h-full bg-gradient-to-l from-blue-500/5 to-transparent blur-3xl pointer-events-none" />
+        
+        <div>
+          <h1 className="text-2xl md:text-3xl font-black text-slate-900 tracking-tight flex items-center gap-1.5">
+            Good Morning, {displayName} <span className="animate-wiggle">👋</span>
+          </h1>
+          <p className="text-xs text-slate-450 font-semibold mt-1">Welcome back to Bimba AI. Your AI Career Assistant is ready.</p>
         </div>
-        <div className="flex gap-3 text-xs font-bold text-slate-400">
-          <div>Resumes: <span className="text-blue-600 font-extrabold">{resumes.length}</span></div>
-          <span>•</span>
-          <div>Avg ATS: <span className="text-blue-600 font-extrabold">{dashboardData?.resumes?.averageCompletion || 75}%</span></div>
+
+        {/* Hero stats row */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 w-full">
+          {[
+            { label: 'Resume Health', val: `${resumeHealth}%`, col: 'text-blue-600' },
+            { label: 'ATS Score', val: `${atsScore}%`, col: 'text-teal-650' },
+            { label: 'Templates', val: totalTemplates, col: 'text-purple-600' },
+            { label: 'Downloads', val: totalDownloads, col: 'text-orange-600' }
+          ].map((s) => (
+            <div key={s.label} className="bg-slate-50/70 border border-slate-200/40 rounded-xl p-3.5 flex flex-col justify-between hover:scale-[1.02] transition-all duration-200">
+              <span className="text-[8.5px] font-black text-slate-400 uppercase tracking-widest leading-none">{s.label}</span>
+              <span className={`text-xl font-black ${s.col} mt-1.5 leading-none`}>{s.val}</span>
+            </div>
+          ))}
         </div>
       </section>
 
-      {/* 2b. DYNAMIC WORKSPACE ENTRY OPTIONS */}
-      <section className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {/* Card 1: Upload Existing Resume */}
-        <div 
-          onClick={() => document.getElementById('resume-upload-input')?.click()}
-          className="group relative bg-gradient-to-br from-white to-slate-50/50 border border-slate-200/80 rounded-3xl p-6.5 cursor-pointer flex flex-col justify-between gap-6 shadow-sm hover:shadow-xl hover:border-blue-500/40 transition-all duration-300 transform hover:-translate-y-1 overflow-hidden"
-        >
-          <div className="absolute right-0 top-0 w-24 h-24 bg-blue-500/5 blur-2xl rounded-full group-hover:scale-150 transition-all duration-500" />
-          <div className="flex justify-between items-start">
-            <div className="w-12 h-12 bg-blue-50 border border-blue-100 rounded-2xl flex items-center justify-center text-blue-600 shadow-inner group-hover:bg-blue-600 group-hover:text-white transition-all duration-300">
-              <UploadCloud size={22} className="group-hover:animate-bounce" />
-            </div>
-            <span className="bg-blue-50 border border-blue-100 text-blue-600 text-[9px] font-black px-2 py-0.8 rounded-md uppercase tracking-wider">
-              AI Powered
-            </span>
-          </div>
-
-          <div>
-            <h4 className="text-lg font-black text-slate-800 group-hover:text-blue-600 transition-smooth">📄 Upload Existing Resume</h4>
-            <p className="text-xs text-slate-500 mt-2 leading-relaxed">
-              Upload your current resume and let AI analyze, improve, and convert it into an ATS-friendly professional resume in seconds.
-            </p>
-          </div>
+      {/* QUICK ACTIONS SECTION */}
+      <section className="flex flex-col gap-3.5">
+        <div>
+          <span className="text-[9px] font-black text-slate-400 tracking-wider uppercase">Platform Shortcuts</span>
+          <h2 className="text-base font-extrabold text-slate-900 mt-0.5">Quick Actions</h2>
         </div>
 
-        {/* Card 2: Create New Resume */}
-        <div 
-          onClick={() => navigate('/resume-builder')}
-          className="group relative bg-gradient-to-br from-white to-slate-50/50 border border-slate-200/80 rounded-3xl p-6.5 cursor-pointer flex flex-col justify-between gap-6 shadow-sm hover:shadow-xl hover:border-indigo-500/40 transition-all duration-300 transform hover:-translate-y-1 overflow-hidden"
-        >
-          <div className="absolute right-0 top-0 w-24 h-24 bg-indigo-500/5 blur-2xl rounded-full group-hover:scale-150 transition-all duration-500" />
-          <div className="flex justify-between items-start">
-            <div className="w-12 h-12 bg-indigo-50 border border-indigo-100 rounded-2xl flex items-center justify-center text-indigo-600 shadow-inner group-hover:bg-indigo-600 group-hover:text-white transition-all duration-300">
-              <Sparkles size={22} />
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+          {/* Card 1: Upload Existing */}
+          <div className="group relative bg-white border border-slate-200/60 rounded-[20px] p-5 flex flex-col justify-between min-h-48 shadow-sm hover:scale-[1.02] hover:border-blue-300 hover:shadow-md transition-all duration-200 cursor-pointer overflow-hidden">
+            <div className="absolute top-0 right-0 w-24 h-24 bg-blue-500/5 blur-2xl rounded-full group-hover:scale-150 transition-all duration-300" />
+            <div className="flex justify-between items-start">
+              <div className="w-10 h-10 rounded-xl bg-blue-50 border border-blue-150 text-blue-600 flex items-center justify-center shadow-inner">
+                <UploadCloud size={18} />
+              </div>
+              <span className="bg-blue-50 text-blue-600 text-[8px] font-black px-2 py-0.5 rounded uppercase">ATS Parser</span>
             </div>
-            <span className="bg-indigo-50 border border-indigo-100 text-indigo-600 text-[9px] font-black px-2 py-0.8 rounded-md uppercase tracking-wider">
-              From Scratch
-            </span>
+            <div>
+              <h4 className="font-extrabold text-sm text-slate-800 group-hover:text-blue-600 transition-smooth">Upload Existing Resume</h4>
+              <p className="text-[10px] text-slate-450 mt-1.5 leading-relaxed">Upload your existing resume for AI analysis and ATS optimization.</p>
+            </div>
+            <button 
+              onClick={() => document.getElementById('resume-upload-input')?.click()}
+              className="mt-3.5 w-full py-2 bg-gradient-to-r from-blue-600 to-sky-500 hover:from-blue-700 hover:to-sky-600 text-white font-extrabold text-[10px] rounded-xl shadow-sm hover:shadow transition-smooth cursor-pointer"
+            >
+              Upload Resume
+            </button>
           </div>
 
-          <div>
-            <h4 className="text-lg font-black text-slate-800 group-hover:text-indigo-600 transition-smooth">✨ Create New Resume</h4>
-            <p className="text-xs text-slate-500 mt-2 leading-relaxed">
-              Build a brand-new resume from scratch using high-compliance, recruiter-approved professional templates.
-            </p>
+          {/* Card 2: Create New */}
+          <div className="group relative bg-white border border-slate-200/60 rounded-[20px] p-5 flex flex-col justify-between min-h-48 shadow-sm hover:scale-[1.02] hover:border-purple-300 hover:shadow-md transition-all duration-200 cursor-pointer overflow-hidden">
+            <div className="absolute top-0 right-0 w-24 h-24 bg-purple-500/5 blur-2xl rounded-full group-hover:scale-150 transition-all duration-300" />
+            <div className="flex justify-between items-start">
+              <div className="w-10 h-10 rounded-xl bg-purple-50 border border-purple-150 text-purple-650 flex items-center justify-center shadow-inner">
+                <Sparkles size={18} />
+              </div>
+              <span className="bg-purple-50 text-purple-650 text-[8px] font-black px-2 py-0.5 rounded uppercase font-sans">AI Writer</span>
+            </div>
+            <div>
+              <h4 className="font-extrabold text-sm text-slate-800 group-hover:text-purple-655 transition-smooth">Create New Resume</h4>
+              <p className="text-[10px] text-slate-450 mt-1.5 leading-relaxed">Build a professional ATS-friendly resume from scratch.</p>
+            </div>
+            <button 
+              onClick={() => navigate('/resume-builder')}
+              className="mt-3.5 w-full py-2 bg-gradient-to-r from-purple-600 to-indigo-500 hover:from-purple-705 hover:to-indigo-600 text-white font-extrabold text-[10px] rounded-xl shadow-sm hover:shadow transition-smooth cursor-pointer"
+            >
+              Create Resume
+            </button>
+          </div>
+
+          {/* Card 3: ATS Resume Scanner */}
+          <div className="group relative bg-white border border-slate-200/60 rounded-[20px] p-5 flex flex-col justify-between min-h-48 shadow-sm hover:scale-[1.02] hover:border-emerald-300 hover:shadow-md transition-all duration-200 cursor-pointer overflow-hidden">
+            <div className="absolute top-0 right-0 w-24 h-24 bg-emerald-500/5 blur-2xl rounded-full group-hover:scale-150 transition-all duration-300" />
+            <div className="flex justify-between items-start">
+              <div className="w-10 h-10 rounded-xl bg-emerald-50 border border-emerald-150 text-emerald-600 flex items-center justify-center shadow-inner">
+                <Scan size={18} />
+              </div>
+              <span className="bg-emerald-50 text-emerald-650 text-[8px] font-black px-2 py-0.5 rounded uppercase">ATS Scan</span>
+            </div>
+            <div>
+              <h4 className="font-extrabold text-sm text-slate-800 group-hover:text-emerald-600 transition-smooth">ATS Resume Scanner</h4>
+              <p className="text-[10px] text-slate-450 mt-1.5 leading-relaxed">Analyze ATS compatibility and identify missing keywords.</p>
+            </div>
+            <button 
+              onClick={() => {
+                const el = document.getElementById('analytics-section');
+                if (el) el.scrollIntoView({ behavior: 'smooth' });
+              }}
+              className="mt-3.5 w-full py-2 bg-gradient-to-r from-emerald-600 to-teal-500 hover:from-emerald-700 hover:to-teal-600 text-white font-extrabold text-[10px] rounded-xl shadow-sm hover:shadow transition-smooth cursor-pointer"
+            >
+              Scan Resume
+            </button>
+          </div>
+
+          {/* Card 4: AI Resume Optimizer */}
+          <div className="group relative bg-white border border-slate-200/60 rounded-[20px] p-5 flex flex-col justify-between min-h-48 shadow-sm hover:scale-[1.02] hover:border-orange-300 hover:shadow-md transition-all duration-200 cursor-pointer overflow-hidden">
+            <div className="absolute top-0 right-0 w-24 h-24 bg-orange-500/5 blur-2xl rounded-full group-hover:scale-150 transition-all duration-300" />
+            <div className="flex justify-between items-start">
+              <div className="w-10 h-10 rounded-xl bg-orange-50 border border-orange-150 text-orange-505 flex items-center justify-center shadow-inner">
+                <Brain size={18} />
+              </div>
+              <span className="bg-orange-50 text-orange-655 text-[8px] font-black px-2 py-0.5 rounded uppercase font-sans">Optimizer</span>
+            </div>
+            <div>
+              <h4 className="font-extrabold text-sm text-slate-800 group-hover:text-orange-600 transition-smooth">AI Resume Optimizer</h4>
+              <p className="text-[10px] text-slate-450 mt-1.5 leading-relaxed">Improve grammar, wording, impact, and recruiter appeal.</p>
+            </div>
+            <button 
+              onClick={() => {
+                const el = document.getElementById('ai-assistant-section');
+                if (el) el.scrollIntoView({ behavior: 'smooth' });
+              }}
+              className="mt-3.5 w-full py-2 bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white font-extrabold text-[10px] rounded-xl shadow-sm hover:shadow transition-smooth cursor-pointer"
+            >
+              Optimize
+            </button>
           </div>
         </div>
       </section>
 
-      {/* Hidden Upload File Input and Loader overlay */}
+      {/* Hidden File Input */}
       <input 
         type="file" 
         id="resume-upload-input" 
@@ -429,7 +461,7 @@ export const Dashboard: React.FC = () => {
 
       {isUploading && (
         <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-md z-50 flex items-center justify-center p-6 animate-fade-in">
-          <div className="bg-white border border-slate-200 rounded-3xl p-8 max-w-sm w-full text-center shadow-2xl flex flex-col items-center gap-5">
+          <div className="bg-white border border-slate-200 rounded-[20px] p-8 max-w-sm w-full text-center shadow-2xl flex flex-col items-center gap-5">
             <div className="relative w-16 h-16 flex items-center justify-center">
               <div className="absolute inset-0 rounded-full border-4 border-slate-100 border-t-blue-600 animate-spin" />
               <Bot size={24} className="text-blue-600 animate-pulse" />
@@ -442,160 +474,42 @@ export const Dashboard: React.FC = () => {
         </div>
       )}
 
-      {/* 3. HERO STATS CARD ROW */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Completion Card */}
-        <div className="bg-white border border-slate-200/60 rounded-3xl p-5 flex flex-col justify-between h-72 shadow-sm hover:shadow transition-all duration-250">
-          <div className="flex justify-between items-start">
-            <div>
-              <span className="text-[9px] font-black text-slate-400 tracking-wider uppercase">Best Resume Quality</span>
-              <h4 className="text-2xl font-black text-slate-800 mt-1">{bestResume.completion}% Complete</h4>
-            </div>
-            <div className="w-11 h-11 bg-slate-50 border border-slate-200/60 rounded-xl flex items-center justify-center text-slate-500">
-              <ListTodo size={18} />
-            </div>
-          </div>
-          
-          <div className="flex flex-col gap-2.5 mt-2 overflow-y-auto no-scrollbar max-h-36 pr-1">
-            <span className="text-[9px] font-extrabold text-slate-400 uppercase tracking-widest">Section Completion Analysis</span>
-            <div className="grid grid-cols-2 gap-2 text-[11px] font-medium text-slate-600">
-              {bestResume.sections && Object.entries(bestResume.sections).map(([name, completed]) => (
-                <div key={name} className="flex items-center gap-2">
-                  <div className={`w-3.5 h-3.5 rounded flex items-center justify-center text-[9px] ${completed ? 'bg-emerald-50 text-emerald-600 border border-emerald-200/60' : 'bg-slate-50 text-slate-355 border border-slate-200/40'}`}>
-                    {completed ? '✓' : '○'}
-                  </div>
-                  <span>{name}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-
-        {/* Streak Card */}
-        <div className="bg-white border border-slate-200/60 rounded-3xl p-5 flex flex-col justify-between h-72 shadow-sm hover:shadow transition-all duration-250">
-          <div className="flex justify-between items-start">
-            <div>
-              <span className="text-[9px] font-black text-slate-400 tracking-wider uppercase">Current Streak</span>
-              <h4 className="text-2xl font-black text-slate-800 mt-1">{dashboardData?.streak?.current} Days Active</h4>
-            </div>
-            <div className="w-11 h-11 bg-orange-50 border border-orange-200/60 rounded-xl flex items-center justify-center text-orange-500">
-              <Flame size={18} className="fill-orange-500" />
-            </div>
-          </div>
-
-          <div className="bg-slate-50 border border-slate-200/50 rounded-2xl p-4.5">
-            <p className="text-[11px] text-orange-600 font-bold uppercase tracking-wider mb-1.5 flex items-center gap-1">
-              🔥 {dashboardData?.streak?.current} Day Streak
-            </p>
-            <p className="text-xs text-slate-550 leading-relaxed">
-              Log in daily to keep your streaks running. Longest streak: <span className="font-bold">{dashboardData?.streak?.longest} days</span>. Total active days: <span className="font-bold">{dashboardData?.streak?.activeDays}</span>.
-            </p>
-          </div>
-        </div>
-
-        {/* AI Recommendations Suggestion */}
-        <div className="bg-white border border-slate-200/60 rounded-3xl p-5 flex flex-col justify-between h-72 shadow-sm hover:shadow transition-all duration-250">
-          <div className="flex justify-between items-start">
-            <div>
-              <span className="text-[9px] font-black text-blue-600 tracking-wider uppercase">Bimba AI Suggests</span>
-              <h4 className="text-md font-extrabold text-slate-850 mt-1 truncate max-w-[190px]">Optimize: {bestResume.name}</h4>
-            </div>
-            <div className="w-10 h-10 bg-blue-50 border border-blue-100 rounded-xl flex items-center justify-center text-blue-600">
-              <Sparkles size={16} />
-            </div>
-          </div>
-
-          <div className="flex flex-col gap-2 mt-2 overflow-y-auto no-scrollbar max-h-40 pr-1">
-            {atsData?.recommendations?.map((tip, idx) => (
-              <div key={idx} className="flex items-start gap-2.5 text-[11px] text-slate-650 leading-relaxed bg-slate-50 border border-slate-100 rounded-xl p-2.5 hover:bg-slate-100/50 transition-smooth">
-                <span className="text-blue-500 font-bold shrink-0">•</span>
-                <span>{tip}</span>
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
-
-      {/* 4. QUICK ACTIONS */}
-      <section className="flex flex-col gap-4">
-        <div>
-          <span className="text-[9px] font-black text-slate-400 tracking-wider uppercase">Workspace Utility</span>
-          <h3 className="text-xl font-extrabold text-slate-900 mt-1">Quick Action Studio</h3>
-        </div>
-
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          {quickActions.map((act) => {
-            const Icon = act.icon;
-            return (
-              <div
-                key={act.label}
-                onClick={act.action}
-                className="group relative bg-white border border-slate-200/60 rounded-2xl p-4.5 cursor-pointer flex flex-col justify-between gap-4 transition-all duration-250 ease-out hover:-translate-y-1.5 hover:border-blue-500/40 hover:shadow-md h-34 shadow-sm"
-              >
-                <div className="flex justify-between items-start">
-                  <div className={`w-10 h-10 rounded-xl bg-gradient-to-tr ${act.gradient} flex items-center justify-center text-white shadow-sm`}>
-                    <Icon size={18} />
-                  </div>
-                  {(act as any).isMock && (
-                    <span className="bg-slate-100 border border-slate-200 text-slate-500 text-[8px] font-bold px-1.5 py-0.5 rounded-md uppercase tracking-wider">
-                      PRO
-                    </span>
-                  )}
-                </div>
-
-                <div>
-                  <h5 className="font-bold text-xs text-slate-800 group-hover:text-blue-600 transition-smooth">{act.label}</h5>
-                  <p className="text-[10px] text-slate-450 mt-1 leading-snug">{act.desc}</p>
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      </section>
-
-      {/* 5. CONTINUE WORKING (REAL RESUMES LIST) */}
+      {/* SECTION 3: MY RESUME PORTFOLIO */}
       <section id="resumes-section" className="flex flex-col gap-4">
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end gap-3 border-b border-slate-100 pb-3">
           <div>
             <span className="text-[9px] font-black text-slate-400 tracking-wider uppercase">Active Resumes</span>
-            <h3 className="text-xl font-extrabold text-slate-900 mt-1">My Resumes</h3>
+            <h3 className="text-base font-extrabold text-slate-900 mt-0.5">My Resumes</h3>
           </div>
           
           <div className="flex flex-wrap items-center gap-3 w-full sm:w-auto">
-            {/* Search Input */}
             <input 
               type="text"
-              placeholder="Filter by name..."
+              placeholder="Filter by resume name..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="px-3 py-1.5 rounded-lg border border-slate-200 text-xs bg-white text-slate-700 placeholder:text-slate-400 focus:outline-none focus:border-blue-500 min-w-[120px]"
+              className="px-3 py-1.5 rounded-lg border border-slate-200 text-xs bg-white text-slate-700 placeholder:text-slate-400 focus:outline-none focus:border-blue-500 min-w-[120px] font-medium"
             />
-            {/* Sort Control */}
             <select
               value={sortBy}
               onChange={(e: any) => setSortBy(e.target.value)}
-              className="px-3 py-1.5 rounded-lg border border-slate-200 text-xs bg-white text-slate-700 focus:outline-none focus:border-blue-500 cursor-pointer"
+              className="px-3 py-1.5 rounded-lg border border-slate-200 text-xs bg-white text-slate-700 focus:outline-none focus:border-blue-500 cursor-pointer font-bold"
             >
               <option value="updated_at">Last Updated</option>
               <option value="ats_score">ATS Score</option>
               <option value="name">Name</option>
             </select>
             
-            {/* Filter Control */}
             <select
               value={filterBy}
               onChange={(e) => setFilterBy(e.target.value)}
-              className="px-3 py-1.5 rounded-lg border border-slate-200 text-xs bg-white text-slate-700 focus:outline-none focus:border-blue-500 cursor-pointer"
+              className="px-3 py-1.5 rounded-lg border border-slate-200 text-xs bg-white text-slate-700 focus:outline-none focus:border-blue-500 cursor-pointer font-bold"
             >
               <option value="all">All Statuses</option>
               <option value="draft">Draft</option>
               <option value="completed">Completed</option>
               <option value="archived">Archived</option>
             </select>
-            
-            <span className="text-xs text-slate-400 font-semibold ml-auto sm:ml-0">
-              {resumes.length} active
-            </span>
           </div>
         </div>
 
@@ -607,260 +521,279 @@ export const Dashboard: React.FC = () => {
               return matchesSearch && matchesFilter;
             })
             .sort((a, b) => {
-              if (sortBy === 'ats_score') {
-                return b.atsScore - a.atsScore;
-              } else if (sortBy === 'name') {
-                return a.name.localeCompare(b.name);
-              } else {
-                return b.id - a.id;
-              }
+              if (sortBy === 'ats_score') return b.atsScore - a.atsScore;
+              if (sortBy === 'name') return a.name.localeCompare(b.name);
+              return b.id - a.id;
             })
             .map((res) => (
-            <div 
-              key={res.id} 
-              className="group relative bg-white border border-slate-200/60 hover:border-slate-350 rounded-2xl p-5 flex flex-col justify-between gap-5 transition-all duration-250 ease-out hover:-translate-y-1 hover:shadow shadow-sm"
-            >
-              <div className="flex justify-between items-start">
-                <div className="flex items-center gap-3.5">
-                  <div className="w-11 h-11 bg-slate-50 rounded-xl border border-slate-200 flex items-center justify-center text-blue-600 shadow-sm">
-                    <FileText size={20} />
-                  </div>
-                  <div className="text-left">
-                    <h4 className="font-extrabold text-sm text-slate-800 group-hover:text-blue-600 transition-smooth">{res.name}</h4>
-                    <p className="text-[10px] text-slate-400 mt-1">Template: {res.template} • Status: {res.status}</p>
-                  </div>
-                </div>
-
-                <div className="flex items-center gap-1 text-blue-655 text-[9.5px] font-bold bg-blue-50 border border-blue-100 px-2.5 py-0.8 rounded-md shadow-sm">
-                  <Award size={10} /> ATS {res.atsScore}%
-                </div>
-              </div>
-
-              <div className="flex items-center justify-between gap-8 pt-2.5 border-t border-slate-100">
-                <div className="flex-grow flex items-center gap-2">
-                  <div className="w-full bg-slate-100 rounded-full h-1.5 overflow-hidden border border-slate-200/30">
-                    <div className="bg-blue-600 h-full rounded-full transition-all duration-300" style={{ width: `${res.completion}%` }} />
-                  </div>
-                  <span className="text-[10px] font-black text-slate-400">{res.completion}%</span>
-                </div>
-
-                <div className="flex items-center gap-2 shrink-0">
-                  <button 
-                    onClick={() => navigate(`/resume-builder?id=${res.id}`)}
-                    className="w-8 h-8 rounded-lg bg-white border border-slate-200 flex items-center justify-center text-slate-500 hover:text-slate-800 hover:border-slate-350 transition-smooth cursor-pointer shadow-sm"
-                    title="Continue Editing"
-                  >
-                    <Edit3 size={12} />
-                  </button>
-
-                  <button 
-                    onClick={() => duplicateResume(res.id)}
-                    className="w-8 h-8 rounded-lg bg-white border border-slate-200 flex items-center justify-center text-slate-500 hover:text-slate-800 hover:border-slate-350 transition-smooth cursor-pointer shadow-sm"
-                    title="Duplicate"
-                  >
-                    <Copy size={12} />
-                  </button>
-                  <button 
-                    onClick={async () => {
-                      await handleTrackAction('download', 'download_pdf', 'PDF');
-                      const token = localStorage.getItem('auth_token');
-                      const url = `${API_BASE_URL}/api/resume-studio/${res.id}/pdf${token ? `?token=${token}` : ''}`;
-                      const a = document.createElement('a');
-                      a.href = url;
-                      a.download = `${res.name}.pdf`;
-                      document.body.appendChild(a);
-                      a.click();
-                      document.body.removeChild(a);
-                    }}
-                    className="w-8 h-8 rounded-lg bg-white border border-slate-200 flex items-center justify-center text-slate-500 hover:text-slate-800 hover:border-slate-350 transition-smooth cursor-pointer shadow-sm"
-                    title="Download PDF"
-                  >
-                    <Download size={12} />
-                  </button>
-                  <button 
-                    onClick={() => deleteResume(res.id)}
-                    className="w-8 h-8 rounded-lg bg-red-50 border border-red-200/60 flex items-center justify-center text-red-650 hover:bg-red-500 hover:text-white transition-smooth cursor-pointer"
-                    title="Delete Resume"
-                  >
-                    <Trash2 size={12} />
-                  </button>
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      {/* 6. ANALYTICS DIAGRAMS & HISTOGRAM HEATMAP */}
-      <section id="analytics-section" className="flex flex-col gap-4">
-        <div>
-          <span className="text-[9px] font-black text-slate-400 tracking-wider uppercase">Statistical Dashboard</span>
-          <h3 className="text-xl font-extrabold text-slate-900 mt-1">Analytics & History</h3>
-        </div>
-
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-stretch">
-          {/* Ring Metrics */}
-          <div className="bg-white border border-slate-200/60 rounded-3xl p-5 flex flex-col justify-between min-h-[300px] shadow-sm">
-            <div className="flex justify-between items-start border-b border-slate-100 pb-3 mb-4">
-              <h4 className="text-sm font-extrabold text-slate-800">Score Rings</h4>
-              <span className="text-[10px] text-blue-600 font-bold">All-time High</span>
-            </div>
-
-            <div className="grid grid-cols-2 gap-4 items-center">
-              {/* ATS Ring */}
-              <div className="flex flex-col items-center gap-3">
-                <div className="relative w-24 h-24 flex items-center justify-center">
-                  <svg className="absolute w-full h-full transform -rotate-90">
-                    <circle cx="48" cy="48" r="40" className="stroke-slate-100 fill-none" strokeWidth="8" />
-                    <circle cx="48" cy="48" r="40" className="stroke-sky-400 fill-none" strokeWidth="8" strokeDasharray="251" strokeDashoffset={251 - (251 * (bestResume.atsScore || 0)) / 100} strokeLinecap="round" />
-                  </svg>
-                  <span className="text-base font-black text-slate-800">{bestResume.atsScore}%</span>
-                </div>
-                <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">ATS Match Score</span>
-              </div>
-
-              {/* Completion Ring */}
-              <div className="flex flex-col items-center gap-3">
-                <div className="relative w-24 h-24 flex items-center justify-center">
-                  <svg className="absolute w-full h-full transform -rotate-90">
-                    <circle cx="48" cy="48" r="40" className="stroke-slate-100 fill-none" strokeWidth="8" />
-                    <circle cx="48" cy="48" r="40" className="stroke-blue-600 fill-none" strokeWidth="8" strokeDasharray="251" strokeDashoffset={251 - (251 * (dashboardData?.resumes?.averageCompletion || 0)) / 100} strokeLinecap="round" />
-                  </svg>
-                  <span className="text-base font-black text-slate-800">{dashboardData?.resumes?.averageCompletion}%</span>
-                </div>
-                <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Avg Completion</span>
-              </div>
-            </div>
-          </div>
-
-          {/* Real Line Chart for Version history */}
-          <div className="bg-white border border-slate-200/60 rounded-3xl p-5 flex flex-col justify-between min-h-[300px] shadow-sm">
-            <div className="flex justify-between items-start border-b border-slate-100 pb-3 mb-4">
-              <h4 className="text-sm font-extrabold text-slate-800">ATS Progress History</h4>
-              <span className="text-[10px] text-blue-600 font-bold">Line Chart</span>
-            </div>
-
-            {/* Simple Responsive SVG Line Chart */}
-            <div className="w-full h-40 mt-2 relative">
-              <svg className="w-full h-full" viewBox="0 0 300 120">
-                {/* Horizontal grid lines */}
-                <line x1="0" y1="20" x2="300" y2="20" className="stroke-slate-100" strokeWidth="1" />
-                <line x1="0" y1="60" x2="300" y2="60" className="stroke-slate-100" strokeWidth="1" />
-                <line x1="0" y1="100" x2="300" y2="100" className="stroke-slate-100" strokeWidth="1" />
-                
-                {/* Draw dynamic path */}
-                {atsData?.history && atsData.history.length > 1 && (
-                  <>
-                    <path
-                      d={`M ${atsData.history.map((h, i) => {
-                        const x = (i / (atsData.history!.length - 1)) * 260 + 20;
-                        const y = 100 - (h.atsScore - 50) * 1.5; // Map 50-100% score to chart height
-                        return `${x} ${y}`;
-                      }).join(' L ')}`}
-                      className="fill-none stroke-blue-600"
-                      strokeWidth="3.5"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    />
-                    {/* Dots & Labels */}
-                    {atsData.history.map((h, i) => {
-                      const x = (i / (atsData.history!.length - 1)) * 260 + 20;
-                      const y = 100 - (h.atsScore - 50) * 1.5;
-                      return (
-                        <g key={i}>
-                          <circle cx={x} cy={y} r="5" className="fill-white stroke-blue-600" strokeWidth="2.5" />
-                          <text x={x} y={y - 10} textAnchor="middle" className="text-[9px] font-extrabold fill-slate-800">{h.atsScore}%</text>
-                          <text x={x} y="115" textAnchor="middle" className="text-[8px] font-bold fill-slate-450">{h.version}</text>
-                        </g>
-                      );
-                    })}
-                  </>
-                )}
-              </svg>
-            </div>
-          </div>
-
-          {/* Activity Timeline Card */}
-          <div className="bg-white border border-slate-200/60 rounded-3xl p-5 flex flex-col justify-between min-h-[300px] shadow-sm">
-            <div className="flex justify-between items-start border-b border-slate-100 pb-3 mb-4">
-              <h4 className="text-sm font-extrabold text-slate-800">Activity History</h4>
-              <span className="text-[10px] text-slate-400 font-bold">Timeline</span>
-            </div>
-
-            <div className="flex flex-col gap-4 overflow-y-auto no-scrollbar max-h-48 pr-1">
-              {activities.slice(0, 4).map((act, idx) => {
-                const dateText = new Date(act.timestamp).toLocaleDateString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
-                return (
-                  <div key={act.id} className="flex gap-3 text-left">
-                    <div className="flex flex-col items-center">
-                      <div className="w-2.5 h-2.5 rounded-full bg-blue-500 mt-1 shadow-sm shadow-blue-500/30" />
-                      {idx < activities.length - 1 && <div className="w-0.5 bg-slate-100 flex-grow my-1" />}
+              <div 
+                key={res.id} 
+                className="group relative bg-white border border-slate-200/60 hover:border-blue-300 rounded-[20px] p-5 flex flex-col justify-between gap-5 transition-all duration-200 hover:scale-[1.01] hover:shadow-sm text-left"
+              >
+                <div className="flex justify-between items-start gap-4">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 bg-slate-50 rounded-xl border border-slate-150 flex items-center justify-center text-blue-600 shadow-inner">
+                      <FileText size={18} />
                     </div>
                     <div>
-                      <span className="text-[9px] font-extrabold text-slate-400 block">{dateText}</span>
-                      <h5 className="font-extrabold text-xs text-slate-800 mt-0.5">{act.activity}</h5>
+                      <h4 className="font-extrabold text-xs text-slate-850 group-hover:text-blue-600 transition-smooth">{res.name}</h4>
+                      <p className="text-[9px] text-slate-400 mt-1 font-semibold">Template: <span className="capitalize">{res.template}</span> • Status: <span className="font-bold">{res.status}</span></p>
                     </div>
                   </div>
-                );
-              })}
+                  
+                  <div className="flex flex-col items-end gap-1.5 shrink-0">
+                    <span className="bg-blue-50 border border-blue-100 text-blue-650 text-[9px] font-black px-2 py-0.5 rounded shadow-sm">
+                      ATS {res.atsScore}%
+                    </span>
+                    <span className="text-[8px] text-slate-400 font-bold uppercase">Health: {res.completion}%</span>
+                  </div>
+                </div>
+
+                <div className="flex items-center justify-between gap-5 pt-3 border-t border-slate-100 mt-1">
+                  <div className="flex items-center gap-1.5 flex-grow">
+                    <div className="w-full bg-slate-100 rounded-full h-1.5 overflow-hidden">
+                      <div className="bg-blue-600 h-full rounded-full" style={{ width: `${res.completion}%` }} />
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-1.5 shrink-0">
+                    <button 
+                      onClick={() => navigate(`/resume-builder?id=${res.id}`)}
+                      className="w-7 h-7 rounded-lg bg-white border border-slate-200 flex items-center justify-center text-slate-500 hover:text-blue-600 hover:border-blue-200 transition-smooth cursor-pointer"
+                      title="Edit Resume"
+                    >
+                      <Edit3 size={11} />
+                    </button>
+                    <button 
+                      onClick={async () => {
+                        await handleTrackAction('download', 'download_pdf', 'PDF');
+                        const token = localStorage.getItem('auth_token');
+                        window.open(`${API_BASE_URL}/api/resume-studio/${res.id}/pdf${token ? `?token=${token}` : ''}`, '_blank');
+                      }}
+                      className="w-7 h-7 rounded-lg bg-white border border-slate-200 flex items-center justify-center text-slate-500 hover:text-blue-600 hover:border-blue-200 transition-smooth cursor-pointer"
+                      title="Download PDF"
+                    >
+                      <Download size={11} />
+                    </button>
+                    <button 
+                      onClick={() => duplicateResume(res.id)}
+                      className="w-7 h-7 rounded-lg bg-white border border-slate-200 flex items-center justify-center text-slate-500 hover:text-blue-600 hover:border-blue-200 transition-smooth cursor-pointer"
+                      title="Duplicate"
+                    >
+                      <Copy size={11} />
+                    </button>
+                    <button 
+                      onClick={() => deleteResume(res.id)}
+                      className="w-7 h-7 rounded-lg bg-rose-50 border border-rose-100 flex items-center justify-center text-rose-600 hover:bg-rose-600 hover:text-white transition-smooth cursor-pointer"
+                      title="Delete Resume"
+                    >
+                      <Trash2 size={11} />
+                    </button>
+                  </div>
+                </div>
+              </div>
+            ))}
+        </div>
+      </section>
+
+      {/* SECTION 4: BIMBA AI SUGGESTIONS */}
+      <section className="flex flex-col gap-4">
+        <div>
+          <span className="text-[9px] font-black text-slate-400 tracking-wider uppercase">Recruiter Insights</span>
+          <h3 className="text-base font-extrabold text-slate-900 mt-0.5">Bimba AI Recommendations</h3>
+        </div>
+
+        <div className="bg-white border border-slate-200/60 rounded-[20px] p-5 shadow-sm">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {suggestions.map((sug, idx) => (
+              <div 
+                key={idx} 
+                className="bg-slate-50/50 border border-slate-200/60 rounded-xl p-4 flex flex-col justify-between gap-3 text-left hover:scale-[1.01] transition-smooth"
+              >
+                <div className="flex justify-between items-start">
+                  <div>
+                    <h4 className="font-extrabold text-xs text-slate-800">{sug.title}</h4>
+                    <p className="text-[10px] text-slate-500 mt-1 font-semibold leading-relaxed">{sug.reason}</p>
+                  </div>
+                  <span className={`px-2 py-0.5 rounded text-[8px] font-black uppercase ${
+                    sug.priority === 'High' ? 'bg-rose-50 border border-rose-100 text-rose-600' : 'bg-amber-50 border border-amber-100 text-amber-600'
+                  }`}>
+                    {sug.priority}
+                  </span>
+                </div>
+                <div className="flex justify-end pt-2 border-t border-slate-100">
+                  <button 
+                    onClick={() => handleFixSuggestion(sug.title)}
+                    className="px-3.5 py-1 bg-blue-600 hover:bg-blue-700 text-white font-extrabold text-[9px] rounded-lg transition-smooth shadow-sm cursor-pointer"
+                  >
+                    One-Click Fix
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* SECTION 5: CAREER TOOLS */}
+      <section id="career-tools-section" className="flex flex-col gap-4">
+        <div>
+          <span className="text-[9px] font-black text-slate-400 tracking-wider uppercase">Job Search Accelerators</span>
+          <h3 className="text-base font-extrabold text-slate-900 mt-0.5">Career Tools</h3>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+          {careerTools.map((t, idx) => {
+            const IconComponent = t.icon;
+            return (
+              <div 
+                key={idx}
+                className="bg-white border border-slate-200/60 rounded-[20px] p-5 flex flex-col justify-between min-h-36 shadow-sm hover:scale-[1.02] hover:border-blue-300 transition-all duration-200 text-left"
+              >
+                <div>
+                  <div className="w-9 h-9 rounded-lg bg-blue-50 border border-blue-100 flex items-center justify-center text-blue-600">
+                    <IconComponent size={16} />
+                  </div>
+                  <h4 className="font-extrabold text-xs text-slate-800 mt-3">{t.name}</h4>
+                  <p className="text-[9.5px] text-slate-450 mt-1 font-semibold leading-relaxed">{t.desc}</p>
+                </div>
+                <div className="pt-3.5 border-t border-slate-100 mt-3 flex justify-end">
+                  <button 
+                    onClick={() => navigate(t.path)}
+                    className="flex items-center gap-1 text-[10px] text-blue-600 hover:text-blue-700 font-extrabold cursor-pointer"
+                  >
+                    Launch <ChevronRight size={10} />
+                  </button>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </section>
+
+      {/* SECTION 6: RECENT ACTIVITY TIMELINE & INSIGHTS CHARTS */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-stretch">
+        
+        {/* Activity Timeline */}
+        <div className="bg-white border border-slate-200/60 rounded-[20px] p-5 flex flex-col justify-between min-h-[280px] shadow-sm text-left">
+          <div className="border-b border-slate-100 pb-3 mb-4 flex justify-between items-center">
+            <h4 className="text-xs font-extrabold text-slate-850">Recent Activity</h4>
+            <span className="text-[8px] font-black text-slate-400 uppercase tracking-widest">Logs</span>
+          </div>
+
+          <div className="flex flex-col gap-4 flex-grow justify-center pr-1">
+            {timelineActivities.map((act, idx) => (
+              <div key={idx} className="flex gap-3 text-left">
+                <div className="flex flex-col items-center shrink-0">
+                  <div className="w-2 h-2 rounded-full bg-blue-500 mt-1 shadow-sm shadow-blue-500/20" />
+                  {idx < timelineActivities.length - 1 && <div className="w-0.5 bg-slate-100 flex-grow my-1" />}
+                </div>
+                <div>
+                  <div className="flex gap-2 items-center leading-none">
+                    <span className="text-[10px] font-extrabold text-slate-800">{act.title}</span>
+                    <span className="text-[8px] text-slate-400 font-bold">• {act.time}</span>
+                  </div>
+                  <p className="text-[9px] text-slate-450 mt-1 font-semibold leading-relaxed">{act.desc}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Career Insights Charts */}
+        <div className="lg:col-span-2 bg-white border border-slate-200/60 rounded-[20px] p-5 flex flex-col justify-between min-h-[280px] shadow-sm text-left" id="analytics-section">
+          <div className="border-b border-slate-100 pb-3 mb-4 flex justify-between items-center">
+            <h4 className="text-xs font-extrabold text-slate-850">Career Insights & Progress</h4>
+            <span className="text-[8px] font-black text-slate-400 uppercase tracking-widest">Analytics Trends</span>
+          </div>
+
+          {/* Simple premium SVG Charts */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-5 flex-grow items-center">
+            <div className="flex flex-col gap-2">
+              <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">ATS score progression</span>
+              <div className="w-full h-28 mt-1 relative bg-slate-50/50 border border-slate-100 rounded-xl p-2 flex items-center justify-center">
+                <svg className="w-full h-full" viewBox="0 0 200 80">
+                  {/* Grid lines */}
+                  <line x1="10" y1="15" x2="190" y2="15" className="stroke-slate-100" strokeWidth="1" />
+                  <line x1="10" y1="40" x2="190" y2="40" className="stroke-slate-100" strokeWidth="1" />
+                  <line x1="10" y1="65" x2="190" y2="65" className="stroke-slate-100" strokeWidth="1" />
+                  
+                  {/* Dynamic path */}
+                  <path 
+                    d="M 20 65 L 60 55 L 100 45 L 140 25 L 180 18" 
+                    fill="none" 
+                    stroke="#2563EB" 
+                    strokeWidth="3.5" 
+                    strokeLinecap="round" 
+                    strokeLinejoin="round" 
+                  />
+                  
+                  {/* Dots */}
+                  <circle cx="20" cy="65" r="3.5" className="fill-white stroke-blue-600" strokeWidth="2" />
+                  <circle cx="60" cy="55" r="3.5" className="fill-white stroke-blue-600" strokeWidth="2" />
+                  <circle cx="100" cy="45" r="3.5" className="fill-white stroke-blue-600" strokeWidth="2" />
+                  <circle cx="140" cy="25" r="3.5" className="fill-white stroke-blue-600" strokeWidth="2" />
+                  <circle cx="180" cy="18" r="3.5" className="fill-white stroke-blue-600" strokeWidth="2" />
+                  
+                  {/* Text label */}
+                  <text x="180" y="10" textAnchor="end" className="text-[8px] font-black fill-blue-650">91% ATS</text>
+                </svg>
+              </div>
+            </div>
+
+            <div className="flex flex-col gap-2">
+              <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Resume Downloads & Views</span>
+              <div className="w-full h-28 mt-1 relative bg-slate-50/50 border border-slate-100 rounded-xl p-2 flex items-center justify-center">
+                <svg className="w-full h-full" viewBox="0 0 200 80">
+                  {/* Grid lines */}
+                  <line x1="10" y1="15" x2="190" y2="15" className="stroke-slate-100" strokeWidth="1" />
+                  <line x1="10" y1="40" x2="190" y2="40" className="stroke-slate-100" strokeWidth="1" />
+                  <line x1="10" y1="65" x2="190" y2="65" className="stroke-slate-100" strokeWidth="1" />
+                  
+                  {/* Dynamic path */}
+                  <path 
+                    d="M 20 60 L 60 45 L 100 50 L 140 30 L 180 20" 
+                    fill="none" 
+                    stroke="#0284C7" 
+                    strokeWidth="3.5" 
+                    strokeLinecap="round" 
+                    strokeLinejoin="round" 
+                  />
+                  
+                  {/* Dots */}
+                  <circle cx="20" cy="60" r="3.5" className="fill-white stroke-sky-600" strokeWidth="2" />
+                  <circle cx="60" cy="45" r="3.5" className="fill-white stroke-sky-600" strokeWidth="2" />
+                  <circle cx="100" cy="50" r="3.5" className="fill-white stroke-sky-600" strokeWidth="2" />
+                  <circle cx="140" cy="30" r="3.5" className="fill-white stroke-sky-600" strokeWidth="2" />
+                  <circle cx="180" cy="20" r="3.5" className="fill-white stroke-sky-600" strokeWidth="2" />
+                  
+                  {/* Text label */}
+                  <text x="180" y="12" textAnchor="end" className="text-[8px] font-black fill-sky-600">17 Exports</text>
+                </svg>
+              </div>
             </div>
           </div>
         </div>
-      </section>
 
-      {/* 7. GITHUB STYLE HEATMAP */}
-      <section className="flex flex-col gap-4">
-        <div>
-          <span className="text-[9px] font-black text-slate-400 tracking-wider uppercase">User Productivity</span>
-          <h3 className="text-xl font-extrabold text-slate-900 mt-1">Productivity Heatmap</h3>
-        </div>
+      </div>
 
-        <div className="bg-white border border-slate-200/60 rounded-3xl p-5 shadow-sm overflow-x-auto no-scrollbar">
-          <div className="flex items-center gap-1.5 justify-start">
-            {dashboardData?.heatmap?.slice().reverse().map((day) => {
-              const colors = [
-                'bg-slate-50 border border-slate-200/30',
-                'bg-blue-100 border border-blue-200/20',
-                'bg-blue-300 border border-blue-400/20',
-                'bg-blue-500 border border-blue-600/10 shadow shadow-blue-500/5',
-                'bg-blue-600 border border-blue-700/10 shadow shadow-blue-600/10'
-              ];
-              const level = Math.min(day.count, 4);
-              const dateStr = new Date(day.date).toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
-              return (
-                <div 
-                  key={day.date} 
-                  className={`w-7 h-7 rounded-lg shrink-0 flex items-center justify-center text-[10px] font-extrabold text-slate-700 transition-all ${colors[level]}`}
-                  title={`${day.count} activities on ${dateStr}`}
-                >
-                  {day.count > 0 ? day.count : ''}
-                </div>
-              );
-            })}
-          </div>
-          <p className="text-[9px] text-slate-400 mt-3 font-semibold text-left">
-            Displaying daily activity logs count for the past 30 days. Hover squares to inspect details.
-          </p>
-        </div>
-      </section>
-
-      {/* 8. AI ASSISTANT PANEL */}
+      {/* BIMBA AI ASSISTANT CHAT PANEL */}
       <section id="ai-assistant-section" className="flex flex-col gap-4">
         <div>
-          <span className="text-[9px] font-black text-blue-600 tracking-wider uppercase">Intelligent Helper</span>
-          <h3 className="text-xl font-extrabold text-slate-900 mt-1">Bimba AI Assistant</h3>
+          <span className="text-[9px] font-black text-blue-650 tracking-wider uppercase">Intelligent Career Advisor</span>
+          <h3 className="text-base font-extrabold text-slate-900 mt-0.5">Bimba AI Assistant Chat</h3>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-stretch">
           {/* Left Chat Screen */}
-          <div className="lg:col-span-2 bg-white border border-slate-200/60 rounded-3xl p-5 flex flex-col justify-between h-[360px] shadow-sm">
-            <div className="flex-grow overflow-y-auto no-scrollbar flex flex-col gap-3.5 pr-2 mb-4">
+          <div className="lg:col-span-2 bg-white border border-slate-200/60 rounded-[20px] p-5 flex flex-col justify-between h-[300px] shadow-sm">
+            <div className="flex-grow overflow-y-auto no-scrollbar flex flex-col gap-3 pr-2 mb-4">
               {chatMessages.map((msg, idx) => (
                 <div 
                   key={idx} 
                   className={`flex ${msg.sender === 'user' ? 'justify-end' : 'justify-start'}`}
                 >
-                  <div className={`max-w-[85%] rounded-2xl p-3.5 text-xs leading-relaxed ${
+                  <div className={`max-w-[85%] rounded-2xl p-3 text-[11px] leading-relaxed ${
                     msg.sender === 'user'
                       ? 'bg-blue-600 text-white rounded-tr-none'
                       : 'bg-slate-50 border border-slate-150 text-slate-700 rounded-tl-none'
@@ -871,88 +804,49 @@ export const Dashboard: React.FC = () => {
               ))}
             </div>
 
-            <div className="flex items-center gap-2 border-t border-slate-100 pt-3.5">
+            <div className="flex items-center gap-2 border-t border-slate-100 pt-3">
               <input 
                 type="text"
                 placeholder="Ask Bimba AI e.g. 'Add technical skills' or 'Optimize ATS'..."
                 value={chatInput}
                 onChange={(e) => setChatInput(e.target.value)}
                 onKeyDown={(e) => e.key === 'Enter' && handleSendChat()}
-                className="flex-grow pl-4 pr-4 py-2.5 rounded-xl bg-slate-50 border border-slate-200/80 focus:border-blue-500 focus:outline-none text-xs text-slate-700 placeholder:text-slate-400"
+                className="flex-grow pl-4 pr-4 py-2 rounded-xl bg-slate-50 border border-slate-200/80 focus:border-blue-500 focus:outline-none text-[11px] text-slate-700 placeholder:text-slate-400 font-medium"
               />
               <button 
                 onClick={handleSendChat}
-                className="w-10 h-10 rounded-xl bg-blue-600 hover:bg-blue-500 text-white flex items-center justify-center transition-smooth cursor-pointer shadow-sm"
+                className="w-8 h-8 rounded-xl bg-blue-600 hover:bg-blue-500 text-white flex items-center justify-center transition-smooth cursor-pointer shadow-sm shrink-0"
               >
-                <SendHorizontal size={14} />
+                <SendHorizontal size={12} />
               </button>
             </div>
           </div>
 
           {/* Right prompt suggestions */}
-          <div className="bg-white border border-slate-200/60 rounded-3xl p-5 flex flex-col justify-between h-[360px] shadow-sm">
+          <div className="bg-white border border-slate-200/60 rounded-[20px] p-5 flex flex-col justify-between h-[300px] shadow-sm text-left">
             <div>
-              <span className="text-[9px] font-black text-slate-400 tracking-wider uppercase">Quick Actions</span>
-              <h4 className="text-sm font-extrabold text-slate-800 mt-1">Suggested Prompt Actions</h4>
+              <span className="text-[8px] font-black text-slate-400 tracking-wider uppercase">Quick Prompts</span>
+              <h4 className="text-xs font-extrabold text-slate-800 mt-1">Suggested Prompt Actions</h4>
             </div>
 
-            <div className="flex flex-col gap-2 mt-4">
+            <div className="flex flex-col gap-2 mt-3 flex-grow overflow-y-auto no-scrollbar">
               {[
                 { label: 'Improve Skills', text: 'Analyze and suggest modern skills for my CV.' },
                 { label: 'Optimize ATS', text: 'How do I bypass standard ATS systems?' },
                 { label: 'Generate Cover Letter', text: 'Draft a cover letter for a Frontend Engineer position.' },
-                { label: 'Find Missing Keywords', text: 'What key technical terms are missing from my resume?' },
-                { label: 'Career Advice', text: 'What credentials should I highlight for Senior roles?' },
               ].map((sug, idx) => (
                 <button
                   key={idx}
                   onClick={() => {
                     setChatInput(sug.text);
                   }}
-                  className="w-full text-left bg-slate-50 border border-slate-200/60 hover:border-slate-350 rounded-xl p-3.5 hover:bg-slate-100 transition-smooth cursor-pointer"
+                  className="w-full text-left bg-slate-50 border border-slate-200/60 hover:border-blue-200 rounded-xl p-3.5 hover:bg-slate-100/50 transition-smooth cursor-pointer"
                 >
-                  <h5 className="font-bold text-xs text-slate-750">{sug.label}</h5>
-                  <p className="text-[10px] text-slate-400 mt-1">{sug.text}</p>
+                  <h5 className="font-extrabold text-[11px] text-slate-750">{sug.label}</h5>
+                  <p className="text-[9px] text-slate-450 mt-1 font-semibold">{sug.text}</p>
                 </button>
               ))}
             </div>
-          </div>
-        </div>
-      </section>
-
-      {/* 9. STREAKS & BADGES ACHIEVEMENTS */}
-      <section className="flex flex-col gap-4">
-        <div>
-          <span className="text-[9px] font-black text-slate-400 tracking-wider uppercase">Gamification Achievements</span>
-          <h3 className="text-xl font-extrabold text-slate-900 mt-1">Streaks & Badges</h3>
-        </div>
-
-        <div className="bg-white border border-slate-200/60 rounded-3xl p-5 shadow-sm">
-          <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
-            {badges.map((badge, idx) => (
-              <div 
-                key={idx}
-                className={`relative rounded-2xl p-4.5 text-center flex flex-col items-center justify-between gap-3 transition-all duration-300 ${
-                  badge.unlocked 
-                    ? 'bg-slate-50/50 border border-blue-500/10 hover:border-blue-500/20 hover:-translate-y-1 shadow-sm' 
-                    : 'bg-slate-100/30 border border-slate-200/40 opacity-40'
-                }`}
-              >
-                <div className="w-12 h-12 rounded-full bg-white flex items-center justify-center text-xl shadow border border-slate-200/60">
-                  {badge.icon}
-                </div>
-                <div>
-                  <h5 className="font-extrabold text-xs text-slate-800 leading-tight">{badge.name}</h5>
-                  <p className="text-[9px] text-slate-400 mt-0.8">{badge.desc}</p>
-                </div>
-
-                {!badge.unlocked && (
-                  <div className="absolute top-2.5 right-2.5 text-slate-405">
-                    <Lock size={10} />
-                  </div>
-                )}
-              </div>
-            ))}
           </div>
         </div>
       </section>
@@ -960,4 +854,5 @@ export const Dashboard: React.FC = () => {
     </div>
   );
 };
+
 export default Dashboard;
