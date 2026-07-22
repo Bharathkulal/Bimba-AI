@@ -1,9 +1,8 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { Outlet, useLocation, useNavigate } from 'react-router-dom';
-import { motion, AnimatePresence } from 'framer-motion';
 import { 
-  Home, FileText, Bot, Award, BarChart3, Settings, 
-  User, LogOut, Sparkles
+  Home, FileText, Bot, Settings, 
+  LogOut, Sparkles, BarChart3
 } from 'lucide-react';
 import { useUserStore } from '../store/userStore';
 import { ThemeToggle } from '../components/ThemeToggle';
@@ -12,7 +11,6 @@ export const DashboardLayout: React.FC = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const logout = useUserStore((state) => state.logout);
-  const [isHovered, setIsHovered] = useState(false);
 
   const menuItems = [
     { label: 'Dashboard', path: '/dashboard', sectionId: 'top', icon: Home },
@@ -46,38 +44,21 @@ export const DashboardLayout: React.FC = () => {
       <div className="absolute top-[-10%] left-[-10%] w-[50%] h-[50%] rounded-full bg-blue-500/5 blur-[120px] pointer-events-none z-0" />
       <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] rounded-full bg-blue-500/5 blur-[120px] pointer-events-none z-0" />
 
-      {/* Floating Vertical Navigation Dock - DESKTOP */}
-      <motion.aside 
-        onMouseEnter={() => setIsHovered(true)}
-        onMouseLeave={() => setIsHovered(false)}
-        initial={{ width: 84 }}
-        animate={{ width: isHovered ? 240 : 84 }}
-        transition={{ type: 'spring', stiffness: 220, damping: 28 }}
-        className="hidden md:flex flex-col justify-between items-stretch py-6 px-4 bg-white border-r border-slate-200/60 backdrop-blur-xl h-screen fixed left-0 top-0 z-40 origin-left shadow-md shadow-slate-100/50"
-      >
+      {/* Floating Vertical Navigation Dock - DESKTOP (Permanently Expanded) */}
+      <aside className="hidden md:flex flex-col justify-between items-stretch py-7 px-5 bg-white border-r border-slate-200/60 h-screen fixed left-0 top-0 w-64 shadow-sm z-40">
         <div className="flex flex-col gap-8">
           {/* Logo / Bimba Dock Header */}
-          <div className="flex items-center gap-3.5 px-2.5 overflow-hidden">
-            <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-blue-600 to-sky-500 flex items-center justify-center text-white font-black text-xl shadow-lg shadow-blue-500/20 shrink-0">
+          <div className="flex items-center gap-3.5 px-1 overflow-hidden">
+            <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-blue-600 to-sky-500 flex items-center justify-center text-white font-black text-2xl shadow-lg shadow-blue-500/20 shrink-0">
               B
             </div>
-            <AnimatePresence>
-              {isHovered && (
-                <motion.span 
-                  initial={{ opacity: 0, x: -10 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  exit={{ opacity: 0, x: -10 }}
-                  transition={{ duration: 0.15 }}
-                  className="font-extrabold text-slate-900 text-lg tracking-tight whitespace-nowrap"
-                >
-                  Bimba AI
-                </motion.span>
-              )}
-            </AnimatePresence>
+            <span className="font-extrabold text-slate-900 text-xl tracking-tight whitespace-nowrap">
+              Bimba AI
+            </span>
           </div>
 
           {/* Dock Navigation List */}
-          <nav className="flex flex-col gap-1.5">
+          <nav className="flex flex-col gap-2">
             {menuItems.map((item) => {
               const Icon = item.icon;
               const isActive = item.sectionId 
@@ -88,44 +69,24 @@ export const DashboardLayout: React.FC = () => {
                 <button
                   key={item.label}
                   onClick={() => handleNavClick(item)}
-                  className={`flex items-center w-full px-3 py-2.8 rounded-xl transition-all duration-250 relative group cursor-pointer ${
+                  className={`flex items-center w-full px-4 py-3.5 rounded-xl transition-all duration-250 relative group cursor-pointer ${
                     isActive 
-                      ? 'text-blue-600 font-semibold' 
-                      : 'text-slate-500 hover:text-slate-800 hover:bg-slate-100/50'
+                      ? 'text-blue-600 font-extrabold' 
+                      : 'text-slate-500 hover:text-slate-800 hover:bg-slate-100/50 font-bold'
                   }`}
                 >
-                  {/* Active Page Animated Glow Accent - Blue Pill Background */}
+                  {/* Active Page Accent - Blue Pill Background */}
                   {isActive && (
-                    <motion.div 
-                      layoutId="activeGlowLight" 
-                      className="absolute inset-0 rounded-xl bg-blue-50 border border-blue-200/50 shadow-sm pointer-events-none"
-                    />
+                    <div className="absolute inset-0 rounded-xl bg-blue-50 border border-blue-200/50 shadow-sm pointer-events-none" />
                   )}
 
                   <div className="flex items-center shrink-0 justify-center w-6 h-6 z-10 relative">
                     <Icon size={20} className={isActive ? 'text-blue-600' : 'text-slate-400 group-hover:text-slate-655'} />
                   </div>
                   
-                  <AnimatePresence>
-                    {isHovered && (
-                      <motion.span 
-                        initial={{ opacity: 0, x: -8 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        exit={{ opacity: 0, x: -8 }}
-                        transition={{ duration: 0.15 }}
-                        className="ml-3 text-xs tracking-wide whitespace-nowrap z-10"
-                      >
-                        {item.label}
-                      </motion.span>
-                    )}
-                  </AnimatePresence>
-
-                  {/* Icon tooltip when collapsed */}
-                  {!isHovered && (
-                    <div className="absolute left-20 bg-slate-900 border border-slate-800 text-white px-2.5 py-1.5 rounded-lg text-[10px] font-bold tracking-wider uppercase opacity-0 pointer-events-none group-hover:opacity-100 transition-opacity duration-200 shadow-xl whitespace-nowrap z-50">
-                      {item.label}
-                    </div>
-                  )}
+                  <span className="ml-3 text-[13px] tracking-wide whitespace-nowrap z-10">
+                    {item.label}
+                  </span>
                 </button>
               );
             })}
@@ -135,32 +96,16 @@ export const DashboardLayout: React.FC = () => {
         {/* Dock Footer (Logout) */}
         <button
           onClick={() => logout()}
-          className="flex items-center w-full px-3 py-3 rounded-xl text-red-650 hover:text-red-700 hover:bg-red-50 transition-all duration-250 cursor-pointer relative group"
+          className="flex items-center w-full px-4 py-3.5 rounded-xl text-red-650 hover:text-red-700 hover:bg-red-50 transition-all duration-250 cursor-pointer font-bold"
         >
           <div className="flex items-center shrink-0 justify-center w-6 h-6">
             <LogOut size={20} />
           </div>
-          <AnimatePresence>
-            {isHovered && (
-              <motion.span 
-                initial={{ opacity: 0, x: -8 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: -8 }}
-                transition={{ duration: 0.15 }}
-                className="ml-3 text-xs font-bold tracking-wide whitespace-nowrap"
-              >
-                Log Out
-              </motion.span>
-            )}
-          </AnimatePresence>
-
-          {!isHovered && (
-            <div className="absolute left-20 bg-slate-900 border border-slate-800 text-red-500 px-2.5 py-1.5 rounded-lg text-[10px] font-bold tracking-wider uppercase opacity-0 pointer-events-none group-hover:opacity-100 transition-opacity duration-200 shadow-xl whitespace-nowrap z-50">
-              Log Out
-            </div>
-          )}
+          <span className="ml-3 text-[13px] tracking-wide whitespace-nowrap">
+            Log Out
+          </span>
         </button>
-      </motion.aside>
+      </aside>
 
       {/* Floating Bottom Navigation Bar - MOBILE */}
       <nav className="md:hidden fixed bottom-4 inset-x-4 bg-white/80 border border-slate-200/60 backdrop-blur-xl rounded-2xl py-2.5 px-4 flex items-center justify-around z-40 shadow-xl shadow-slate-100/50">
@@ -193,7 +138,7 @@ export const DashboardLayout: React.FC = () => {
       </nav>
 
       {/* Content wrapper */}
-      <div className="flex-grow pl-0 md:pl-[84px] min-h-screen flex flex-col z-10 w-full">
+      <div className="flex-grow pl-0 md:pl-64 min-h-screen flex flex-col z-10 w-full">
         {/* Improved Top Navigation */}
         <header className="bg-white/80 backdrop-blur-md border-b border-slate-200/60 h-16 flex items-center justify-between px-6 z-30 shadow-sm sticky top-0">
           <div className="flex items-center gap-1.5 text-xs font-black text-slate-800 tracking-tight uppercase">
