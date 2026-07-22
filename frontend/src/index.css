@@ -90,6 +90,10 @@
   --glass-card-shadow: 0 12px 40px rgba(0, 0, 0, 0.45);
 }
 
+html, body, button, input, select, textarea, span, p, h1, h2, h3, h4, h5, h6 {
+  font-family: 'Inter', sans-serif !important;
+}
+
 html, body {
   background-color: var(--bg-base) !important;
   color: var(--text-primary) !important;
@@ -99,7 +103,6 @@ html, body {
 body {
   background-color: var(--bg-base);
   color: var(--text-primary);
-  font-family: 'Inter', sans-serif;
   overflow-x: hidden;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
