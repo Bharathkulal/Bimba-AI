@@ -5,7 +5,8 @@ import {
   ChevronLeft, ChevronRight, Clock, DollarSign,
   SlidersHorizontal, RefreshCw, X, Check, Eye
 } from 'lucide-react';
-import { jobsService, JobListItem } from '../../services/jobs';
+import { jobsService } from '../../services/jobs';
+import type { JobListItem } from '../../services/jobs';
 import { useUserStore } from '../../store/userStore';
 
 export const JobsDashboard: React.FC = () => {

@@ -5,7 +5,8 @@ import {
   Share2, ExternalLink, Calendar, DollarSign, Award, Heart, 
   AlertCircle, Check, X, FileText, Send
 } from 'lucide-react';
-import { jobsService, JobDetailResponse, JobApplication } from '../../services/jobs';
+import { jobsService } from '../../services/jobs';
+import type { JobDetailResponse, JobApplication } from '../../services/jobs';
 
 export const JobDetails: React.FC = () => {
   const { id } = useParams<{ id: string }>();

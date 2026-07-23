@@ -4,7 +4,8 @@ import {
   Bookmark, Briefcase, MapPin, Sparkles, ChevronRight, Trash2, 
   Eye, Check, X, Building
 } from 'lucide-react';
-import { jobsService, SavedJob } from '../../services/jobs';
+import { jobsService } from '../../services/jobs';
+import type { SavedJob } from '../../services/jobs';
 
 export const SavedJobs: React.FC = () => {
   const navigate = useNavigate();

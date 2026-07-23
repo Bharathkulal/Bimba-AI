@@ -4,7 +4,8 @@ import {
   Briefcase, MapPin, Calendar, ClipboardList, CheckCircle2, 
   ChevronRight, ArrowRight, Eye, Check, X, Building, Trash2
 } from 'lucide-react';
-import { jobsService, JobApplication } from '../../services/jobs';
+import { jobsService } from '../../services/jobs';
+import type { JobApplication } from '../../services/jobs';
 
 export const Applications: React.FC = () => {
   const navigate = useNavigate();
