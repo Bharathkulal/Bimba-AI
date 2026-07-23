@@ -20,6 +20,12 @@ import { AdminLogin } from '../pages/AdminLogin';
 import { NotFound } from '../pages/NotFound';
 import { Notifications } from '../pages/Notifications';
 
+// Jobs Module Pages
+import { JobsDashboard } from '../pages/jobs/JobsDashboard';
+import { JobDetails } from '../pages/jobs/JobDetails';
+import { SavedJobs } from '../pages/jobs/SavedJobs';
+import { Applications } from '../pages/jobs/Applications';
+
 
 // Modular Admin Pages
 import { AdminDashboardOverview } from '../pages/admin/AdminDashboardOverview';
@@ -123,6 +129,12 @@ export const AppRoutes: React.FC = () => {
             <Route path="/profile" element={<Profile />} />
             <Route path="/settings" element={<Settings />} />
             <Route path="/notifications" element={<Notifications />} />
+            
+            {/* Jobs Routes */}
+            <Route path="/jobs" element={<JobsDashboard />} />
+            <Route path="/jobs/:id" element={<JobDetails />} />
+            <Route path="/jobs/saved" element={<SavedJobs />} />
+            <Route path="/jobs/applications" element={<Applications />} />
           </Route>
         </Route>
 

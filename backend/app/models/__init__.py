@@ -12,6 +12,7 @@ from app.models.resume_studio import (
     ResumeTemplate, ResumeDownload, ResumeATS, ResumeAILog, CareerReadiness,
     ResumeAnalysis, ResumeImprovementHistory, JobDescriptionOptimization
 )
+from app.models.saved_job import SavedJob, JobApplication
 
 __all__ = [
     "Base", 
@@ -43,6 +44,9 @@ __all__ = [
     "CareerReadiness",
     "ResumeAnalysis",
     "ResumeImprovementHistory",
-    "JobDescriptionOptimization"
+    "JobDescriptionOptimization",
+    "SavedJob",
+    "JobApplication"
 ]
+
 

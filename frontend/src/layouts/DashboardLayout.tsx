@@ -1,8 +1,9 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { 
   Home, FileText, Bot, Settings, 
-  LogOut, Sparkles, BarChart3
+  LogOut, Sparkles, BarChart3, Briefcase, 
+  Building, MessageSquare, Coins
 } from 'lucide-react';
 import { useUserStore } from '../store/userStore';
 import { ThemeToggle } from '../components/ThemeToggle';
@@ -11,12 +12,16 @@ export const DashboardLayout: React.FC = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const logout = useUserStore((state) => state.logout);
+  const [isHovered, setIsHovered] = useState(false);
 
   const menuItems = [
     { label: 'Dashboard', path: '/dashboard', sectionId: 'top', icon: Home },
     { label: 'Resume', path: '/dashboard', sectionId: 'resumes-section', icon: FileText },
-    { label: 'AI Tools', path: '/dashboard', sectionId: 'ai-assistant-section', icon: Bot },
-    { label: 'Career', path: '/dashboard', sectionId: 'career-tools-section', icon: Sparkles },
+    { label: 'Jobs', path: '/jobs', icon: Briefcase },
+    { label: 'Companies', path: '/jobs', icon: Building },
+    { label: 'Interview', path: '/resume-builder', icon: MessageSquare },
+    { label: 'Salary', path: '/jobs', icon: Coins },
+    { label: 'Career AI', path: '/resume-builder', icon: Sparkles },
     { label: 'Analytics', path: '/dashboard', sectionId: 'analytics-section', icon: BarChart3 },
     { label: 'Settings', path: '/settings', icon: Settings },
   ];
@@ -44,15 +49,23 @@ export const DashboardLayout: React.FC = () => {
       <div className="absolute top-[-10%] left-[-10%] w-[50%] h-[50%] rounded-full bg-blue-500/5 blur-[120px] pointer-events-none z-0" />
       <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] rounded-full bg-blue-500/5 blur-[120px] pointer-events-none z-0" />
 
-      {/* Floating Vertical Navigation Dock - DESKTOP (Permanently Expanded) */}
-      <aside className="hidden md:flex flex-col justify-between items-stretch py-7 px-5 bg-white border-r border-slate-200/60 h-screen fixed left-0 top-0 w-64 shadow-sm z-40">
+      {/* Floating Vertical Navigation Dock - DESKTOP (Smooth Hover Expansion) */}
+      <aside 
+        onMouseEnter={() => setIsHovered(true)}
+        onMouseLeave={() => setIsHovered(false)}
+        className={`hidden md:flex flex-col justify-between items-stretch py-7 px-5 bg-white border-r border-slate-200/60 h-screen fixed left-0 top-0 z-40 shadow-sm transition-all duration-300 ease-in-out ${
+          isHovered ? 'w-64' : 'w-[84px]'
+        }`}
+      >
         <div className="flex flex-col gap-8">
           {/* Logo / Bimba Dock Header */}
-          <div className="flex items-center gap-3.5 px-1 overflow-hidden">
+          <div className="flex items-center px-1 overflow-hidden shrink-0">
             <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-blue-600 to-sky-500 flex items-center justify-center text-white font-black text-2xl shadow-lg shadow-blue-500/20 shrink-0">
               B
             </div>
-            <span className="font-extrabold text-slate-900 text-xl tracking-tight whitespace-nowrap">
+            <span className={`font-extrabold text-slate-900 text-xl tracking-tight whitespace-nowrap transition-all duration-300 ease-in-out ${
+              isHovered ? 'opacity-100 max-w-[150px] ml-3.5' : 'opacity-0 max-w-0 overflow-hidden pointer-events-none'
+            }`}>
               Bimba AI
             </span>
           </div>
@@ -69,7 +82,7 @@ export const DashboardLayout: React.FC = () => {
                 <button
                   key={item.label}
                   onClick={() => handleNavClick(item)}
-                  className={`flex items-center w-full px-4 py-3.5 rounded-xl transition-all duration-250 relative group cursor-pointer ${
+                  className={`flex items-center w-full px-4 py-3.5 rounded-xl transition-all duration-250 relative group cursor-pointer overflow-hidden ${
                     isActive 
                       ? 'text-blue-600 font-extrabold' 
                       : 'text-slate-500 hover:text-slate-800 hover:bg-slate-100/50 font-bold'
@@ -84,9 +97,18 @@ export const DashboardLayout: React.FC = () => {
                     <Icon size={20} className={isActive ? 'text-blue-600' : 'text-slate-400 group-hover:text-slate-655'} />
                   </div>
                   
-                  <span className="ml-3 text-[13px] tracking-wide whitespace-nowrap z-10">
+                  <span className={`text-[13px] tracking-wide whitespace-nowrap z-10 transition-all duration-300 ease-in-out ${
+                    isHovered ? 'opacity-100 max-w-[150px] ml-3' : 'opacity-0 max-w-0 overflow-hidden pointer-events-none'
+                  }`}>
                     {item.label}
                   </span>
+
+                  {/* Icon tooltip when collapsed */}
+                  {!isHovered && (
+                    <div className="absolute left-20 bg-slate-900 border border-slate-800 text-white px-2.5 py-1.5 rounded-lg text-[10px] font-bold tracking-wider uppercase opacity-0 pointer-events-none group-hover:opacity-100 transition-opacity duration-200 shadow-xl whitespace-nowrap z-50">
+                      {item.label}
+                    </div>
+                  )}
                 </button>
               );
             })}
@@ -96,14 +118,21 @@ export const DashboardLayout: React.FC = () => {
         {/* Dock Footer (Logout) */}
         <button
           onClick={() => logout()}
-          className="flex items-center w-full px-4 py-3.5 rounded-xl text-red-650 hover:text-red-700 hover:bg-red-50 transition-all duration-250 cursor-pointer font-bold"
+          className="flex items-center w-full px-4 py-3.5 rounded-xl text-red-650 hover:text-red-700 hover:bg-red-50 transition-all duration-250 cursor-pointer font-bold relative group overflow-hidden"
         >
           <div className="flex items-center shrink-0 justify-center w-6 h-6">
             <LogOut size={20} />
           </div>
-          <span className="ml-3 text-[13px] tracking-wide whitespace-nowrap">
+          <span className={`text-[13px] tracking-wide whitespace-nowrap transition-all duration-300 ease-in-out ${
+            isHovered ? 'opacity-100 max-w-[150px] ml-3' : 'opacity-0 max-w-0 overflow-hidden pointer-events-none'
+          }`}>
             Log Out
           </span>
+          {!isHovered && (
+            <div className="absolute left-20 bg-slate-900 border border-slate-800 text-red-500 px-2.5 py-1.5 rounded-lg text-[10px] font-bold tracking-wider uppercase opacity-0 pointer-events-none group-hover:opacity-100 transition-opacity duration-200 shadow-xl whitespace-nowrap z-50">
+              Log Out
+            </div>
+          )}
         </button>
       </aside>
 
@@ -137,8 +166,8 @@ export const DashboardLayout: React.FC = () => {
         </button>
       </nav>
 
-      {/* Content wrapper */}
-      <div className="flex-grow pl-0 md:pl-64 min-h-screen flex flex-col z-10 w-full">
+      {/* Content wrapper with Stable Padding */}
+      <div className="flex-grow pl-0 md:pl-[84px] min-h-screen flex flex-col z-10 w-full">
         {/* Improved Top Navigation */}
         <header className="bg-white/80 backdrop-blur-md border-b border-slate-200/60 h-16 flex items-center justify-between px-6 z-30 shadow-sm sticky top-0">
           <div className="flex items-center gap-1.5 text-xs font-black text-slate-800 tracking-tight uppercase">

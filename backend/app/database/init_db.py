@@ -19,7 +19,9 @@ def init_db():
         ResumeTemplate, ResumeDownload, ResumeATS, ResumeAILog, CareerReadiness,
         ResumeAnalysis, ResumeImprovementHistory, JobDescriptionOptimization
     )
+    from app.models.saved_job import SavedJob, JobApplication
     from datetime import datetime, timedelta, timezone
+
     from app.core.security import get_password_hash
     import random
     

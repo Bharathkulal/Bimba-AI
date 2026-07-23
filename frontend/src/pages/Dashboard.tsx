@@ -5,7 +5,7 @@ import {
   Bot, BarChart3, Settings, Flame, Search, Bell, 
   Edit3, Copy, Download, Trash2,
   SendHorizontal, Lock, ListTodo, UploadCloud,
-  Brain, Scan, Mail, Briefcase, Globe,
+  Brain, Scan, Mail, Briefcase, Globe, Building,
   MessageSquare, LineChart, CheckCircle2, AlertCircle,
   HelpCircle, ChevronRight, RefreshCw, RefreshCw as RotateCw
 } from 'lucide-react';
@@ -13,12 +13,14 @@ import { Button } from '../components/Button';
 import { useUserStore } from '../store/userStore';
 import { analyticsService } from '../services/analytics';
 import { apiClient, API_BASE_URL } from '../services/api';
+import { jobsService, JobListItem } from '../services/jobs';
 
 import type { DashboardData, AtsData, ActivityTimelineItem, ResumeAnalyticsItem } from '../services/analytics';
 
 export const Dashboard: React.FC = () => {
   const navigate = useNavigate();
   const user = useUserStore((state) => state.user);
+  const [recommendedJobs, setRecommendedJobs] = useState<JobListItem[]>([]);
   
   const getDisplayName = () => {
     if (!user) return 'Student';
@@ -59,13 +61,14 @@ export const Dashboard: React.FC = () => {
   const fetchAnalytics = async () => {
     try {
       setIsLoading(true);
-      const [dash, ats, act, resList, notifRes, tplRes] = await Promise.all([
+      const [dash, ats, act, resList, notifRes, tplRes, jobsRes] = await Promise.all([
         analyticsService.getDashboard(),
         analyticsService.getAts(),
         analyticsService.getActivity(),
         analyticsService.getResumes(),
         apiClient.get('/api/analytics/notifications'),
-        apiClient.get('/api/resume-studio/templates')
+        apiClient.get('/api/resume-studio/templates'),
+        jobsService.searchJobs({ limit: 4 })
       ]);
       setDashboardData(dash);
       setAtsData(ats);
@@ -73,6 +76,7 @@ export const Dashboard: React.FC = () => {
       setResumes(resList);
       setNotificationCount(notifRes.data.unread_count || 0);
       setTemplates(tplRes.data || []);
+      setRecommendedJobs(jobsRes.jobs);
     } catch (err) {
       console.error("Error loading real-time user analytics:", err);
     } finally {
@@ -269,15 +273,6 @@ export const Dashboard: React.FC = () => {
     { title: "Low ATS Keywords Match", reason: "Target roles require more DevOps and cloud definitions.", priority: "High" },
   ];
 
-  // Career tools grid
-  const careerTools = [
-    { name: "Cover Letter Generator", desc: "Build tailored cover letters optimized for job specs.", icon: Mail, path: "/resume-builder" },
-    { name: "LinkedIn Optimizer", desc: "Rewrite profile highlights to increase headhunter outreach.", icon: Globe, path: "/resume-builder" },
-    { name: "Portfolio Builder", desc: "Convert your document data into a stunning personal website.", icon: Globe, path: "/resume-builder" },
-    { name: "Mock Interview Prep", desc: "Real-time chat questions based on your resume achievements.", icon: MessageSquare, path: "/resume-builder" },
-    { name: "Resume Analyzer", desc: "Verify styling alignment and recruiter layout checks.", icon: LineChart, path: "/resume-builder" },
-    { name: "Email Generator", desc: "Draft professional outreach and follow-up templates.", icon: Bot, path: "/resume-builder" },
-  ];
 
   // Activities mapping
   const timelineActivities = [
@@ -474,6 +469,74 @@ export const Dashboard: React.FC = () => {
         </div>
       )}
 
+      {/* RECOMMENDED JOBS SECTION */}
+      <section className="flex flex-col gap-3.5">
+        <div className="flex justify-between items-end border-b border-slate-100 pb-3">
+          <div>
+            <span className="text-[9px] font-black text-blue-650 tracking-wider uppercase">AI Matching</span>
+            <h3 className="text-base font-extrabold text-slate-900 mt-0.5">Recommended Jobs</h3>
+          </div>
+          <button 
+            onClick={() => navigate('/jobs')}
+            className="text-[10px] font-black text-blue-650 hover:underline flex items-center gap-0.5 cursor-pointer border-0 bg-transparent"
+          >
+            View All Jobs <ChevronRight size={12} />
+          </button>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+          {recommendedJobs.slice(0, 4).map((job) => {
+            const score = job.ai_match_score || 75;
+            let scoreBg = 'bg-blue-50 text-blue-700 border-blue-150';
+            if (score >= 90) {
+              scoreBg = 'bg-emerald-50 text-emerald-700 border-emerald-200';
+            }
+            return (
+              <div 
+                key={job.id} 
+                className="bg-white border border-slate-200/60 rounded-[20px] p-4.5 flex items-center justify-between shadow-sm hover:scale-[1.01] hover:border-slate-300 hover:shadow transition-all duration-200"
+              >
+                <div className="flex items-center gap-3.5">
+                  {job.logo ? (
+                    <img 
+                      src={job.logo} 
+                      alt={job.company} 
+                      className="w-10 h-10 rounded-lg object-cover border border-slate-100 shrink-0" 
+                      onError={(e) => {
+                        (e.target as HTMLImageElement).src = 'https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?w=100&auto=format&fit=crop&q=60';
+                      }}
+                    />
+                  ) : (
+                    <div className="w-10 h-10 rounded-lg bg-blue-50 border border-blue-100 flex items-center justify-center text-blue-600 shrink-0">
+                      <Building size={16} />
+                    </div>
+                  )}
+                  <div className="text-left leading-tight">
+                    <h4 className="font-extrabold text-xs text-slate-800 truncate max-w-[140px] sm:max-w-[180px]" title={job.title}>
+                      {job.title}
+                    </h4>
+                    <p className="text-[10px] text-slate-450 font-bold mt-0.5">{job.company}</p>
+                    <span className="text-[9px] text-slate-400 font-bold block mt-1">{job.location}</span>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-3 shrink-0">
+                  <span className={`text-[9.5px] px-2 py-1 rounded-lg border font-bold ${scoreBg}`}>
+                    {score}% Match
+                  </span>
+                  <button 
+                    onClick={() => navigate(`/jobs/${job.id}`)}
+                    className="px-3.5 py-1.5 bg-blue-600 hover:bg-blue-700 text-white font-extrabold text-[10px] rounded-lg shadow-sm hover:scale-102 transition-smooth cursor-pointer"
+                  >
+                    Apply
+                  </button>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </section>
+
       {/* SECTION 3: MY RESUME PORTFOLIO */}
       <section id="resumes-section" className="flex flex-col gap-4">
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end gap-3 border-b border-slate-100 pb-3">
@@ -635,41 +698,6 @@ export const Dashboard: React.FC = () => {
         </div>
       </section>
 
-      {/* SECTION 5: CAREER TOOLS */}
-      <section id="career-tools-section" className="flex flex-col gap-4">
-        <div>
-          <span className="text-[9px] font-black text-slate-400 tracking-wider uppercase">Job Search Accelerators</span>
-          <h3 className="text-base font-extrabold text-slate-900 mt-0.5">Career Tools</h3>
-        </div>
-
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
-          {careerTools.map((t, idx) => {
-            const IconComponent = t.icon;
-            return (
-              <div 
-                key={idx}
-                className="bg-white border border-slate-200/60 rounded-[20px] p-5 flex flex-col justify-between min-h-36 shadow-sm hover:scale-[1.02] hover:border-blue-300 transition-all duration-200 text-left"
-              >
-                <div>
-                  <div className="w-9 h-9 rounded-lg bg-blue-50 border border-blue-100 flex items-center justify-center text-blue-600">
-                    <IconComponent size={16} />
-                  </div>
-                  <h4 className="font-extrabold text-xs text-slate-800 mt-3">{t.name}</h4>
-                  <p className="text-[9.5px] text-slate-450 mt-1 font-semibold leading-relaxed">{t.desc}</p>
-                </div>
-                <div className="pt-3.5 border-t border-slate-100 mt-3 flex justify-end">
-                  <button 
-                    onClick={() => navigate(t.path)}
-                    className="flex items-center gap-1 text-[10px] text-blue-600 hover:text-blue-700 font-extrabold cursor-pointer"
-                  >
-                    Launch <ChevronRight size={10} />
-                  </button>
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      </section>
 
       {/* SECTION 6: RECENT ACTIVITY TIMELINE & INSIGHTS CHARTS */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-stretch">
