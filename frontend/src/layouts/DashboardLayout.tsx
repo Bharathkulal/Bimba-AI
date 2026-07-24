@@ -44,10 +44,10 @@ export const DashboardLayout: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 text-slate-800 flex overflow-x-hidden font-sans relative selection:bg-blue-600/10">
+    <div className="min-h-screen bg-slate-50 text-slate-800 flex overflow-x-hidden font-sans relative selection:bg-green-600/10">
       {/* Decorative blurred glow elements */}
-      <div className="absolute top-[-10%] left-[-10%] w-[50%] h-[50%] rounded-full bg-blue-500/5 blur-[120px] pointer-events-none z-0" />
-      <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] rounded-full bg-blue-500/5 blur-[120px] pointer-events-none z-0" />
+      <div className="absolute top-[-10%] left-[-10%] w-[50%] h-[50%] rounded-full bg-green-500/5 blur-[120px] pointer-events-none z-0" />
+      <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] rounded-full bg-green-500/5 blur-[120px] pointer-events-none z-0" />
 
       {/* Floating Vertical Navigation Dock - DESKTOP (Smooth Hover Expansion) */}
       <aside 
@@ -60,7 +60,7 @@ export const DashboardLayout: React.FC = () => {
         <div className="flex flex-col gap-8">
           {/* Logo / Bimba Dock Header */}
           <div className="flex items-center px-1 overflow-hidden shrink-0">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-blue-600 to-sky-500 flex items-center justify-center text-white font-black text-2xl shadow-lg shadow-blue-500/20 shrink-0">
+            <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-green-600 to-emerald-500 flex items-center justify-center text-white font-black text-2xl shadow-lg shadow-green-500/20 shrink-0">
               B
             </div>
             <span className={`font-extrabold text-slate-900 text-xl tracking-tight whitespace-nowrap transition-all duration-300 ease-in-out ${
@@ -84,17 +84,17 @@ export const DashboardLayout: React.FC = () => {
                   onClick={() => handleNavClick(item)}
                   className={`flex items-center w-full px-4 py-3.5 rounded-xl transition-all duration-250 relative group cursor-pointer overflow-hidden ${
                     isActive 
-                      ? 'text-blue-600 font-extrabold' 
+                      ? 'text-green-600 font-extrabold' 
                       : 'text-slate-500 hover:text-slate-800 hover:bg-slate-100/50 font-bold'
                   }`}
                 >
-                  {/* Active Page Accent - Blue Pill Background */}
+                  {/* Active Page Accent - Green Pill Background */}
                   {isActive && (
-                    <div className="absolute inset-0 rounded-xl bg-blue-50 border border-blue-200/50 shadow-sm pointer-events-none" />
+                    <div className="absolute inset-0 rounded-xl bg-green-50 border border-green-200/50 shadow-sm pointer-events-none" />
                   )}
 
                   <div className="flex items-center shrink-0 justify-center w-6 h-6 z-10 relative">
-                    <Icon size={20} className={isActive ? 'text-blue-600' : 'text-slate-400 group-hover:text-slate-655'} />
+                    <Icon size={20} className={isActive ? 'text-green-600' : 'text-slate-400 group-hover:text-slate-655'} />
                   </div>
                   
                   <span className={`text-[13px] tracking-wide whitespace-nowrap z-10 transition-all duration-300 ease-in-out ${
@@ -150,9 +150,9 @@ export const DashboardLayout: React.FC = () => {
               onClick={() => handleNavClick(item)}
               className="flex flex-col items-center justify-center p-2 relative cursor-pointer"
             >
-              <Icon size={18} className={isActive ? 'text-blue-600' : 'text-slate-400'} />
+              <Icon size={18} className={isActive ? 'text-green-600' : 'text-slate-400'} />
               {isActive && (
-                <span className="absolute bottom-[-2px] w-1.5 h-1.5 rounded-full bg-blue-600" />
+                <span className="absolute bottom-[-2px] w-1.5 h-1.5 rounded-full bg-green-600" />
               )}
             </button>
           );
@@ -162,7 +162,7 @@ export const DashboardLayout: React.FC = () => {
           onClick={() => navigate('/settings')}
           className="flex flex-col items-center justify-center p-2 cursor-pointer"
         >
-          <Settings size={18} className={location.pathname === '/settings' ? 'text-blue-600' : 'text-slate-400'} />
+          <Settings size={18} className={location.pathname === '/settings' ? 'text-green-600' : 'text-slate-400'} />
         </button>
       </nav>
 

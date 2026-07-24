@@ -1,1 +1,4 @@
-from app.database.models.student import *
+from app.core.mongodb import MongoModel
+
+class Student(MongoModel):
+    pass

@@ -13,7 +13,8 @@ import { Button } from '../components/Button';
 import { useUserStore } from '../store/userStore';
 import { analyticsService } from '../services/analytics';
 import { apiClient, API_BASE_URL } from '../services/api';
-import { jobsService, JobListItem } from '../services/jobs';
+import { jobsService } from '../services/jobs';
+import type { JobListItem } from '../services/jobs';
 
 import type { DashboardData, AtsData, ActivityTimelineItem, ResumeAnalyticsItem } from '../services/analytics';
 
@@ -283,7 +284,7 @@ export const Dashboard: React.FC = () => {
   ];
 
   return (
-    <div className="flex flex-col gap-6.5 text-left font-sans text-slate-800 w-full animate-fadeIn pb-12 selection:bg-blue-500/10">
+    <div className="flex flex-col gap-6.5 text-left font-sans text-slate-800 w-full animate-fadeIn pb-12 selection:bg-green-500/10">
       
       {/* TOP HEADER STATUS & BAR */}
       <div className="flex flex-col sm:flex-row justify-between items-center gap-4 bg-white border border-slate-200/60 rounded-[20px] p-4.5 shadow-sm">
@@ -294,7 +295,7 @@ export const Dashboard: React.FC = () => {
             placeholder="Search resumes, tools, insights..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-9 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-700 focus:outline-none focus:border-blue-500 transition-smooth font-medium"
+            className="w-full pl-9 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-700 focus:outline-none focus:border-green-500 transition-smooth font-medium"
           />
         </div>
         <div className="flex items-center gap-3.5 w-full sm:w-auto justify-end">
@@ -303,11 +304,11 @@ export const Dashboard: React.FC = () => {
             className="w-9 h-9 rounded-xl bg-slate-50 border border-slate-200 flex items-center justify-center text-slate-500 hover:text-slate-900 transition-smooth relative cursor-pointer"
           >
             <Bell size={15} />
-            {notificationCount > 0 && <span className="absolute top-2.5 right-2.5 w-1.5 h-1.5 rounded-full bg-blue-600" />}
+            {notificationCount > 0 && <span className="absolute top-2.5 right-2.5 w-1.5 h-1.5 rounded-full bg-green-600" />}
           </button>
           
           <div className="flex items-center gap-2.5 border-l border-slate-100 pl-3">
-            <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-blue-600 to-sky-400 text-white font-extrabold flex items-center justify-center text-xs shadow-sm">
+            <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-green-600 to-emerald-400 text-white font-extrabold flex items-center justify-center text-xs shadow-sm">
               {displayName.charAt(0).toUpperCase()}
             </div>
             <div className="hidden lg:block text-left leading-none">
@@ -332,8 +333,8 @@ export const Dashboard: React.FC = () => {
         {/* Hero stats row */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 w-full">
           {[
-            { label: 'Resume Health', val: `${resumeHealth}%`, col: 'text-blue-600' },
-            { label: 'ATS Score', val: `${atsScore}%`, col: 'text-teal-650' },
+            { label: 'Resume Health', val: `${resumeHealth}%`, col: 'text-green-600' },
+            { label: 'ATS Score', val: `${atsScore}%`, col: 'text-emerald-600' },
             { label: 'Templates', val: totalTemplates, col: 'text-purple-600' },
             { label: 'Downloads', val: totalDownloads, col: 'text-orange-600' }
           ].map((s) => (
@@ -354,21 +355,21 @@ export const Dashboard: React.FC = () => {
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
           {/* Card 1: Upload Existing */}
-          <div className="group relative bg-white border border-slate-200/60 rounded-[20px] p-5 flex flex-col justify-between min-h-48 shadow-sm hover:scale-[1.02] hover:border-blue-300 hover:shadow-md transition-all duration-200 cursor-pointer overflow-hidden">
-            <div className="absolute top-0 right-0 w-24 h-24 bg-blue-500/5 blur-2xl rounded-full group-hover:scale-150 transition-all duration-300" />
+          <div className="group relative bg-white border border-slate-200/60 rounded-[20px] p-5 flex flex-col justify-between min-h-48 shadow-sm hover:scale-[1.02] hover:border-green-300 hover:shadow-md transition-all duration-200 cursor-pointer overflow-hidden">
+            <div className="absolute top-0 right-0 w-24 h-24 bg-green-500/5 blur-2xl rounded-full group-hover:scale-150 transition-all duration-300" />
             <div className="flex justify-between items-start">
-              <div className="w-10 h-10 rounded-xl bg-blue-50 border border-blue-150 text-blue-600 flex items-center justify-center shadow-inner">
+              <div className="w-10 h-10 rounded-xl bg-green-50 border border-green-150 text-green-600 flex items-center justify-center shadow-inner">
                 <UploadCloud size={18} />
               </div>
-              <span className="bg-blue-50 text-blue-600 text-[8px] font-black px-2 py-0.5 rounded uppercase">ATS Parser</span>
+              <span className="bg-green-50 text-green-600 text-[8px] font-black px-2 py-0.5 rounded uppercase">ATS Parser</span>
             </div>
             <div>
-              <h4 className="font-extrabold text-sm text-slate-800 group-hover:text-blue-600 transition-smooth">Upload Existing Resume</h4>
+              <h4 className="font-extrabold text-sm text-slate-800 group-hover:text-green-600 transition-smooth">Upload Existing Resume</h4>
               <p className="text-[10px] text-slate-450 mt-1.5 leading-relaxed">Upload your existing resume for AI analysis and ATS optimization.</p>
             </div>
             <button 
               onClick={() => document.getElementById('resume-upload-input')?.click()}
-              className="mt-3.5 w-full py-2 bg-gradient-to-r from-blue-600 to-sky-500 hover:from-blue-700 hover:to-sky-600 text-white font-extrabold text-[10px] rounded-xl shadow-sm hover:shadow transition-smooth cursor-pointer"
+              className="mt-3.5 w-full py-2 bg-gradient-to-r from-green-600 to-emerald-500 hover:from-green-700 hover:to-emerald-600 text-white font-extrabold text-[10px] rounded-xl shadow-sm hover:shadow transition-smooth cursor-pointer"
             >
               Upload Resume
             </button>
@@ -458,8 +459,8 @@ export const Dashboard: React.FC = () => {
         <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-md z-50 flex items-center justify-center p-6 animate-fade-in">
           <div className="bg-white border border-slate-200 rounded-[20px] p-8 max-w-sm w-full text-center shadow-2xl flex flex-col items-center gap-5">
             <div className="relative w-16 h-16 flex items-center justify-center">
-              <div className="absolute inset-0 rounded-full border-4 border-slate-100 border-t-blue-600 animate-spin" />
-              <Bot size={24} className="text-blue-600 animate-pulse" />
+              <div className="absolute inset-0 rounded-full border-4 border-slate-100 border-t-green-600 animate-spin" />
+              <Bot size={24} className="text-green-600 animate-pulse" />
             </div>
             <div>
               <h3 className="font-extrabold text-slate-800 text-lg">AI Resume Parsing</h3>
@@ -473,12 +474,12 @@ export const Dashboard: React.FC = () => {
       <section className="flex flex-col gap-3.5">
         <div className="flex justify-between items-end border-b border-slate-100 pb-3">
           <div>
-            <span className="text-[9px] font-black text-blue-650 tracking-wider uppercase">AI Matching</span>
+            <span className="text-[9px] font-black text-green-650 tracking-wider uppercase">AI Matching</span>
             <h3 className="text-base font-extrabold text-slate-900 mt-0.5">Recommended Jobs</h3>
           </div>
           <button 
             onClick={() => navigate('/jobs')}
-            className="text-[10px] font-black text-blue-650 hover:underline flex items-center gap-0.5 cursor-pointer border-0 bg-transparent"
+            className="text-[10px] font-black text-green-650 hover:underline flex items-center gap-0.5 cursor-pointer border-0 bg-transparent"
           >
             View All Jobs <ChevronRight size={12} />
           </button>
@@ -487,7 +488,7 @@ export const Dashboard: React.FC = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
           {recommendedJobs.slice(0, 4).map((job) => {
             const score = job.ai_match_score || 75;
-            let scoreBg = 'bg-blue-50 text-blue-700 border-blue-150';
+            let scoreBg = 'bg-green-50 text-green-700 border-green-150';
             if (score >= 90) {
               scoreBg = 'bg-emerald-50 text-emerald-700 border-emerald-200';
             }
@@ -507,7 +508,7 @@ export const Dashboard: React.FC = () => {
                       }}
                     />
                   ) : (
-                    <div className="w-10 h-10 rounded-lg bg-blue-50 border border-blue-100 flex items-center justify-center text-blue-600 shrink-0">
+                    <div className="w-10 h-10 rounded-lg bg-green-50 border border-green-100 flex items-center justify-center text-green-600 shrink-0">
                       <Building size={16} />
                     </div>
                   )}
@@ -526,7 +527,7 @@ export const Dashboard: React.FC = () => {
                   </span>
                   <button 
                     onClick={() => navigate(`/jobs/${job.id}`)}
-                    className="px-3.5 py-1.5 bg-blue-600 hover:bg-blue-700 text-white font-extrabold text-[10px] rounded-lg shadow-sm hover:scale-102 transition-smooth cursor-pointer"
+                    className="px-3.5 py-1.5 bg-green-600 hover:bg-green-700 text-white font-extrabold text-[10px] rounded-lg shadow-sm hover:scale-102 transition-smooth cursor-pointer"
                   >
                     Apply
                   </button>
@@ -551,12 +552,12 @@ export const Dashboard: React.FC = () => {
               placeholder="Filter by resume name..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="px-3 py-1.5 rounded-lg border border-slate-200 text-xs bg-white text-slate-700 placeholder:text-slate-400 focus:outline-none focus:border-blue-500 min-w-[120px] font-medium"
+              className="px-3 py-1.5 rounded-lg border border-slate-200 text-xs bg-white text-slate-700 placeholder:text-slate-400 focus:outline-none focus:border-green-500 min-w-[120px] font-medium"
             />
             <select
               value={sortBy}
               onChange={(e: any) => setSortBy(e.target.value)}
-              className="px-3 py-1.5 rounded-lg border border-slate-200 text-xs bg-white text-slate-700 focus:outline-none focus:border-blue-500 cursor-pointer font-bold"
+              className="px-3 py-1.5 rounded-lg border border-slate-200 text-xs bg-white text-slate-700 focus:outline-none focus:border-green-500 cursor-pointer font-bold"
             >
               <option value="updated_at">Last Updated</option>
               <option value="ats_score">ATS Score</option>
@@ -566,7 +567,7 @@ export const Dashboard: React.FC = () => {
             <select
               value={filterBy}
               onChange={(e) => setFilterBy(e.target.value)}
-              className="px-3 py-1.5 rounded-lg border border-slate-200 text-xs bg-white text-slate-700 focus:outline-none focus:border-blue-500 cursor-pointer font-bold"
+              className="px-3 py-1.5 rounded-lg border border-slate-200 text-xs bg-white text-slate-700 focus:outline-none focus:border-green-500 cursor-pointer font-bold"
             >
               <option value="all">All Statuses</option>
               <option value="draft">Draft</option>
@@ -591,21 +592,21 @@ export const Dashboard: React.FC = () => {
             .map((res) => (
               <div 
                 key={res.id} 
-                className="group relative bg-white border border-slate-200/60 hover:border-blue-300 rounded-[20px] p-5 flex flex-col justify-between gap-5 transition-all duration-200 hover:scale-[1.01] hover:shadow-sm text-left"
+                className="group relative bg-white border border-slate-200/60 hover:border-green-300 rounded-[20px] p-5 flex flex-col justify-between gap-5 transition-all duration-200 hover:scale-[1.01] hover:shadow-sm text-left"
               >
                 <div className="flex justify-between items-start gap-4">
                   <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 bg-slate-50 rounded-xl border border-slate-150 flex items-center justify-center text-blue-600 shadow-inner">
+                    <div className="w-10 h-10 bg-slate-50 rounded-xl border border-slate-150 flex items-center justify-center text-green-600 shadow-inner">
                       <FileText size={18} />
                     </div>
                     <div>
-                      <h4 className="font-extrabold text-xs text-slate-850 group-hover:text-blue-600 transition-smooth">{res.name}</h4>
+                      <h4 className="font-extrabold text-xs text-slate-850 group-hover:text-green-600 transition-smooth">{res.name}</h4>
                       <p className="text-[9px] text-slate-400 mt-1 font-semibold">Template: <span className="capitalize">{res.template}</span> • Status: <span className="font-bold">{res.status}</span></p>
                     </div>
                   </div>
                   
                   <div className="flex flex-col items-end gap-1.5 shrink-0">
-                    <span className="bg-blue-50 border border-blue-100 text-blue-650 text-[9px] font-black px-2 py-0.5 rounded shadow-sm">
+                    <span className="bg-green-50 border border-green-100 text-green-650 text-[9px] font-black px-2 py-0.5 rounded shadow-sm">
                       ATS {res.atsScore}%
                     </span>
                     <span className="text-[8px] text-slate-400 font-bold uppercase">Health: {res.completion}%</span>
@@ -615,14 +616,14 @@ export const Dashboard: React.FC = () => {
                 <div className="flex items-center justify-between gap-5 pt-3 border-t border-slate-100 mt-1">
                   <div className="flex items-center gap-1.5 flex-grow">
                     <div className="w-full bg-slate-100 rounded-full h-1.5 overflow-hidden">
-                      <div className="bg-blue-600 h-full rounded-full" style={{ width: `${res.completion}%` }} />
+                      <div className="bg-green-600 h-full rounded-full" style={{ width: `${res.completion}%` }} />
                     </div>
                   </div>
 
                   <div className="flex items-center gap-1.5 shrink-0">
                     <button 
                       onClick={() => navigate(`/resume-builder?id=${res.id}`)}
-                      className="w-7 h-7 rounded-lg bg-white border border-slate-200 flex items-center justify-center text-slate-500 hover:text-blue-600 hover:border-blue-200 transition-smooth cursor-pointer"
+                      className="w-7 h-7 rounded-lg bg-white border border-slate-200 flex items-center justify-center text-slate-500 hover:text-green-600 hover:border-green-200 transition-smooth cursor-pointer"
                       title="Edit Resume"
                     >
                       <Edit3 size={11} />
@@ -633,14 +634,14 @@ export const Dashboard: React.FC = () => {
                         const token = localStorage.getItem('auth_token');
                         window.open(`${API_BASE_URL}/api/resume-studio/${res.id}/pdf${token ? `?token=${token}` : ''}`, '_blank');
                       }}
-                      className="w-7 h-7 rounded-lg bg-white border border-slate-200 flex items-center justify-center text-slate-500 hover:text-blue-600 hover:border-blue-200 transition-smooth cursor-pointer"
+                      className="w-7 h-7 rounded-lg bg-white border border-slate-200 flex items-center justify-center text-slate-500 hover:text-green-600 hover:border-green-200 transition-smooth cursor-pointer"
                       title="Download PDF"
                     >
                       <Download size={11} />
                     </button>
                     <button 
                       onClick={() => duplicateResume(res.id)}
-                      className="w-7 h-7 rounded-lg bg-white border border-slate-200 flex items-center justify-center text-slate-500 hover:text-blue-600 hover:border-blue-200 transition-smooth cursor-pointer"
+                      className="w-7 h-7 rounded-lg bg-white border border-slate-200 flex items-center justify-center text-slate-500 hover:text-green-600 hover:border-green-200 transition-smooth cursor-pointer"
                       title="Duplicate"
                     >
                       <Copy size={11} />
@@ -687,7 +688,7 @@ export const Dashboard: React.FC = () => {
                 <div className="flex justify-end pt-2 border-t border-slate-100">
                   <button 
                     onClick={() => handleFixSuggestion(sug.title)}
-                    className="px-3.5 py-1 bg-blue-600 hover:bg-blue-700 text-white font-extrabold text-[9px] rounded-lg transition-smooth shadow-sm cursor-pointer"
+                    className="px-3.5 py-1 bg-green-600 hover:bg-green-700 text-white font-extrabold text-[9px] rounded-lg transition-smooth shadow-sm cursor-pointer"
                   >
                     One-Click Fix
                   </button>
@@ -713,7 +714,7 @@ export const Dashboard: React.FC = () => {
             {timelineActivities.map((act, idx) => (
               <div key={idx} className="flex gap-3 text-left">
                 <div className="flex flex-col items-center shrink-0">
-                  <div className="w-2 h-2 rounded-full bg-blue-500 mt-1 shadow-sm shadow-blue-500/20" />
+                  <div className="w-2 h-2 rounded-full bg-green-500 mt-1 shadow-sm shadow-green-500/20" />
                   {idx < timelineActivities.length - 1 && <div className="w-0.5 bg-slate-100 flex-grow my-1" />}
                 </div>
                 <div>
@@ -750,21 +751,21 @@ export const Dashboard: React.FC = () => {
                   <path 
                     d="M 20 65 L 60 55 L 100 45 L 140 25 L 180 18" 
                     fill="none" 
-                    stroke="#2563EB" 
+                    stroke="#16A34A" 
                     strokeWidth="3.5" 
                     strokeLinecap="round" 
                     strokeLinejoin="round" 
                   />
                   
                   {/* Dots */}
-                  <circle cx="20" cy="65" r="3.5" className="fill-white stroke-blue-600" strokeWidth="2" />
-                  <circle cx="60" cy="55" r="3.5" className="fill-white stroke-blue-600" strokeWidth="2" />
-                  <circle cx="100" cy="45" r="3.5" className="fill-white stroke-blue-600" strokeWidth="2" />
-                  <circle cx="140" cy="25" r="3.5" className="fill-white stroke-blue-600" strokeWidth="2" />
-                  <circle cx="180" cy="18" r="3.5" className="fill-white stroke-blue-600" strokeWidth="2" />
+                  <circle cx="20" cy="65" r="3.5" className="fill-white stroke-green-600" strokeWidth="2" />
+                  <circle cx="60" cy="55" r="3.5" className="fill-white stroke-green-600" strokeWidth="2" />
+                  <circle cx="100" cy="45" r="3.5" className="fill-white stroke-green-600" strokeWidth="2" />
+                  <circle cx="140" cy="25" r="3.5" className="fill-white stroke-green-600" strokeWidth="2" />
+                  <circle cx="180" cy="18" r="3.5" className="fill-white stroke-green-600" strokeWidth="2" />
                   
                   {/* Text label */}
-                  <text x="180" y="10" textAnchor="end" className="text-[8px] font-black fill-blue-650">91% ATS</text>
+                  <text x="180" y="10" textAnchor="end" className="text-[8px] font-black fill-green-650">91% ATS</text>
                 </svg>
               </div>
             </div>
@@ -782,21 +783,21 @@ export const Dashboard: React.FC = () => {
                   <path 
                     d="M 20 60 L 60 45 L 100 50 L 140 30 L 180 20" 
                     fill="none" 
-                    stroke="#0284C7" 
+                    stroke="#22C55E" 
                     strokeWidth="3.5" 
                     strokeLinecap="round" 
                     strokeLinejoin="round" 
                   />
                   
                   {/* Dots */}
-                  <circle cx="20" cy="60" r="3.5" className="fill-white stroke-sky-600" strokeWidth="2" />
-                  <circle cx="60" cy="45" r="3.5" className="fill-white stroke-sky-600" strokeWidth="2" />
-                  <circle cx="100" cy="50" r="3.5" className="fill-white stroke-sky-600" strokeWidth="2" />
-                  <circle cx="140" cy="30" r="3.5" className="fill-white stroke-sky-600" strokeWidth="2" />
-                  <circle cx="180" cy="20" r="3.5" className="fill-white stroke-sky-600" strokeWidth="2" />
+                  <circle cx="20" cy="60" r="3.5" className="fill-white stroke-emerald-600" strokeWidth="2" />
+                  <circle cx="60" cy="45" r="3.5" className="fill-white stroke-emerald-600" strokeWidth="2" />
+                  <circle cx="100" cy="50" r="3.5" className="fill-white stroke-emerald-600" strokeWidth="2" />
+                  <circle cx="140" cy="30" r="3.5" className="fill-white stroke-emerald-600" strokeWidth="2" />
+                  <circle cx="180" cy="20" r="3.5" className="fill-white stroke-emerald-600" strokeWidth="2" />
                   
                   {/* Text label */}
-                  <text x="180" y="12" textAnchor="end" className="text-[8px] font-black fill-sky-600">17 Exports</text>
+                  <text x="180" y="12" textAnchor="end" className="text-[8px] font-black fill-emerald-600">17 Exports</text>
                 </svg>
               </div>
             </div>
@@ -808,7 +809,7 @@ export const Dashboard: React.FC = () => {
       {/* BIMBA AI ASSISTANT CHAT PANEL */}
       <section id="ai-assistant-section" className="flex flex-col gap-4">
         <div>
-          <span className="text-[9px] font-black text-blue-650 tracking-wider uppercase">Intelligent Career Advisor</span>
+          <span className="text-[9px] font-black text-green-650 tracking-wider uppercase">Intelligent Career Advisor</span>
           <h3 className="text-base font-extrabold text-slate-900 mt-0.5">Bimba AI Assistant Chat</h3>
         </div>
 
@@ -823,7 +824,7 @@ export const Dashboard: React.FC = () => {
                 >
                   <div className={`max-w-[85%] rounded-2xl p-3 text-[11px] leading-relaxed ${
                     msg.sender === 'user'
-                      ? 'bg-blue-600 text-white rounded-tr-none'
+                      ? 'bg-green-600 text-white rounded-tr-none'
                       : 'bg-slate-50 border border-slate-150 text-slate-700 rounded-tl-none'
                   }`}>
                     {msg.text}
@@ -839,11 +840,11 @@ export const Dashboard: React.FC = () => {
                 value={chatInput}
                 onChange={(e) => setChatInput(e.target.value)}
                 onKeyDown={(e) => e.key === 'Enter' && handleSendChat()}
-                className="flex-grow pl-4 pr-4 py-2 rounded-xl bg-slate-50 border border-slate-200/80 focus:border-blue-500 focus:outline-none text-[11px] text-slate-700 placeholder:text-slate-400 font-medium"
+                className="flex-grow pl-4 pr-4 py-2 rounded-xl bg-slate-50 border border-slate-200/80 focus:border-green-500 focus:outline-none text-[11px] text-slate-700 placeholder:text-slate-400 font-medium"
               />
               <button 
                 onClick={handleSendChat}
-                className="w-8 h-8 rounded-xl bg-blue-600 hover:bg-blue-500 text-white flex items-center justify-center transition-smooth cursor-pointer shadow-sm shrink-0"
+                className="w-8 h-8 rounded-xl bg-green-600 hover:bg-green-500 text-white flex items-center justify-center transition-smooth cursor-pointer shadow-sm shrink-0"
               >
                 <SendHorizontal size={12} />
               </button>
@@ -868,7 +869,7 @@ export const Dashboard: React.FC = () => {
                   onClick={() => {
                     setChatInput(sug.text);
                   }}
-                  className="w-full text-left bg-slate-50 border border-slate-200/60 hover:border-blue-200 rounded-xl p-3.5 hover:bg-slate-100/50 transition-smooth cursor-pointer"
+                  className="w-full text-left bg-slate-50 border border-slate-200/60 hover:border-green-200 rounded-xl p-3.5 hover:bg-slate-100/50 transition-smooth cursor-pointer"
                 >
                   <h5 className="font-extrabold text-[11px] text-slate-750">{sug.label}</h5>
                   <p className="text-[9px] text-slate-450 mt-1 font-semibold">{sug.text}</p>

@@ -1,25 +1,19 @@
 from fastapi import APIRouter, Depends, HTTPException, status, Request
-from sqlalchemy.orm import Session
-from sqlalchemy import func
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timedelta
 from pydantic import BaseModel
-from typing import List, Optional
+from typing import List, Optional, Any
 
 from app.database.session import get_db
 from app.models.student import Student
-from app.models.analytics import AIUsageLog, EditingSession, DownloadLog, ActivityLog
-from app.models.resume_studio import ResumeMaster, ResumeVersion, ResumeEducation, ResumeExperience, ResumeProject, ResumeSkill, ResumeCertificate
-from app.models.communications import Notification, Announcement
-
-
 from app.core.security import verify_token
 from fastapi.security import OAuth2PasswordBearer
+from app.core.mongodb import MongoModel, get_next_sequence
 
 router = APIRouter(prefix="/analytics", tags=["Analytics"])
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/auth/login", auto_error=False)
 
-def get_current_student(request: Request, token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)) -> Student:
+def get_current_student(request: Request, token: str = Depends(oauth2_scheme), db: Any = Depends(get_db)) -> Student:
     if not token:
         # Check query parameters (e.g. for window.open downloads)
         token = request.query_params.get("token")
@@ -36,13 +30,14 @@ def get_current_student(request: Request, token: str = Depends(oauth2_scheme), d
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid or expired token",
         )
-    student = db.query(Student).filter(Student.roll_number == roll_number).first()
-    if not student:
+        
+    student_doc = db.students.find_one({"roll_number": roll_number})
+    if not student_doc:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Student not found",
         )
-    return student
+    return Student(student_doc)
 
 # Request Schemas
 class TrackActionRequest(BaseModel):
@@ -53,84 +48,96 @@ class TrackActionRequest(BaseModel):
     ats_score: Optional[int] = None  # For ATS improvements
 
 @router.get("/dashboard")
-def get_dashboard_analytics(student: Student = Depends(get_current_student), db: Session = Depends(get_db)):
+def get_dashboard_analytics(student: Student = Depends(get_current_student), db: Any = Depends(get_db)):
     # Resumes counts
-    total_resumes = db.query(ResumeMaster).filter(ResumeMaster.student_id == student.id).count()
-    draft_resumes = db.query(ResumeMaster).filter(ResumeMaster.student_id == student.id, ResumeMaster.status == "Draft").count()
-    completed_resumes = db.query(ResumeMaster).filter(ResumeMaster.student_id == student.id, ResumeMaster.status == "Completed").count()
-    archived_resumes = db.query(ResumeMaster).filter(ResumeMaster.student_id == student.id, ResumeMaster.status == "Archived").count()
+    total_resumes = db.resumes.count_documents({"student_id": student.id})
+    draft_resumes = db.resumes.count_documents({"student_id": student.id, "status": "Draft"})
+    completed_resumes = db.resumes.count_documents({"student_id": student.id, "status": "Completed"})
+    archived_resumes = db.resumes.count_documents({"student_id": student.id, "status": "Archived"})
     
     # Average completion percentage across all resumes
-    resumes = db.query(ResumeMaster).filter(ResumeMaster.student_id == student.id).all()
+    resumes_list = list(db.resumes.find({"student_id": student.id}))
     avg_completion = 0
-    if resumes:
+    if resumes_list:
         total_comp = 0
-        for r in resumes:
-            edu_exists = db.query(ResumeEducation).filter(ResumeEducation.resume_id == r.id).count() > 0
-            exp_exists = db.query(ResumeExperience).filter(ResumeExperience.resume_id == r.id).count() > 0 or r.resume_type == "Fresher"
-            proj_exists = db.query(ResumeProject).filter(ResumeProject.resume_id == r.id).count() > 0
-            skill_exists = db.query(ResumeSkill).filter(ResumeSkill.resume_id == r.id).count() > 0
-            cert_exists = db.query(ResumeCertificate).filter(ResumeCertificate.resume_id == r.id).count() > 0
+        for r in resumes_list:
+            edu_exists = len(r.get("education", [])) > 0
+            exp_exists = len(r.get("experience", [])) > 0 or r.get("resume_type") == "Fresher"
+            proj_exists = len(r.get("projects", [])) > 0
+            skill_exists = len(r.get("skills", [])) > 0
+            cert_exists = len(r.get("certificates", [])) > 0
             
             sections = [
-                bool(r.phone or r.address or r.linkedin),  # personal info
-                bool(r.summary or r.career_objective),     # summary
-                exp_exists,                                # experience
-                edu_exists,                                # education
-                skill_exists,                              # skills
-                proj_exists,                               # projects
-                cert_exists,                               # certifications
-                bool(r.languages_list or r.language),      # languages
-                bool(r.achievements_list)                  # achievements
+                bool(r.get("phone") or r.get("address") or r.get("linkedin")),  # personal info
+                bool(r.get("summary") or r.get("career_objective")),           # summary
+                exp_exists,                                                    # experience
+                edu_exists,                                                    # education
+                skill_exists,                                                  # skills
+                proj_exists,                                                   # projects
+                cert_exists,                                                   # certifications
+                bool(r.get("languages_list") or r.get("language")),            # languages
+                bool(r.get("achievements_list"))                               # achievements
             ]
             completed_count = sum(1 for s in sections if s)
             total_comp += (completed_count / len(sections)) * 100
-        avg_completion = int(total_comp / len(resumes))
+        avg_completion = int(total_comp / len(resumes_list))
         
     # AI Minutes Saved
-    total_time_saved = db.query(func.sum(AIUsageLog.time_saved_minutes)).filter(AIUsageLog.student_id == student.id).scalar() or 0
+    ai_saved_res = list(db.ai_usage_logs.aggregate([
+        {"$match": {"student_id": student.id}},
+        {"$group": {"_id": None, "total": {"$sum": "$time_saved_minutes"}}}
+    ]))
+    total_time_saved = ai_saved_res[0]["total"] if ai_saved_res else 0
     
     # Editing Session Durations
-    total_editing_seconds = db.query(func.sum(EditingSession.duration_seconds)).filter(EditingSession.student_id == student.id).scalar() or 0
+    session_res = list(db.editing_sessions.aggregate([
+        {"$match": {"student_id": student.id}},
+        {"$group": {"_id": None, "total": {"$sum": "$duration_seconds"}}}
+    ]))
+    total_editing_seconds = session_res[0]["total"] if session_res else 0
     total_editing_minutes = int(total_editing_seconds / 60)
     
     # Longest editing session
-    longest_session_seconds = db.query(func.max(EditingSession.duration_seconds)).filter(EditingSession.student_id == student.id).scalar() or 0
+    longest_res = list(db.editing_sessions.aggregate([
+        {"$match": {"student_id": student.id}},
+        {"$group": {"_id": None, "max_val": {"$max": "$duration_seconds"}}}
+    ]))
+    longest_session_seconds = longest_res[0]["max_val"] if longest_res else 0
     longest_session_minutes = int(longest_session_seconds / 60)
     
     # Today's editing time
-    today_start = datetime.now().replace(hour=0, minute=0, second=0, microsecond=0)
-    today_editing_seconds = db.query(func.sum(EditingSession.duration_seconds)).filter(
-        EditingSession.student_id == student.id,
-        EditingSession.start_time >= today_start
-    ).scalar() or 0
+    today_start = datetime.utcnow().replace(hour=0, minute=0, second=0, microsecond=0)
+    today_res = list(db.editing_sessions.aggregate([
+        {"$match": {"student_id": student.id, "start_time": {"$gte": today_start}}},
+        {"$group": {"_id": None, "total": {"$sum": "$duration_seconds"}}}
+    ]))
+    today_editing_seconds = today_res[0]["total"] if today_res else 0
     today_editing_minutes = int(today_editing_seconds / 60)
     
-    # Streaks (Mocked logically or counted by consecutive active days)
-    # We can fetch active days from activity logs
-    active_dates = db.query(func.date(ActivityLog.created_at)).filter(
-        ActivityLog.student_id == student.id
-    ).distinct().all()
-    
-    # Sort and count active days
-    active_days_count = len(active_dates)
-    current_streak = 8  # Seed standard default
+    # Streaks based on activity logs
+    active_dates_res = list(db.activity_logs.aggregate([
+        {"$match": {"student_id": student.id}},
+        {"$project": {"date": {"$dateToString": {"format": "%Y-%m-%d", "date": "$created_at"}}}},
+        {"$group": {"_id": "$date"}}
+    ]))
+    active_days_count = len(active_dates_res)
+    current_streak = 8  # Default streak seed
     longest_streak = 14
     
-    # Render weekly activity (for the Git heatmap)
-    # We will generate a list of daily activity count for the past 30 days
+    # Heatmap data for the past 30 days
     heatmap_data = []
     for i in range(30):
-        date_check = (datetime.now() - timedelta(days=i)).date()
-        count = db.query(ActivityLog).filter(
-            ActivityLog.student_id == student.id,
-            func.date(ActivityLog.created_at) == date_check
-        ).count()
+        date_check = (datetime.utcnow() - timedelta(days=i)).date()
+        start_dt = datetime.combine(date_check, datetime.min.time())
+        end_dt = datetime.combine(date_check, datetime.max.time())
+        count = db.activity_logs.count_documents({
+            "student_id": student.id,
+            "created_at": {"$gte": start_dt, "$lte": end_dt}
+        })
         heatmap_data.append({
             "date": date_check.isoformat(),
             "count": count
         })
-
         
     return {
         "resumes": {
@@ -155,25 +162,25 @@ def get_dashboard_analytics(student: Student = Depends(get_current_student), db:
     }
 
 @router.get("/ats")
-def get_ats_analytics(student: Student = Depends(get_current_student), db: Session = Depends(get_db)):
+def get_ats_analytics(student: Student = Depends(get_current_student), db: Any = Depends(get_db)):
     # Fetch active resumes
-    resumes = db.query(ResumeMaster).filter(ResumeMaster.student_id == student.id).all()
+    resumes = list(db.resumes.find({"student_id": student.id}))
     if not resumes:
         return {"has_resumes": False}
         
     # Get highest scoring resume
-    best_resume = max(resumes, key=lambda r: (r.ats_score or 0))
+    best_resume = max(resumes, key=lambda r: (r.get("ats_score") or 0))
+    resume_id = best_resume.get("id")
     
-    edu_exists = db.query(ResumeEducation).filter(ResumeEducation.resume_id == best_resume.id).count() > 0
-    exp_exists = db.query(ResumeExperience).filter(ResumeExperience.resume_id == best_resume.id).count() > 0 or best_resume.resume_type == "Fresher"
-    proj_exists = db.query(ResumeProject).filter(ResumeProject.resume_id == best_resume.id).count() > 0
-    skill_exists = db.query(ResumeSkill).filter(ResumeSkill.resume_id == best_resume.id).count() > 0
-    cert_exists = db.query(ResumeCertificate).filter(ResumeCertificate.resume_id == best_resume.id).count() > 0
+    edu_exists = len(best_resume.get("education", [])) > 0
+    exp_exists = len(best_resume.get("experience", [])) > 0 or best_resume.get("resume_type") == "Fresher"
+    proj_exists = len(best_resume.get("projects", [])) > 0
+    skill_exists = len(best_resume.get("skills", [])) > 0
+    cert_exists = len(best_resume.get("certificates", [])) > 0
 
-    # Dynamic section analysis based on completed flags
     section_breakdown = {
-        "personalInfo": 95 if (best_resume.phone or best_resume.address or best_resume.linkedin) else 0,
-        "summary": 90 if (best_resume.summary or best_resume.career_objective) else 0,
+        "personalInfo": 95 if (best_resume.get("phone") or best_resume.get("address") or best_resume.get("linkedin")) else 0,
+        "summary": 90 if (best_resume.get("summary") or best_resume.get("career_objective")) else 0,
         "experience": 95 if exp_exists else 0,
         "education": 90 if edu_exists else 0,
         "skills": 95 if skill_exists else 0,
@@ -181,12 +188,10 @@ def get_ats_analytics(student: Student = Depends(get_current_student), db: Sessi
         "certifications": 85 if cert_exists else 0,
     }
     
-    # Formatting, Readability and Keyword matches are dynamically calculated
     formatting_score = 92
     readability_score = 88
     keyword_match = 84
     
-    # Recommendations computed dynamically
     recommendations = []
     missing_keywords = []
     
@@ -198,7 +203,7 @@ def get_ats_analytics(student: Student = Depends(get_current_student), db: Sessi
         missing_keywords.extend(["Git", "Web APIs", "CI/CD"])
     if not cert_exists:
         recommendations.append("List relevant certifications (e.g. AWS, Scrum Master, Google Analytics).")
-    if (best_resume.ats_score or 0) < 90:
+    if (best_resume.get("ats_score") or 0) < 90:
         recommendations.append("Increase bullet points density under experience and use action verbs.")
         
     if not recommendations:
@@ -206,31 +211,28 @@ def get_ats_analytics(student: Student = Depends(get_current_student), db: Sessi
         missing_keywords = ["RESTful APIs", "Docker"]
         
     # History of versions (improvements)
-    versions = db.query(ResumeVersion).filter(
-        ResumeVersion.resume_id == best_resume.id
-    ).order_by(ResumeVersion.version_number.asc()).all()
+    versions = list(db.resume_versions.find({"resume_id": resume_id}).sort("version_number", 1))
     
     history = []
     for v in versions:
         history.append({
-            "version": f"Version {v.version_number}",
-            "atsScore": v.ats_score,
-            "date": v.created_at.strftime("%Y-%m-%d")
+            "version": f"Version {v.get('version_number')}",
+            "atsScore": v.get("ats_score"),
+            "date": v.get("created_at").strftime("%Y-%m-%d") if v.get("created_at") else datetime.now().strftime("%Y-%m-%d")
         })
         
     if not history:
         history = [
             {"version": "Version 1", "atsScore": 65, "date": "2026-07-01"},
-            {"version": "Version 2", "atsScore": best_resume.ats_score, "date": "2026-07-08"}
+            {"version": "Version 2", "atsScore": best_resume.get("ats_score"), "date": "2026-07-08"}
         ]
 
     return {
         "has_resumes": True,
-
         "bestResume": {
-            "id": best_resume.id,
-            "name": best_resume.name,
-            "atsScore": best_resume.ats_score,
+            "id": resume_id,
+            "name": best_resume.get("name"),
+            "atsScore": best_resume.get("ats_score"),
         },
         "sections": section_breakdown,
         "formattingScore": formatting_score,
@@ -242,81 +244,81 @@ def get_ats_analytics(student: Student = Depends(get_current_student), db: Sessi
     }
 
 @router.get("/activity")
-def get_activity_timeline(student: Student = Depends(get_current_student), db: Session = Depends(get_db)):
-    logs = db.query(ActivityLog).filter(
-        ActivityLog.student_id == student.id
-    ).order_by(ActivityLog.created_at.desc()).limit(15).all()
+def get_activity_timeline(student: Student = Depends(get_current_student), db: Any = Depends(get_db)):
+    logs = list(db.activity_logs.find({"student_id": student.id}).sort("created_at", -1).limit(15))
     
     return [
         {
-            "id": log.id,
-            "activity": log.activity,
-            "timestamp": log.created_at.isoformat()
+            "id": log.get("id") or str(log.get("_id")),
+            "activity": log.get("activity"),
+            "timestamp": log.get("created_at").isoformat() if log.get("created_at") else datetime.now().isoformat()
         } for log in logs
     ]
 
 @router.get("/resumes")
-def get_resumes_analytics(student: Student = Depends(get_current_student), db: Session = Depends(get_db)):
-    resumes = db.query(ResumeMaster).filter(ResumeMaster.student_id == student.id).all()
+def get_resumes_analytics(student: Student = Depends(get_current_student), db: Any = Depends(get_db)):
+    resumes = list(db.resumes.find({"student_id": student.id}))
     result = []
     
     for r in resumes:
-        edu_exists = db.query(ResumeEducation).filter(ResumeEducation.resume_id == r.id).count() > 0
-        exp_exists = db.query(ResumeExperience).filter(ResumeExperience.resume_id == r.id).count() > 0 or r.resume_type == "Fresher"
-        proj_exists = db.query(ResumeProject).filter(ResumeProject.resume_id == r.id).count() > 0
-        skill_exists = db.query(ResumeSkill).filter(ResumeSkill.resume_id == r.id).count() > 0
-        cert_exists = db.query(ResumeCertificate).filter(ResumeCertificate.resume_id == r.id).count() > 0
+        edu_exists = len(r.get("education", [])) > 0
+        exp_exists = len(r.get("experience", [])) > 0 or r.get("resume_type") == "Fresher"
+        proj_exists = len(r.get("projects", [])) > 0
+        skill_exists = len(r.get("skills", [])) > 0
+        cert_exists = len(r.get("certificates", [])) > 0
 
         sections = {
-            "Personal Info": bool(r.phone or r.address or r.linkedin),
-            "Summary": bool(r.summary or r.career_objective),
+            "Personal Info": bool(r.get("phone") or r.get("address") or r.get("linkedin")),
+            "Summary": bool(r.get("summary") or r.get("career_objective")),
             "Experience": exp_exists,
             "Education": edu_exists,
             "Skills": skill_exists,
             "Projects": proj_exists,
             "Certifications": cert_exists,
-            "Languages": bool(r.languages_list or r.language),
-            "Achievements": bool(r.achievements_list)
+            "Languages": bool(r.get("languages_list") or r.get("language")),
+            "Achievements": bool(r.get("achievements_list"))
         }
         completed_count = sum(1 for k, v in sections.items() if v)
         completion_percent = int((completed_count / len(sections)) * 100)
         
         # Versions count
-        versions_count = db.query(ResumeVersion).filter(ResumeVersion.resume_id == r.id).count()
+        versions_count = db.resume_versions.count_documents({"resume_id": r.get("id")})
         
         result.append({
-            "id": r.id,
-            "name": r.name,
-            "template": r.template_id,
-            "atsScore": r.ats_score,
+            "id": r.get("id"),
+            "name": r.get("name"),
+            "template": r.get("template_id"),
+            "atsScore": r.get("ats_score"),
             "completion": completion_percent,
             "sections": sections,
             "versionsCount": versions_count,
-            "status": r.status,
-            "lastEdited": r.updated_at.isoformat()
+            "status": r.get("status"),
+            "lastEdited": r.get("updated_at").isoformat() if r.get("updated_at") else datetime.utcnow().isoformat()
         })
         
     return result
 
-
 @router.get("/downloads")
-def get_downloads_analytics(student: Student = Depends(get_current_student), db: Session = Depends(get_db)):
-    logs = db.query(DownloadLog).filter(DownloadLog.student_id == student.id).all()
+def get_downloads_analytics(student: Student = Depends(get_current_student), db: Any = Depends(get_db)):
+    logs = list(db.download_logs.find({"student_id": student.id}))
     
     # Counts by format
     counts = {"PDF": 0, "DOCX": 0, "Share": 0, "Print": 0, "Copy": 0}
     for log in logs:
-        if log.format in counts:
-            counts[log.format] += 1
+        fmt = log.get("format")
+        if fmt in counts:
+            counts[fmt] += 1
             
     # Trend past 7 days
     trend = []
     for i in range(7):
-        date_check = (datetime.now() - timedelta(days=i)).date()
-        count = db.query(DownloadLog).filter(
-            DownloadLog.student_id == student.id,
-            func.date(DownloadLog.created_at) == date_check
-        ).count()
+        date_check = (datetime.utcnow() - timedelta(days=i)).date()
+        start_dt = datetime.combine(date_check, datetime.min.time())
+        end_dt = datetime.combine(date_check, datetime.max.time())
+        count = db.download_logs.count_documents({
+            "student_id": student.id,
+            "created_at": {"$gte": start_dt, "$lte": end_dt}
+        })
         trend.append({
             "date": date_check.strftime("%b %d"),
             "downloads": count
@@ -329,8 +331,8 @@ def get_downloads_analytics(student: Student = Depends(get_current_student), db:
     }
 
 @router.get("/ai-usage")
-def get_ai_usage_analytics(student: Student = Depends(get_current_student), db: Session = Depends(get_db)):
-    logs = db.query(AIUsageLog).filter(AIUsageLog.student_id == student.id).all()
+def get_ai_usage_analytics(student: Student = Depends(get_current_student), db: Any = Depends(get_db)):
+    logs = list(db.ai_usage_logs.find({"student_id": student.id}))
     
     counts = {
         "generation": 0,
@@ -343,17 +345,20 @@ def get_ai_usage_analytics(student: Student = Depends(get_current_student), db: 
     }
     
     for log in logs:
-        if log.action_type in counts:
-            counts[log.action_type] += 1
+        action = log.get("action_type")
+        if action in counts:
+            counts[action] += 1
             
     # Weekly usage trend
     trend = []
     for i in range(7):
-        date_check = (datetime.now() - timedelta(days=i)).date()
-        count = db.query(AIUsageLog).filter(
-            AIUsageLog.student_id == student.id,
-            func.date(AIUsageLog.created_at) == date_check
-        ).count()
+        date_check = (datetime.utcnow() - timedelta(days=i)).date()
+        start_dt = datetime.combine(date_check, datetime.min.time())
+        end_dt = datetime.combine(date_check, datetime.max.time())
+        count = db.ai_usage_logs.count_documents({
+            "student_id": student.id,
+            "created_at": {"$gte": start_dt, "$lte": end_dt}
+        })
         trend.append({
             "date": date_check.strftime("%a"),
             "requests": count
@@ -366,96 +371,110 @@ def get_ai_usage_analytics(student: Student = Depends(get_current_student), db: 
     }
 
 @router.post("/track")
-def track_user_action(payload: TrackActionRequest, student: Student = Depends(get_current_student), db: Session = Depends(get_db)):
+def track_user_action(payload: TrackActionRequest, student: Student = Depends(get_current_student), db: Any = Depends(get_db)):
     try:
         if payload.action_type == "ai_use":
-            # Determine time saved based on detail action
             time_saved = 5
             if "generation" in payload.detail:
                 time_saved = 15
             elif "cover_letter" in payload.detail:
                 time_saved = 20
             
-            ai_log = AIUsageLog(
-                student_id=student.id,
-                action_type=payload.detail,
-                time_saved_minutes=time_saved
-            )
-            db.add(ai_log)
+            db.ai_usage_logs.insert_one({
+                "id": get_next_sequence("ai_usage_logs"),
+                "student_id": student.id,
+                "action_type": payload.detail,
+                "time_saved_minutes": time_saved,
+                "created_at": datetime.utcnow()
+            })
             
-            # Also log as general activity
-            act_log = ActivityLog(
-                student_id=student.id,
-                activity=f"Used AI for: {payload.detail}"
-            )
-            db.add(act_log)
+            db.activity_logs.insert_one({
+                "id": get_next_sequence("activity_logs"),
+                "student_id": student.id,
+                "activity": f"Used AI for: {payload.detail}",
+                "created_at": datetime.utcnow()
+            })
             
         elif payload.action_type == "download":
-            dl_log = DownloadLog(
-                student_id=student.id,
-                format=payload.format or "PDF"
-            )
-            db.add(dl_log)
+            db.download_logs.insert_one({
+                "id": get_next_sequence("download_logs"),
+                "student_id": student.id,
+                "format": payload.format or "PDF",
+                "created_at": datetime.utcnow()
+            })
             
-            act_log = ActivityLog(
-                student_id=student.id,
-                activity=f"Downloaded Resume: {payload.format or 'PDF'} Format"
-            )
-            db.add(act_log)
+            db.activity_logs.insert_one({
+                "id": get_next_sequence("activity_logs"),
+                "student_id": student.id,
+                "activity": f"Downloaded Resume: {payload.format or 'PDF'} Format",
+                "created_at": datetime.utcnow()
+            })
             
         elif payload.action_type == "edit":
-            # Update resume last edited or score
-            resume = db.query(Resume).filter(
-                Resume.student_id == student.id
-            ).order_by(Resume.last_edited.desc()).first()
+            # Find the student's last edited resume
+            resume_doc = db.resumes.find_one(
+                {"student_id": student.id},
+                sort=[("updated_at", -1)]
+            )
             
-            if resume:
-                resume.last_edited = datetime.now()
+            if resume_doc:
+                update_fields = {"updated_at": datetime.utcnow()}
                 if payload.ats_score:
-                    # Log improvement version
-                    last_version = db.query(func.max(ResumeVersion.version_number)).filter(
-                        ResumeVersion.resume_id == resume.id
-                    ).scalar() or 0
+                    update_fields["ats_score"] = payload.ats_score
                     
-                    resume.ats_score = payload.ats_score
-                    
-                    version = ResumeVersion(
-                        resume_id=resume.id,
-                        version_number=last_version + 1,
-                        ats_score=payload.ats_score
+                    # Fetch last version number
+                    last_v_doc = db.resume_versions.find_one(
+                        {"resume_id": resume_doc["id"]},
+                        sort=[("version_number", -1)]
                     )
-                    db.add(version)
+                    last_version = last_v_doc["version_number"] if last_v_doc else 0
                     
-                    act_log = ActivityLog(
-                        student_id=student.id,
-                        activity=f"Improved ATS Score to {payload.ats_score}%"
-                    )
-                    db.add(act_log)
+                    db.resume_versions.insert_one({
+                        "id": get_next_sequence("resume_versions"),
+                        "resume_id": resume_doc["id"],
+                        "version_number": last_version + 1,
+                        "ats_score": payload.ats_score,
+                        "created_at": datetime.utcnow()
+                    })
+                    
+                    db.activity_logs.insert_one({
+                        "id": get_next_sequence("activity_logs"),
+                        "student_id": student.id,
+                        "activity": f"Improved ATS Score to {payload.ats_score}%",
+                        "created_at": datetime.utcnow()
+                    })
                 else:
-                    act_log = ActivityLog(
-                        student_id=student.id,
-                        activity=f"Edited Resume Details: {payload.detail}"
-                    )
-                    db.add(act_log)
+                    db.activity_logs.insert_one({
+                        "id": get_next_sequence("activity_logs"),
+                        "student_id": student.id,
+                        "activity": f"Edited Resume Details: {payload.detail}",
+                        "created_at": datetime.utcnow()
+                    })
+                
+                db.resumes.update_one(
+                    {"_id": resume_doc["_id"]},
+                    {"$set": update_fields}
+                )
                     
         elif payload.action_type == "session":
-            session = EditingSession(
-                student_id=student.id,
-                duration_seconds=payload.duration_seconds or 0
-            )
-            db.add(session)
+            db.editing_sessions.insert_one({
+                "id": get_next_sequence("editing_sessions"),
+                "student_id": student.id,
+                "start_time": datetime.utcnow() - timedelta(seconds=payload.duration_seconds or 0),
+                "end_time": datetime.utcnow(),
+                "duration_seconds": payload.duration_seconds or 0
+            })
             
         elif payload.action_type == "activity":
-            act_log = ActivityLog(
-                student_id=student.id,
-                activity=payload.detail
-            )
-            db.add(act_log)
+            db.activity_logs.insert_one({
+                "id": get_next_sequence("activity_logs"),
+                "student_id": student.id,
+                "activity": payload.detail,
+                "created_at": datetime.utcnow()
+            })
             
-        db.commit()
         return {"success": True, "message": "Action tracked successfully."}
     except Exception as e:
-        db.rollback()
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Tracking failed: {str(e)}"
@@ -468,22 +487,22 @@ def list_student_notifications(
     category: Optional[str] = None,
     search: Optional[str] = None,
     student: Student = Depends(get_current_student),
-    db: Session = Depends(get_db)
+    db: Any = Depends(get_db)
 ):
-    query = db.query(Notification).filter(Notification.student_id == student.id)
-    
+    query_filter = {"student_id": student.id}
     if category:
-        query = query.filter(Notification.category == category)
+        query_filter["category"] = category
     if search:
-        query = query.filter(Notification.message.icontains(search))
+        query_filter["message"] = {"$regex": search, "$options": "i"}
         
-    notifications = query.order_by(Notification.created_at.desc()).all()
+    notifications_cursor = db.notifications.find(query_filter).sort("created_at", -1)
+    notifications = [MongoModel(doc) for doc in notifications_cursor]
     
     # Calculate unread count
-    unread_count = db.query(Notification).filter(
-        Notification.student_id == student.id,
-        Notification.is_read == False
-    ).count()
+    unread_count = db.notifications.count_documents({
+        "student_id": student.id,
+        "is_read": False
+    })
     
     return {
         "notifications": notifications,
@@ -494,65 +513,55 @@ def list_student_notifications(
 def read_student_notification(
     id: int,
     student: Student = Depends(get_current_student),
-    db: Session = Depends(get_db)
+    db: Any = Depends(get_db)
 ):
-    notif = db.query(Notification).filter(
-        Notification.id == id,
-        Notification.student_id == student.id
-    ).first()
+    notif = db.notifications.find_one({"id": id, "student_id": student.id})
     
     if not notif:
         raise HTTPException(status_code=404, detail="Notification not found")
         
-    notif.is_read = True
-    db.commit()
+    db.notifications.update_one(
+        {"_id": notif["_id"]},
+        {"$set": {"is_read": True}}
+    )
     return {"message": "Notification marked as read"}
 
 @router.put("/notifications/read-all")
 def read_all_student_notifications(
     student: Student = Depends(get_current_student),
-    db: Session = Depends(get_db)
+    db: Any = Depends(get_db)
 ):
-    db.query(Notification).filter(
-        Notification.student_id == student.id,
-        Notification.is_read == False
-    ).update({"is_read": True}, synchronize_session=False)
-    db.commit()
+    db.notifications.update_many(
+        {"student_id": student.id, "is_read": False},
+        {"$set": {"is_read": True}}
+    )
     return {"message": "All notifications marked as read"}
 
 @router.delete("/notifications/{id}")
 def delete_student_notification(
     id: int,
     student: Student = Depends(get_current_student),
-    db: Session = Depends(get_db)
+    db: Any = Depends(get_db)
 ):
-    notif = db.query(Notification).filter(
-        Notification.id == id,
-        Notification.student_id == student.id
-    ).first()
+    notif = db.notifications.find_one({"id": id, "student_id": student.id})
     
     if not notif:
         raise HTTPException(status_code=404, detail="Notification not found")
         
-    db.delete(notif)
-    db.commit()
+    db.notifications.delete_one({"_id": notif["_id"]})
     return {"message": "Notification deleted"}
 
 @router.get("/announcements")
 def list_student_announcements(
     search: Optional[str] = None,
     student: Student = Depends(get_current_student),
-    db: Session = Depends(get_db)
+    db: Any = Depends(get_db)
 ):
-    # Fetch announcements published and matching target audience
-    query = db.query(Announcement).filter(Announcement.status == "Published")
-    
-    # Filter announcements by student details (e.g., target_audience matches department/semester or Entire College)
-    announcements = query.order_by(Announcement.created_at.desc()).all()
+    announcements_cursor = db.announcements.find({"status": "Published"}).sort("created_at", -1)
     
     filtered = []
-    for a in announcements:
-        # Check target audience
+    for a_doc in announcements_cursor:
+        a = MongoModel(a_doc)
         aud = a.target_audience
         val = a.target_value
         
@@ -570,4 +579,3 @@ def list_student_announcements(
         filtered = [a for a in filtered if search_lower in a.title.lower() or search_lower in a.content.lower()]
         
     return filtered
-

@@ -3,12 +3,15 @@ import urllib.request
 import urllib.error
 import time
 from typing import List, Dict, Any, Optional
-from sqlalchemy.orm import Session
+from datetime import datetime
+from fastapi import HTTPException, status
+
 from app.models.ai_admin import AIProvider, AIGatewayLog
 from app.utils.crypto import decrypt_key
+from app.core.mongodb import MongoModel, get_next_sequence
 
 def log_gateway_event(
-    db: Session,
+    db: Any,
     provider_name: str,
     feature: str,
     status: str,
@@ -20,19 +23,19 @@ def log_gateway_event(
     retries: int = 0
 ):
     try:
-        log = AIGatewayLog(
-            provider=provider_name,
-            feature=feature,
-            status=status,
-            latency_ms=latency_ms,
-            user_roll=user_roll,
-            prompt_length=prompt_len,
-            tokens_used=tokens,
-            error_message=error,
-            retry_count=retries
-        )
-        db.add(log)
-        db.commit()
+        db.ai_gateway_logs.insert_one({
+            "id": get_next_sequence("ai_gateway_logs"),
+            "provider": provider_name,
+            "feature": feature,
+            "status": status,
+            "latency_ms": latency_ms,
+            "user_roll": user_roll,
+            "prompt_length": prompt_len,
+            "tokens_used": tokens,
+            "error_message": error,
+            "retry_count": retries,
+            "created_at": datetime.utcnow()
+        })
     except Exception as e:
         print(f"[Gateway Logging Error] {e}")
 
@@ -131,16 +134,16 @@ def execute_llm_call(provider: AIProvider, prompt: str) -> str:
         raise NotImplementedError(f"Provider {slug} not implemented")
 
 def run_ai_gateway_request(
-    db: Session,
+    db: Any,
     prompt: str,
     feature: str,
     user_roll: str
 ) -> str:
     # Fetch all active providers sorted by priority
-    providers = db.query(AIProvider).filter(AIProvider.is_enabled == True).order_by(AIProvider.priority.asc()).all()
+    providers_cursor = db.ai_providers.find({"is_enabled": True}).sort("priority", 1)
+    providers = [AIProvider(doc) for doc in providers_cursor]
     
     if not providers:
-        # Fallback to local simulated/mock response if no providers are configured or enabled
         print("[AI Gateway] No active providers found. Returning mock response.")
         return f"[Simulated Response for {feature}] Prompt: {prompt[:100]}..."
 
@@ -149,7 +152,6 @@ def run_ai_gateway_request(
     
     for idx, provider in enumerate(providers):
         start_time = time.time()
-        # Retry mechanism for each provider based on its retry_attempts config
         retries = provider.retry_attempts if provider.retry_attempts is not None else 3
         
         for attempt in range(retries):
@@ -158,7 +160,6 @@ def run_ai_gateway_request(
                 env_key = f"{provider.slug.upper()}_API_KEY"
                 decrypted_key = os.getenv(env_key, "").strip()
                 if decrypted_key.startswith("mock_") or "mock" in decrypted_key.lower():
-                    # Simulate successful response
                     latency = int((time.time() - start_time) * 1000)
                     log_gateway_event(db, provider.provider_name, feature, "Success", latency, user_roll, len(prompt), 100, None, attempt)
                     return f"[Simulated response from {provider.provider_name}] Verified prompt request successfully executed."
@@ -166,19 +167,16 @@ def run_ai_gateway_request(
                 response_text = execute_llm_call(provider, prompt)
                 latency = int((time.time() - start_time) * 1000)
                 
-                # Log success event
                 log_gateway_event(db, provider.provider_name, feature, "Success", latency, user_roll, len(prompt), len(response_text) // 4, None, attempt)
                 return response_text
             except Exception as e:
                 last_error = str(e)
                 print(f"[AI Gateway] Attempt {attempt+1} failed for {provider.provider_name}: {e}")
-                time.sleep(0.5) # small backoff
+                time.sleep(0.5)
                 
-        # If it failed all attempts, log failure and fall back if allowed
         latency = int((time.time() - start_time) * 1000)
         log_gateway_event(db, provider.provider_name, feature, "Failed", latency, user_roll, len(prompt), 0, last_error, retries)
         
-        # If fallback is disabled for this provider or globally, abort
         if not provider.fallback_enabled:
             print(f"[AI Gateway] Fallback disabled for {provider.provider_name}. Aborting.")
             break

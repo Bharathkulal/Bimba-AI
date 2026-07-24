@@ -1,1 +1,4 @@
-from app.database.models.otp import *
+from app.core.mongodb import MongoModel
+
+class OTP(MongoModel):
+    pass

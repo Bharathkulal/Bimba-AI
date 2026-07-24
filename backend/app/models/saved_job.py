@@ -1,1 +1,7 @@
-from app.database.models.saved_job import *
+from app.core.mongodb import MongoModel
+
+class SavedJob(MongoModel):
+    pass
+
+class JobApplication(MongoModel):
+    pass

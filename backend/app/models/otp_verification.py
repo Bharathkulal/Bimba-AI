@@ -1,1 +1,4 @@
-from app.database.models.otp_verification import *
+from app.core.mongodb import MongoModel
+
+class OTPVerification(MongoModel):
+    pass
