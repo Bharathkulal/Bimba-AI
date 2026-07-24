@@ -1186,8 +1186,10 @@ async def upload_resume_file(
             cleaned = cleaned[:-3]
         parsed_json = json.loads(cleaned.strip())
     except Exception as e:
-        print(f"[AI Parsing Error] {e}. Falling back to simulated parser.")
-        parsed_json = simulated_resume_parse(text)
+        raise HTTPException(
+            status_code=status.HTTP_502_BAD_GATEWAY,
+            detail=f"AI Resume Parsing Service failed: {str(e)}. Please check your AI API configurations."
+        )
         
     return {"parsed_data": parsed_json, "file_path": filepath}
 
@@ -1227,30 +1229,10 @@ def analyze_resume_endpoint(
             cleaned = cleaned[:-3]
         analysis_data = json.loads(cleaned.strip())
     except Exception as e:
-        print(f"[AI Analysis Error] {e}. Falling back to simulated analysis.")
-        analysis_data = {
-            "scores": {
-                "overall_score": 78,
-                "ats_score": 75,
-                "professional_writing_score": 80,
-                "formatting_score": 85,
-                "grammar_score": 90,
-                "keyword_match_score": 70,
-                "project_quality_score": 75,
-                "experience_strength": 70,
-                "education_completeness": 95,
-                "technical_skills_score": 80,
-                "soft_skills_score": 75
-            },
-            "metadata": {
-                "resume_length": "1 Page",
-                "readability": "Excellent"
-            },
-            "suggestions": [
-                {"problem": "Weak Project Descriptions", "reason": "Lacks quantified impact numbers", "fix": "Add metrics like % of load speed improved", "priority": "High"},
-                {"problem": "Missing Keywords", "reason": "ATS filters look for tools", "fix": "Add Docker or AWS under technical skills", "priority": "Medium"}
-            ]
-        }
+        raise HTTPException(
+            status_code=status.HTTP_502_BAD_GATEWAY,
+            detail=f"AI Resume Analysis Service failed: {str(e)}. Please check your AI API configurations."
+        )
         
     analysis_doc = db.resume_analyses.find_one({"resume_id": id})
     scores = analysis_data.get("scores", {})
@@ -1341,7 +1323,6 @@ def improve_resume_endpoint(
     
     prompt = RESUME_IMPROVE_PROMPT.format(improvement_goal=payload.improvement_goal, resume_json=json.dumps(resume_state))
     
-    improved_json = None
     try:
         raw_response = run_ai_gateway_request(db, prompt, f"Resume Studio: IMPROVE", student.roll_number)
         cleaned = raw_response.strip()
@@ -1351,13 +1332,10 @@ def improve_resume_endpoint(
             cleaned = cleaned[:-3]
         improved_json = json.loads(cleaned.strip())
     except Exception as e:
-        print(f"[AI Improvement Error] {e}. Falling back to original state.")
-        improved_json = json.loads(json.dumps(resume_state))
-        improved_json["personal_info"]["summary"] = f"Improved for {payload.improvement_goal}: " + (resume.get("summary") or "Ambitious professional seeking role.")
-        for p in improved_json.get("projects", []):
-            p["description"] = "Spearheaded development: " + p["description"]
-        for e in improved_json.get("experience", []):
-            e["description"] = "Architected solution: " + e["description"]
+        raise HTTPException(
+            status_code=status.HTTP_502_BAD_GATEWAY,
+            detail=f"AI Resume Improvement Service failed: {str(e)}. Please check your AI API configurations."
+        )
             
     db.resume_improvements.insert_one({
         "id": get_next_sequence("resume_improvements"),
@@ -1408,15 +1386,10 @@ def optimize_jd_endpoint(
             cleaned = cleaned[:-3]
         match_data = json.loads(cleaned.strip())
     except Exception as e:
-        print(f"[JD Match Error] {e}. Falling back to simulation.")
-        match_data = {
-            "overall_match_score": 75,
-            "missing_skills": ["Docker", "AWS"],
-            "missing_keywords": ["Microservices", "RESTful design"],
-            "recommended_improvements": "Add experience with deploying containers to matching section.",
-            "important_technologies": ["React", "FastAPI", "Docker", "AWS"],
-            "required_certifications": ["AWS Certified Solutions Architect"]
-        }
+        raise HTTPException(
+            status_code=status.HTTP_502_BAD_GATEWAY,
+            detail=f"AI Job Match Service failed: {str(e)}. Please check your AI API configurations."
+        )
         
     opt_prompt = ATS_OPTIMIZATION_PROMPT.format(resume_json=json.dumps(resume_state), job_description=payload.job_description)
     optimized_resume = None
@@ -1429,9 +1402,10 @@ def optimize_jd_endpoint(
             cleaned_opt = cleaned_opt[:-3]
         optimized_resume = json.loads(cleaned_opt.strip())
     except Exception as e:
-        print(f"[JD Wording Optimization Error] {e}. Using simulated optimization.")
-        optimized_resume = json.loads(json.dumps(resume_state))
-        optimized_resume["personal_info"]["summary"] = "Optimized: " + (resume.get("summary") or "")
+        raise HTTPException(
+            status_code=status.HTTP_502_BAD_GATEWAY,
+            detail=f"AI Resume JD Wording Optimization Service failed: {str(e)}. Please check your AI API configurations."
+        )
         
     db.jd_optimizations.insert_one({
         "id": get_next_sequence("jd_optimizations"),

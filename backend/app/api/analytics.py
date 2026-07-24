@@ -121,8 +121,48 @@ def get_dashboard_analytics(student: Student = Depends(get_current_student), db:
         {"$group": {"_id": "$date"}}
     ]))
     active_days_count = len(active_dates_res)
-    current_streak = 8  # Default streak seed
-    longest_streak = 14
+    
+    # Calculate real current streak and longest streak
+    active_dates = []
+    for doc in active_dates_res:
+        if doc.get("_id"):
+            try:
+                active_dates.append(datetime.strptime(doc["_id"], "%Y-%m-%d").date())
+            except ValueError:
+                pass
+    active_dates = sorted(list(set(active_dates)), reverse=True)
+    
+    current_streak = 0
+    longest_streak = 0
+    
+    if active_dates:
+        today = datetime.utcnow().date()
+        yesterday = today - timedelta(days=1)
+        
+        # Calculate current streak
+        if active_dates[0] in (today, yesterday):
+            current_streak = 1
+            for idx in range(len(active_dates) - 1):
+                diff = active_dates[idx] - active_dates[idx + 1]
+                if diff.days == 1:
+                    current_streak += 1
+                elif diff.days > 1:
+                    break
+        else:
+            current_streak = 0
+            
+        # Calculate longest streak
+        active_dates_asc = sorted(active_dates)
+        temp_streak = 1
+        longest_streak = 1
+        for idx in range(len(active_dates_asc) - 1):
+            diff = active_dates_asc[idx + 1] - active_dates_asc[idx]
+            if diff.days == 1:
+                temp_streak += 1
+            elif diff.days > 1:
+                longest_streak = max(longest_streak, temp_streak)
+                temp_streak = 1
+        longest_streak = max(longest_streak, temp_streak)
     
     # Heatmap data for the past 30 days
     heatmap_data = []
@@ -188,28 +228,54 @@ def get_ats_analytics(student: Student = Depends(get_current_student), db: Any =
         "certifications": 85 if cert_exists else 0,
     }
     
-    formatting_score = 92
-    readability_score = 88
-    keyword_match = 84
+    # Query real analysis metrics from MongoDB
+    formatting_score = 0
+    readability_score = 0
+    keyword_match = 0
     
     recommendations = []
     missing_keywords = []
     
-    if not skill_exists:
-        recommendations.append("Add more technical skills to clear automatic keywords scanners.")
-        missing_keywords.extend(["React", "TypeScript", "Node.js"])
-    if not proj_exists:
-        recommendations.append("Include at least 2 detailed project descriptions with GitHub links.")
-        missing_keywords.extend(["Git", "Web APIs", "CI/CD"])
-    if not cert_exists:
-        recommendations.append("List relevant certifications (e.g. AWS, Scrum Master, Google Analytics).")
-    if (best_resume.get("ats_score") or 0) < 90:
-        recommendations.append("Increase bullet points density under experience and use action verbs.")
+    analysis = db.resume_analyses.find_one({"resume_id": resume_id})
+    if analysis:
+        formatting_score = int(analysis.get("formatting_score", 0))
+        readability_score = int(analysis.get("grammar_score", 0))
+        keyword_match = int(analysis.get("keyword_match_score", 0))
         
-    if not recommendations:
-        recommendations = ["Add measurable achievements.", "Include links to portfolio projects."]
-        missing_keywords = ["RESTful APIs", "Docker"]
-        
+        suggestions_str = analysis.get("suggestions")
+        if suggestions_str:
+            try:
+                import json
+                suggestions = json.loads(suggestions_str)
+                for s in suggestions:
+                    recommendations.append({
+                        "title": s.get("problem", "Optimize Details"),
+                        "reason": s.get("reason", "Scan alert check"),
+                        "priority": s.get("priority", "Medium"),
+                        "fix": s.get("fix", "")
+                    })
+            except Exception as ex:
+                print(f"[Analytics suggestions parse error] {ex}")
+                
+    # Fallback recommendations if no analysis has been executed yet
+    if not analysis:
+        if not skill_exists:
+            recommendations.append({
+                "title": "Add Skills",
+                "reason": "No technical skills found on your profile.",
+                "priority": "High",
+                "fix": "Add relevant tools under skills tab."
+            })
+            missing_keywords.extend(["React", "TypeScript"])
+        if not proj_exists:
+            recommendations.append({
+                "title": "Add Projects",
+                "reason": "Listing projects boosts resume visibility.",
+                "priority": "High",
+                "fix": "Add at least one key coding project."
+            })
+            missing_keywords.extend(["Git", "API"])
+
     # History of versions (improvements)
     versions = list(db.resume_versions.find({"resume_id": resume_id}).sort("version_number", 1))
     
@@ -217,15 +283,9 @@ def get_ats_analytics(student: Student = Depends(get_current_student), db: Any =
     for v in versions:
         history.append({
             "version": f"Version {v.get('version_number')}",
-            "atsScore": v.get("ats_score"),
-            "date": v.get("created_at").strftime("%Y-%m-%d") if v.get("created_at") else datetime.now().strftime("%Y-%m-%d")
+            "atsScore": v.get("ats_score") or best_resume.get("ats_score") or 0,
+            "date": v.get("created_at").strftime("%Y-%m-%d") if v.get("created_at") else datetime.utcnow().strftime("%Y-%m-%d")
         })
-        
-    if not history:
-        history = [
-            {"version": "Version 1", "atsScore": 65, "date": "2026-07-01"},
-            {"version": "Version 2", "atsScore": best_resume.get("ats_score"), "date": "2026-07-08"}
-        ]
 
     return {
         "has_resumes": True,

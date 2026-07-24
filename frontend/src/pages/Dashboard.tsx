@@ -16,7 +16,7 @@ import { apiClient, API_BASE_URL } from '../services/api';
 import { jobsService } from '../services/jobs';
 import type { JobListItem } from '../services/jobs';
 
-import type { DashboardData, AtsData, ActivityTimelineItem, ResumeAnalyticsItem } from '../services/analytics';
+import type { DashboardData, AtsData, ActivityTimelineItem, ResumeAnalyticsItem, DownloadsData } from '../services/analytics';
 
 export const Dashboard: React.FC = () => {
   const navigate = useNavigate();
@@ -39,6 +39,7 @@ export const Dashboard: React.FC = () => {
   const [activities, setActivities] = useState<ActivityTimelineItem[]>([]);
   const [resumes, setResumes] = useState<ResumeAnalyticsItem[]>([]);
   const [templates, setTemplates] = useState<any[]>([]);
+  const [downloadsData, setDownloadsData] = useState<DownloadsData | null>(null);
   
   // UI States
   const [searchQuery, setSearchQuery] = useState('');
@@ -62,14 +63,15 @@ export const Dashboard: React.FC = () => {
   const fetchAnalytics = async () => {
     try {
       setIsLoading(true);
-      const [dash, ats, act, resList, notifRes, tplRes, jobsRes] = await Promise.all([
+      const [dash, ats, act, resList, notifRes, tplRes, jobsRes, dlRes] = await Promise.all([
         analyticsService.getDashboard(),
         analyticsService.getAts(),
         analyticsService.getActivity(),
         analyticsService.getResumes(),
         apiClient.get('/api/analytics/notifications'),
         apiClient.get('/api/resume-studio/templates'),
-        jobsService.searchJobs({ limit: 4 })
+        jobsService.searchJobs({ limit: 4 }),
+        analyticsService.getDownloads()
       ]);
       setDashboardData(dash);
       setAtsData(ats);
@@ -78,6 +80,7 @@ export const Dashboard: React.FC = () => {
       setNotificationCount(notifRes.data.unread_count || 0);
       setTemplates(tplRes.data || []);
       setRecommendedJobs(jobsRes.jobs);
+      setDownloadsData(dlRes);
     } catch (err) {
       console.error("Error loading real-time user analytics:", err);
     } finally {
@@ -260,28 +263,38 @@ export const Dashboard: React.FC = () => {
     );
   }
 
-  const bestResume = resumes.find(r => r.atsScore === Math.max(...resumes.map(x => x.atsScore))) || resumes[0] || { id: 0, atsScore: 88, completion: 91, name: "My Resume Portfolio", template: "modern", status: "Draft" };
-  const resumeHealth = bestResume.completion || 88;
-  const atsScore = bestResume.atsScore || 91;
-  const totalTemplates = templates.length || 24;
-  const totalDownloads = dashboardData?.timeSavedMinutes || 17;
+  const bestResume = resumes.find(r => r.atsScore === Math.max(...resumes.map(x => x.atsScore))) || resumes[0];
+  const resumeHealth = bestResume?.completion || 0;
+  const atsScore = bestResume?.atsScore || 0;
+  const totalTemplates = templates.length || 0;
+  const totalDownloads = downloadsData?.trend?.reduce((sum: number, item: any) => sum + item.downloads, 0) || 0;
 
-  // Mock suggestion list derived from DB recommendations
-  const suggestions = [
-    { title: "Improve Project Descriptions", reason: "Action verbs and metrics are currently weak or missing.", priority: "High" },
-    { title: "Missing Certifications", reason: "No industry credentials found to support developer skills.", priority: "Medium" },
-    { title: "Weak Professional Summary", reason: "Paragraph is currently generic and lacks targeted roles.", priority: "High" },
-    { title: "Low ATS Keywords Match", reason: "Target roles require more DevOps and cloud definitions.", priority: "High" },
-  ];
+  // Load real recommendations from atsData
+  const suggestions = atsData?.recommendations || [];
+  const atsHistory = atsData?.history || [];
+  const downloadsTrend = downloadsData?.trend || [];
 
+  // Format real activity logs
+  const formatTimeAgo = (isoStr: string) => {
+    try {
+      const diffMs = new Date().getTime() - new Date(isoStr).getTime();
+      const diffMins = Math.floor(diffMs / 60000);
+      if (diffMins < 1) return 'Just now';
+      if (diffMins < 60) return `${diffMins}m ago`;
+      const diffHours = Math.floor(diffMins / 60);
+      if (diffHours < 24) return `${diffHours}h ago`;
+      const diffDays = Math.floor(diffHours / 24);
+      return `${diffDays}d ago`;
+    } catch {
+      return 'Recently';
+    }
+  };
 
-  // Activities mapping
-  const timelineActivities = [
-    { title: "Resume Updated", time: "Today", desc: "Modified bullets in experience section." },
-    { title: "ATS Improved", time: "Yesterday", desc: "Added missing skills tags: Docker, System Design." },
-    { title: "Downloaded PDF", time: "3 Days Ago", desc: "Exported celestial layout template." },
-    { title: "Created Resume", time: "Last Week", desc: "Started draft from scratch." },
-  ];
+  const timelineActivities = (activities || []).map(act => ({
+    title: act.activity,
+    time: formatTimeAgo(act.timestamp),
+    desc: ""
+  }));
 
   return (
     <div className="flex flex-col gap-6.5 text-left font-sans text-slate-800 w-full animate-fadeIn pb-12 selection:bg-green-500/10">
@@ -650,32 +663,38 @@ export const Dashboard: React.FC = () => {
 
         <div className="bg-white border border-slate-200/60 rounded-[20px] p-5 shadow-sm">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {suggestions.map((sug, idx) => (
-              <div 
-                key={idx} 
-                className="bg-slate-50/50 border border-slate-200/60 rounded-xl p-4 flex flex-col justify-between gap-3 text-left hover:scale-[1.01] transition-smooth"
-              >
-                <div className="flex justify-between items-start">
-                  <div>
-                    <h4 className="font-extrabold text-xs text-slate-800">{sug.title}</h4>
-                    <p className="text-[10px] text-slate-500 mt-1 font-semibold leading-relaxed">{sug.reason}</p>
-                  </div>
-                  <span className={`px-2 py-0.5 rounded text-[8px] font-black uppercase ${
-                    sug.priority === 'High' ? 'bg-rose-50 border border-rose-100 text-rose-600' : 'bg-amber-50 border border-amber-100 text-amber-600'
-                  }`}>
-                    {sug.priority}
-                  </span>
-                </div>
-                <div className="flex justify-end pt-2 border-t border-slate-100">
-                  <button 
-                    onClick={() => handleFixSuggestion(sug.title)}
-                    className="px-3.5 py-1 bg-green-600 hover:bg-green-700 text-white font-extrabold text-[9px] rounded-lg transition-smooth shadow-sm cursor-pointer"
-                  >
-                    One-Click Fix
-                  </button>
-                </div>
+            {suggestions.length === 0 ? (
+              <div className="col-span-2 text-center py-8 text-slate-400 font-bold text-xs">
+                No recommendations found. Scan or create a resume to get AI career insights!
               </div>
-            ))}
+            ) : (
+              suggestions.map((sug: any, idx: number) => (
+                <div 
+                  key={idx} 
+                  className="bg-slate-50/50 border border-slate-200/60 rounded-xl p-4 flex flex-col justify-between gap-3 text-left hover:scale-[1.01] transition-smooth"
+                >
+                  <div className="flex justify-between items-start">
+                    <div>
+                      <h4 className="font-extrabold text-xs text-slate-800">{sug.title}</h4>
+                      <p className="text-[10px] text-slate-500 mt-1 font-semibold leading-relaxed">{sug.reason}</p>
+                    </div>
+                    <span className={`px-2 py-0.5 rounded text-[8px] font-black uppercase ${
+                      sug.priority === 'High' ? 'bg-rose-50 border border-rose-100 text-rose-600' : 'bg-amber-50 border border-amber-100 text-amber-600'
+                    }`}>
+                      {sug.priority}
+                    </span>
+                  </div>
+                  <div className="flex justify-end pt-2 border-t border-slate-100">
+                    <button 
+                      onClick={() => handleFixSuggestion(sug.title)}
+                      className="px-3.5 py-1 bg-green-600 hover:bg-green-700 text-white font-extrabold text-[9px] rounded-lg transition-smooth shadow-sm cursor-pointer"
+                    >
+                      One-Click Fix
+                    </button>
+                  </div>
+                </div>
+              ))
+            )}
           </div>
         </div>
       </section>
@@ -692,21 +711,27 @@ export const Dashboard: React.FC = () => {
           </div>
 
           <div className="flex flex-col gap-4 flex-grow justify-center pr-1">
-            {timelineActivities.map((act, idx) => (
-              <div key={idx} className="flex gap-3 text-left">
-                <div className="flex flex-col items-center shrink-0">
-                  <div className="w-2 h-2 rounded-full bg-green-500 mt-1 shadow-sm shadow-green-500/20" />
-                  {idx < timelineActivities.length - 1 && <div className="w-0.5 bg-slate-100 flex-grow my-1" />}
-                </div>
-                <div>
-                  <div className="flex gap-2 items-center leading-none">
-                    <span className="text-[10px] font-extrabold text-slate-800">{act.title}</span>
-                    <span className="text-[8px] text-slate-400 font-bold">• {act.time}</span>
-                  </div>
-                  <p className="text-[9px] text-slate-450 mt-1 font-semibold leading-relaxed">{act.desc}</p>
-                </div>
+            {timelineActivities.length === 0 ? (
+              <div className="text-center py-6 text-slate-400 font-bold text-xs">
+                No recent activity recorded yet.
               </div>
-            ))}
+            ) : (
+              timelineActivities.map((act, idx) => (
+                <div key={idx} className="flex gap-3 text-left">
+                  <div className="flex flex-col items-center shrink-0">
+                    <div className="w-2 h-2 rounded-full bg-green-500 mt-1 shadow-sm shadow-green-500/20" />
+                    {idx < timelineActivities.length - 1 && <div className="w-0.5 bg-slate-100 flex-grow my-1" />}
+                  </div>
+                  <div>
+                    <div className="flex gap-2 items-center leading-none">
+                      <span className="text-[10px] font-extrabold text-slate-800">{act.title}</span>
+                      <span className="text-[8px] text-slate-400 font-bold">• {act.time}</span>
+                    </div>
+                    <p className="text-[9px] text-slate-450 mt-1 font-semibold leading-relaxed">{act.desc}</p>
+                  </div>
+                </div>
+              ))
+            )}
           </div>
         </div>
 
@@ -729,24 +754,52 @@ export const Dashboard: React.FC = () => {
                   <line x1="10" y1="65" x2="190" y2="65" className="stroke-slate-100" strokeWidth="1" />
                   
                   {/* Dynamic path */}
-                  <path 
-                    d="M 20 65 L 60 55 L 100 45 L 140 25 L 180 18" 
-                    fill="none" 
-                    stroke="#16A34A" 
-                    strokeWidth="3.5" 
-                    strokeLinecap="round" 
-                    strokeLinejoin="round" 
-                  />
-                  
-                  {/* Dots */}
-                  <circle cx="20" cy="65" r="3.5" className="fill-white stroke-green-600" strokeWidth="2" />
-                  <circle cx="60" cy="55" r="3.5" className="fill-white stroke-green-600" strokeWidth="2" />
-                  <circle cx="100" cy="45" r="3.5" className="fill-white stroke-green-600" strokeWidth="2" />
-                  <circle cx="140" cy="25" r="3.5" className="fill-white stroke-green-600" strokeWidth="2" />
-                  <circle cx="180" cy="18" r="3.5" className="fill-white stroke-green-600" strokeWidth="2" />
-                  
-                  {/* Text label */}
-                  <text x="180" y="10" textAnchor="end" className="text-[8px] font-black fill-green-650">91% ATS</text>
+                  {atsHistory.length > 0 ? (
+                    <>
+                      <path 
+                        d={(() => {
+                          const len = atsHistory.length;
+                          return atsHistory.map((h: any, i: number) => {
+                            const x = len > 1 ? 10 + i * (180 / (len - 1)) : 100;
+                            const score = h.atsScore || 70;
+                            const y = 70 - (score / 100) * 55;
+                            return `${i === 0 ? 'M' : 'L'} ${x} ${y}`;
+                          }).join(" ");
+                        })()} 
+                        fill="none" 
+                        stroke="#16A34A" 
+                        strokeWidth="3.5" 
+                        strokeLinecap="round" 
+                        strokeLinejoin="round" 
+                      />
+                      
+                      {/* Dots */}
+                      {atsHistory.map((h: any, i: number) => {
+                        const len = atsHistory.length;
+                        const x = len > 1 ? 10 + i * (180 / (len - 1)) : 100;
+                        const score = h.atsScore || 70;
+                        const y = 70 - (score / 100) * 55;
+                        return (
+                          <circle 
+                            key={i} 
+                            cx={x} 
+                            cy={y} 
+                            r="3.5" 
+                            className="fill-white stroke-green-600" 
+                            strokeWidth="2" 
+                          />
+                        );
+                      })}
+                      
+                      <text x="180" y="10" textAnchor="end" className="text-[8px] font-black fill-green-650">
+                        {atsHistory[atsHistory.length - 1].atsScore}% ATS
+                      </text>
+                    </>
+                  ) : (
+                    <text x="100" y="45" textAnchor="middle" className="text-[9px] font-bold fill-slate-400">
+                      No ATS history yet
+                    </text>
+                  )}
                 </svg>
               </div>
             </div>
@@ -761,24 +814,52 @@ export const Dashboard: React.FC = () => {
                   <line x1="10" y1="65" x2="190" y2="65" className="stroke-slate-100" strokeWidth="1" />
                   
                   {/* Dynamic path */}
-                  <path 
-                    d="M 20 60 L 60 45 L 100 50 L 140 30 L 180 20" 
-                    fill="none" 
-                    stroke="#22C55E" 
-                    strokeWidth="3.5" 
-                    strokeLinecap="round" 
-                    strokeLinejoin="round" 
-                  />
-                  
-                  {/* Dots */}
-                  <circle cx="20" cy="60" r="3.5" className="fill-white stroke-emerald-600" strokeWidth="2" />
-                  <circle cx="60" cy="45" r="3.5" className="fill-white stroke-emerald-600" strokeWidth="2" />
-                  <circle cx="100" cy="50" r="3.5" className="fill-white stroke-emerald-600" strokeWidth="2" />
-                  <circle cx="140" cy="30" r="3.5" className="fill-white stroke-emerald-600" strokeWidth="2" />
-                  <circle cx="180" cy="20" r="3.5" className="fill-white stroke-emerald-600" strokeWidth="2" />
-                  
-                  {/* Text label */}
-                  <text x="180" y="12" textAnchor="end" className="text-[8px] font-black fill-emerald-600">17 Exports</text>
+                  {downloadsTrend.length > 0 ? (
+                    <>
+                      <path 
+                        d={(() => {
+                          const len = downloadsTrend.length;
+                          const maxVal = Math.max(...downloadsTrend.map((t: any) => t.downloads)) || 1;
+                          return downloadsTrend.map((t: any, i: number) => {
+                            const x = len > 1 ? 10 + i * (180 / (len - 1)) : 100;
+                            const y = 70 - (t.downloads / maxVal) * 50;
+                            return `${i === 0 ? 'M' : 'L'} ${x} ${y}`;
+                          }).join(" ");
+                        })()} 
+                        fill="none" 
+                        stroke="#F97316" 
+                        strokeWidth="3.5" 
+                        strokeLinecap="round" 
+                        strokeLinejoin="round" 
+                      />
+                      
+                      {/* Dots */}
+                      {downloadsTrend.map((t: any, i: number) => {
+                        const len = downloadsTrend.length;
+                        const maxVal = Math.max(...downloadsTrend.map((x: any) => x.downloads)) || 1;
+                        const x = len > 1 ? 10 + i * (180 / (len - 1)) : 100;
+                        const y = 70 - (t.downloads / maxVal) * 50;
+                        return (
+                          <circle 
+                            key={i} 
+                            cx={x} 
+                            cy={y} 
+                            r="3.5" 
+                            className="fill-white stroke-orange-500" 
+                            strokeWidth="2" 
+                          />
+                        );
+                      })}
+                      
+                      <text x="180" y="12" textAnchor="end" className="text-[8px] font-black fill-orange-600">
+                        {downloadsTrend[downloadsTrend.length - 1].downloads} DLs
+                      </text>
+                    </>
+                  ) : (
+                    <text x="100" y="45" textAnchor="middle" className="text-[9px] font-bold fill-slate-400">
+                      No downloads logged
+                    </text>
+                  )}
                 </svg>
               </div>
             </div>

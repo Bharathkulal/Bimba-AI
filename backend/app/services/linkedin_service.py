@@ -321,89 +321,17 @@ class LinkedInService:
                         "pages": (total + limit - 1) // limit,
                         "limit": limit
                     }
-                    
+                else:
+                    print(f"RapidAPI search failed with status code {response.status_code}")
             except Exception as e:
-                print(f"RapidAPI failed: {e}. Falling back to mock database.")
-                
-        # 2. Mock Fallback Flow
-        filtered_jobs = []
-        student_skills = self._parse_student_skills(student)
+                print(f"RapidAPI failed: {e}. Returning empty list.")
         
-        for job in self.mock_jobs:
-            # Match keyword
-            if keyword:
-                kw = keyword.lower()
-                title_match = kw in job["title"].lower()
-                company_match = kw in job["company"].lower()
-                desc_match = kw in job["description"].lower()
-                req_match = any(kw in req.lower() for req in job["requirements"])
-                if not (title_match or company_match or desc_match or req_match):
-                    continue
-                    
-            # Match location
-            if location:
-                loc = location.lower()
-                if loc != "remote" and loc not in job["location"].lower():
-                    continue
-                    
-            # Match experience
-            if experience:
-                if experience.lower() not in job["experience"].lower():
-                    continue
-                    
-            # Match remote
-            if remote is not None:
-                if job["remote"] != remote:
-                    continue
-                    
-            # Match employment type
-            if employment_type:
-                if employment_type.lower() not in job["employment_type"].lower():
-                    continue
-                    
-            # Calculate match score dynamically based on profile skills
-            ai_match = self._calculate_ai_match(student_skills, job["requirements"])
-            
-            # Create a copy with computed properties
-            job_copy = job.copy()
-            job_copy["ai_match_score"] = ai_match["score"]
-            job_copy["skills_matched"] = ai_match["matched"]
-            job_copy["skills_missing"] = ai_match["missing"]
-            filtered_jobs.append(job_copy)
-
-        # Sort by match score by default to feel extra smart, otherwise newest (mock list order)
-        filtered_jobs.sort(key=lambda x: x["ai_match_score"], reverse=True)
-        
-        # Paginate
-        total_items = len(filtered_jobs)
-        start_idx = (page - 1) * limit
-        end_idx = start_idx + limit
-        paginated_jobs = filtered_jobs[start_idx:end_idx]
-        
-        # Map output to JobListItem schema
-        output_jobs = []
-        for job in paginated_jobs:
-            output_jobs.append({
-                "id": job["id"],
-                "title": job["title"],
-                "company": job["company"],
-                "location": job["location"],
-                "logo": job["logo"],
-                "salary": job["salary"],
-                "employment_type": job["employment_type"],
-                "remote": job["remote"],
-                "posted_date": job["posted_date"],
-                "ai_match_score": job["ai_match_score"],
-                "skills_matched": job["skills_matched"],
-                "skills_missing": job["skills_missing"],
-                "apply_url": job.get("apply_url") or "https://www.linkedin.com/jobs"
-            })
-            
+        # 2. Return clean empty results when API is not configured or fails
         return {
-            "jobs": output_jobs,
-            "total": total_items,
+            "jobs": [],
+            "total": 0,
             "page": page,
-            "pages": max(1, (total_items + limit - 1) // limit),
+            "pages": 0,
             "limit": limit
         }
 
@@ -454,20 +382,8 @@ class LinkedInService:
                         }
                     }
             except Exception as e:
-                print(f"RapidAPI details failed: {e}. Falling back to mock details.")
+                print(f"RapidAPI details failed: {e}. Returning None.")
 
-        # 2. Mock Fallback
-        for job in self.mock_jobs:
-            if job["id"] == job_id:
-                student_skills = self._parse_student_skills(student)
-                ai_match = self._calculate_ai_match(student_skills, job["requirements"])
-                
-                job_copy = job.copy()
-                job_copy["ai_match_score"] = ai_match["score"]
-                job_copy["skills_matched"] = ai_match["matched"]
-                job_copy["skills_missing"] = ai_match["missing"]
-                return job_copy
-                
         return None
 
 # Singleton client instance
