@@ -262,63 +262,65 @@ class LinkedInService:
         # 1. Try invoking real API if configured
         if self.api_key and self.api_key.strip():
             try:
-                # Target endpoint: e.g. LinkedIn Data API /search endpoint
-                url = f"https://{self.api_host}/search-jobs"
+                url = f"https://{self.api_host}/active-jb"
                 headers = {
                     "X-RapidAPI-Key": self.api_key,
                     "X-RapidAPI-Host": self.api_host
                 }
                 params = {
-                    "keywords": keyword or "Software Engineer",
+                    "title": keyword or "Software Engineer",
                     "location": location or "United States",
-                    "start": (page - 1) * limit
+                    "time_frame": "6m",
+                    "limit": str(limit),
+                    "offset": str((page - 1) * limit)
                 }
                 
-                # Check for other filters and map them to standard API parameters
-                if remote is not None:
-                    params["remote"] = "true" if remote else "false"
-                if employment_type:
-                    params["type"] = employment_type
-                    
-                response = requests.get(url, headers=headers, params=params, timeout=8)
+                response = requests.get(url, headers=headers, params=params, timeout=10)
                 
                 if response.status_code == 200:
-                    api_data = response.json()
-                    # Map the raw API structure to our standard JobListItem
+                    raw_jobs = response.json()
+                    if not isinstance(raw_jobs, list):
+                        raw_jobs = raw_jobs.get("data", []) if isinstance(raw_jobs, dict) else []
+                    
                     jobs_list = []
-                    
-                    # Assume api_data has a 'data' array or is a list
-                    raw_jobs = api_data.get("data", []) if isinstance(api_data, dict) else api_data
-                    
                     student_skills = self._parse_student_skills(student)
                     
                     for index, rj in enumerate(raw_jobs):
-                        # Construct a mock requirements list if not provided by API
-                        reqs = rj.get("skills", ["React", "Python", "SQL", "Git"])
+                        reqs = rj.get("ai_key_skills", ["React", "Python", "SQL", "Git"])
                         ai_match = self._calculate_ai_match(student_skills, reqs)
                         
+                        locs = rj.get("locations_derived", [])
+                        loc_str = locs[0] if locs else "Remote"
+                        
+                        date_posted = rj.get("date_posted", "")
+                        posted_str = date_posted[:10] if date_posted else "Recently"
+                        
+                        emp_type = rj.get("ai_employment_type", [])
+                        emp_str = emp_type[0].replace("_", "-").title() if emp_type else "Full-time"
+                        is_remote = rj.get("ai_work_arrangement") == "Remote"
+                        
                         jobs_list.append({
-                            "id": rj.get("id") or rj.get("job_id") or f"api_job_{index}",
+                            "id": str(rj.get("id") or f"api_job_{index}"),
                             "title": rj.get("title", "Software Developer"),
-                            "company": rj.get("companyName") or rj.get("company", {}).get("name", "Tech Company"),
-                            "location": rj.get("location", "Remote"),
-                            "logo": rj.get("companyLogo") or rj.get("company", {}).get("logo", None),
-                            "salary": rj.get("salary") or rj.get("salaryRange", None),
-                            "employment_type": rj.get("employmentType") or rj.get("type", "Full-time"),
-                            "remote": rj.get("workplaceType") == "remote" or rj.get("remote", False),
-                            "posted_date": rj.get("postDate") or rj.get("postedTime", "Recently"),
+                            "company": rj.get("organization", "Tech Company"),
+                            "location": loc_str,
+                            "logo": rj.get("organization_logo"),
+                            "salary": rj.get("ai_salary_value") or "Competitive",
+                            "employment_type": emp_str,
+                            "remote": is_remote,
+                            "posted_date": posted_str,
                             "ai_match_score": ai_match["score"],
                             "skills_matched": ai_match["matched"],
                             "skills_missing": ai_match["missing"],
-                            "apply_url": rj.get("applyUrl") or rj.get("jobUrl", "https://linkedin.com")
+                            "apply_url": rj.get("url", "https://linkedin.com")
                         })
                         
-                    total = api_data.get("total", len(jobs_list)) if isinstance(api_data, dict) else len(raw_jobs)
+                    total = len(jobs_list)
                     return {
                         "jobs": jobs_list,
                         "total": total,
                         "page": page,
-                        "pages": (total + limit - 1) // limit,
+                        "pages": (total + limit - 1) // limit if total > 0 else 0,
                         "limit": limit
                     }
                 else:
@@ -339,51 +341,69 @@ class LinkedInService:
         # 1. Try invoking real API if configured
         if self.api_key and self.api_key.strip():
             try:
-                # Target endpoint: e.g. LinkedIn Data API /get-job-details endpoint
-                url = f"https://{self.api_host}/job-details"
+                url = f"https://{self.api_host}/active-jb"
                 headers = {
                     "X-RapidAPI-Key": self.api_key,
                     "X-RapidAPI-Host": self.api_host
                 }
-                params = {"id": job_id}
+                params = {
+                    "time_frame": "6m",
+                    "id": job_id
+                }
                 
-                response = requests.get(url, headers=headers, params=params, timeout=8)
+                response = requests.get(url, headers=headers, params=params, timeout=10)
                 
                 if response.status_code == 200:
-                    rj = response.json()
+                    data = response.json()
+                    if not data:
+                        return None
+                    rj = data[0]
                     student_skills = self._parse_student_skills(student)
-                    reqs = rj.get("skills", ["React", "Python", "SQL", "Git"])
+                    reqs = rj.get("ai_key_skills", ["React", "Python", "SQL", "Git"])
                     ai_match = self._calculate_ai_match(student_skills, reqs)
+                    
+                    locs = rj.get("locations_derived", [])
+                    loc_str = locs[0] if locs else "Remote"
+                    
+                    date_posted = rj.get("date_posted", "")
+                    posted_str = date_posted[:10] if date_posted else "Recently"
+                    
+                    emp_type = rj.get("ai_employment_type", [])
+                    emp_str = emp_type[0].replace("_", "-").title() if emp_type else "Full-time"
+                    is_remote = rj.get("ai_work_arrangement") == "Remote"
+                    
+                    desc = rj.get("ai_requirements_summary", "No description provided.")
+                    if rj.get("ai_core_responsibilities"):
+                        desc = f"{rj.get('ai_core_responsibilities')}\n\n{desc}"
                     
                     return {
                         "id": job_id,
                         "title": rj.get("title", "Software Developer"),
-                        "company": rj.get("companyName") or rj.get("company", {}).get("name", "Tech Company"),
-                        "location": rj.get("location", "Remote"),
-                        "logo": rj.get("companyLogo") or rj.get("company", {}).get("logo", None),
-                        "banner": rj.get("companyBanner") or "https://images.unsplash.com/photo-1557683316-973673baf926?w=800&auto=format&fit=crop&q=60",
-                        "salary": rj.get("salary") or rj.get("salaryRange", None),
-                        "employment_type": rj.get("employmentType") or rj.get("type", "Full-time"),
-                        "remote": rj.get("workplaceType") == "remote" or rj.get("remote", False),
-                        "posted_date": rj.get("postDate") or rj.get("postedTime", "Recently"),
-                        "description": rj.get("description", "No description provided."),
+                        "company": rj.get("organization", "Tech Company"),
+                        "location": loc_str,
+                        "logo": rj.get("organization_logo"),
+                        "banner": "https://images.unsplash.com/photo-1557683316-973673baf926?w=800&auto=format&fit=crop&q=60",
+                        "salary": rj.get("ai_salary_value") or "Competitive",
+                        "employment_type": emp_str,
+                        "remote": is_remote,
+                        "posted_date": posted_str,
+                        "description": desc,
                         "requirements": reqs,
-                        "responsibilities": rj.get("responsibilities", ["Contribute to technical projects", "Code reviews"]),
-                        "benefits": rj.get("benefits", ["Competitive Salary", "Health Insurance"]),
-                        "experience": rj.get("experienceLevel") or "Mid-level",
+                        "responsibilities": [rj.get("ai_core_responsibilities")] if rj.get("ai_core_responsibilities") else ["Fulfill software requirements"],
+                        "benefits": [rj.get("ai_benefits")] if rj.get("ai_benefits") else ["Competitive Salary", "Health Insurance"],
+                        "experience": rj.get("ai_experience_level") or "Mid-level",
                         "ai_match_score": ai_match["score"],
                         "skills_matched": ai_match["matched"],
                         "skills_missing": ai_match["missing"],
-                        "apply_url": rj.get("applyUrl") or rj.get("jobUrl", "https://linkedin.com"),
+                        "apply_url": rj.get("url", "https://linkedin.com"),
                         "company_info": {
-                            "industry": rj.get("company", {}).get("industry", "Technology"),
-                            "size": rj.get("company", {}).get("employeeCount", "100-500 employees"),
-                            "website": rj.get("company", {}).get("website", "linkedin.com")
+                            "industry": rj.get("org_linkedin_industry", "Technology"),
+                            "size": rj.get("org_linkedin_size", "11-50 employees"),
+                            "website": rj.get("org_linkedin_website", "linkedin.com")
                         }
                     }
             except Exception as e:
                 print(f"RapidAPI details failed: {e}. Returning None.")
-
         return None
 
 # Singleton client instance
