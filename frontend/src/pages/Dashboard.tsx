@@ -298,25 +298,6 @@ export const Dashboard: React.FC = () => {
             className="w-full pl-9 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-700 focus:outline-none focus:border-green-500 transition-smooth font-medium"
           />
         </div>
-        <div className="flex items-center gap-3.5 w-full sm:w-auto justify-end">
-          <button 
-            onClick={() => navigate('/notifications')}
-            className="w-9 h-9 rounded-xl bg-slate-50 border border-slate-200 flex items-center justify-center text-slate-500 hover:text-slate-900 transition-smooth relative cursor-pointer"
-          >
-            <Bell size={15} />
-            {notificationCount > 0 && <span className="absolute top-2.5 right-2.5 w-1.5 h-1.5 rounded-full bg-green-600" />}
-          </button>
-          
-          <div className="flex items-center gap-2.5 border-l border-slate-100 pl-3">
-            <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-green-600 to-emerald-400 text-white font-extrabold flex items-center justify-center text-xs shadow-sm">
-              {displayName.charAt(0).toUpperCase()}
-            </div>
-            <div className="hidden lg:block text-left leading-none">
-              <h5 className="font-extrabold text-[11px] text-slate-800">{displayName}</h5>
-              <span className="text-[8px] font-black text-slate-400 uppercase tracking-widest block mt-0.5">Plus Member</span>
-            </div>
-          </div>
-        </div>
       </div>
 
       {/* HERO SECTION */}

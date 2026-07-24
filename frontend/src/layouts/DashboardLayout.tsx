@@ -1,18 +1,45 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { 
   Home, FileText, Bot, Settings, 
   LogOut, Sparkles, BarChart3, Briefcase, 
-  Building, MessageSquare, Coins
+  Building, MessageSquare, Coins, Bell
 } from 'lucide-react';
 import { useUserStore } from '../store/userStore';
 import { ThemeToggle } from '../components/ThemeToggle';
+import { apiClient } from '../services/api';
 
 export const DashboardLayout: React.FC = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const logout = useUserStore((state) => state.logout);
   const [isHovered, setIsHovered] = useState(false);
+  
+  const user = useUserStore((state) => state.user);
+  const [notificationCount, setNotificationCount] = useState(0);
+
+  const getDisplayName = () => {
+    if (!user) return 'Student';
+    const email = user.personal_email;
+    const prefix = email.split('@')[0];
+    const name = prefix.replace(/[0-9_.]/g, ' ');
+    return name.charAt(0).toUpperCase() + name.slice(1).trim();
+  };
+  const displayName = getDisplayName();
+
+  useEffect(() => {
+    const fetchNotifications = async () => {
+      try {
+        const notifRes = await apiClient.get('/api/analytics/notifications');
+        setNotificationCount(notifRes.data.unread_count || 0);
+      } catch (err) {
+        console.error("Error loading notification count:", err);
+      }
+    };
+    if (user) {
+      fetchNotifications();
+    }
+  }, [user]);
 
   const menuItems = [
     { label: 'Dashboard', path: '/dashboard', sectionId: 'top', icon: Home },
@@ -173,8 +200,33 @@ export const DashboardLayout: React.FC = () => {
           <div className="flex items-center gap-1.5 text-xs font-black text-slate-800 tracking-tight uppercase">
             <span>Bimba AI Platform</span>
           </div>
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-3.5">
+            {/* 1st: Notifications */}
+            <button 
+              onClick={() => navigate('/notifications')}
+              className="w-9 h-9 rounded-xl bg-slate-50 border border-slate-250 flex items-center justify-center text-slate-500 hover:text-slate-900 transition-smooth relative cursor-pointer"
+            >
+              <Bell size={15} />
+              {notificationCount > 0 && <span className="absolute top-2.5 right-2.5 w-1.5 h-1.5 rounded-full bg-green-600" />}
+            </button>
+            
+            <div className="w-[1px] h-5 bg-slate-200" />
+            
+            {/* 2nd: Theme Toggle */}
             <ThemeToggle />
+            
+            <div className="w-[1px] h-5 bg-slate-200" />
+
+            {/* 3rd: Account */}
+            <div className="flex items-center gap-2.5 pl-1">
+              <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-green-600 to-emerald-400 text-white font-extrabold flex items-center justify-center text-xs shadow-sm">
+                {displayName.charAt(0).toUpperCase()}
+              </div>
+              <div className="hidden lg:block text-left leading-none">
+                <h5 className="font-extrabold text-[11px] text-slate-850">{displayName}</h5>
+                <span className="text-[8px] font-black text-slate-450 uppercase tracking-widest block mt-0.5">Plus Member</span>
+              </div>
+            </div>
           </div>
         </header>
         <main className="p-4 md:p-8 flex-grow pb-24 md:pb-8 w-full">
