@@ -14,13 +14,19 @@ export interface AdminDashboardData {
 export interface AdminUserData {
   id: number;
   roll_number: string;
+  student_name: string;
+  full_name: string;
+  dob: string;
   email: string;
+  phone?: string;
   department: string;
   semester: number;
   status: string;
+  is_active: boolean;
   is_activated: boolean;
   resumes_count: number;
   last_activity: string;
+  last_login?: string | null;
 }
 
 export interface AdminResumeData {
@@ -188,6 +194,27 @@ export const adminService = {
 
   modifyUser: async (rollNumber: string, action: 'suspend' | 'activate' | 'delete' | 'reset_password'): Promise<void> => {
     await apiClient.post('/api/admin/users/modify', { roll_number: rollNumber, action });
+  },
+
+  createStudent: async (payload: Partial<AdminUserData>): Promise<void> => {
+    await apiClient.post('/api/admin/students', payload);
+  },
+
+  updateStudent: async (rollNumber: string, payload: Partial<AdminUserData>): Promise<void> => {
+    await apiClient.put(`/api/admin/students/${rollNumber}`, payload);
+  },
+
+  deleteStudent: async (rollNumber: string): Promise<void> => {
+    await apiClient.delete(`/api/admin/students/${rollNumber}`);
+  },
+
+  resetStudentPassword: async (rollNumber: string): Promise<void> => {
+    await apiClient.post(`/api/admin/students/${rollNumber}/reset-password`);
+  },
+
+  toggleStudentStatus: async (rollNumber: string): Promise<{ success: boolean; status: string }> => {
+    const res = await apiClient.post<{ success: boolean; status: string }>(`/api/admin/students/${rollNumber}/toggle-status`);
+    return res.data;
   },
 
   getResumes: async (): Promise<AdminResumeData[]> => {

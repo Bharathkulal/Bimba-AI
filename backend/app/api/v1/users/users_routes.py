@@ -104,6 +104,7 @@ class StudentCreateRequest(BaseModel):
     student_name: str
     email: str
     dob: str
+    phone: Optional[str] = ""
     department: str
     semester: int
     section: Optional[str] = "A"
@@ -114,6 +115,7 @@ class StudentUpdateRequest(BaseModel):
     student_name: str
     email: str
     dob: str
+    phone: Optional[str] = ""
     department: str
     semester: int
     section: Optional[str] = None
@@ -241,13 +243,19 @@ def get_admin_users(admin: AdminUser = Depends(get_current_admin), db: Any = Dep
         result.append({
             "id": s.id,
             "roll_number": s.roll_number,
+            "student_name": s.student_name,
+            "full_name": s.full_name or s.student_name,
+            "dob": s.dob,
             "email": s.email,
+            "phone": s.get("phone", "") or "",
             "department": s.department,
             "semester": s.semester,
             "status": s.status,
+            "is_active": s.is_active,
             "is_activated": s.account_activated,
             "resumes_count": resumes_count,
-            "last_activity": last_act.activity if last_act else "No activity yet"
+            "last_activity": last_act.activity if last_act else "No activity yet",
+            "last_login": s.last_login.isoformat() if s.last_login else None
         })
     return result
 
@@ -258,21 +266,133 @@ def modify_user(payload: UserModifyRequest, request: Request, admin: AdminUser =
         raise HTTPException(status_code=404, detail="Student not found.")
         
     if payload.action == "suspend":
-        db.students.update_one({"_id": student_doc["_id"]}, {"$set": {"status": "Suspended"}})
+        db.students.update_one({"_id": student_doc["_id"]}, {"$set": {"status": "Suspended", "is_active": False}})
     elif payload.action == "activate":
-        db.students.update_one({"_id": student_doc["_id"]}, {"$set": {"status": "Active"}})
+        db.students.update_one({"_id": student_doc["_id"]}, {"$set": {"status": "Active", "is_active": True}})
     elif payload.action == "delete":
         if admin.role not in ["super_admin", "admin"]:
             raise HTTPException(status_code=403, detail="Only admins/super_admins can delete students")
         db.students.delete_one({"_id": student_doc["_id"]})
     elif payload.action == "reset_password":
+        dob = student_doc.get("dob") or "15-08-2005"
         db.students.update_one(
             {"_id": student_doc["_id"]},
-            {"$set": {"password_hash": None, "account_activated": False}}
+            {"$set": {"password_hash": get_password_hash(dob), "account_activated": True, "otp_verified": True}}
         )
         
     log_audit(db, admin.username, f"Modify User: {payload.action.upper()}", "Success", affected_record=payload.roll_number, request=request)
     return {"success": True, "message": f"User action '{payload.action}' executed successfully."}
+
+@router.post("/students")
+def create_student(payload: StudentCreateRequest, request: Request, admin: AdminUser = Depends(require_role(["super_admin", "admin"])), db: Any = Depends(get_db)):
+    existing = db.students.find_one({"roll_number": payload.roll_number})
+    if existing:
+        raise HTTPException(status_code=400, detail="Student with this Roll Number already exists.")
+        
+    if payload.email:
+        existing_email = db.students.find_one({"email": payload.email})
+        if existing_email:
+            raise HTTPException(status_code=400, detail="Student with this Email already exists.")
+            
+    next_id = get_next_sequence("students")
+    
+    # Date of Birth becomes the initial password, hashed.
+    hashed_pass = get_password_hash(payload.dob)
+    
+    student_doc = {
+        "id": next_id,
+        "roll_number": payload.roll_number,
+        "student_name": payload.student_name,
+        "full_name": payload.student_name,
+        "email": payload.email,
+        "dob": payload.dob,
+        "phone": payload.phone or "",
+        "department": payload.department,
+        "semester": payload.semester,
+        "status": "Active",
+        "is_active": True,
+        "password_hash": hashed_pass,
+        "account_activated": True,
+        "otp_verified": True,
+        "created_at": datetime.utcnow(),
+        "updated_at": datetime.utcnow(),
+        "last_login": None
+    }
+    db.students.insert_one(student_doc)
+    log_audit(db, admin.username, "Create Student", "Success", affected_record=payload.roll_number, request=request)
+    return {"success": True, "message": "Student created successfully."}
+
+@router.put("/students/{roll_number}")
+def update_student(roll_number: str, payload: StudentUpdateRequest, request: Request, admin: AdminUser = Depends(require_role(["super_admin", "admin", "moderator"])), db: Any = Depends(get_db)):
+    student_doc = db.students.find_one({"roll_number": roll_number})
+    if not student_doc:
+        raise HTTPException(status_code=404, detail="Student not found.")
+        
+    if payload.email and payload.email != student_doc.get("email"):
+        existing_email = db.students.find_one({"email": payload.email})
+        if existing_email:
+            raise HTTPException(status_code=400, detail="Student with this Email already exists.")
+            
+    update_data = {
+        "student_name": payload.student_name,
+        "full_name": payload.student_name,
+        "email": payload.email,
+        "dob": payload.dob,
+        "phone": payload.phone or "",
+        "department": payload.department,
+        "semester": payload.semester,
+        "status": payload.status,
+        "is_active": payload.status == "Active",
+        "updated_at": datetime.utcnow()
+    }
+    
+    db.students.update_one({"_id": student_doc["_id"]}, {"$set": update_data})
+    log_audit(db, admin.username, "Update Student", "Success", affected_record=roll_number, request=request)
+    return {"success": True, "message": "Student updated successfully."}
+
+@router.delete("/students/{roll_number}")
+def delete_student_by_roll(roll_number: str, request: Request, admin: AdminUser = Depends(require_role(["super_admin", "admin"])), db: Any = Depends(get_db)):
+    student_doc = db.students.find_one({"roll_number": roll_number})
+    if not student_doc:
+        raise HTTPException(status_code=404, detail="Student not found.")
+        
+    db.students.delete_one({"_id": student_doc["_id"]})
+    log_audit(db, admin.username, "Delete Student", "Success", affected_record=roll_number, request=request)
+    return {"success": True, "message": "Student deleted successfully."}
+
+@router.post("/students/{roll_number}/reset-password")
+def reset_student_password(roll_number: str, request: Request, admin: AdminUser = Depends(require_role(["super_admin", "admin", "moderator"])), db: Any = Depends(get_db)):
+    student_doc = db.students.find_one({"roll_number": roll_number})
+    if not student_doc:
+        raise HTTPException(status_code=404, detail="Student not found.")
+        
+    dob = student_doc.get("dob")
+    if not dob:
+        raise HTTPException(status_code=400, detail="Student Date of Birth is missing. Cannot reset password.")
+        
+    db.students.update_one(
+        {"_id": student_doc["_id"]},
+        {"$set": {"password_hash": get_password_hash(dob)}}
+    )
+    log_audit(db, admin.username, "Reset Student Password", "Success", affected_record=roll_number, request=request)
+    return {"success": True, "message": "Student password reset to Date of Birth successfully."}
+
+@router.post("/students/{roll_number}/toggle-status")
+def toggle_student_status(roll_number: str, request: Request, admin: AdminUser = Depends(require_role(["super_admin", "admin", "moderator"])), db: Any = Depends(get_db)):
+    student_doc = db.students.find_one({"roll_number": roll_number})
+    if not student_doc:
+        raise HTTPException(status_code=404, detail="Student not found.")
+        
+    current_status = student_doc.get("status", "Active")
+    new_status = "Suspended" if current_status == "Active" else "Active"
+    is_active = new_status == "Active"
+    
+    db.students.update_one(
+        {"_id": student_doc["_id"]},
+        {"$set": {"status": new_status, "is_active": is_active}}
+    )
+    log_audit(db, admin.username, f"Toggle Student Status to {new_status}", "Success", affected_record=roll_number, request=request)
+    return {"success": True, "status": new_status}
 
 @router.get("/resumes")
 def get_admin_resumes(admin: AdminUser = Depends(get_current_admin), db: Any = Depends(get_db)):

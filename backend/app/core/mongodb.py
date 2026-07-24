@@ -62,10 +62,15 @@ class MongoModel(dict):
         if name == "achievements_list":
             return self.get("achievements", "")
             
+        if name == "full_name":
+            return self.get("student_name") or self.get("full_name")
+            
         if name == "name":
             return self.get("provider_name")
-            
+
         if name == "is_active":
+            if "is_active" in self:
+                return self["is_active"]
             return self.get("is_enabled", True)
             
         if name == "status":

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -8,7 +8,7 @@ import { Input } from '../components/Input';
 import { Button } from '../components/Button';
 import { useUserStore } from '../store/userStore';
 import { apiClient } from '../services/api';
-import { CheckCircle, ShieldAlert, Sparkles, KeyRound, Mail, ArrowRight, Copy, Check, ArrowLeft } from 'lucide-react';
+import { CheckCircle, ShieldAlert, Sparkles, KeyRound, Mail, ArrowRight, Copy, Check, ArrowLeft, HelpCircle } from 'lucide-react';
 
 // Validation Schemas
 const loginSchema = z.object({
@@ -16,22 +16,17 @@ const loginSchema = z.object({
   password: z.string().min(6, { message: 'Password must be at least 6 characters' }),
 });
 
-const activateSchema = z.object({
+const forgotSchema = z.object({
   roll_number: z.string().min(3, { message: 'Enter a valid Roll Number' }),
-  date_of_birth: z.string().regex(/^\d{2}-\d{2}-\d{4}$/, { message: 'Date of Birth must be in format DD-MM-YYYY' }),
 });
 
 const otpSchema = z.object({
   otp_code: z.string().length(6, { message: 'OTP must be exactly 6 digits' }),
 });
 
-const passwordSchema = z.object({
+const resetPasswordSchema = z.object({
   password: z.string()
-    .min(8, { message: 'Password must be at least 8 characters' })
-    .regex(/[A-Z]/, { message: 'Must contain at least one uppercase letter' })
-    .regex(/[a-z]/, { message: 'Must contain at least one lowercase letter' })
-    .regex(/[0-9]/, { message: 'Must contain at least one number' })
-    .regex(/[^A-Za-z0-9]/, { message: 'Must contain at least one special character' }),
+    .min(8, { message: 'Password must be at least 8 characters' }),
   confirm_password: z.string(),
 }).refine((data) => data.password === data.confirm_password, {
   message: "Passwords don't match",
@@ -39,29 +34,26 @@ const passwordSchema = z.object({
 });
 
 type LoginSchema = z.infer<typeof loginSchema>;
-type ActivateSchema = z.infer<typeof activateSchema>;
+type ForgotSchema = z.infer<typeof forgotSchema>;
 type OtpSchema = z.infer<typeof otpSchema>;
-type PasswordSchema = z.infer<typeof passwordSchema>;
+type ResetPasswordSchema = z.infer<typeof resetPasswordSchema>;
 
 export const Login: React.FC = () => {
   const setUser = useUserStore((state) => state.setUser);
   const navigate = useNavigate();
-  const [searchParams] = useSearchParams();
-  const initialMode = searchParams.get('mode') === 'activate' ? 'activate' : 'login';
 
-  // Mode: 'login' | 'activate' | 'forgot_password'
-  const [mode, setMode] = useState<'login' | 'activate' | 'forgot_password'>(initialMode);
+  // Mode: 'login' | 'forgot_password'
+  const [mode, setMode] = useState<'login' | 'forgot_password'>('login');
   
-  // Activation / Forgot Password Wizard Step: 1 = Verify, 2 = OTP, 3 = Password, 4 = Success
+  // Forgot Password Wizard Step: 1 = Roll Number, 2 = OTP, 3 = Password, 4 = Success
   const [step, setStep] = useState(1);
   const [rollNumber, setRollNumber] = useState('');
   const [studentName, setStudentName] = useState('');
   const [maskedEmail, setMaskedEmail] = useState('');
   const [devOtp, setDevOtp] = useState<string | null>(null);
 
-  // Copy states for test cards
+  // Copy states for testing credentials
   const [copiedRoll, setCopiedRoll] = useState(false);
-  const [copiedDob, setCopiedDob] = useState(false);
   const [copiedPass, setCopiedPass] = useState(false);
 
   const [apiError, setApiError] = useState<string | null>(null);
@@ -69,9 +61,9 @@ export const Login: React.FC = () => {
 
   // Forms
   const loginForm = useForm<LoginSchema>({ resolver: zodResolver(loginSchema) });
-  const activateForm = useForm<ActivateSchema>({ resolver: zodResolver(activateSchema) });
+  const forgotForm = useForm<ForgotSchema>({ resolver: zodResolver(forgotSchema) });
   const otpForm = useForm<OtpSchema>({ resolver: zodResolver(otpSchema) });
-  const passwordForm = useForm<PasswordSchema>({ resolver: zodResolver(passwordSchema) });
+  const resetForm = useForm<ResetPasswordSchema>({ resolver: zodResolver(resetPasswordSchema) });
 
   const isDev = import.meta.env.DEV;
 
@@ -95,13 +87,11 @@ export const Login: React.FC = () => {
     }
   };
 
-  const handleVerifyActivationOrForgot = async (data: ActivateSchema) => {
+  const handleVerifyForgot = async (data: ForgotSchema) => {
     setIsLoading(true);
     setApiError(null);
     try {
-      const endpoint = mode === 'forgot_password' ? '/api/auth/forgot-password/verify' : '/api/auth/activation/verify';
-      const response = await apiClient.post(endpoint, data);
-      
+      const response = await apiClient.post('/api/auth/forgot-password', data);
       setRollNumber(data.roll_number);
       setStudentName(response.data.student_name);
       setMaskedEmail(response.data.email);
@@ -110,7 +100,7 @@ export const Login: React.FC = () => {
       }
       setStep(2);
     } catch (err: any) {
-      setApiError(err.response?.data?.detail || 'Invalid Roll Number or Date of Birth.');
+      setApiError(err.response?.data?.detail || 'Roll Number not found or inactive.');
     } finally {
       setIsLoading(false);
     }
@@ -120,11 +110,10 @@ export const Login: React.FC = () => {
     setIsLoading(true);
     setApiError(null);
     try {
-      const endpoint = mode === 'forgot_password' ? '/api/auth/forgot-password/verify-otp' : '/api/auth/activation/verify-otp';
-      await apiClient.post(endpoint, {
+      await apiClient.post('/api/auth/forgot-password/verify-otp', {
         roll_number: rollNumber,
         otp_code: data.otp_code,
-        purpose: mode === 'forgot_password' ? 'forgot_password' : 'activation'
+        purpose: 'forgot_password'
       });
       setStep(3);
     } catch (err: any) {
@@ -134,26 +123,17 @@ export const Login: React.FC = () => {
     }
   };
 
-  const handleSetupPassword = async (data: PasswordSchema) => {
+  const handleResetPassword = async (data: ResetPasswordSchema) => {
     setIsLoading(true);
     setApiError(null);
     try {
-      const endpoint = mode === 'forgot_password' ? '/api/auth/forgot-password/reset' : '/api/auth/activation/setup-password';
-      const response = await apiClient.post(endpoint, {
+      await apiClient.post('/api/auth/forgot-password/reset', {
         roll_number: rollNumber,
         password: data.password
       });
-      
-      if (mode === 'activate') {
-        // Automatically log in for activation success
-        const { access_token, student } = response.data;
-        setUser(student, access_token);
-        navigate('/dashboard');
-      } else {
-        setStep(4);
-      }
+      setStep(4);
     } catch (err: any) {
-      setApiError(err.response?.data?.detail || 'Failed to setup password.');
+      setApiError(err.response?.data?.detail || 'Failed to reset password.');
     } finally {
       setIsLoading(false);
     }
@@ -166,7 +146,7 @@ export const Login: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center px-6 py-12 relative overflow-hidden font-sans select-none">
+    <div className="min-h-screen flex flex-col items-center justify-center px-6 py-12 relative overflow-hidden font-sans select-none bg-slate-50">
       {/* Decorative blurred background shapes */}
       <div className="absolute top-1/4 left-1/4 w-[400px] h-[400px] rounded-full bg-blue-500/5 blur-[120px] pointer-events-none" />
       <div className="absolute bottom-1/4 right-1/4 w-[450px] h-[450px] rounded-full bg-indigo-500/5 blur-[120px] pointer-events-none" />
@@ -194,7 +174,7 @@ export const Login: React.FC = () => {
 
           {/* Error Alert */}
           {apiError && (
-            <div className="mb-6 p-4 rounded-xl bg-red-50 border border-red-100 text-xs font-semibold text-red-650 flex items-center gap-2.5">
+            <div className="mb-6 p-4 rounded-xl bg-red-50 border border-red-100 text-xs font-semibold text-red-600 flex items-center gap-2.5">
               <ShieldAlert size={16} className="shrink-0 text-red-500" />
               <span>{apiError}</span>
             </div>
@@ -203,6 +183,11 @@ export const Login: React.FC = () => {
           {/* CARD 1: LOGIN */}
           {mode === 'login' && (
             <div>
+              <div className="text-center mb-6">
+                <h2 className="text-xl font-bold text-slate-900">Welcome Back</h2>
+                <p className="text-xs text-slate-500 mt-1">Access your academic placements & optimized resumes</p>
+              </div>
+
               <form onSubmit={loginForm.handleSubmit(handleLogin)} className="flex flex-col gap-5">
                 <Input
                   id="roll_number"
@@ -222,7 +207,14 @@ export const Login: React.FC = () => {
                     error={loginForm.formState.errors.password?.message}
                     {...loginForm.register('password')}
                   />
-                  <div className="flex justify-end mt-1.5">
+                  <div className="flex justify-between items-center mt-2.5">
+                    <label className="flex items-center gap-2 text-xs font-semibold text-slate-500 cursor-pointer select-none">
+                      <input
+                        type="checkbox"
+                        className="w-4 h-4 rounded text-blue-600 border-slate-300 focus:ring-blue-500"
+                      />
+                      <span>Remember Me</span>
+                    </label>
                     <button
                       type="button"
                       onClick={() => setMode('forgot_password')}
@@ -238,20 +230,14 @@ export const Login: React.FC = () => {
                 </Button>
               </form>
 
-              <div className="text-center mt-8 pt-6 border-t border-slate-100 text-xs text-slate-500">
-                First time using Bimba AI?{' '}
-                <button
-                  onClick={() => setMode('activate')}
-                  className="text-blue-600 font-bold hover:text-blue-700 transition-colors cursor-pointer"
-                >
-                  Activate Account
-                </button>
+              <div className="text-center mt-8 pt-6 border-t border-slate-100 text-xs text-slate-400">
+                To activate or manage accounts, contact the Placement Administrator.
               </div>
             </div>
           )}
 
-          {/* CARD 2: ACTIVATE ACCOUNT / FORGOT PASSWORD */}
-          {(mode === 'activate' || mode === 'forgot_password') && (
+          {/* CARD 2: FORGOT PASSWORD WIZARD */}
+          {mode === 'forgot_password' && (
             <div>
               {/* Step Indicators */}
               {step < 4 && (
@@ -275,33 +261,20 @@ export const Login: React.FC = () => {
               {step === 1 && (
                 <div>
                   <div className="text-center mb-6">
-                    <h2 className="text-xl font-bold text-slate-900">
-                      {mode === 'forgot_password' ? 'Reset Password' : 'Activate Account'}
-                    </h2>
+                    <h2 className="text-xl font-bold text-slate-900">Reset Password</h2>
                     <p className="text-xs text-slate-500 mt-1.5 leading-relaxed">
-                      {mode === 'forgot_password'
-                        ? 'Verify your credentials to reset password'
-                        : 'Enter details as provided by college placement cell'}
+                      Enter your Roll Number to trigger verification OTP
                     </p>
                   </div>
 
-                  <form onSubmit={activateForm.handleSubmit(handleVerifyActivationOrForgot)} className="flex flex-col gap-5">
+                  <form onSubmit={forgotForm.handleSubmit(handleVerifyForgot)} className="flex flex-col gap-5">
                     <Input
                       id="roll_number"
                       label="Roll Number"
                       type="text"
                       placeholder="e.g. BCA24001"
-                      error={activateForm.formState.errors.roll_number?.message}
-                      {...activateForm.register('roll_number')}
-                    />
-                    <Input
-                      id="date_of_birth"
-                      label="Date of Birth"
-                      type="text"
-                      placeholder="DD-MM-YYYY"
-                      helperText="Enter in format Day-Month-Year (e.g. 15-08-2005)"
-                      error={activateForm.formState.errors.date_of_birth?.message}
-                      {...activateForm.register('date_of_birth')}
+                      error={forgotForm.formState.errors.roll_number?.message}
+                      {...forgotForm.register('roll_number')}
                     />
 
                     <div className="flex gap-3.5 mt-2">
@@ -376,40 +349,37 @@ export const Login: React.FC = () => {
                     <div className="w-12 h-12 bg-blue-50 text-blue-600 border border-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
                       <KeyRound size={22} />
                     </div>
-                    <h2 className="text-xl font-bold text-slate-900">Create Password</h2>
+                    <h2 className="text-xl font-bold text-slate-900">Create New Password</h2>
                     <p className="text-xs text-slate-550 mt-1.5 leading-relaxed">
-                      Enter a secure password to access your placement dashboard.
+                      Enter a new secure password to access your student profile.
                     </p>
                   </div>
 
-                  <form onSubmit={passwordForm.handleSubmit(handleSetupPassword)} className="flex flex-col gap-4">
+                  <form onSubmit={resetForm.handleSubmit(handleResetPassword)} className="flex flex-col gap-4">
                     <Input
                       id="password"
                       label="New Password"
                       type="password"
                       placeholder="••••••••"
-                      error={passwordForm.formState.errors.password?.message}
-                      {...passwordForm.register('password')}
+                      error={resetForm.formState.errors.password?.message}
+                      {...resetForm.register('password')}
                     />
                     <Input
                       id="confirm_password"
                       label="Confirm Password"
                       type="password"
                       placeholder="••••••••"
-                      error={passwordForm.formState.errors.confirm_password?.message}
-                      {...passwordForm.register('confirm_password')}
+                      error={resetForm.formState.errors.confirm_password?.message}
+                      {...resetForm.register('confirm_password')}
                     />
 
-                    {/* Password criteria UI helper */}
                     <div className="text-[10px] text-slate-500 flex flex-col gap-1 mt-1 border border-slate-100 p-3 rounded-xl bg-slate-50">
                       <span className="font-bold text-slate-700 mb-1">Password Requirements:</span>
                       <span>• Minimum 8 characters</span>
-                      <span>• One uppercase & one lowercase letter</span>
-                      <span>• One number & one special character</span>
                     </div>
 
                     <Button type="submit" className="w-full mt-2 bg-blue-600 hover:bg-blue-700 text-white font-bold" isLoading={isLoading}>
-                      {mode === 'forgot_password' ? 'Reset Password' : 'Activate & Enter Portal'}
+                      Reset Password
                     </Button>
                   </form>
                 </div>
@@ -422,12 +392,12 @@ export const Login: React.FC = () => {
                     <CheckCircle size={32} />
                   </div>
                   <div>
-                    <h2 className="text-2xl font-extrabold text-slate-950">Password Reset Success!</h2>
+                    <h2 className="text-2xl font-extrabold text-slate-950">Success!</h2>
                     <p className="text-xs text-slate-500 mt-2 leading-relaxed max-w-xs mx-auto">
-                      Your student password has been successfully updated. You can now login with your new password.
+                      Your password has been successfully updated.
                     </p>
                   </div>
-                  <Button onClick={() => setMode('login')} className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold gap-2 mt-4">
+                  <Button onClick={() => { setMode('login'); setStep(1); }} className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold gap-2 mt-4">
                     Return to Login <ArrowRight size={16} />
                   </Button>
                 </div>
@@ -437,8 +407,8 @@ export const Login: React.FC = () => {
 
         </Card>
 
-        {/* Development Mode Testing Cards */}
-        {isDev && (
+        {/* Development Mode Testing Credentials Card */}
+        {true && (
           <div className="mt-8 flex flex-col gap-4">
             <div className="bg-white border border-slate-200/80 rounded-2xl p-5 text-slate-600 shadow-sm">
               <div className="flex items-center justify-between mb-3 border-b border-slate-100 pb-2">
@@ -462,19 +432,9 @@ export const Login: React.FC = () => {
                   </button>
                 </div>
                 <div className="flex items-center justify-between">
-                  <span>Date of Birth: <strong>15-08-2005</strong></span>
+                  <span>Initial Password (DOB): <strong>15-08-2005</strong></span>
                   <button
-                    onClick={() => copyToClipboard('15-08-2005', setCopiedDob)}
-                    className="p-1 rounded bg-slate-50 border border-slate-250 text-slate-500 hover:text-slate-800 transition-colors cursor-pointer flex items-center gap-1 text-[10px]"
-                  >
-                    {copiedDob ? <Check size={12} className="text-emerald-600" /> : <Copy size={12} />}
-                    <span>{copiedDob ? 'Copied' : 'Copy'}</span>
-                  </button>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span>Pass (after activation): <strong>Test@12345</strong></span>
-                  <button
-                    onClick={() => copyToClipboard('Test@12345', setCopiedPass)}
+                    onClick={() => copyToClipboard('15-08-2005', setCopiedPass)}
                     className="p-1 rounded bg-slate-50 border border-slate-250 text-slate-500 hover:text-slate-800 transition-colors cursor-pointer flex items-center gap-1 text-[10px]"
                   >
                     {copiedPass ? <Check size={12} className="text-emerald-600" /> : <Copy size={12} />}
@@ -482,11 +442,9 @@ export const Login: React.FC = () => {
                   </button>
                 </div>
                 <div className="mt-2.5 pt-2.5 border-t border-slate-100 text-[10px] text-slate-400 leading-relaxed">
-                  <strong>Activation Flow Guide:</strong><br />
-                  1. Click "Activate Account" link.<br />
-                  2. Use Roll and DOB above to fetch masked email.<br />
-                  3. Enter the Dev Mode OTP displayed in the card.<br />
-                  4. Setup password (e.g. <code>Test@12345</code>) to activate.
+                  <strong>Student Login Flow:</strong><br />
+                  1. Log in immediately with Roll: <code>BCA24001</code> and Pass: <code>15-08-2005</code>.<br />
+                  2. No forced setup or activation. Direct redirection to dashboard.
                 </div>
               </div>
             </div>

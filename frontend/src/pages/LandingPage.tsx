@@ -114,7 +114,7 @@ export const LandingPage: React.FC = () => {
             </p>
 
             <div className="flex flex-wrap items-center gap-4 mt-2">
-              <Link to="/activate">
+              <Link to="/login">
                 <Button variant="primary" size="lg" className="shadow-lg shadow-emerald-500/20 font-semibold gap-2">
                   Create AI Resume Now <ArrowRight size={18} />
                 </Button>
@@ -313,7 +313,7 @@ export const LandingPage: React.FC = () => {
             </div>
 
             <div className="mt-10">
-              <Link to="/activate">
+              <Link to="/login">
                 <Button variant="primary" size="lg" className="shadow-lg shadow-blue-500/20 font-semibold">
                   Build My Resume with AI
                 </Button>
@@ -475,7 +475,7 @@ export const LandingPage: React.FC = () => {
           </motion.div>
 
           <motion.div variants={childVariants} className="mt-12 flex justify-center">
-            <Link to="/activate">
+            <Link to="/login">
               <Button variant="primary" size="lg" className="shadow-lg shadow-blue-500/20 font-semibold">
                 Create My AI Resume
               </Button>

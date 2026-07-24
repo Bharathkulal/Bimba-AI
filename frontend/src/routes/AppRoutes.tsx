@@ -11,7 +11,6 @@ import { AdminLayout } from '../layouts/AdminLayout';
 // Pages
 import { LandingPage } from '../pages/LandingPage';
 import { Login } from '../pages/Login';
-import { Activate } from '../pages/Activate';
 import { Dashboard } from '../pages/Dashboard';
 import { ResumeBuilder } from '../pages/ResumeBuilder';
 import { Profile } from '../pages/Profile';
@@ -117,7 +116,6 @@ export const AppRoutes: React.FC = () => {
           <Route element={<DefaultLayout />}>
             <Route path="/" element={<LandingPage />} />
             <Route path="/login" element={<Login />} />
-            <Route path="/activate" element={<Activate />} />
           </Route>
         </Route>
 
