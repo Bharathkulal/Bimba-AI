@@ -7,16 +7,8 @@ class Settings(BaseSettings):
     API_V1_STR: str = "/api"
     
     # Database
-    POSTGRES_SERVER: str = os.getenv("POSTGRES_SERVER", "localhost")
-    POSTGRES_USER: str = os.getenv("POSTGRES_USER", "postgres")
-    POSTGRES_PASSWORD: str = os.getenv("POSTGRES_PASSWORD", "postgres")
-    POSTGRES_DB: str = os.getenv("POSTGRES_DB", "bimba_ai")
-    
-    # We will compute the DB URL
-    DATABASE_URL: str = os.getenv(
-        "DATABASE_URL", 
-        f"postgresql://{POSTGRES_USER}:{POSTGRES_PASSWORD}@{POSTGRES_SERVER}/{POSTGRES_DB}"
-    )
+    MONGODB_URI: str = os.getenv("MONGODB_URI", "mongodb://localhost:27017")
+    DATABASE_NAME: str = os.getenv("DATABASE_NAME", "bimba_ai")
 
     # Security
     SECRET_KEY: str = os.getenv("SECRET_KEY", "super_secret_placement_system_key")

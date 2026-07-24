@@ -2,13 +2,11 @@ import os
 from bson import ObjectId
 from pymongo import MongoClient, ASCENDING
 
-# Retrieve MongoDB credentials
-MONGODB_URI = os.getenv("MONGODB_URI", "mongodb://localhost:27017")
-DATABASE_NAME = os.getenv("DATABASE_NAME", "bimba_ai")
+from app.core.config import settings
 
 # Initialize client
-client = MongoClient(MONGODB_URI)
-db = client[DATABASE_NAME]
+client = MongoClient(settings.MONGODB_URI)
+db = client[settings.DATABASE_NAME]
 
 class MongoModel(dict):
     """
