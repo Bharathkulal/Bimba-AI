@@ -2,7 +2,7 @@ import React from 'react';
 import { motion } from 'framer-motion';
 
 interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
-  variant?: 'primary' | 'secondary' | 'accent' | 'outline' | 'ghost';
+  variant?: 'primary' | 'secondary' | 'outline' | 'ghost' | 'danger';
   size?: 'sm' | 'md' | 'lg';
   isLoading?: boolean;
 }
@@ -16,14 +16,14 @@ export const Button: React.FC<ButtonProps> = ({
   disabled,
   ...props
 }) => {
-  const baseStyles = 'inline-flex items-center justify-center font-medium rounded-xl transition-smooth focus:outline-none focus:ring-2 focus:ring-offset-2 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed';
+  const baseStyles = 'inline-flex items-center justify-center font-semibold tracking-wide rounded-xl transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed';
   
   const variants = {
-    primary: 'bg-emerald-500 text-white hover:bg-emerald-600 focus:ring-emerald-500 shadow-sm shadow-emerald-500/10',
-    secondary: 'bg-slate-100 text-slate-900 hover:bg-slate-200 focus:ring-slate-300',
-    accent: 'bg-emerald-100 text-emerald-900 hover:bg-emerald-200 focus:ring-emerald-300',
-    outline: 'border border-slate-250 bg-transparent text-slate-800 hover:bg-slate-50 hover:border-emerald-500 focus:ring-emerald-500',
-    ghost: 'bg-transparent text-slate-650 hover:bg-slate-50 hover:text-slate-900 focus:ring-emerald-500',
+    primary: 'bg-gradient-to-r from-emerald-600 to-emerald-500 text-white hover:from-emerald-700 hover:to-emerald-600 focus:ring-emerald-500 shadow-sm shadow-emerald-500/10 hover:shadow-lg hover:shadow-emerald-500/20',
+    secondary: 'bg-white border border-slate-200 text-slate-800 hover:bg-slate-50 hover:border-slate-300 focus:ring-slate-400 shadow-sm',
+    outline: 'border border-slate-200 bg-transparent text-slate-800 hover:bg-slate-50 hover:border-emerald-500 focus:ring-emerald-500',
+    ghost: 'bg-transparent text-slate-600 hover:bg-slate-50 hover:text-slate-900 focus:ring-emerald-500',
+    danger: 'bg-rose-600 text-white hover:bg-rose-700 focus:ring-rose-500 shadow-sm shadow-rose-500/10',
   };
 
   const sizes = {
@@ -34,9 +34,9 @@ export const Button: React.FC<ButtonProps> = ({
 
   return (
     <motion.button
-      whileHover={{ scale: disabled || isLoading ? 1 : 1.02 }}
-      whileTap={{ scale: disabled || isLoading ? 1 : 0.98 }}
-      transition={{ type: 'spring', stiffness: 500, damping: 25 }}
+      whileHover={{ scale: disabled || isLoading ? 1 : 1.015 }}
+      whileTap={{ scale: disabled || isLoading ? 1 : 0.985 }}
+      transition={{ type: 'spring', stiffness: 400, damping: 20 }}
       className={`${baseStyles} ${variants[variant]} ${sizes[size]} ${className}`}
       disabled={disabled || isLoading}
       {...(props as any)}
@@ -55,3 +55,5 @@ export const Button: React.FC<ButtonProps> = ({
     </motion.button>
   );
 };
+
+export default Button;

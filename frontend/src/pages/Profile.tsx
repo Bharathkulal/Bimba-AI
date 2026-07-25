@@ -72,13 +72,11 @@ export const Profile: React.FC = () => {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    // Validate size (max 2MB)
     if (file.size > 2 * 1024 * 1024) {
       setMessage({ text: 'File size must be under 2MB', type: 'error' });
       return;
     }
 
-    // Validate format
     if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type)) {
       setMessage({ text: 'Supported formats: JPEG, PNG, WEBP', type: 'error' });
       return;
@@ -192,27 +190,27 @@ export const Profile: React.FC = () => {
   const completeness = getCompletionPercentage();
 
   return (
-    <div className="flex flex-col gap-8 pb-12">
+    <div className="flex flex-col gap-6 pb-12 w-full max-w-7xl mx-auto text-left">
       <PageHeader
         title="Student Profile"
         description="Manage your identity settings, contact info, photo, and passwords."
       />
 
       {message && (
-        <div className={`p-4.5 rounded-2xl border text-xs font-semibold ${
+        <div className={`p-4 rounded-xl border text-xs font-semibold ${
           message.type === 'success' 
-            ? 'bg-emerald-50 border-emerald-250 text-emerald-700 dark:bg-emerald-950/20 dark:border-emerald-900/50' 
-            : 'bg-rose-50 border-rose-250 text-rose-700 dark:bg-rose-950/20 dark:border-rose-900/50'
+            ? 'bg-emerald-50 border-emerald-200 text-emerald-800' 
+            : 'bg-rose-50 border-rose-200 text-rose-800'
         }`}>
           {message.text}
         </div>
       )}
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
         
         {/* LEFT COLUMN: AVATAR & COMPLETENESS */}
         <div className="flex flex-col gap-6 lg:col-span-1">
-          <Card className="flex flex-col items-center p-8 text-center bg-white border border-slate-200/60 rounded-3xl shadow-sm">
+          <Card className="flex flex-col items-center p-6 text-center hover:border-emerald-300">
             
             {/* Avatar block */}
             <div className="relative group">
@@ -220,40 +218,40 @@ export const Profile: React.FC = () => {
                 <img 
                   src={photo} 
                   alt="Profile" 
-                  className="w-28 h-28 rounded-full object-cover border-2 border-blue-600/20 shadow-md"
+                  className="w-28 h-28 rounded-full object-cover border border-slate-200 shadow-md"
                 />
               ) : (
-                <div className="w-28 h-28 rounded-full bg-gradient-to-tr from-blue-600 to-indigo-500 flex items-center justify-center text-white text-4xl font-extrabold shadow-md">
+                <div className="w-28 h-28 rounded-full bg-gradient-to-tr from-emerald-600 to-emerald-400 flex items-center justify-center text-white text-4xl font-extrabold shadow-md">
                   {name.charAt(0).toUpperCase() || 'S'}
                 </div>
               )}
 
               {/* Photo Options Overlay */}
               <div className="absolute inset-0 bg-slate-900/60 rounded-full opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-3">
-                <label className="cursor-pointer text-white hover:text-blue-200 p-1">
+                <label className="cursor-pointer text-white hover:text-emerald-250 p-1">
                   <Camera size={18} />
                   <input type="file" accept="image/*" onChange={handlePhotoUpload} className="hidden" />
                 </label>
                 {photo && (
-                  <button onClick={handleDeletePhoto} className="text-white hover:text-red-400 p-1">
+                  <button onClick={handleDeletePhoto} className="text-white hover:text-rose-450 p-1">
                     <Trash2 size={18} />
                   </button>
                 )}
               </div>
             </div>
 
-            <h3 className="text-base font-black text-slate-800 mt-4">{name || 'Enter Full Name'}</h3>
-            <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider mt-1">{user?.personal_email}</p>
+            <h3 className="text-base font-extrabold text-slate-800 mt-4">{name || 'Enter Full Name'}</h3>
+            <p className="text-[10px] text-slate-450 font-bold uppercase tracking-wider mt-1">{user?.personal_email}</p>
 
             {/* Profile Completion Meter */}
             <div className="w-full border-t border-slate-100 mt-6 pt-6 flex flex-col gap-2.5">
-              <div className="flex justify-between items-center text-[10px] font-black text-slate-400 uppercase tracking-widest">
+              <div className="flex justify-between items-center text-[10px] font-bold text-slate-400 uppercase tracking-widest">
                 <span>Profile Completion</span>
-                <span className="text-blue-600">{completeness}%</span>
+                <span className="text-emerald-600 font-extrabold">{completeness}%</span>
               </div>
-              <div className="w-full bg-slate-100 rounded-full h-2">
+              <div className="w-full bg-slate-100 rounded-full h-1.5 overflow-hidden">
                 <div 
-                  className="bg-blue-600 h-2 rounded-full transition-all duration-300"
+                  className="bg-emerald-600 h-full rounded-full transition-all duration-300"
                   style={{ width: `${completeness}%` }}
                 />
               </div>
@@ -261,10 +259,10 @@ export const Profile: React.FC = () => {
           </Card>
 
           {/* Change Password Card */}
-          <Card className="p-6 bg-white border border-slate-200/60 rounded-3xl shadow-sm flex flex-col gap-4">
+          <Card className="p-6 flex flex-col gap-4 hover:border-emerald-300">
             <div className="flex items-center gap-2 border-b border-slate-100 pb-3">
-              <Lock size={16} className="text-blue-600" />
-              <h4 className="text-sm font-extrabold text-slate-800">Change Password</h4>
+              <Lock size={16} className="text-slate-700" />
+              <h4 className="text-xs font-bold text-slate-800 uppercase tracking-wider">Change Password</h4>
             </div>
 
             <form onSubmit={handleChangePassword} className="flex flex-col gap-4">
@@ -290,7 +288,7 @@ export const Profile: React.FC = () => {
                 required 
               />
               
-              <Button type="submit" variant="outline" size="sm" className="font-bold border-slate-250 hover:bg-slate-50 mt-1" disabled={loading}>
+              <Button type="submit" variant="secondary" size="sm" className="font-bold border-slate-200 mt-1" disabled={loading}>
                 Update Password
               </Button>
             </form>
@@ -299,10 +297,10 @@ export const Profile: React.FC = () => {
 
         {/* RIGHT COLUMN: CORE PROFILE INFO EDIT */}
         <div className="lg:col-span-2 flex flex-col gap-6">
-          <Card className="p-6.5 bg-white border border-slate-200/60 rounded-3xl shadow-sm flex flex-col gap-6">
+          <Card className="p-6 flex flex-col gap-6 hover:border-emerald-300">
             <div className="flex items-center gap-2 border-b border-slate-100 pb-3">
-              <User size={16} className="text-blue-600" />
-              <h4 className="text-sm font-extrabold text-slate-800">Personal & Academic Details</h4>
+              <User size={16} className="text-slate-700" />
+              <h4 className="text-xs font-bold text-slate-800 uppercase tracking-wider">Personal & Academic Details</h4>
             </div>
 
             <form onSubmit={handleSaveProfile} className="flex flex-col gap-5">
@@ -313,19 +311,19 @@ export const Profile: React.FC = () => {
 
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div>
-                  <label className="text-[10px] font-black text-slate-400 uppercase block mb-1">Gender</label>
+                  <label className="text-[10px] font-bold text-slate-400 uppercase block mb-1">Gender</label>
                   <select 
                     value={gender} 
                     onChange={(e) => setGender(e.target.value)}
-                    className="w-full pl-3 pr-4 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-xs font-semibold text-slate-700"
+                    className="w-full px-3 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-xs font-semibold text-slate-700 focus:outline-none focus:border-emerald-500"
                   >
                     <option value="Male">Male</option>
                     <option value="Female">Female</option>
                     <option value="Other">Other</option>
                   </select>
                 </div>
-                <Input label="Roll Number (Read-only)" value={user?.roll_number || ''} disabled />
-                <Input label="Email (Read-only)" value={user?.personal_email || ''} disabled />
+                <Input label="Roll Number" value={user?.roll_number || ''} disabled />
+                <Input label="Email" value={user?.personal_email || ''} disabled />
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -334,29 +332,29 @@ export const Profile: React.FC = () => {
               </div>
 
               <div>
-                <label className="text-[10px] font-black text-slate-400 uppercase block mb-1">Bio / About Me</label>
+                <label className="text-[10px] font-bold text-slate-400 uppercase block mb-1">Bio / About Me</label>
                 <textarea 
                   value={bio} 
                   onChange={(e) => setBio(e.target.value)} 
                   rows={3} 
                   placeholder="Tell recruiters about yourself..."
-                  className="w-full p-4 rounded-xl bg-slate-50 border border-slate-200 text-xs text-slate-700 focus:outline-none"
+                  className="w-full p-3.5 rounded-xl bg-slate-50 border border-slate-200 text-xs text-slate-700 focus:outline-none focus:border-emerald-500 font-medium"
                 />
               </div>
 
               <div>
-                <label className="text-[10px] font-black text-slate-400 uppercase block mb-1">Permanent / Present Address</label>
+                <label className="text-[10px] font-bold text-slate-400 uppercase block mb-1">Permanent / Present Address</label>
                 <textarea 
                   value={address} 
                   onChange={(e) => setAddress(e.target.value)} 
                   rows={2}
-                  className="w-full p-4 rounded-xl bg-slate-50 border border-slate-200 text-xs text-slate-700 focus:outline-none"
+                  className="w-full p-3.5 rounded-xl bg-slate-50 border border-slate-200 text-xs text-slate-700 focus:outline-none focus:border-emerald-500 font-medium"
                 />
               </div>
 
               <div className="border-t border-slate-100 pt-4 mt-2">
                 <h5 className="text-xs font-bold text-slate-800 mb-4 flex items-center gap-2">
-                  <Globe size={14} className="text-slate-450" /> Social Links & Websites
+                  <Globe size={14} className="text-slate-500" /> Social Links & Websites
                 </h5>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <Input label="LinkedIn Link" value={linkedin} onChange={(e) => setLinkedin(e.target.value)} placeholder="linkedin.com/in/username" />
@@ -367,27 +365,29 @@ export const Profile: React.FC = () => {
 
               <div className="border-t border-slate-100 pt-4">
                 <h5 className="text-xs font-bold text-slate-800 mb-4 flex items-center gap-2">
-                  <Award size={14} className="text-slate-450" /> Skills & Career Objectives
+                  <Award size={14} className="text-slate-500" /> Skills & Career Objectives
                 </h5>
                 <div className="flex flex-col gap-4">
                   <Input label="Core Technical Skills (Comma-separated)" value={skills} onChange={(e) => setSkills(e.target.value)} placeholder="React, Python, AWS" />
                   <Input label="Languages Spoken" value={languages} onChange={(e) => setLanguages(e.target.value)} placeholder="English, Kannada, Hindi" />
                   <div>
-                    <label className="text-[10px] font-black text-slate-400 uppercase block mb-1">Career Objective</label>
+                    <label className="text-[10px] font-bold text-slate-400 uppercase block mb-1">Career Objective</label>
                     <textarea 
                       value={objective} 
                       onChange={(e) => setObjective(e.target.value)} 
                       rows={3} 
                       placeholder="Seeking a challenging position to leverage software development capabilities..."
-                      className="w-full p-4 rounded-xl bg-slate-50 border border-slate-200 text-xs text-slate-700 focus:outline-none"
+                      className="w-full p-3.5 rounded-xl bg-slate-50 border border-slate-200 text-xs text-slate-700 focus:outline-none focus:border-emerald-500 font-medium"
                     />
                   </div>
                 </div>
               </div>
 
-              <Button type="submit" variant="primary" size="lg" className="bg-blue-600 hover:bg-blue-700 text-white font-bold w-44 mt-3" disabled={loading}>
-                {loading ? 'Saving...' : 'Save Profile Details'}
-              </Button>
+              <div className="flex justify-end pt-3">
+                <Button type="submit" variant="primary" size="md" className="w-48" disabled={loading}>
+                  {loading ? 'Saving...' : 'Save Profile Details'}
+                </Button>
+              </div>
             </form>
           </Card>
         </div>
@@ -396,4 +396,5 @@ export const Profile: React.FC = () => {
     </div>
   );
 };
+
 export default Profile;

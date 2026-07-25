@@ -12,6 +12,7 @@ import { AdminLayout } from '../layouts/AdminLayout';
 import { LandingPage } from '../pages/LandingPage';
 import { Login } from '../pages/Login';
 import { Dashboard } from '../pages/Dashboard';
+import { ResumePage } from '../pages/ResumePage';
 import { ResumeBuilder } from '../pages/ResumeBuilder';
 import { Profile } from '../pages/Profile';
 import { Settings } from '../pages/Settings';
@@ -24,6 +25,9 @@ import { JobsDashboard } from '../pages/jobs/JobsDashboard';
 import { JobDetails } from '../pages/jobs/JobDetails';
 import { SavedJobs } from '../pages/jobs/SavedJobs';
 import { Applications } from '../pages/jobs/Applications';
+
+// Companies Page
+import { Companies } from '../pages/Companies';
 
 
 // Modular Admin Pages
@@ -123,10 +127,12 @@ export const AppRoutes: React.FC = () => {
         <Route element={<ProtectedRoute />}>
           <Route element={<DashboardLayout />}>
             <Route path="/dashboard" element={<Dashboard />} />
+            <Route path="/resume" element={<ResumePage />} />
             <Route path="/resume-builder" element={<ResumeBuilder />} />
             <Route path="/profile" element={<Profile />} />
             <Route path="/settings" element={<Settings />} />
             <Route path="/notifications" element={<Notifications />} />
+            <Route path="/companies" element={<Companies />} />
             
             {/* Jobs Routes */}
             <Route path="/jobs" element={<JobsDashboard />} />
