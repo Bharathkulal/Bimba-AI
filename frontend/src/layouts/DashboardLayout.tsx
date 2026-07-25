@@ -1,45 +1,48 @@
-import React, { useState } from 'react';
-import { Outlet, useLocation } from 'react-router-dom';
+import React from 'react';
+import { Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
+import { 
+  Home, FileText, Briefcase, Building, 
+  User, Settings 
+} from 'lucide-react';
 import { Sidebar } from '../components/Sidebar';
 import { DashboardNavbar } from '../components/DashboardNavbar';
 
 export const DashboardLayout: React.FC = () => {
   const location = useLocation();
-  const [isCollapsed, setIsCollapsed] = useState(false);
-  const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
+  const navigate = useNavigate();
 
-  const toggleCollapse = () => {
-    setIsCollapsed(!isCollapsed);
-  };
+  const menuItems = [
+    { label: 'Dashboard', path: '/dashboard', icon: Home },
+    { label: 'Resume', path: '/resume', icon: FileText },
+    { label: 'Jobs', path: '/jobs', icon: Briefcase },
+    { label: 'Companies', path: '/companies', icon: Building },
+    { label: 'Profile', path: '/profile', icon: User },
+    { label: 'Settings', path: '/settings', icon: Settings },
+  ];
 
   return (
-    <div className="min-h-screen bg-[#F8FAFC] text-[#111827] flex overflow-x-hidden font-sans relative">
+    <div className="min-h-screen bg-background text-slate-900 flex overflow-x-hidden font-sans relative">
       {/* Decorative subtle gradient background blur */}
-      <div className="absolute top-[-10%] left-[-15%] w-[45%] h-[45%] rounded-full bg-emerald-500/5 blur-[120px] pointer-events-none z-0" />
-      <div className="absolute bottom-[-10%] right-[-15%] w-[40%] h-[40%] rounded-full bg-emerald-500/5 blur-[120px] pointer-events-none z-0" />
+      <div className="absolute top-[-10%] left-[-15%] w-[45%] h-[45%] rounded-full bg-emerald-50/5 blur-[120px] pointer-events-none z-0" />
+      <div className="absolute bottom-[-10%] right-[-15%] w-[40%] h-[40%] rounded-full bg-emerald-50/5 blur-[120px] pointer-events-none z-0" />
 
-      {/* Floating Collapsible Sidebar */}
+      {/* Floating Hover-Collapsible Sidebar (Desktop/Tablet) */}
       <Sidebar 
-        isCollapsed={isCollapsed}
-        onToggleCollapse={toggleCollapse}
-        isMobileOpen={isMobileSidebarOpen}
-        onCloseMobile={() => setIsMobileSidebarOpen(false)}
+        isMobileOpen={false}
+        onCloseMobile={() => {}}
       />
 
-      {/* Content Area Wrapper */}
-      <div 
-        className={`flex-grow min-h-screen flex flex-col z-10 w-full transition-all duration-300 ${
-          isCollapsed ? 'md:pl-24' : 'md:pl-[304px]'
-        }`}
-      >
+      {/* Content Area Wrapper - Stable Left Padding on Desktop, bottom padding on mobile */}
+      <div className="flex-grow min-h-screen flex flex-col z-10 w-full md:pl-28 pb-16 md:pb-0 transition-all duration-350">
+        
         {/* Sticky Top Navbar */}
         <DashboardNavbar 
-          onToggleMobileSidebar={() => setIsMobileSidebarOpen(true)}
+          onToggleMobileSidebar={() => {}}
         />
         
         {/* Main Content Pane with Framer Motion Page Transition */}
-        <main className="p-4 md:p-8 flex-grow pb-24 md:pb-8 w-full overflow-hidden">
+        <main className="p-4 md:p-8 flex-grow pb-20 md:pb-8 w-full overflow-hidden">
           <AnimatePresence mode="wait">
             <motion.div
               key={location.pathname}
@@ -54,6 +57,37 @@ export const DashboardLayout: React.FC = () => {
           </AnimatePresence>
         </main>
       </div>
+
+      {/* Premium Bottom Navigation Tab Bar - MOBILE */}
+      <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-[#111827]/95 backdrop-blur-lg border-t border-slate-800 py-2 px-3 flex items-center justify-around z-45 shadow-2xl">
+        {menuItems.map((item) => {
+          const Icon = item.icon;
+          const isActive = item.path === '/dashboard' 
+            ? location.pathname === '/dashboard' 
+            : location.pathname.startsWith(item.path);
+
+          return (
+            <button
+              key={item.label}
+              onClick={() => navigate(item.path)}
+              className="flex flex-col items-center justify-center py-1.5 px-2.5 relative cursor-pointer flex-1"
+            >
+              <Icon 
+                size={18} 
+                className={`transition-colors duration-200 ${
+                  isActive ? 'text-emerald-500' : 'text-slate-400'
+                }`}
+              />
+              <span className={`text-[8.5px] mt-1 tracking-wide transition-colors duration-200 ${
+                isActive ? 'text-emerald-500 font-extrabold' : 'text-slate-400 font-medium'
+              }`}>
+                {item.label}
+              </span>
+            </button>
+          );
+        })}
+      </nav>
+
     </div>
   );
 };

@@ -41,14 +41,8 @@ export const DashboardNavbar: React.FC<DashboardNavbarProps> = ({ onToggleMobile
 
   return (
     <header className="bg-white/80 backdrop-blur-md border-b border-slate-200/80 h-16 flex items-center justify-between px-6 sticky top-0 z-30 shadow-sm">
-      {/* Mobile Hamburger & Logo Header */}
+      {/* Logo Header */}
       <div className="flex items-center gap-3">
-        <button 
-          onClick={onToggleMobileSidebar}
-          className="md:hidden p-1 text-slate-500 hover:text-slate-900 cursor-pointer"
-        >
-          <Menu size={22} />
-        </button>
         <div className="flex items-center gap-1.5 text-xs font-black text-slate-900 tracking-wider uppercase">
           <span>Bimba AI</span>
         </div>

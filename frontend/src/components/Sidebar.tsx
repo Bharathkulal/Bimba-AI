@@ -1,27 +1,24 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { 
   Home, FileText, Briefcase, Building, 
-  User, Settings, LogOut, ChevronLeft, ChevronRight, Menu, X
+  User, Settings, LogOut, X
 } from 'lucide-react';
 import { useUserStore } from '../store/userStore';
 
 interface SidebarProps {
-  isCollapsed: boolean;
-  onToggleCollapse: () => void;
   isMobileOpen: boolean;
   onCloseMobile: () => void;
 }
 
 export const Sidebar: React.FC<SidebarProps> = ({
-  isCollapsed,
-  onToggleCollapse,
   isMobileOpen,
   onCloseMobile,
 }) => {
   const location = useLocation();
   const navigate = useNavigate();
   const logout = useUserStore((state) => state.logout);
+  const [isHovered, setIsHovered] = useState(false);
 
   const menuItems = [
     { label: 'Dashboard', path: '/dashboard', icon: Home },
@@ -39,104 +36,97 @@ export const Sidebar: React.FC<SidebarProps> = ({
     }
   };
 
-  const sidebarContent = (
-    <div className="flex flex-col justify-between h-full py-6 px-4 text-slate-300">
-      <div className="flex flex-col gap-8">
-        {/* Logo Section */}
-        <div className="flex items-center justify-between px-2">
-          <div className="flex items-center gap-3 overflow-hidden">
+  const sidebarContent = (isDesktop: boolean) => {
+    const showExpanded = isDesktop ? isHovered : true;
+    return (
+      <div className="flex flex-col justify-between h-full py-6 px-4 text-slate-350">
+        <div className="flex flex-col gap-8">
+          {/* Logo Section */}
+          <div className="flex items-center px-2 overflow-hidden shrink-0">
             <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-emerald-600 to-emerald-500 flex items-center justify-center text-white font-black text-2xl shadow-lg shadow-emerald-500/20 shrink-0">
               B
             </div>
-            {!isCollapsed && (
-              <span className="font-extrabold text-white text-lg tracking-tight whitespace-nowrap">
-                Bimba AI
-              </span>
-            )}
+            <span className={`font-extrabold text-white text-lg tracking-tight ml-3.5 whitespace-nowrap transition-all duration-300 ease-in-out ${
+              showExpanded ? 'opacity-100 max-w-[150px]' : 'opacity-0 max-w-0 overflow-hidden pointer-events-none'
+            }`}>
+              Bimba AI
+            </span>
           </div>
-          {/* Collapse toggle button for desktop/tablet */}
-          <button 
-            onClick={onToggleCollapse}
-            className="hidden md:flex w-6 h-6 rounded-full bg-slate-800 border border-slate-700 items-center justify-center text-slate-400 hover:text-white cursor-pointer transition-colors"
-          >
-            {isCollapsed ? <ChevronRight size={14} /> : <ChevronLeft size={14} />}
-          </button>
-        </div>
 
-        {/* Navigation Items */}
-        <nav className="flex flex-col gap-1.5">
-          {menuItems.map((item) => {
-            const Icon = item.icon;
-            // Strict active check (must match location.pathname or be a subpath for jobs/resumes)
-            const isActive = item.path === '/dashboard' 
-              ? location.pathname === '/dashboard' 
-              : location.pathname.startsWith(item.path);
+          {/* Navigation Items */}
+          <nav className="flex flex-col gap-1.5">
+            {menuItems.map((item) => {
+              const Icon = item.icon;
+              const isActive = item.path === '/dashboard' 
+                ? location.pathname === '/dashboard' 
+                : location.pathname.startsWith(item.path);
 
-            return (
-              <button
-                key={item.label}
-                onClick={() => handleNavClick(item.path)}
-                className={`flex items-center w-full px-3.5 py-3 rounded-xl transition-all duration-200 relative group cursor-pointer ${
-                  isActive 
-                    ? 'bg-emerald-600 text-white font-semibold shadow-md shadow-emerald-600/10' 
-                    : 'text-slate-400 hover:text-slate-100 hover:bg-slate-800/40 font-medium'
-                }`}
-              >
-                <div className="flex items-center shrink-0 justify-center w-5 h-5 relative z-10">
-                  <Icon size={20} />
-                </div>
-                
-                {!isCollapsed && (
-                  <span className="text-[13px] tracking-wide ml-3 whitespace-nowrap z-10 transition-opacity duration-200">
+              return (
+                <button
+                  key={item.label}
+                  onClick={() => handleNavClick(item.path)}
+                  className={`flex items-center w-full px-3.5 py-3 rounded-xl transition-all duration-200 relative group cursor-pointer ${
+                    isActive 
+                      ? 'bg-emerald-600 text-white font-semibold shadow-md shadow-emerald-600/10' 
+                      : 'text-slate-400 hover:text-slate-100 hover:bg-slate-800/40 font-medium'
+                  }`}
+                >
+                  <div className="flex items-center shrink-0 justify-center w-5 h-5 relative z-10">
+                    <Icon size={20} />
+                  </div>
+                  
+                  <span className={`text-[13px] tracking-wide whitespace-nowrap z-10 transition-all duration-350 ease-in-out ${
+                    showExpanded ? 'opacity-100 max-w-[180px] ml-3' : 'opacity-0 max-w-0 overflow-hidden pointer-events-none'
+                  }`}>
                     {item.label}
                   </span>
-                )}
 
-                {/* Tooltip when collapsed */}
-                {isCollapsed && (
-                  <div className="absolute left-20 bg-slate-900 border border-slate-800 text-white px-2.5 py-1.5 rounded-lg text-[10px] font-bold tracking-wider uppercase opacity-0 pointer-events-none group-hover:opacity-100 transition-opacity duration-200 shadow-xl whitespace-nowrap z-50">
-                    {item.label}
-                  </div>
-                )}
-              </button>
-            );
-          })}
-        </nav>
-      </div>
-
-      {/* Logout Footer */}
-      <button
-        onClick={() => logout()}
-        className={`flex items-center px-3.5 py-3 rounded-xl text-rose-400 hover:text-rose-300 hover:bg-rose-500/10 transition-all duration-200 cursor-pointer font-semibold group overflow-hidden ${
-          isCollapsed ? 'justify-center' : ''
-        }`}
-      >
-        <div className="flex items-center shrink-0 justify-center w-5 h-5">
-          <LogOut size={20} />
+                  {/* Tooltip when collapsed */}
+                  {!showExpanded && (
+                    <div className="absolute left-20 bg-slate-900 border border-slate-800 text-white px-2.5 py-1.5 rounded-lg text-[10px] font-bold tracking-wider uppercase opacity-0 pointer-events-none group-hover:opacity-100 transition-opacity duration-200 shadow-xl whitespace-nowrap z-50">
+                      {item.label}
+                    </div>
+                  )}
+                </button>
+              );
+            })}
+          </nav>
         </div>
-        {!isCollapsed && (
-          <span className="text-[13px] tracking-wide ml-3 whitespace-nowrap transition-opacity duration-200">
+
+        {/* Logout Footer */}
+        <button
+          onClick={() => logout()}
+          className="flex items-center px-3.5 py-3 rounded-xl text-rose-450 hover:text-rose-300 hover:bg-rose-500/10 transition-all duration-200 cursor-pointer font-semibold relative group overflow-hidden"
+        >
+          <div className="flex items-center shrink-0 justify-center w-5 h-5">
+            <LogOut size={20} />
+          </div>
+          <span className={`text-[13px] tracking-wide whitespace-nowrap transition-all duration-350 ease-in-out ${
+            showExpanded ? 'opacity-100 max-w-[180px] ml-3' : 'opacity-0 max-w-0 overflow-hidden pointer-events-none'
+          }`}>
             Log Out
           </span>
-        )}
-        {isCollapsed && (
-          <div className="absolute left-20 bg-slate-900 border border-slate-800 text-rose-400 px-2.5 py-1.5 rounded-lg text-[10px] font-bold tracking-wider uppercase opacity-0 pointer-events-none group-hover:opacity-100 transition-opacity duration-200 shadow-xl whitespace-nowrap z-50">
-            Log Out
-          </div>
-        )}
-      </button>
-    </div>
-  );
+          {!showExpanded && (
+            <div className="absolute left-20 bg-slate-900 border border-slate-800 text-rose-400 px-2.5 py-1.5 rounded-lg text-[10px] font-bold tracking-wider uppercase opacity-0 pointer-events-none group-hover:opacity-100 transition-opacity duration-200 shadow-xl whitespace-nowrap z-50">
+              Log Out
+            </div>
+          )}
+        </button>
+      </div>
+    );
+  };
 
   return (
     <>
-      {/* Desktop Navigation Drawer (Fixed) */}
+      {/* Desktop Navigation Drawer (Fixed + Hover Expand) */}
       <aside 
-        className={`hidden md:block bg-[#111827] border-r border-slate-800 fixed left-4 top-4 bottom-4 z-40 rounded-[24px] shadow-2xl transition-all duration-300 ${
-          isCollapsed ? 'w-20' : 'w-[280px]'
+        onMouseEnter={() => setIsHovered(true)}
+        onMouseLeave={() => setIsHovered(false)}
+        className={`hidden md:block bg-[#111827] border-r border-slate-800 fixed left-4 top-4 bottom-4 z-40 rounded-[24px] shadow-2xl transition-all duration-300 ease-in-out ${
+          isHovered ? 'w-[280px]' : 'w-20'
         }`}
       >
-        {sidebarContent}
+        {sidebarContent(true)}
       </aside>
 
       {/* Mobile Backdrop */}
@@ -159,7 +149,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
         >
           <X size={20} />
         </button>
-        {sidebarContent}
+        {sidebarContent(false)}
       </aside>
     </>
   );
