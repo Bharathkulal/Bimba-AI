@@ -14,12 +14,15 @@ export const Card: React.FC<CardProps> = ({
   onClick,
   hoverEffect = true,
 }) => {
+  const isAdmin = typeof window !== 'undefined' && window.location.hostname && window.location.pathname.startsWith('/admin');
+  const themeBg = isAdmin ? 'bg-[#13261B] border-white/5 text-white' : 'bg-white border-slate-200 text-slate-800';
+
   return (
     <motion.div
-      whileHover={onClick || hoverEffect ? { y: -4, boxShadow: '0 10px 20px -5px rgba(0, 0, 0, 0.05), 0 8px 16px -6px rgba(0, 0, 0, 0.05)' } : {}}
+      whileHover={onClick || hoverEffect ? { y: -4, boxShadow: isAdmin ? '0 10px 20px -5px rgba(0, 0, 0, 0.3)' : '0 10px 20px -5px rgba(0, 0, 0, 0.05), 0 8px 16px -6px rgba(0, 0, 0, 0.05)' } : {}}
       transition={{ duration: 0.2, ease: 'easeInOut' }}
       onClick={onClick}
-      className={`bg-white border border-slate-200 p-6 rounded-[20px] shadow-sm ${onClick ? 'cursor-pointer' : ''} ${className}`}
+      className={`${themeBg} border p-6 rounded-[20px] shadow-sm ${onClick ? 'cursor-pointer' : ''} ${className}`}
     >
       {children}
     </motion.div>

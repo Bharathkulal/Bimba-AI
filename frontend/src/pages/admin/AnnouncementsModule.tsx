@@ -1,6 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, Megaphone, RefreshCw, Pin } from 'lucide-react';
+import { Plus, Megaphone, RefreshCw, Pin, Edit3, Trash2, CheckCircle2, AlertTriangle } from 'lucide-react';
 import { Button } from '../../components/Button';
+import { Card } from '../../components/Card';
+import { Modal } from '../../components/Modal';
+import { Input } from '../../components/Input';
 import { adminService } from '../../services/admin';
 import type { AnnouncementData } from '../../services/admin';
 
@@ -10,6 +13,8 @@ export const AnnouncementsModule: React.FC = () => {
 
   // Form states
   const [isOpen, setIsOpen] = useState(false);
+  const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
+
   const [form, setForm] = useState({
     id: 0,
     title: '',
@@ -20,6 +25,11 @@ export const AnnouncementsModule: React.FC = () => {
     target_value: ''
   });
 
+  const showToast = (message: string, type: 'success' | 'error') => {
+    setToast({ message, type });
+    setTimeout(() => setToast(null), 3000);
+  };
+
   const fetchAnnouncements = async () => {
     try {
       setIsLoading(true);
@@ -27,6 +37,7 @@ export const AnnouncementsModule: React.FC = () => {
       setAnnouncements(data);
     } catch (err) {
       console.error("Failed to load announcements archive:", err);
+      showToast("Failed to retrieve announcements list.", "error");
     } finally {
       setIsLoading(false);
     }
@@ -59,13 +70,15 @@ export const AnnouncementsModule: React.FC = () => {
     try {
       if (form.id > 0) {
         await adminService.editAnnouncement(form.id, form);
+        showToast("Announcement details modified successfully.", "success");
       } else {
         await adminService.createAnnouncement(form);
+        showToast("New announcement broadcasted successfully.", "success");
       }
       setIsOpen(false);
       fetchAnnouncements();
     } catch (err) {
-      alert("Failed to save announcement details.");
+      showToast("Failed to save announcement details.", "error");
     }
   };
 
@@ -73,174 +86,210 @@ export const AnnouncementsModule: React.FC = () => {
     if (!window.confirm("Permanently delete this announcement?")) return;
     try {
       await adminService.deleteAnnouncement(id);
+      showToast("Announcement deleted successfully.", "success");
       fetchAnnouncements();
     } catch (err) {
-      alert("Delete failed.");
+      showToast("Failed to delete announcement.", "error");
     }
   };
 
   if (isLoading) {
-    return <div className="h-64 bg-slate-100 rounded-2xl animate-pulse" />;
+    return (
+      <div className="flex flex-col gap-6 w-full max-w-5xl mx-auto animate-pulse text-left">
+        <div className="h-16 bg-[#102117] border border-white/5 rounded-2xl" />
+        <div className="h-72 bg-[#102117] border border-white/5 rounded-2xl" />
+      </div>
+    );
   }
 
   return (
-    <div className="bg-white border border-slate-200/60 rounded-3xl p-6 shadow-sm flex flex-col gap-6 animate-fadeIn text-left">
-      <div className="flex justify-between items-center border-b border-slate-100 pb-4">
-        <div>
-          <h2 className="text-base font-extrabold text-slate-900">Announcements & Bulletins Dispatch</h2>
-          <p className="text-[10px] text-slate-450 font-bold uppercase tracking-wider mt-1">Publish alerts broadcast push notifications and academic bulletins</p>
-        </div>
-
-        <div className="flex gap-2">
-          <button onClick={fetchAnnouncements} className="p-2 rounded-xl hover:bg-slate-50 border border-slate-200 text-slate-500 cursor-pointer">
-            <RefreshCw size={13} />
-          </button>
-          <Button onClick={handleCreateNew} variant="primary" size="sm" className="bg-blue-600 font-bold gap-1 text-[11px]">
-            <Plus size={14} /> New Broadcast
-          </Button>
-        </div>
-      </div>
-
-      {/* Grid of Announcements Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {announcements.length === 0 ? (
-          <div className="bg-slate-50/50 border border-slate-200/60 rounded-3xl p-12 text-center text-slate-400 col-span-full font-bold text-xs">
-            No active bulletins published.
-          </div>
-        ) : (
-          announcements.map((ann) => (
-            <div key={ann.id} className="bg-slate-50/40 border border-slate-200/60 rounded-2xl p-5 flex flex-col justify-between min-h-52">
-              <div>
-                <div className="flex justify-between items-start">
-                  <span className="bg-blue-50 text-blue-600 border border-blue-100 px-2 py-0.5 rounded text-[8px] font-black uppercase">
-                    Audience: {ann.target_audience}
-                  </span>
-                  
-                  <div className="flex items-center gap-2">
-                    {ann.pinned && (
-                      <span className="text-orange-500" title="Pinned Announcement">
-                        <Pin size={12} className="fill-orange-500" />
-                      </span>
-                    )}
-                    <span className={`px-2 py-0.5 rounded text-[8px] font-black uppercase border ${
-                      ann.status === 'Published' 
-                        ? 'bg-emerald-50 border-emerald-100 text-emerald-600' 
-                        : 'bg-slate-100 border-slate-250 text-slate-500'
-                    }`}>
-                      {ann.status}
-                    </span>
-                  </div>
-                </div>
-
-                <h4 className="font-extrabold text-xs text-slate-800 mt-3 flex items-center gap-1.5">
-                  <Megaphone size={13} className="text-slate-400" /> {ann.title}
-                </h4>
-                <p className="text-[11px] text-slate-500 mt-2 font-semibold leading-relaxed whitespace-pre-line">
-                  {ann.content}
-                </p>
-              </div>
-
-              <div className="flex justify-between items-center pt-4 mt-4 border-t border-slate-200/60">
-                <span className="text-[9px] text-slate-450 font-bold">
-                  Posted: {new Date(ann.created_at).toLocaleDateString()} | Reads: {ann.read_count}
-                </span>
-                <div className="flex gap-2.5">
-                  <button onClick={() => handleEdit(ann)} className="text-[10px] text-blue-600 font-bold hover:underline cursor-pointer">Edit</button>
-                  <button onClick={() => handleDelete(ann.id)} className="text-[10px] text-red-650 font-bold hover:underline cursor-pointer">Delete</button>
-                </div>
-              </div>
-            </div>
-          ))
-        )}
-      </div>
-
-      {/* Form modal */}
-      {isOpen && (
-        <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center z-50 animate-fadeIn">
-          <form onSubmit={handleSave} className="bg-white border border-slate-200 rounded-3xl p-6 w-full max-w-lg shadow-xl text-left">
-            <h4 className="text-sm font-extrabold text-slate-800 mb-4">{form.id > 0 ? "Edit Broadcast Bulletin" : "Create Broadcast Bulletin"}</h4>
-            
-            <div className="flex flex-col gap-4">
-              <div>
-                <label className="text-[10px] font-black text-slate-400 uppercase tracking-wider block mb-1.5">Bulletin Title</label>
-                <input
-                  type="text"
-                  value={form.title}
-                  onChange={(e) => setForm({ ...form, title: e.target.value })}
-                  className="w-full pl-4 pr-4 py-2.5 rounded-xl bg-slate-50 border border-slate-200 focus:outline-none text-xs text-slate-700 font-bold"
-                  placeholder="e.g. Campus Placement Drives 2026 Schedule"
-                  required
-                />
-              </div>
-              <div>
-                <label className="text-[10px] font-black text-slate-400 uppercase tracking-wider block mb-1.5">Broadcast Content (Markdown supported)</label>
-                <textarea
-                  value={form.content}
-                  onChange={(e) => setForm({ ...form, content: e.target.value })}
-                  className="w-full pl-4 pr-4 py-2.5 rounded-xl bg-slate-50 border border-slate-200 focus:outline-none text-xs text-slate-700"
-                  placeholder="Draft details..."
-                  rows={6}
-                  required
-                />
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-wider block mb-1.5">Target Audience</label>
-                  <select
-                    value={form.target_audience}
-                    onChange={(e) => setForm({ ...form, target_audience: e.target.value })}
-                    className="w-full pl-3 pr-4 py-2.5 rounded-xl bg-slate-50 border border-slate-200 focus:outline-none text-xs text-slate-700 cursor-pointer"
-                  >
-                    <option value="Entire College">Entire College</option>
-                    <option value="Placement Registered">Placement Registered</option>
-                    <option value="CS Department">CS Department Only</option>
-                    <option value="Teachers">Teachers Only</option>
-                  </select>
-                </div>
-                <div>
-                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-wider block mb-1.5">Broadcast Status</label>
-                  <select
-                    value={form.status}
-                    onChange={(e) => setForm({ ...form, status: e.target.value })}
-                    className="w-full pl-3 pr-4 py-2.5 rounded-xl bg-slate-50 border border-slate-200 focus:outline-none text-xs text-slate-700 cursor-pointer"
-                  >
-                    <option value="Published">Published (Active)</option>
-                    <option value="Draft">Draft (Hidden)</option>
-                  </select>
-                </div>
-              </div>
-
-              <div className="flex items-center gap-2">
-                <input
-                  type="checkbox"
-                  id="pinnedCheck"
-                  checked={form.pinned}
-                  onChange={(e) => setForm({ ...form, pinned: e.target.checked })}
-                  className="w-4 h-4 text-blue-600 rounded bg-slate-50 border-slate-200 focus:ring-blue-500 cursor-pointer"
-                />
-                <label htmlFor="pinnedCheck" className="text-xs font-bold text-slate-650 cursor-pointer select-none">
-                  Pin announcement banner to user dashboard alerts drawer
-                </label>
-              </div>
-            </div>
-
-            <div className="flex justify-end gap-3 mt-6">
-              <button
-                type="button"
-                onClick={() => setIsOpen(false)}
-                className="px-4 py-2 rounded-xl border border-slate-200 text-xs font-bold text-slate-655 hover:bg-slate-50 cursor-pointer"
-              >
-                Cancel
-              </button>
-              <Button type="submit" variant="primary" size="sm" className="bg-blue-600 font-bold text-[11px]">
-                Dispatch Broadcast
-              </Button>
-            </div>
-          </form>
+    <div className="flex flex-col gap-6 w-full text-left animate-fadeIn font-sans max-w-5xl mx-auto">
+      
+      {/* Toast Alert */}
+      {toast && (
+        <div className={`fixed top-6 right-6 z-50 flex items-center gap-3 px-5 py-4 rounded-xl shadow-xl border animate-fadeIn ${
+          toast.type === 'success' 
+            ? 'bg-[#102117] border-[#22C55E]/20 text-[#22C55E]' 
+            : 'bg-[#1F1116] border-rose-500/20 text-rose-500'
+        }`}>
+          {toast.type === 'success' ? <CheckCircle2 size={18} /> : <AlertTriangle size={18} />}
+          <span className="text-xs font-semibold">{toast.message}</span>
         </div>
       )}
+
+      {/* Header Banner */}
+      <section className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-[#102117] border border-white/5 rounded-2xl p-6 shadow-md relative overflow-hidden">
+        <div className="absolute right-0 top-0 w-80 h-full bg-gradient-to-l from-emerald-500/5 to-transparent blur-3xl pointer-events-none" />
+        <div className="relative z-10 text-left">
+          <h1 className="text-xl font-extrabold text-white tracking-tight">Announcements</h1>
+          <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider block mt-1">
+            Broadcast notices, internship schedules, and campus drive updates to students.
+          </p>
+        </div>
+        <div className="flex gap-2 shrink-0 relative z-10">
+          <button 
+            onClick={fetchAnnouncements} 
+            className="p-2 rounded-xl bg-white/5 border border-white/5 text-slate-400 hover:text-white cursor-pointer"
+          >
+            <RefreshCw size={13} />
+          </button>
+          <Button 
+            onClick={handleCreateNew} 
+            variant="primary" 
+            size="sm" 
+            className="flex items-center gap-1.5"
+          >
+            <Plus size={15} /> Create Announcement
+          </Button>
+        </div>
+      </section>
+
+      {/* Announcements List Table */}
+      <Card className="bg-[#13261B] border-white/5 overflow-hidden">
+        <div className="overflow-x-auto w-full">
+          <table className="w-full text-left border-collapse text-xs">
+            <thead>
+              <tr className="bg-[#102117] border-b border-white/5 text-slate-400 font-bold uppercase tracking-wider">
+                <th className="py-4 px-6 w-12 text-center"><Pin size={14} className="mx-auto" /></th>
+                <th className="py-4 px-6">Notice Title</th>
+                <th className="py-4 px-6">Message Body</th>
+                <th className="py-4 px-6">Target Students</th>
+                <th className="py-4 px-6">State Status</th>
+                <th className="py-4 px-6 text-center">Actions</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-white/5 text-slate-300 font-medium">
+              {announcements.length > 0 ? (
+                announcements.map((ann) => (
+                  <tr key={ann.id} className="hover:bg-white/5 transition-colors">
+                    <td className="py-4 px-6 text-center">
+                      {ann.pinned ? (
+                        <Pin size={13} className="text-[#22C55E] mx-auto animate-pulse" />
+                      ) : (
+                        <span className="text-slate-600">-</span>
+                      )}
+                    </td>
+                    <td className="py-4 px-6 font-bold text-slate-200 flex items-center gap-2">
+                      <Megaphone size={14} className="text-emerald-500 shrink-0" />
+                      {ann.title}
+                    </td>
+                    <td className="py-4 px-6 text-slate-400 truncate max-w-xs">
+                      {ann.content}
+                    </td>
+                    <td className="py-4 px-6 font-black text-slate-350">
+                      {ann.target_audience}
+                    </td>
+                    <td className="py-4 px-6">
+                      <span className={`px-2 py-0.5 rounded text-[9.5px] font-black uppercase ${
+                        ann.status === 'Published' 
+                          ? 'bg-[#16A34A]/10 text-emerald-400 border border-emerald-500/20' 
+                          : 'bg-slate-800 text-slate-450 border border-white/5'
+                      }`}>
+                        {ann.status}
+                      </span>
+                    </td>
+                    <td className="py-4 px-6 text-center">
+                      <div className="flex items-center justify-center gap-2">
+                        <button
+                          onClick={() => handleEdit(ann)}
+                          className="p-1.5 rounded-lg bg-white/5 border border-white/5 text-slate-400 hover:text-white hover:border-emerald-500/30 transition-colors cursor-pointer"
+                          title="Edit Announcement"
+                        >
+                          <Edit3 size={12} />
+                        </button>
+                        <button
+                          onClick={() => handleDelete(ann.id)}
+                          className="p-1.5 rounded-lg bg-rose-500/10 border border-rose-500/20 text-rose-500 hover:bg-rose-600 hover:text-white transition-colors cursor-pointer"
+                          title="Delete"
+                        >
+                          <Trash2 size={12} />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))
+              ) : (
+                <tr>
+                  <td colSpan={6} className="py-12 text-center text-slate-500 font-bold">
+                    No active bulletins broadcasted.
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+      </Card>
+
+      {/* Add / Edit Modal */}
+      <Modal isOpen={isOpen} onClose={() => setIsOpen(false)} title={form.id > 0 ? 'Edit Announcement Broadcast' : 'Create Announcement Broadcast'}>
+        <form onSubmit={handleSave} className="flex flex-col gap-4 text-left text-xs font-semibold text-slate-350">
+          <Input 
+            id="title"
+            name="title"
+            label="Announcement Title*"
+            value={form.title}
+            onChange={(e) => setForm({ ...form, title: e.target.value })}
+            required
+            placeholder="e.g. Stripe Recruitment Drive 2026"
+          />
+          <div>
+            <label className="text-[10px] font-bold text-slate-450 uppercase block mb-1">Message Content / Details*</label>
+            <textarea 
+              value={form.content}
+              onChange={(e) => setForm({ ...form, content: e.target.value })}
+              className="w-full p-2.5 bg-[#102117] border border-white/10 focus:border-emerald-500/30 rounded-xl text-white outline-none"
+              rows={4}
+              required
+              placeholder="Provide job details, links, or dates..."
+            />
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="text-[10px] font-bold text-slate-455 block mb-1">Target Audience</label>
+              <select
+                value={form.target_audience}
+                onChange={(e) => setForm({ ...form, target_audience: e.target.value })}
+                className="w-full px-3 py-2.5 bg-[#102117] border border-white/10 rounded-xl text-slate-200 outline-none"
+              >
+                <option value="Entire College">Entire College</option>
+                <option value="BCA Students">BCA Students</option>
+                <option value="CSE Students">CSE Students</option>
+                <option value="ISE Students">ISE Students</option>
+              </select>
+            </div>
+            <div>
+              <label className="text-[10px] font-bold text-slate-455 block mb-1">Status</label>
+              <select
+                value={form.status}
+                onChange={(e) => setForm({ ...form, status: e.target.value })}
+                className="w-full px-3 py-2.5 bg-[#102117] border border-white/10 rounded-xl text-slate-200 outline-none"
+              >
+                <option value="Published">Published</option>
+                <option value="Draft">Draft</option>
+              </select>
+            </div>
+          </div>
+
+          <label className="flex items-center gap-2 cursor-pointer mt-2 bg-white/5 p-3 rounded-xl border border-white/5">
+            <input 
+              type="checkbox"
+              checked={form.pinned}
+              onChange={(e) => setForm({ ...form, pinned: e.target.checked })}
+              className="w-4 h-4 rounded text-emerald-600 focus:ring-emerald-500 border-white/10"
+            />
+            <span className="text-[9.5px] font-bold uppercase tracking-wider text-slate-300">Pin to top of student bulletin board</span>
+          </label>
+
+          <div className="flex justify-end gap-2 pt-3 border-t border-white/5">
+            <Button type="button" variant="secondary" onClick={() => setIsOpen(false)}>Cancel</Button>
+            <Button type="submit" variant="primary">Broadcast Alert</Button>
+          </div>
+        </form>
+      </Modal>
+
     </div>
   );
 };
+
 export default AnnouncementsModule;

@@ -34,14 +34,30 @@ export const Modal: React.FC<ModalProps> = ({
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.95, y: 20 }}
             transition={{ type: 'spring', duration: 0.4 }}
-            className="relative w-full max-w-lg bg-white rounded-[20px] shadow-xl overflow-hidden z-10 border border-slate-100 flex flex-col"
+            className={`relative w-full max-w-lg rounded-[20px] shadow-xl overflow-hidden z-10 border flex flex-col ${
+              typeof window !== 'undefined' && window.location.pathname.startsWith('/admin')
+                ? 'bg-[#102117] border-white/5 text-white'
+                : 'bg-white border-slate-100 text-slate-900'
+            }`}
           >
             {/* Header */}
-            <div className="flex items-center justify-between p-6 border-b border-slate-100">
-              <h3 className="text-lg font-bold text-slate-900">{title}</h3>
+            <div className={`flex items-center justify-between p-6 border-b ${
+              typeof window !== 'undefined' && window.location.pathname.startsWith('/admin')
+                ? 'border-white/5'
+                : 'border-slate-100'
+            }`}>
+              <h3 className={`text-lg font-bold ${
+                typeof window !== 'undefined' && window.location.pathname.startsWith('/admin')
+                  ? 'text-white'
+                  : 'text-slate-900'
+              }`}>{title}</h3>
               <button
                 onClick={onClose}
-                className="text-slate-400 hover:text-slate-600 p-1.5 rounded-lg hover:bg-slate-50 transition-smooth cursor-pointer"
+                className={`p-1.5 rounded-lg transition-smooth cursor-pointer ${
+                  typeof window !== 'undefined' && window.location.pathname.startsWith('/admin')
+                    ? 'text-slate-400 hover:text-white hover:bg-white/5'
+                    : 'text-slate-400 hover:text-slate-600 hover:bg-slate-50'
+                }`}
               >
                 <X size={18} />
               </button>
