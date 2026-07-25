@@ -1,6 +1,18 @@
 import axios from 'axios';
 
-export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000';
+export const API_BASE_URL = (() => {
+  const envUrl = import.meta.env.VITE_API_BASE_URL;
+  // If env URL is set and is a production host, use it directly
+  if (envUrl && !envUrl.includes('localhost') && !envUrl.includes('127.0.0.1')) {
+    return envUrl;
+  }
+  // Otherwise, if accessing via local network IP (e.g. from phone), map to host IP at backend port 8000
+  const hostname = window.location.hostname;
+  if (hostname !== 'localhost' && hostname !== '127.0.0.1') {
+    return `http://${hostname}:8000`;
+  }
+  return envUrl || 'http://localhost:8000';
+})();
 
 export const apiClient = axios.create({
   baseURL: API_BASE_URL,

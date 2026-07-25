@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Cpu, Lock, User, AlertCircle, Eye, EyeOff } from 'lucide-react';
+import { Cpu, Lock, User, AlertCircle, Eye, EyeOff, Sparkles, Copy, Check } from 'lucide-react';
 import { Button } from '../components/Button';
 import { adminService } from '../services/admin';
 
@@ -11,6 +11,10 @@ export const AdminLogin: React.FC = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Copy states for testing credentials
+  const [copiedUser, setCopiedUser] = useState(false);
+  const [copiedPass, setCopiedPass] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -35,8 +39,40 @@ export const AdminLogin: React.FC = () => {
     }
   };
 
+  const copyToClipboard = (text: string, setCopied: (val: boolean) => void) => {
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text)
+        .then(() => {
+          setCopied(true);
+          setTimeout(() => setCopied(false), 2000);
+        })
+        .catch(() => fallbackCopy(text, setCopied));
+    } else {
+      fallbackCopy(text, setCopied);
+    }
+  };
+
+  const fallbackCopy = (text: string, setCopied: (val: boolean) => void) => {
+    try {
+      const textArea = document.createElement('textarea');
+      textArea.value = text;
+      textArea.style.top = '0';
+      textArea.style.left = '0';
+      textArea.style.position = 'fixed';
+      document.body.appendChild(textArea);
+      textArea.focus();
+      textArea.select();
+      document.execCommand('copy');
+      document.body.removeChild(textArea);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch (err) {
+      console.error('Fallback copy failed', err);
+    }
+  };
+
   return (
-    <div className="min-h-screen flex items-center justify-center font-sans px-6 select-none relative overflow-hidden">
+    <div className="min-h-screen flex flex-col items-center justify-center font-sans px-6 relative overflow-hidden bg-slate-50">
       {/* Decorative blurred background shapes */}
       <div className="absolute top-[-20%] left-[-20%] w-[60%] h-[60%] rounded-full bg-blue-500/5 blur-[120px] pointer-events-none" />
       <div className="absolute bottom-[-20%] right-[-20%] w-[55%] h-[55%] rounded-full bg-indigo-500/5 blur-[120px] pointer-events-none" />
@@ -51,7 +87,7 @@ export const AdminLogin: React.FC = () => {
         </div>
 
         {error && (
-          <div className="mb-5 bg-red-50 border border-red-200/60 rounded-2xl p-4 flex items-start gap-3 text-red-650 text-xs font-semibold animate-fadeIn">
+          <div className="mb-5 bg-red-50 border border-red-200/60 rounded-2xl p-4 flex items-start gap-3 text-red-655 text-xs font-semibold animate-fadeIn">
             <AlertCircle size={16} className="shrink-0 mt-0.5" />
             <span>{error}</span>
           </div>
@@ -108,7 +144,45 @@ export const AdminLogin: React.FC = () => {
           </Button>
         </form>
       </div>
+
+      {/* Dev Testing Credentials Card */}
+      <div className="w-full max-w-md mt-6 relative z-10 text-left">
+        <div className="bg-white border border-slate-200/80 rounded-2xl p-5 text-slate-650 shadow-sm">
+          <div className="flex items-center justify-between mb-3 border-b border-slate-100 pb-2">
+            <span className="text-xs font-bold text-blue-600 flex items-center gap-1.5 uppercase tracking-wider">
+              <Sparkles size={14} /> Dev Testing Credentials
+            </span>
+            <span className="text-[10px] bg-blue-50 text-blue-600 font-extrabold px-2 py-0.5 rounded border border-blue-100 uppercase">
+              Admin
+            </span>
+          </div>
+
+          <div className="flex flex-col gap-2.5 text-xs font-medium">
+            <div className="flex items-center justify-between">
+              <span>Username: <strong>admin</strong></span>
+              <button
+                onClick={() => copyToClipboard('admin', setCopiedUser)}
+                className="p-1.5 rounded-lg bg-slate-50 border border-slate-250 text-slate-500 hover:text-slate-800 transition-colors cursor-pointer flex items-center gap-1 text-[10px]"
+              >
+                {copiedUser ? <Check size={12} className="text-emerald-600" /> : <Copy size={12} />}
+                <span>{copiedUser ? 'Copied' : 'Copy'}</span>
+              </button>
+            </div>
+            <div className="flex items-center justify-between">
+              <span>Password: <strong>admin</strong></span>
+              <button
+                onClick={() => copyToClipboard('admin', setCopiedPass)}
+                className="p-1.5 rounded-lg bg-slate-50 border border-slate-250 text-slate-500 hover:text-slate-800 transition-colors cursor-pointer flex items-center gap-1 text-[10px]"
+              >
+                {copiedPass ? <Check size={12} className="text-emerald-600" /> : <Copy size={12} />}
+                <span>{copiedPass ? 'Copied' : 'Copy'}</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
   );
 };
+
 export default AdminLogin;
