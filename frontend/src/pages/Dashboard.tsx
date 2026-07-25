@@ -378,7 +378,7 @@ export const Dashboard: React.FC = () => {
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
-          {/* Card 1: Upload Existing */}
+          {/* Card 1: Upload Existing (Green/Emerald) */}
           <div className="group relative bg-white border border-slate-200/80 rounded-2xl p-5 flex flex-col justify-between min-h-48 shadow-sm hover:border-emerald-300 hover:shadow-md transition-all duration-200 cursor-pointer overflow-hidden">
             <div className="absolute top-0 right-0 w-24 h-24 bg-emerald-500/5 blur-2xl rounded-full group-hover:scale-150 transition-all duration-300" />
             <div className="flex justify-between items-start">
@@ -399,38 +399,38 @@ export const Dashboard: React.FC = () => {
             </button>
           </div>
 
-          {/* Card 2: Create New */}
-          <div className="group relative bg-white border border-slate-200/80 rounded-2xl p-5 flex flex-col justify-between min-h-48 shadow-sm hover:border-emerald-300 hover:shadow-md transition-all duration-200 cursor-pointer overflow-hidden">
-            <div className="absolute top-0 right-0 w-24 h-24 bg-emerald-500/5 blur-2xl rounded-full group-hover:scale-150 transition-all duration-300" />
+          {/* Card 2: Create New (Purple/Indigo) */}
+          <div className="group relative bg-white border border-slate-200/80 rounded-2xl p-5 flex flex-col justify-between min-h-48 shadow-sm hover:border-purple-300 hover:shadow-md transition-all duration-200 cursor-pointer overflow-hidden">
+            <div className="absolute top-0 right-0 w-24 h-24 bg-purple-500/5 blur-2xl rounded-full group-hover:scale-150 transition-all duration-300" />
             <div className="flex justify-between items-start">
-              <div className="w-10 h-10 rounded-xl bg-emerald-50 border border-emerald-100 text-emerald-600 flex items-center justify-center shadow-sm">
+              <div className="w-10 h-10 rounded-xl bg-purple-50 border border-purple-100 text-purple-650 flex items-center justify-center shadow-sm">
                 <Sparkles size={18} />
               </div>
-              <span className="bg-emerald-50 text-emerald-700 text-[8px] font-bold px-2 py-0.5 rounded uppercase">AI Writer</span>
+              <span className="bg-purple-50 text-purple-750 text-[8px] font-bold px-2 py-0.5 rounded uppercase">AI Writer</span>
             </div>
             <div className="mt-4">
-              <h4 className="font-bold text-sm text-slate-800 group-hover:text-emerald-600 transition-colors">Create New Resume</h4>
+              <h4 className="font-bold text-sm text-slate-800 group-hover:text-purple-600 transition-colors">Create New Resume</h4>
               <p className="text-[10px] text-slate-500 mt-1.5 leading-relaxed">Build a professional ATS-friendly resume from scratch.</p>
             </div>
             <button 
               onClick={() => navigate('/resume-builder')}
-              className="mt-4 w-full py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl shadow-sm hover:shadow transition-colors cursor-pointer"
+              className="mt-4 w-full py-2 bg-purple-600 hover:bg-purple-700 text-white font-bold text-xs rounded-xl shadow-sm hover:shadow transition-colors cursor-pointer"
             >
               Create Resume
             </button>
           </div>
 
-          {/* Card 3: ATS Resume Scanner */}
-          <div className="group relative bg-white border border-slate-200/80 rounded-2xl p-5 flex flex-col justify-between min-h-48 shadow-sm hover:border-emerald-300 hover:shadow-md transition-all duration-200 cursor-pointer overflow-hidden">
-            <div className="absolute top-0 right-0 w-24 h-24 bg-emerald-500/5 blur-2xl rounded-full group-hover:scale-150 transition-all duration-300" />
+          {/* Card 3: ATS Resume Scanner (Teal/Cyan) */}
+          <div className="group relative bg-white border border-slate-200/80 rounded-2xl p-5 flex flex-col justify-between min-h-48 shadow-sm hover:border-teal-300 hover:shadow-md transition-all duration-200 cursor-pointer overflow-hidden">
+            <div className="absolute top-0 right-0 w-24 h-24 bg-teal-500/5 blur-2xl rounded-full group-hover:scale-150 transition-all duration-300" />
             <div className="flex justify-between items-start">
-              <div className="w-10 h-10 rounded-xl bg-emerald-50 border border-emerald-100 text-emerald-600 flex items-center justify-center shadow-sm">
+              <div className="w-10 h-10 rounded-xl bg-teal-50 border border-teal-100 text-teal-600 flex items-center justify-center shadow-sm">
                 <Scan size={18} />
               </div>
-              <span className="bg-emerald-50 text-emerald-700 text-[8px] font-bold px-2 py-0.5 rounded uppercase">ATS Scan</span>
+              <span className="bg-teal-50 text-teal-700 text-[8px] font-bold px-2 py-0.5 rounded uppercase">ATS Scan</span>
             </div>
             <div className="mt-4">
-              <h4 className="font-bold text-sm text-slate-800 group-hover:text-emerald-600 transition-colors">ATS Resume Scanner</h4>
+              <h4 className="font-bold text-sm text-slate-800 group-hover:text-teal-600 transition-colors">ATS Resume Scanner</h4>
               <p className="text-[10px] text-slate-500 mt-1.5 leading-relaxed">Analyze ATS compatibility and identify missing keywords.</p>
             </div>
             <button 
@@ -438,28 +438,28 @@ export const Dashboard: React.FC = () => {
                 const el = document.getElementById('analytics-section');
                 if (el) el.scrollIntoView({ behavior: 'smooth' });
               }}
-              className="mt-4 w-full py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl shadow-sm hover:shadow transition-colors cursor-pointer"
+              className="mt-4 w-full py-2 bg-teal-600 hover:bg-teal-700 text-white font-bold text-xs rounded-xl shadow-sm hover:shadow transition-colors cursor-pointer"
             >
               Scan Resume
             </button>
           </div>
 
-          {/* Card 4: AI Resume Optimizer */}
-          <div className="group relative bg-white border border-slate-200/80 rounded-2xl p-5 flex flex-col justify-between min-h-48 shadow-sm hover:border-emerald-300 hover:shadow-md transition-all duration-200 cursor-pointer overflow-hidden">
-            <div className="absolute top-0 right-0 w-24 h-24 bg-emerald-500/5 blur-2xl rounded-full group-hover:scale-150 transition-all duration-300" />
+          {/* Card 4: AI Resume Optimizer (Orange/Amber) */}
+          <div className="group relative bg-white border border-slate-200/80 rounded-2xl p-5 flex flex-col justify-between min-h-48 shadow-sm hover:border-orange-300 hover:shadow-md transition-all duration-200 cursor-pointer overflow-hidden">
+            <div className="absolute top-0 right-0 w-24 h-24 bg-orange-500/5 blur-2xl rounded-full group-hover:scale-150 transition-all duration-300" />
             <div className="flex justify-between items-start">
-              <div className="w-10 h-10 rounded-xl bg-emerald-50 border border-emerald-100 text-emerald-600 flex items-center justify-center shadow-sm">
+              <div className="w-10 h-10 rounded-xl bg-orange-50 border border-orange-100 text-orange-655 flex items-center justify-center shadow-sm">
                 <Brain size={18} />
               </div>
-              <span className="bg-emerald-50 text-emerald-700 text-[8px] font-bold px-2 py-0.5 rounded uppercase">Optimizer</span>
+              <span className="bg-orange-50 text-orange-750 text-[8px] font-bold px-2 py-0.5 rounded uppercase">Optimizer</span>
             </div>
             <div className="mt-4">
-              <h4 className="font-bold text-sm text-slate-800 group-hover:text-emerald-600 transition-colors">AI Resume Optimizer</h4>
+              <h4 className="font-bold text-sm text-slate-800 group-hover:text-orange-600 transition-colors">AI Resume Optimizer</h4>
               <p className="text-[10px] text-slate-500 mt-1.5 leading-relaxed">Improve grammar, wording, impact, and recruiter appeal.</p>
             </div>
             <button 
               onClick={() => setIsChatOpen(true)}
-              className="mt-4 w-full py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl shadow-sm hover:shadow transition-colors cursor-pointer"
+              className="mt-4 w-full py-2 bg-orange-600 hover:bg-orange-750 text-white font-bold text-xs rounded-xl shadow-sm hover:shadow transition-colors cursor-pointer"
             >
               Optimize
             </button>
