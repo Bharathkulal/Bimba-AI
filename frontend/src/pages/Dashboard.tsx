@@ -7,7 +7,7 @@ import {
   SendHorizontal, Lock, ListTodo, UploadCloud,
   Brain, Scan, Mail, Briefcase, Globe, Building,
   MessageSquare, LineChart, CheckCircle2, AlertCircle,
-  HelpCircle, ChevronRight, RefreshCw, RefreshCw as RotateCw
+  HelpCircle, ChevronRight, RefreshCw, X, MessageCircle
 } from 'lucide-react';
 import { Button } from '../components/Button';
 import { useUserStore } from '../store/userStore';
@@ -43,8 +43,8 @@ export const Dashboard: React.FC = () => {
   
   // UI States
   const [searchQuery, setSearchQuery] = useState('');
-  const [notificationCount, setNotificationCount] = useState(3);
   const [chatMessages, setChatMessages] = useState<Array<{ sender: string; text: string }>>([]);
+  const [isChatOpen, setIsChatOpen] = useState(false);
   
   // Upload and Sorting/Filtering State
   const [isUploading, setIsUploading] = useState(false);
@@ -63,12 +63,11 @@ export const Dashboard: React.FC = () => {
   const fetchAnalytics = async () => {
     try {
       setIsLoading(true);
-      const [dash, ats, act, resList, notifRes, tplRes, jobsRes, dlRes] = await Promise.all([
+      const [dash, ats, act, resList, tplRes, jobsRes, dlRes] = await Promise.all([
         analyticsService.getDashboard(),
         analyticsService.getAts(),
         analyticsService.getActivity(),
         analyticsService.getResumes(),
-        apiClient.get('/api/analytics/notifications'),
         apiClient.get('/api/resume-studio/templates'),
         jobsService.searchJobs({ limit: 4 }),
         analyticsService.getDownloads()
@@ -77,7 +76,6 @@ export const Dashboard: React.FC = () => {
       setAtsData(ats);
       setActivities(act);
       setResumes(resList);
-      setNotificationCount(notifRes.data.unread_count || 0);
       setTemplates(tplRes.data || []);
       setRecommendedJobs(jobsRes.jobs);
       setDownloadsData(dlRes);
@@ -139,7 +137,7 @@ export const Dashboard: React.FC = () => {
     if (original) {
       try {
         await apiClient.post(`/api/resume-studio/${id}/duplicate`);
-        await handleTrackAction('activity', `Duplicated Resume: original name`);
+        await handleTrackAction('activity', `Duplicated Resume: ${original.name}`);
         fetchAnalytics();
       } catch (err) {
         alert("Failed to duplicate resume.");
@@ -252,12 +250,12 @@ export const Dashboard: React.FC = () => {
   if (isLoading) {
     return (
       <div className="flex flex-col gap-8 min-h-screen pb-12 font-sans text-left">
-        <div className="h-44 w-full bg-slate-205/50 rounded-[20px] animate-pulse" />
+        <div className="h-44 w-full bg-slate-100 rounded-[20px] animate-pulse" />
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-          <div className="h-36 bg-slate-205/50 rounded-[20px] animate-pulse" />
-          <div className="h-36 bg-slate-205/50 rounded-[20px] animate-pulse" />
-          <div className="h-36 bg-slate-205/50 rounded-[20px] animate-pulse" />
-          <div className="h-36 bg-slate-205/50 rounded-[20px] animate-pulse" />
+          <div className="h-36 bg-slate-100 rounded-[20px] animate-pulse" />
+          <div className="h-36 bg-slate-100 rounded-[20px] animate-pulse" />
+          <div className="h-36 bg-slate-100 rounded-[20px] animate-pulse" />
+          <div className="h-36 bg-slate-100 rounded-[20px] animate-pulse" />
         </div>
       </div>
     );
@@ -269,12 +267,10 @@ export const Dashboard: React.FC = () => {
   const totalTemplates = templates.length || 0;
   const totalDownloads = downloadsData?.trend?.reduce((sum: number, item: any) => sum + item.downloads, 0) || 0;
 
-  // Load real recommendations from atsData
   const suggestions = atsData?.recommendations || [];
   const atsHistory = atsData?.history || [];
   const downloadsTrend = downloadsData?.trend || [];
 
-  // Format real activity logs
   const formatTimeAgo = (isoStr: string) => {
     try {
       const diffMs = new Date().getTime() - new Date(isoStr).getTime();
@@ -297,142 +293,173 @@ export const Dashboard: React.FC = () => {
   }));
 
   return (
-    <div className="flex flex-col gap-6.5 text-left font-sans text-slate-800 w-full animate-fadeIn pb-12 selection:bg-green-500/10">
+    <div className="flex flex-col gap-6 text-left font-sans text-slate-800 w-full animate-fadeIn pb-12 selection:bg-emerald-500/10">
       
-      {/* TOP HEADER STATUS & BAR */}
-      <div className="flex flex-col sm:flex-row justify-between items-center gap-4 bg-white border border-slate-200/60 rounded-[20px] p-4.5 shadow-sm">
-        <div className="relative w-full sm:w-80">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={14} />
+      {/* TOP HEADER & GLOBAL SEARCH */}
+      <div className="flex flex-col sm:flex-row justify-between items-center gap-4 bg-white border border-slate-200/80 rounded-2xl p-4 shadow-sm">
+        <div className="relative w-full sm:w-96">
+          <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
           <input 
             type="text"
             placeholder="Search resumes, tools, insights..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-9 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-700 focus:outline-none focus:border-green-500 transition-smooth font-medium"
+            className="w-full pl-10 pr-4 py-2 bg-slate-50 focus:bg-white border border-slate-250/70 focus:border-emerald-500 rounded-xl text-xs text-slate-700 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 transition-all font-medium"
           />
+        </div>
+        <div className="flex items-center gap-2 shrink-0">
+          <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-emerald-50 text-emerald-700 text-xs font-semibold rounded-full border border-emerald-100 shadow-sm">
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+            AI Assistant Active
+          </span>
         </div>
       </div>
 
       {/* HERO SECTION */}
-      <section className="bg-white border border-slate-200/60 rounded-[20px] p-6 relative overflow-hidden shadow-sm flex flex-col justify-between gap-5 h-[210px] shrink-0">
-        <div className="absolute right-0 top-0 w-80 h-full bg-gradient-to-l from-blue-500/5 to-transparent blur-3xl pointer-events-none" />
+      <section className="bg-white border border-slate-200/80 rounded-2xl p-6 relative overflow-hidden shadow-sm flex flex-col justify-between gap-6 min-h-[220px]">
+        {/* Sleek Vercel-style background blur */}
+        <div className="absolute right-0 top-0 w-96 h-full bg-gradient-to-l from-emerald-500/5 to-transparent blur-3xl pointer-events-none" />
         
         <div>
-          <h1 className="text-2xl md:text-3xl font-black text-slate-900 tracking-tight flex items-center gap-1.5">
-            Good Morning, {displayName} <span className="animate-wiggle">👋</span>
+          <h1 className="text-2xl md:text-3xl font-extrabold text-slate-900 tracking-tight">
+            Good Morning, {displayName}
           </h1>
-          <p className="text-xs text-slate-450 font-semibold mt-1">Welcome back to Bimba AI. Your AI Career Assistant is ready.</p>
+          <p className="text-xs text-slate-500 mt-1.5 font-medium">Your Bimba AI Career Dashboard is synced and up to date.</p>
         </div>
 
-        {/* Hero stats row */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 w-full">
+        {/* Hero metrics grid */}
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 w-full">
           {[
-            { label: 'Resume Health', val: `${resumeHealth}%`, col: 'text-green-600' },
-            { label: 'ATS Score', val: `${atsScore}%`, col: 'text-emerald-600' },
-            { label: 'Templates', val: totalTemplates, col: 'text-purple-600' },
-            { label: 'Downloads', val: totalDownloads, col: 'text-orange-600' }
+            { label: 'Resume Health', val: `${resumeHealth}%`, col: 'text-emerald-600', valNum: resumeHealth },
+            { label: 'ATS Score', val: `${atsScore}%`, col: 'text-emerald-600', valNum: atsScore },
+            { label: 'Templates', val: totalTemplates, col: 'text-emerald-700', valNum: 100 },
+            { label: 'Downloads', val: totalDownloads, col: 'text-emerald-700', valNum: 100 }
           ].map((s) => (
-            <div key={s.label} className="bg-slate-50/70 border border-slate-200/40 rounded-xl p-3.5 flex flex-col justify-between hover:scale-[1.02] transition-all duration-200">
-              <span className="text-[8.5px] font-black text-slate-400 uppercase tracking-widest leading-none">{s.label}</span>
-              <span className={`text-xl font-black ${s.col} mt-1.5 leading-none`}>{s.val}</span>
+            <div key={s.label} className="bg-slate-50/70 border border-slate-200/40 rounded-xl p-4 flex flex-col justify-between hover:scale-[1.02] hover:bg-white hover:border-emerald-100 hover:shadow-sm transition-all duration-200">
+              <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider leading-none">{s.label}</span>
+              <div className="flex items-end justify-between mt-2">
+                <span className={`text-2xl font-extrabold ${s.col} leading-none`}>{s.val}</span>
+                {/* Visual SVG Progress Ring for Health and ATS */}
+                {(s.label.includes('Health') || s.label.includes('ATS')) ? (
+                  <svg className="w-6 h-6" viewBox="0 0 36 36">
+                    <path
+                      className="text-slate-100"
+                      strokeWidth="3.5"
+                      stroke="currentColor"
+                      fill="none"
+                      d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
+                    />
+                    <path
+                      className="text-emerald-500 transition-all duration-500"
+                      strokeDasharray={`${s.valNum}, 100`}
+                      strokeWidth="3.5"
+                      strokeLinecap="round"
+                      stroke="currentColor"
+                      fill="none"
+                      d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
+                    />
+                  </svg>
+                ) : (
+                  <div className="w-2.5 h-2.5 rounded-full bg-emerald-500/20 flex items-center justify-center">
+                    <div className="w-1 h-1 rounded-full bg-emerald-600" />
+                  </div>
+                )}
+              </div>
             </div>
           ))}
         </div>
       </section>
 
       {/* QUICK ACTIONS SECTION */}
-      <section className="flex flex-col gap-3.5">
+      <section className="flex flex-col gap-3">
         <div>
-          <span className="text-[9px] font-black text-slate-400 tracking-wider uppercase">Platform Shortcuts</span>
+          <span className="text-[9px] font-bold text-slate-400 tracking-wider uppercase">Platform Shortcuts</span>
           <h2 className="text-base font-extrabold text-slate-900 mt-0.5">Quick Actions</h2>
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
           {/* Card 1: Upload Existing */}
-          <div className="group relative bg-white border border-slate-200/60 rounded-[20px] p-5 flex flex-col justify-between min-h-48 shadow-sm hover:scale-[1.02] hover:border-green-300 hover:shadow-md transition-all duration-200 cursor-pointer overflow-hidden">
-            <div className="absolute top-0 right-0 w-24 h-24 bg-green-500/5 blur-2xl rounded-full group-hover:scale-150 transition-all duration-300" />
+          <div className="group relative bg-white border border-slate-200/80 rounded-2xl p-5 flex flex-col justify-between min-h-48 shadow-sm hover:border-emerald-300 hover:shadow-md transition-all duration-200 cursor-pointer overflow-hidden">
+            <div className="absolute top-0 right-0 w-24 h-24 bg-emerald-500/5 blur-2xl rounded-full group-hover:scale-150 transition-all duration-300" />
             <div className="flex justify-between items-start">
-              <div className="w-10 h-10 rounded-xl bg-green-50 border border-green-150 text-green-600 flex items-center justify-center shadow-inner">
+              <div className="w-10 h-10 rounded-xl bg-emerald-50 border border-emerald-100 text-emerald-600 flex items-center justify-center shadow-sm">
                 <UploadCloud size={18} />
               </div>
-              <span className="bg-green-50 text-green-600 text-[8px] font-black px-2 py-0.5 rounded uppercase">ATS Parser</span>
+              <span className="bg-emerald-50 text-emerald-700 text-[8px] font-bold px-2 py-0.5 rounded uppercase">ATS Parser</span>
             </div>
-            <div>
-              <h4 className="font-extrabold text-sm text-slate-800 group-hover:text-green-600 transition-smooth">Upload Existing Resume</h4>
-              <p className="text-[10px] text-slate-450 mt-1.5 leading-relaxed">Upload your existing resume for AI analysis and ATS optimization.</p>
+            <div className="mt-4">
+              <h4 className="font-bold text-sm text-slate-800 group-hover:text-emerald-600 transition-colors">Upload Existing Resume</h4>
+              <p className="text-[10px] text-slate-500 mt-1.5 leading-relaxed">Upload your existing resume for AI analysis and ATS optimization.</p>
             </div>
             <button 
               onClick={() => document.getElementById('resume-upload-input')?.click()}
-              className="mt-3.5 w-full py-2 bg-gradient-to-r from-green-600 to-emerald-500 hover:from-green-700 hover:to-emerald-600 text-white font-extrabold text-[10px] rounded-xl shadow-sm hover:shadow transition-smooth cursor-pointer"
+              className="mt-4 w-full py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl shadow-sm hover:shadow transition-colors cursor-pointer"
             >
               Upload Resume
             </button>
           </div>
 
           {/* Card 2: Create New */}
-          <div className="group relative bg-white border border-slate-200/60 rounded-[20px] p-5 flex flex-col justify-between min-h-48 shadow-sm hover:scale-[1.02] hover:border-purple-300 hover:shadow-md transition-all duration-200 cursor-pointer overflow-hidden">
-            <div className="absolute top-0 right-0 w-24 h-24 bg-purple-500/5 blur-2xl rounded-full group-hover:scale-150 transition-all duration-300" />
+          <div className="group relative bg-white border border-slate-200/80 rounded-2xl p-5 flex flex-col justify-between min-h-48 shadow-sm hover:border-emerald-300 hover:shadow-md transition-all duration-200 cursor-pointer overflow-hidden">
+            <div className="absolute top-0 right-0 w-24 h-24 bg-emerald-500/5 blur-2xl rounded-full group-hover:scale-150 transition-all duration-300" />
             <div className="flex justify-between items-start">
-              <div className="w-10 h-10 rounded-xl bg-purple-50 border border-purple-150 text-purple-650 flex items-center justify-center shadow-inner">
+              <div className="w-10 h-10 rounded-xl bg-emerald-50 border border-emerald-100 text-emerald-600 flex items-center justify-center shadow-sm">
                 <Sparkles size={18} />
               </div>
-              <span className="bg-purple-50 text-purple-650 text-[8px] font-black px-2 py-0.5 rounded uppercase font-sans">AI Writer</span>
+              <span className="bg-emerald-50 text-emerald-700 text-[8px] font-bold px-2 py-0.5 rounded uppercase">AI Writer</span>
             </div>
-            <div>
-              <h4 className="font-extrabold text-sm text-slate-800 group-hover:text-purple-655 transition-smooth">Create New Resume</h4>
-              <p className="text-[10px] text-slate-450 mt-1.5 leading-relaxed">Build a professional ATS-friendly resume from scratch.</p>
+            <div className="mt-4">
+              <h4 className="font-bold text-sm text-slate-800 group-hover:text-emerald-600 transition-colors">Create New Resume</h4>
+              <p className="text-[10px] text-slate-500 mt-1.5 leading-relaxed">Build a professional ATS-friendly resume from scratch.</p>
             </div>
             <button 
               onClick={() => navigate('/resume-builder')}
-              className="mt-3.5 w-full py-2 bg-gradient-to-r from-purple-600 to-indigo-500 hover:from-purple-705 hover:to-indigo-600 text-white font-extrabold text-[10px] rounded-xl shadow-sm hover:shadow transition-smooth cursor-pointer"
+              className="mt-4 w-full py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl shadow-sm hover:shadow transition-colors cursor-pointer"
             >
               Create Resume
             </button>
           </div>
 
           {/* Card 3: ATS Resume Scanner */}
-          <div className="group relative bg-white border border-slate-200/60 rounded-[20px] p-5 flex flex-col justify-between min-h-48 shadow-sm hover:scale-[1.02] hover:border-emerald-300 hover:shadow-md transition-all duration-200 cursor-pointer overflow-hidden">
+          <div className="group relative bg-white border border-slate-200/80 rounded-2xl p-5 flex flex-col justify-between min-h-48 shadow-sm hover:border-emerald-300 hover:shadow-md transition-all duration-200 cursor-pointer overflow-hidden">
             <div className="absolute top-0 right-0 w-24 h-24 bg-emerald-500/5 blur-2xl rounded-full group-hover:scale-150 transition-all duration-300" />
             <div className="flex justify-between items-start">
-              <div className="w-10 h-10 rounded-xl bg-emerald-50 border border-emerald-150 text-emerald-600 flex items-center justify-center shadow-inner">
+              <div className="w-10 h-10 rounded-xl bg-emerald-50 border border-emerald-100 text-emerald-600 flex items-center justify-center shadow-sm">
                 <Scan size={18} />
               </div>
-              <span className="bg-emerald-50 text-emerald-650 text-[8px] font-black px-2 py-0.5 rounded uppercase">ATS Scan</span>
+              <span className="bg-emerald-50 text-emerald-700 text-[8px] font-bold px-2 py-0.5 rounded uppercase">ATS Scan</span>
             </div>
-            <div>
-              <h4 className="font-extrabold text-sm text-slate-800 group-hover:text-emerald-600 transition-smooth">ATS Resume Scanner</h4>
-              <p className="text-[10px] text-slate-450 mt-1.5 leading-relaxed">Analyze ATS compatibility and identify missing keywords.</p>
+            <div className="mt-4">
+              <h4 className="font-bold text-sm text-slate-800 group-hover:text-emerald-600 transition-colors">ATS Resume Scanner</h4>
+              <p className="text-[10px] text-slate-500 mt-1.5 leading-relaxed">Analyze ATS compatibility and identify missing keywords.</p>
             </div>
             <button 
               onClick={() => {
                 const el = document.getElementById('analytics-section');
                 if (el) el.scrollIntoView({ behavior: 'smooth' });
               }}
-              className="mt-3.5 w-full py-2 bg-gradient-to-r from-emerald-600 to-teal-500 hover:from-emerald-700 hover:to-teal-600 text-white font-extrabold text-[10px] rounded-xl shadow-sm hover:shadow transition-smooth cursor-pointer"
+              className="mt-4 w-full py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl shadow-sm hover:shadow transition-colors cursor-pointer"
             >
               Scan Resume
             </button>
           </div>
 
           {/* Card 4: AI Resume Optimizer */}
-          <div className="group relative bg-white border border-slate-200/60 rounded-[20px] p-5 flex flex-col justify-between min-h-48 shadow-sm hover:scale-[1.02] hover:border-orange-300 hover:shadow-md transition-all duration-200 cursor-pointer overflow-hidden">
-            <div className="absolute top-0 right-0 w-24 h-24 bg-orange-500/5 blur-2xl rounded-full group-hover:scale-150 transition-all duration-300" />
+          <div className="group relative bg-white border border-slate-200/80 rounded-2xl p-5 flex flex-col justify-between min-h-48 shadow-sm hover:border-emerald-300 hover:shadow-md transition-all duration-200 cursor-pointer overflow-hidden">
+            <div className="absolute top-0 right-0 w-24 h-24 bg-emerald-500/5 blur-2xl rounded-full group-hover:scale-150 transition-all duration-300" />
             <div className="flex justify-between items-start">
-              <div className="w-10 h-10 rounded-xl bg-orange-50 border border-orange-150 text-orange-505 flex items-center justify-center shadow-inner">
+              <div className="w-10 h-10 rounded-xl bg-emerald-50 border border-emerald-100 text-emerald-600 flex items-center justify-center shadow-sm">
                 <Brain size={18} />
               </div>
-              <span className="bg-orange-50 text-orange-655 text-[8px] font-black px-2 py-0.5 rounded uppercase font-sans">Optimizer</span>
+              <span className="bg-emerald-50 text-emerald-700 text-[8px] font-bold px-2 py-0.5 rounded uppercase">Optimizer</span>
             </div>
-            <div>
-              <h4 className="font-extrabold text-sm text-slate-800 group-hover:text-orange-600 transition-smooth">AI Resume Optimizer</h4>
-              <p className="text-[10px] text-slate-450 mt-1.5 leading-relaxed">Improve grammar, wording, impact, and recruiter appeal.</p>
+            <div className="mt-4">
+              <h4 className="font-bold text-sm text-slate-800 group-hover:text-emerald-600 transition-colors">AI Resume Optimizer</h4>
+              <p className="text-[10px] text-slate-500 mt-1.5 leading-relaxed">Improve grammar, wording, impact, and recruiter appeal.</p>
             </div>
             <button 
-              onClick={() => {
-                const el = document.getElementById('ai-assistant-section');
-                if (el) el.scrollIntoView({ behavior: 'smooth' });
-              }}
-              className="mt-3.5 w-full py-2 bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white font-extrabold text-[10px] rounded-xl shadow-sm hover:shadow transition-smooth cursor-pointer"
+              onClick={() => setIsChatOpen(true)}
+              className="mt-4 w-full py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl shadow-sm hover:shadow transition-colors cursor-pointer"
             >
               Optimize
             </button>
@@ -450,46 +477,43 @@ export const Dashboard: React.FC = () => {
       />
 
       {isUploading && (
-        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-md z-50 flex items-center justify-center p-6 animate-fade-in">
-          <div className="bg-white border border-slate-200 rounded-[20px] p-8 max-w-sm w-full text-center shadow-2xl flex flex-col items-center gap-5">
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-md z-50 flex items-center justify-center p-6">
+          <div className="bg-white border border-slate-200 rounded-2xl p-8 max-w-sm w-full text-center shadow-2xl flex flex-col items-center gap-5">
             <div className="relative w-16 h-16 flex items-center justify-center">
-              <div className="absolute inset-0 rounded-full border-4 border-slate-100 border-t-green-600 animate-spin" />
-              <Bot size={24} className="text-green-600 animate-pulse" />
+              <div className="absolute inset-0 rounded-full border-4 border-slate-100 border-t-emerald-600 animate-spin" />
+              <Bot size={24} className="text-emerald-600 animate-pulse" />
             </div>
             <div>
               <h3 className="font-extrabold text-slate-800 text-lg">AI Resume Parsing</h3>
-              <p className="text-xs text-slate-450 mt-2 font-semibold leading-relaxed">{uploadProgress}</p>
+              <p className="text-xs text-slate-500 mt-2 font-semibold leading-relaxed">{uploadProgress}</p>
             </div>
           </div>
         </div>
       )}
 
       {/* RECOMMENDED JOBS SECTION */}
-      <section className="flex flex-col gap-3.5">
-        <div className="flex justify-between items-end border-b border-slate-100 pb-3">
+      <section className="flex flex-col gap-3">
+        <div className="flex justify-between items-end border-b border-slate-100 pb-2">
           <div>
-            <span className="text-[9px] font-black text-green-650 tracking-wider uppercase">AI Matching</span>
+            <span className="text-[9px] font-bold text-emerald-700 tracking-wider uppercase">AI Matching</span>
             <h3 className="text-base font-extrabold text-slate-900 mt-0.5">Recommended Jobs</h3>
           </div>
           <button 
             onClick={() => navigate('/jobs')}
-            className="text-[10px] font-black text-green-650 hover:underline flex items-center gap-0.5 cursor-pointer border-0 bg-transparent"
+            className="text-xs font-semibold text-emerald-600 hover:text-emerald-700 hover:underline flex items-center gap-0.5 cursor-pointer border-0 bg-transparent"
           >
-            View All Jobs <ChevronRight size={12} />
+            View All Jobs →
           </button>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
           {recommendedJobs.slice(0, 4).map((job) => {
             const score = job.ai_match_score || 75;
-            let scoreBg = 'bg-green-50 text-green-700 border-green-150';
-            if (score >= 90) {
-              scoreBg = 'bg-emerald-50 text-emerald-700 border-emerald-200';
-            }
+            let scoreBg = 'bg-emerald-50 text-emerald-700 border-emerald-100';
             return (
               <div 
                 key={job.id} 
-                className="bg-white border border-slate-200/60 rounded-[20px] p-4.5 flex items-center justify-between shadow-sm hover:scale-[1.01] hover:border-slate-300 hover:shadow transition-all duration-200"
+                className="bg-white border border-slate-200/80 rounded-2xl p-4.5 flex items-center justify-between shadow-sm hover:border-slate-350/70 hover:shadow transition-all duration-200"
               >
                 <div className="flex items-center gap-3.5">
                   {job.logo ? (
@@ -502,28 +526,28 @@ export const Dashboard: React.FC = () => {
                       }}
                     />
                   ) : (
-                    <div className="w-10 h-10 rounded-lg bg-green-50 border border-green-100 flex items-center justify-center text-green-600 shrink-0">
+                    <div className="w-10 h-10 rounded-lg bg-emerald-50 border border-emerald-100 flex items-center justify-center text-emerald-600 shrink-0">
                       <Building size={16} />
                     </div>
                   )}
                   <div className="text-left leading-tight">
-                    <h4 className="font-extrabold text-xs text-slate-800 truncate max-w-[140px] sm:max-w-[180px]" title={job.title}>
+                    <h4 className="font-bold text-xs text-slate-800 truncate max-w-[140px] sm:max-w-[180px]" title={job.title}>
                       {job.title}
                     </h4>
-                    <p className="text-[10px] text-slate-450 font-bold mt-0.5">{job.company}</p>
-                    <span className="text-[9px] text-slate-400 font-bold block mt-1">{job.location}</span>
+                    <p className="text-[10px] text-slate-500 font-semibold mt-0.5">{job.company}</p>
+                    <span className="text-[9px] text-slate-400 font-semibold block mt-1">{job.location}</span>
                   </div>
                 </div>
 
                 <div className="flex items-center gap-3 shrink-0">
-                  <span className={`text-[9.5px] px-2 py-1 rounded-lg border font-bold ${scoreBg}`}>
+                  <span className={`text-[10px] px-2.5 py-1 rounded-lg border font-bold ${scoreBg}`}>
                     {score}% Match
                   </span>
                   <button 
                     onClick={() => navigate(`/jobs/${job.id}`)}
-                    className="px-3.5 py-1.5 bg-green-600 hover:bg-green-700 text-white font-extrabold text-[10px] rounded-lg shadow-sm hover:scale-102 transition-smooth cursor-pointer"
+                    className="px-3.5 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-lg shadow-sm hover:scale-102 transition-all cursor-pointer"
                   >
-                    Apply
+                    Apply Now
                   </button>
                 </div>
               </div>
@@ -532,26 +556,26 @@ export const Dashboard: React.FC = () => {
         </div>
       </section>
 
-      {/* SECTION 3: MY RESUME PORTFOLIO */}
+      {/* MY RESUME PORTFOLIO */}
       <section id="resumes-section" className="flex flex-col gap-4">
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end gap-3 border-b border-slate-100 pb-3">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end gap-3 border-b border-slate-100 pb-2">
           <div>
-            <span className="text-[9px] font-black text-slate-400 tracking-wider uppercase">Active Resumes</span>
+            <span className="text-[9px] font-bold text-slate-400 tracking-wider uppercase">Active Resumes</span>
             <h3 className="text-base font-extrabold text-slate-900 mt-0.5">My Resumes</h3>
           </div>
           
           <div className="flex flex-wrap items-center gap-3 w-full sm:w-auto">
             <input 
               type="text"
-              placeholder="Filter by resume name..."
+              placeholder="Filter by name..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="px-3 py-1.5 rounded-lg border border-slate-200 text-xs bg-white text-slate-700 placeholder:text-slate-400 focus:outline-none focus:border-green-500 min-w-[120px] font-medium"
+              className="px-3 py-1.5 rounded-lg border border-slate-200 text-xs bg-white text-slate-700 placeholder:text-slate-400 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 min-w-[120px] font-medium"
             />
             <select
               value={sortBy}
               onChange={(e: any) => setSortBy(e.target.value)}
-              className="px-3 py-1.5 rounded-lg border border-slate-200 text-xs bg-white text-slate-700 focus:outline-none focus:border-green-500 cursor-pointer font-bold"
+              className="px-3 py-1.5 rounded-lg border border-slate-200 text-xs bg-white text-slate-700 focus:outline-none focus:border-emerald-500 cursor-pointer font-semibold"
             >
               <option value="updated_at">Last Updated</option>
               <option value="ats_score">ATS Score</option>
@@ -561,7 +585,7 @@ export const Dashboard: React.FC = () => {
             <select
               value={filterBy}
               onChange={(e) => setFilterBy(e.target.value)}
-              className="px-3 py-1.5 rounded-lg border border-slate-200 text-xs bg-white text-slate-700 focus:outline-none focus:border-green-500 cursor-pointer font-bold"
+              className="px-3 py-1.5 rounded-lg border border-slate-200 text-xs bg-white text-slate-700 focus:outline-none focus:border-emerald-500 cursor-pointer font-semibold"
             >
               <option value="all">All Statuses</option>
               <option value="draft">Draft</option>
@@ -586,38 +610,38 @@ export const Dashboard: React.FC = () => {
             .map((res) => (
               <div 
                 key={res.id} 
-                className="group relative bg-white border border-slate-200/60 hover:border-green-300 rounded-[20px] p-5 flex flex-col justify-between gap-5 transition-all duration-200 hover:scale-[1.01] hover:shadow-sm text-left"
+                className="group relative bg-white border border-slate-200/85 hover:border-emerald-300 rounded-2xl p-5 flex flex-col justify-between gap-4 transition-all duration-200 hover:shadow-md text-left"
               >
                 <div className="flex justify-between items-start gap-4">
                   <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 bg-slate-50 rounded-xl border border-slate-150 flex items-center justify-center text-green-600 shadow-inner">
+                    <div className="w-10 h-10 bg-slate-50 rounded-xl border border-slate-150 flex items-center justify-center text-emerald-600 shadow-sm">
                       <FileText size={18} />
                     </div>
                     <div>
-                      <h4 className="font-extrabold text-xs text-slate-850 group-hover:text-green-600 transition-smooth">{res.name}</h4>
+                      <h4 className="font-bold text-xs text-slate-800 group-hover:text-emerald-600 transition-colors">{res.name}</h4>
                       <p className="text-[9px] text-slate-400 mt-1 font-semibold">Template: <span className="capitalize">{res.template}</span> • Status: <span className="font-bold">{res.status}</span></p>
                     </div>
                   </div>
                   
-                  <div className="flex flex-col items-end gap-1.5 shrink-0">
-                    <span className="bg-green-50 border border-green-100 text-green-650 text-[9px] font-black px-2 py-0.5 rounded shadow-sm">
+                  <div className="flex flex-col items-end gap-1 shrink-0">
+                    <span className="bg-emerald-50 border border-emerald-100 text-emerald-700 text-[10px] font-bold px-2 py-0.5 rounded shadow-sm">
                       ATS {res.atsScore}%
                     </span>
-                    <span className="text-[8px] text-slate-400 font-bold uppercase">Health: {res.completion}%</span>
+                    <span className="text-[9px] text-slate-400 font-bold">Health: {res.completion}%</span>
                   </div>
                 </div>
 
                 <div className="flex items-center justify-between gap-5 pt-3 border-t border-slate-100 mt-1">
                   <div className="flex items-center gap-1.5 flex-grow">
                     <div className="w-full bg-slate-100 rounded-full h-1.5 overflow-hidden">
-                      <div className="bg-green-600 h-full rounded-full" style={{ width: `${res.completion}%` }} />
+                      <div className="bg-emerald-600 h-full rounded-full transition-all duration-500" style={{ width: `${res.completion}%` }} />
                     </div>
                   </div>
 
                   <div className="flex items-center gap-1.5 shrink-0">
                     <button 
                       onClick={() => navigate(`/resume-builder?id=${res.id}`)}
-                      className="w-7 h-7 rounded-lg bg-white border border-slate-200 flex items-center justify-center text-slate-500 hover:text-green-600 hover:border-green-200 transition-smooth cursor-pointer"
+                      className="w-7 h-7 rounded-lg bg-white border border-slate-200 flex items-center justify-center text-slate-500 hover:text-emerald-600 hover:border-emerald-200 transition-colors cursor-pointer"
                       title="Edit Resume"
                     >
                       <Edit3 size={11} />
@@ -628,21 +652,21 @@ export const Dashboard: React.FC = () => {
                         const token = localStorage.getItem('auth_token');
                         window.open(`${API_BASE_URL}/api/resume-studio/${res.id}/pdf${token ? `?token=${token}` : ''}`, '_blank');
                       }}
-                      className="w-7 h-7 rounded-lg bg-white border border-slate-200 flex items-center justify-center text-slate-500 hover:text-green-600 hover:border-green-200 transition-smooth cursor-pointer"
+                      className="w-7 h-7 rounded-lg bg-white border border-slate-200 flex items-center justify-center text-slate-500 hover:text-emerald-600 hover:border-emerald-200 transition-colors cursor-pointer"
                       title="Download PDF"
                     >
                       <Download size={11} />
                     </button>
                     <button 
                       onClick={() => duplicateResume(res.id)}
-                      className="w-7 h-7 rounded-lg bg-white border border-slate-200 flex items-center justify-center text-slate-500 hover:text-green-600 hover:border-green-200 transition-smooth cursor-pointer"
+                      className="w-7 h-7 rounded-lg bg-white border border-slate-200 flex items-center justify-center text-slate-500 hover:text-emerald-600 hover:border-emerald-200 transition-colors cursor-pointer"
                       title="Duplicate"
                     >
                       <Copy size={11} />
                     </button>
                     <button 
                       onClick={() => deleteResume(res.id)}
-                      className="w-7 h-7 rounded-lg bg-rose-50 border border-rose-100 flex items-center justify-center text-rose-600 hover:bg-rose-600 hover:text-white transition-smooth cursor-pointer"
+                      className="w-7 h-7 rounded-lg bg-rose-50 border border-rose-100 flex items-center justify-center text-rose-600 hover:bg-rose-600 hover:text-white transition-colors cursor-pointer"
                       title="Delete Resume"
                     >
                       <Trash2 size={11} />
@@ -654,14 +678,14 @@ export const Dashboard: React.FC = () => {
         </div>
       </section>
 
-      {/* SECTION 4: BIMBA AI SUGGESTIONS */}
+      {/* BIMBA AI RECOMMENDATIONS */}
       <section className="flex flex-col gap-4">
         <div>
-          <span className="text-[9px] font-black text-slate-400 tracking-wider uppercase">Recruiter Insights</span>
+          <span className="text-[9px] font-bold text-slate-400 tracking-wider uppercase">Recruiter Insights</span>
           <h3 className="text-base font-extrabold text-slate-900 mt-0.5">Bimba AI Recommendations</h3>
         </div>
 
-        <div className="bg-white border border-slate-200/60 rounded-[20px] p-5 shadow-sm">
+        <div className="bg-white border border-slate-200/80 rounded-2xl p-5 shadow-sm">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {suggestions.length === 0 ? (
               <div className="col-span-2 text-center py-8 text-slate-400 font-bold text-xs">
@@ -671,14 +695,14 @@ export const Dashboard: React.FC = () => {
               suggestions.map((sug: any, idx: number) => (
                 <div 
                   key={idx} 
-                  className="bg-slate-50/50 border border-slate-200/60 rounded-xl p-4 flex flex-col justify-between gap-3 text-left hover:scale-[1.01] transition-smooth"
+                  className="bg-slate-50/50 border border-slate-200/60 rounded-xl p-4 flex flex-col justify-between gap-3 text-left hover:border-emerald-100 transition-colors"
                 >
                   <div className="flex justify-between items-start">
                     <div>
-                      <h4 className="font-extrabold text-xs text-slate-800">{sug.title}</h4>
+                      <h4 className="font-bold text-xs text-slate-800">{sug.title}</h4>
                       <p className="text-[10px] text-slate-500 mt-1 font-semibold leading-relaxed">{sug.reason}</p>
                     </div>
-                    <span className={`px-2 py-0.5 rounded text-[8px] font-black uppercase ${
+                    <span className={`px-2 py-0.5 rounded text-[8px] font-bold uppercase ${
                       sug.priority === 'High' ? 'bg-rose-50 border border-rose-100 text-rose-600' : 'bg-amber-50 border border-amber-100 text-amber-600'
                     }`}>
                       {sug.priority}
@@ -687,7 +711,7 @@ export const Dashboard: React.FC = () => {
                   <div className="flex justify-end pt-2 border-t border-slate-100">
                     <button 
                       onClick={() => handleFixSuggestion(sug.title)}
-                      className="px-3.5 py-1 bg-green-600 hover:bg-green-700 text-white font-extrabold text-[9px] rounded-lg transition-smooth shadow-sm cursor-pointer"
+                      className="px-3.5 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-[9px] rounded-lg transition-colors shadow-sm cursor-pointer"
                     >
                       One-Click Fix
                     </button>
@@ -699,15 +723,14 @@ export const Dashboard: React.FC = () => {
         </div>
       </section>
 
-
-      {/* SECTION 6: RECENT ACTIVITY TIMELINE & INSIGHTS CHARTS */}
+      {/* CAREER INSIGHTS CHARTS & TIMELINE */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-stretch">
         
         {/* Activity Timeline */}
-        <div className="bg-white border border-slate-200/60 rounded-[20px] p-5 flex flex-col justify-between min-h-[280px] shadow-sm text-left">
+        <div className="bg-white border border-slate-200/80 rounded-2xl p-5 flex flex-col justify-between min-h-[280px] shadow-sm text-left">
           <div className="border-b border-slate-100 pb-3 mb-4 flex justify-between items-center">
-            <h4 className="text-xs font-extrabold text-slate-850">Recent Activity</h4>
-            <span className="text-[8px] font-black text-slate-400 uppercase tracking-widest">Logs</span>
+            <h4 className="text-xs font-bold text-slate-850">Recent Activity</h4>
+            <span className="text-[8px] font-bold text-slate-400 uppercase tracking-widest">Logs</span>
           </div>
 
           <div className="flex flex-col gap-4 flex-grow justify-center pr-1">
@@ -719,15 +742,15 @@ export const Dashboard: React.FC = () => {
               timelineActivities.map((act, idx) => (
                 <div key={idx} className="flex gap-3 text-left">
                   <div className="flex flex-col items-center shrink-0">
-                    <div className="w-2 h-2 rounded-full bg-green-500 mt-1 shadow-sm shadow-green-500/20" />
+                    <div className="w-2 h-2 rounded-full bg-emerald-500 mt-1 shadow-sm shadow-emerald-500/20" />
                     {idx < timelineActivities.length - 1 && <div className="w-0.5 bg-slate-100 flex-grow my-1" />}
                   </div>
                   <div>
                     <div className="flex gap-2 items-center leading-none">
-                      <span className="text-[10px] font-extrabold text-slate-800">{act.title}</span>
-                      <span className="text-[8px] text-slate-400 font-bold">• {act.time}</span>
+                      <span className="text-[10px] font-bold text-slate-800">{act.title}</span>
+                      <span className="text-[8px] text-slate-400 font-semibold">• {act.time}</span>
                     </div>
-                    <p className="text-[9px] text-slate-450 mt-1 font-semibold leading-relaxed">{act.desc}</p>
+                    <p className="text-[9px] text-slate-500 mt-1 font-semibold leading-relaxed">{act.desc}</p>
                   </div>
                 </div>
               ))
@@ -735,27 +758,48 @@ export const Dashboard: React.FC = () => {
           </div>
         </div>
 
-        {/* Career Insights Charts */}
-        <div className="lg:col-span-2 bg-white border border-slate-200/60 rounded-[20px] p-5 flex flex-col justify-between min-h-[280px] shadow-sm text-left" id="analytics-section">
+        {/* SVG charts */}
+        <div className="lg:col-span-2 bg-white border border-slate-200/80 rounded-2xl p-5 flex flex-col justify-between min-h-[280px] shadow-sm text-left" id="analytics-section">
           <div className="border-b border-slate-100 pb-3 mb-4 flex justify-between items-center">
-            <h4 className="text-xs font-extrabold text-slate-850">Career Insights & Progress</h4>
-            <span className="text-[8px] font-black text-slate-400 uppercase tracking-widest">Analytics Trends</span>
+            <h4 className="text-xs font-bold text-slate-850">Career Insights & Progress</h4>
+            <span className="text-[8px] font-bold text-slate-400 uppercase tracking-widest">Analytics Trends</span>
           </div>
 
-          {/* Simple premium SVG Charts */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-5 flex-grow items-center">
+            {/* ATS Score Chart */}
             <div className="flex flex-col gap-2">
-              <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">ATS score progression</span>
+              <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">ATS score progression</span>
               <div className="w-full h-28 mt-1 relative bg-slate-50/50 border border-slate-100 rounded-xl p-2 flex items-center justify-center">
                 <svg className="w-full h-full" viewBox="0 0 200 80">
-                  {/* Grid lines */}
+                  <defs>
+                    <linearGradient id="atsGrad" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" stopColor="#10B981" stopOpacity="0.2"/>
+                      <stop offset="100%" stopColor="#10B981" stopOpacity="0.0"/>
+                    </linearGradient>
+                  </defs>
                   <line x1="10" y1="15" x2="190" y2="15" className="stroke-slate-100" strokeWidth="1" />
                   <line x1="10" y1="40" x2="190" y2="40" className="stroke-slate-100" strokeWidth="1" />
                   <line x1="10" y1="65" x2="190" y2="65" className="stroke-slate-100" strokeWidth="1" />
                   
-                  {/* Dynamic path */}
                   {atsHistory.length > 0 ? (
                     <>
+                      {/* Premium filled path */}
+                      <path 
+                        d={(() => {
+                          const len = atsHistory.length;
+                          const points = atsHistory.map((h: any, i: number) => {
+                            const x = len > 1 ? 10 + i * (180 / (len - 1)) : 100;
+                            const score = h.atsScore || 70;
+                            const y = 70 - (score / 100) * 55;
+                            return `${x},${y}`;
+                          });
+                          const firstX = len > 1 ? 10 : 100;
+                          const lastX = len > 1 ? 190 : 100;
+                          return `M ${firstX},70 L ${points.join(" L ")} L ${lastX},70 Z`;
+                        })()} 
+                        fill="url(#atsGrad)"
+                      />
+                      {/* Premium stroke line */}
                       <path 
                         d={(() => {
                           const len = atsHistory.length;
@@ -767,13 +811,12 @@ export const Dashboard: React.FC = () => {
                           }).join(" ");
                         })()} 
                         fill="none" 
-                        stroke="#16A34A" 
-                        strokeWidth="3.5" 
+                        stroke="#10B981" 
+                        strokeWidth="2.5" 
                         strokeLinecap="round" 
                         strokeLinejoin="round" 
                       />
                       
-                      {/* Dots */}
                       {atsHistory.map((h: any, i: number) => {
                         const len = atsHistory.length;
                         const x = len > 1 ? 10 + i * (180 / (len - 1)) : 100;
@@ -784,14 +827,14 @@ export const Dashboard: React.FC = () => {
                             key={i} 
                             cx={x} 
                             cy={y} 
-                            r="3.5" 
-                            className="fill-white stroke-green-600" 
+                            r="3" 
+                            className="fill-white stroke-emerald-600" 
                             strokeWidth="2" 
                           />
                         );
                       })}
                       
-                      <text x="180" y="10" textAnchor="end" className="text-[8px] font-black fill-green-650">
+                      <text x="180" y="10" textAnchor="end" className="text-[8px] font-bold fill-emerald-700">
                         {atsHistory[atsHistory.length - 1].atsScore}% ATS
                       </text>
                     </>
@@ -804,18 +847,40 @@ export const Dashboard: React.FC = () => {
               </div>
             </div>
 
+            {/* Downloads Chart */}
             <div className="flex flex-col gap-2">
-              <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Resume Downloads & Views</span>
+              <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Downloads & Views</span>
               <div className="w-full h-28 mt-1 relative bg-slate-50/50 border border-slate-100 rounded-xl p-2 flex items-center justify-center">
                 <svg className="w-full h-full" viewBox="0 0 200 80">
-                  {/* Grid lines */}
+                  <defs>
+                    <linearGradient id="dlGrad" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" stopColor="#10B981" stopOpacity="0.2"/>
+                      <stop offset="100%" stopColor="#10B981" stopOpacity="0.0"/>
+                    </linearGradient>
+                  </defs>
                   <line x1="10" y1="15" x2="190" y2="15" className="stroke-slate-100" strokeWidth="1" />
                   <line x1="10" y1="40" x2="190" y2="40" className="stroke-slate-100" strokeWidth="1" />
                   <line x1="10" y1="65" x2="190" y2="65" className="stroke-slate-100" strokeWidth="1" />
                   
-                  {/* Dynamic path */}
                   {downloadsTrend.length > 0 ? (
                     <>
+                      {/* Gradient fill */}
+                      <path 
+                        d={(() => {
+                          const len = downloadsTrend.length;
+                          const maxVal = Math.max(...downloadsTrend.map((t: any) => t.downloads)) || 1;
+                          const points = downloadsTrend.map((t: any, i: number) => {
+                            const x = len > 1 ? 10 + i * (180 / (len - 1)) : 100;
+                            const y = 70 - (t.downloads / maxVal) * 50;
+                            return `${x},${y}`;
+                          });
+                          const firstX = len > 1 ? 10 : 100;
+                          const lastX = len > 1 ? 190 : 100;
+                          return `M ${firstX},70 L ${points.join(" L ")} L ${lastX},70 Z`;
+                        })()} 
+                        fill="url(#dlGrad)"
+                      />
+                      {/* Line stroke */}
                       <path 
                         d={(() => {
                           const len = downloadsTrend.length;
@@ -827,13 +892,12 @@ export const Dashboard: React.FC = () => {
                           }).join(" ");
                         })()} 
                         fill="none" 
-                        stroke="#F97316" 
-                        strokeWidth="3.5" 
+                        stroke="#10B981" 
+                        strokeWidth="2.5" 
                         strokeLinecap="round" 
                         strokeLinejoin="round" 
                       />
                       
-                      {/* Dots */}
                       {downloadsTrend.map((t: any, i: number) => {
                         const len = downloadsTrend.length;
                         const maxVal = Math.max(...downloadsTrend.map((x: any) => x.downloads)) || 1;
@@ -844,14 +908,14 @@ export const Dashboard: React.FC = () => {
                             key={i} 
                             cx={x} 
                             cy={y} 
-                            r="3.5" 
-                            className="fill-white stroke-orange-500" 
+                            r="3" 
+                            className="fill-white stroke-emerald-600" 
                             strokeWidth="2" 
                           />
                         );
                       })}
                       
-                      <text x="180" y="12" textAnchor="end" className="text-[8px] font-black fill-orange-600">
+                      <text x="180" y="12" textAnchor="end" className="text-[8px] font-bold fill-emerald-700">
                         {downloadsTrend[downloadsTrend.length - 1].downloads} DLs
                       </text>
                     </>
@@ -865,20 +929,34 @@ export const Dashboard: React.FC = () => {
             </div>
           </div>
         </div>
-
       </div>
 
-      {/* BIMBA AI ASSISTANT CHAT PANEL */}
-      <section id="ai-assistant-section" className="flex flex-col gap-4">
-        <div>
-          <span className="text-[9px] font-black text-green-650 tracking-wider uppercase">Intelligent Career Advisor</span>
-          <h3 className="text-base font-extrabold text-slate-900 mt-0.5">Bimba AI Assistant Chat</h3>
-        </div>
+      {/* BIMBA AI FLOATING CHATBOT WIDGET */}
+      <div className="fixed bottom-6 right-6 z-50 flex flex-col items-end">
+        {/* Chat Panel Box */}
+        {isChatOpen && (
+          <div className="mb-4 bg-white border border-slate-200 shadow-2xl rounded-2xl w-[350px] h-[450px] flex flex-col overflow-hidden animate-slideUp">
+            {/* Header */}
+            <div className="bg-emerald-600 px-4 py-3 flex items-center justify-between text-white shadow-sm shrink-0">
+              <div className="flex items-center gap-2">
+                <div className="w-7 h-7 rounded-lg bg-white/10 flex items-center justify-center">
+                  <Bot size={16} className="text-white" />
+                </div>
+                <div className="text-left">
+                  <h4 className="font-bold text-xs">Bimba AI Assistant</h4>
+                  <p className="text-[9px] text-emerald-100">Intelligent Career Advisor</p>
+                </div>
+              </div>
+              <button 
+                onClick={() => setIsChatOpen(false)}
+                className="text-white hover:text-emerald-100 cursor-pointer"
+              >
+                <X size={16} />
+              </button>
+            </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-stretch">
-          {/* Left Chat Screen */}
-          <div className="lg:col-span-2 bg-white border border-slate-200/60 rounded-[20px] p-5 flex flex-col justify-between h-[300px] shadow-sm">
-            <div className="flex-grow overflow-y-auto no-scrollbar flex flex-col gap-3 pr-2 mb-4">
+            {/* Chat Messages */}
+            <div className="flex-grow overflow-y-auto p-4 flex flex-col gap-3.5 bg-slate-50/50">
               {chatMessages.map((msg, idx) => (
                 <div 
                   key={idx} 
@@ -886,8 +964,8 @@ export const Dashboard: React.FC = () => {
                 >
                   <div className={`max-w-[85%] rounded-2xl p-3 text-[11px] leading-relaxed ${
                     msg.sender === 'user'
-                      ? 'bg-green-600 text-white rounded-tr-none'
-                      : 'bg-slate-50 border border-slate-150 text-slate-700 rounded-tl-none'
+                      ? 'bg-emerald-600 text-white rounded-tr-none shadow-sm'
+                      : 'bg-white border border-slate-150 text-slate-700 rounded-tl-none shadow-sm'
                   }`}>
                     {msg.text}
                   </div>
@@ -895,53 +973,52 @@ export const Dashboard: React.FC = () => {
               ))}
             </div>
 
-            <div className="flex items-center gap-2 border-t border-slate-100 pt-3">
+            {/* Quick Prompts Container */}
+            <div className="px-4 py-2 border-t border-slate-100 bg-white flex gap-1.5 overflow-x-auto no-scrollbar shrink-0">
+              {[
+                { label: 'Improve Skills', text: 'Analyze and suggest modern skills for my CV.' },
+                { label: 'Optimize ATS', text: 'How do I bypass standard ATS systems?' },
+                { label: 'Cover Letter', text: 'Draft a cover letter for a Frontend Engineer position.' },
+              ].map((sug, idx) => (
+                <button
+                  key={idx}
+                  onClick={() => setChatInput(sug.text)}
+                  className="bg-slate-50 hover:bg-emerald-50 hover:text-emerald-700 border border-slate-200/80 hover:border-emerald-150 text-slate-650 px-2.5 py-1 rounded-full text-[9px] font-semibold transition-all cursor-pointer whitespace-nowrap"
+                >
+                  {sug.label}
+                </button>
+              ))}
+            </div>
+
+            {/* Chat Input Field */}
+            <div className="p-3 border-t border-slate-100 bg-white flex items-center gap-2 shrink-0">
               <input 
                 type="text"
-                placeholder="Ask Bimba AI e.g. 'Add technical skills' or 'Optimize ATS'..."
+                placeholder="Ask anything..."
                 value={chatInput}
                 onChange={(e) => setChatInput(e.target.value)}
                 onKeyDown={(e) => e.key === 'Enter' && handleSendChat()}
-                className="flex-grow pl-4 pr-4 py-2 rounded-xl bg-slate-50 border border-slate-200/80 focus:border-green-500 focus:outline-none text-[11px] text-slate-700 placeholder:text-slate-400 font-medium"
+                className="flex-grow pl-3 pr-3 py-2 rounded-xl bg-slate-50 border border-slate-200 focus:border-emerald-500 focus:outline-none text-[11px] text-slate-700 placeholder:text-slate-400 font-medium"
               />
               <button 
                 onClick={handleSendChat}
-                className="w-8 h-8 rounded-xl bg-green-600 hover:bg-green-500 text-white flex items-center justify-center transition-smooth cursor-pointer shadow-sm shrink-0"
+                className="w-8 h-8 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white flex items-center justify-center transition-colors cursor-pointer shadow-sm shrink-0"
               >
                 <SendHorizontal size={12} />
               </button>
             </div>
           </div>
+        )}
 
-          {/* Right prompt suggestions */}
-          <div className="bg-white border border-slate-200/60 rounded-[20px] p-5 flex flex-col justify-between h-[300px] shadow-sm text-left">
-            <div>
-              <span className="text-[8px] font-black text-slate-400 tracking-wider uppercase">Quick Prompts</span>
-              <h4 className="text-xs font-extrabold text-slate-800 mt-1">Suggested Prompt Actions</h4>
-            </div>
+        {/* Floating Action FAB Button */}
+        <button
+          onClick={() => setIsChatOpen(!isChatOpen)}
+          className="bg-emerald-600 hover:bg-emerald-700 text-white rounded-full p-4 shadow-xl hover:scale-105 transition-all duration-200 cursor-pointer"
+        >
+          {isChatOpen ? <X size={20} /> : <MessageCircle size={20} />}
+        </button>
+      </div>
 
-            <div className="flex flex-col gap-2 mt-3 flex-grow overflow-y-auto no-scrollbar">
-              {[
-                { label: 'Improve Skills', text: 'Analyze and suggest modern skills for my CV.' },
-                { label: 'Optimize ATS', text: 'How do I bypass standard ATS systems?' },
-                { label: 'Generate Cover Letter', text: 'Draft a cover letter for a Frontend Engineer position.' },
-              ].map((sug, idx) => (
-                <button
-                  key={idx}
-                  onClick={() => {
-                    setChatInput(sug.text);
-                  }}
-                  className="w-full text-left bg-slate-50 border border-slate-200/60 hover:border-green-200 rounded-xl p-3.5 hover:bg-slate-100/50 transition-smooth cursor-pointer"
-                >
-                  <h5 className="font-extrabold text-[11px] text-slate-750">{sug.label}</h5>
-                  <p className="text-[9px] text-slate-450 mt-1 font-semibold">{sug.text}</p>
-                </button>
-              ))}
-            </div>
-          </div>
-        </div>
-      </section>
-      
     </div>
   );
 };

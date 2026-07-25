@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { 
-  Home, FileText, Bot, Settings, 
-  LogOut, Sparkles, BarChart3, Briefcase, 
-  Building, MessageSquare, Coins, Bell
+  Home, FileText, Sparkles, BarChart3, 
+  Briefcase, Building, MessageSquare, Coins, 
+  Settings, LogOut, Bell
 } from 'lucide-react';
 import { useUserStore } from '../store/userStore';
 import { ThemeToggle } from '../components/ThemeToggle';
@@ -71,34 +71,34 @@ export const DashboardLayout: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 text-slate-800 flex overflow-x-hidden font-sans relative selection:bg-green-600/10">
-      {/* Decorative blurred glow elements */}
-      <div className="absolute top-[-10%] left-[-10%] w-[50%] h-[50%] rounded-full bg-green-500/5 blur-[120px] pointer-events-none z-0" />
-      <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] rounded-full bg-green-500/5 blur-[120px] pointer-events-none z-0" />
+    <div className="min-h-screen bg-slate-50 text-slate-800 flex overflow-x-hidden font-sans relative selection:bg-emerald-500/10">
+      {/* Subtle background flow element */}
+      <div className="absolute top-[-10%] left-[-10%] w-[50%] h-[50%] rounded-full bg-emerald-500/5 blur-[120px] pointer-events-none z-0" />
+      <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] rounded-full bg-emerald-500/5 blur-[120px] pointer-events-none z-0" />
 
-      {/* Floating Vertical Navigation Dock - DESKTOP (Smooth Hover Expansion) */}
+      {/* Floating Vertical Navigation Sidebar - DESKTOP */}
       <aside 
         onMouseEnter={() => setIsHovered(true)}
         onMouseLeave={() => setIsHovered(false)}
-        className={`hidden md:flex flex-col justify-between items-stretch py-7 px-5 bg-white border-r border-slate-200/60 h-screen fixed left-0 top-0 z-40 shadow-sm transition-all duration-300 ease-in-out ${
+        className={`hidden md:flex flex-col justify-between items-stretch py-7 px-4 bg-white border-r border-slate-200/80 h-screen fixed left-0 top-0 z-40 shadow-sm transition-all duration-300 ease-in-out ${
           isHovered ? 'w-64' : 'w-[84px]'
         }`}
       >
         <div className="flex flex-col gap-8">
           {/* Logo / Bimba Dock Header */}
-          <div className="flex items-center px-1 overflow-hidden shrink-0">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-green-600 to-emerald-500 flex items-center justify-center text-white font-black text-2xl shadow-lg shadow-green-500/20 shrink-0">
+          <div className="flex items-center px-2 overflow-hidden shrink-0">
+            <div className="w-10 h-10 rounded-xl bg-emerald-600 flex items-center justify-center text-white font-black text-2xl shadow-md shadow-emerald-600/10 shrink-0">
               B
             </div>
-            <span className={`font-extrabold text-slate-900 text-xl tracking-tight whitespace-nowrap transition-all duration-300 ease-in-out ${
+            <span className={`font-extrabold text-slate-900 text-lg tracking-tight whitespace-nowrap transition-all duration-300 ease-in-out ${
               isHovered ? 'opacity-100 max-w-[150px] ml-3.5' : 'opacity-0 max-w-0 overflow-hidden pointer-events-none'
             }`}>
               Bimba AI
             </span>
           </div>
 
-          {/* Dock Navigation List */}
-          <nav className="flex flex-col gap-2">
+          {/* Sidebar Navigation Links */}
+          <nav className="flex flex-col gap-1.5">
             {menuItems.map((item) => {
               const Icon = item.icon;
               const isActive = item.sectionId 
@@ -109,19 +109,14 @@ export const DashboardLayout: React.FC = () => {
                 <button
                   key={item.label}
                   onClick={() => handleNavClick(item)}
-                  className={`flex items-center w-full px-4 py-3.5 rounded-xl transition-all duration-250 relative group cursor-pointer overflow-hidden ${
+                  className={`flex items-center w-full px-3.5 py-3 rounded-xl transition-all duration-200 relative group cursor-pointer overflow-hidden ${
                     isActive 
-                      ? 'text-green-600 font-extrabold' 
-                      : 'text-slate-500 hover:text-slate-800 hover:bg-slate-100/50 font-bold'
+                      ? 'bg-emerald-50 text-emerald-700 font-semibold border-r-4 border-emerald-600 rounded-r-none shadow-sm' 
+                      : 'text-slate-500 hover:text-slate-800 hover:bg-slate-50 font-medium'
                   }`}
                 >
-                  {/* Active Page Accent - Green Pill Background */}
-                  {isActive && (
-                    <div className="absolute inset-0 rounded-xl bg-green-50 border border-green-200/50 shadow-sm pointer-events-none" />
-                  )}
-
                   <div className="flex items-center shrink-0 justify-center w-6 h-6 z-10 relative">
-                    <Icon size={20} className={isActive ? 'text-green-600' : 'text-slate-400 group-hover:text-slate-655'} />
+                    <Icon size={20} className={isActive ? 'text-emerald-600' : 'text-slate-450 group-hover:text-slate-700'} />
                   </div>
                   
                   <span className={`text-[13px] tracking-wide whitespace-nowrap z-10 transition-all duration-300 ease-in-out ${
@@ -130,7 +125,7 @@ export const DashboardLayout: React.FC = () => {
                     {item.label}
                   </span>
 
-                  {/* Icon tooltip when collapsed */}
+                  {/* Collapsed Tooltip */}
                   {!isHovered && (
                     <div className="absolute left-20 bg-slate-900 border border-slate-800 text-white px-2.5 py-1.5 rounded-lg text-[10px] font-bold tracking-wider uppercase opacity-0 pointer-events-none group-hover:opacity-100 transition-opacity duration-200 shadow-xl whitespace-nowrap z-50">
                       {item.label}
@@ -142,10 +137,10 @@ export const DashboardLayout: React.FC = () => {
           </nav>
         </div>
 
-        {/* Dock Footer (Logout) */}
+        {/* Sidebar Footer Logout */}
         <button
           onClick={() => logout()}
-          className="flex items-center w-full px-4 py-3.5 rounded-xl text-red-650 hover:text-red-700 hover:bg-red-50 transition-all duration-250 cursor-pointer font-bold relative group overflow-hidden"
+          className="flex items-center w-full px-3.5 py-3 rounded-xl text-rose-600 hover:text-rose-700 hover:bg-rose-50 transition-all duration-200 cursor-pointer font-semibold relative group overflow-hidden"
         >
           <div className="flex items-center shrink-0 justify-center w-6 h-6">
             <LogOut size={20} />
@@ -156,7 +151,7 @@ export const DashboardLayout: React.FC = () => {
             Log Out
           </span>
           {!isHovered && (
-            <div className="absolute left-20 bg-slate-900 border border-slate-800 text-red-500 px-2.5 py-1.5 rounded-lg text-[10px] font-bold tracking-wider uppercase opacity-0 pointer-events-none group-hover:opacity-100 transition-opacity duration-200 shadow-xl whitespace-nowrap z-50">
+            <div className="absolute left-20 bg-slate-900 border border-slate-800 text-rose-500 px-2.5 py-1.5 rounded-lg text-[10px] font-bold tracking-wider uppercase opacity-0 pointer-events-none group-hover:opacity-100 transition-opacity duration-200 shadow-xl whitespace-nowrap z-50">
               Log Out
             </div>
           )}
@@ -164,7 +159,7 @@ export const DashboardLayout: React.FC = () => {
       </aside>
 
       {/* Floating Bottom Navigation Bar - MOBILE */}
-      <nav className="md:hidden fixed bottom-4 inset-x-4 bg-white/80 border border-slate-200/60 backdrop-blur-xl rounded-2xl py-2.5 px-4 flex items-center justify-around z-40 shadow-xl shadow-slate-100/50">
+      <nav className="md:hidden fixed bottom-4 inset-x-4 bg-white/90 border border-emerald-100/60 backdrop-blur-xl rounded-2xl py-2 px-3 flex items-center justify-around z-45 shadow-lg">
         {menuItems.slice(0, 5).map((item) => {
           const Icon = item.icon;
           const isActive = item.sectionId 
@@ -175,56 +170,57 @@ export const DashboardLayout: React.FC = () => {
             <button
               key={item.label}
               onClick={() => handleNavClick(item)}
-              className="flex flex-col items-center justify-center p-2 relative cursor-pointer"
+              className="flex flex-col items-center justify-center p-2.5 relative cursor-pointer"
             >
-              <Icon size={18} className={isActive ? 'text-green-600' : 'text-slate-400'} />
+              <Icon size={18} className={isActive ? 'text-emerald-600' : 'text-slate-400'} />
               {isActive && (
-                <span className="absolute bottom-[-2px] w-1.5 h-1.5 rounded-full bg-green-600" />
+                <span className="absolute bottom-[-1px] w-1.5 h-1.5 rounded-full bg-emerald-600" />
               )}
             </button>
           );
         })}
-        {/* Mobile Settings Shortcut */}
         <button
           onClick={() => navigate('/settings')}
-          className="flex flex-col items-center justify-center p-2 cursor-pointer"
+          className="flex flex-col items-center justify-center p-2.5 cursor-pointer"
         >
-          <Settings size={18} className={location.pathname === '/settings' ? 'text-green-600' : 'text-slate-400'} />
+          <Settings size={18} className={location.pathname === '/settings' ? 'text-emerald-600' : 'text-slate-400'} />
         </button>
       </nav>
 
       {/* Content wrapper with Stable Padding */}
       <div className="flex-grow pl-0 md:pl-[84px] min-h-screen flex flex-col z-10 w-full">
-        {/* Improved Top Navigation */}
-        <header className="bg-white/80 backdrop-blur-md border-b border-slate-200/60 h-16 flex items-center justify-between px-6 z-30 shadow-sm sticky top-0">
-          <div className="flex items-center gap-1.5 text-xs font-black text-slate-800 tracking-tight uppercase">
+        {/* Top Header */}
+        <header className="bg-white/85 backdrop-blur-md border-b border-slate-200/80 h-16 flex items-center justify-between px-6 z-30 shadow-sm sticky top-0">
+          <div className="flex items-center gap-1.5 text-xs font-bold text-slate-800 tracking-tight uppercase">
             <span>Bimba AI Platform</span>
           </div>
           <div className="flex items-center gap-3.5">
-            {/* 1st: Notifications */}
+            {/* Notifications */}
             <button 
               onClick={() => navigate('/notifications')}
-              className="w-9 h-9 rounded-xl bg-slate-50 border border-slate-250 flex items-center justify-center text-slate-500 hover:text-slate-900 transition-smooth relative cursor-pointer"
+              className="w-9 h-9 rounded-xl bg-slate-50 border border-slate-200 flex items-center justify-center text-slate-500 hover:text-slate-900 transition-smooth relative cursor-pointer"
             >
               <Bell size={15} />
-              {notificationCount > 0 && <span className="absolute top-2.5 right-2.5 w-1.5 h-1.5 rounded-full bg-green-600" />}
+              {notificationCount > 0 && <span className="absolute top-2.5 right-2.5 w-1.5 h-1.5 rounded-full bg-emerald-600" />}
             </button>
             
             <div className="w-[1px] h-5 bg-slate-200" />
             
-            {/* 2nd: Theme Toggle */}
+            {/* Theme Toggle */}
             <ThemeToggle />
             
             <div className="w-[1px] h-5 bg-slate-200" />
 
-            {/* 3rd: Account */}
-            <div className="flex items-center gap-2.5 pl-1">
-              <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-green-600 to-emerald-400 text-white font-extrabold flex items-center justify-center text-xs shadow-sm">
+            {/* User Account with Plus Member Badge */}
+            <div className="flex items-center gap-3 pl-1">
+              <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-emerald-600 to-teal-500 text-white font-bold flex items-center justify-center text-xs shadow-sm">
                 {displayName.charAt(0).toUpperCase()}
               </div>
-              <div className="hidden lg:block text-left leading-none">
-                <h5 className="font-extrabold text-[11px] text-slate-850">{displayName}</h5>
-                <span className="text-[8px] font-black text-slate-450 uppercase tracking-widest block mt-0.5">Plus Member</span>
+              <div className="hidden lg:flex items-center gap-2">
+                <h5 className="font-semibold text-xs text-slate-800">{displayName}</h5>
+                <span className="bg-emerald-100 text-emerald-800 text-[10px] font-semibold px-2.5 py-0.5 rounded-full">
+                  Plus Member
+                </span>
               </div>
             </div>
           </div>
