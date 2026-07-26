@@ -90,10 +90,12 @@ def call_claude(api_key: str, model: str, prompt: str, temperature: float, max_t
 
 def execute_llm_call(provider: AIProvider, prompt: str) -> str:
     import os
-    env_key = f"{provider.slug.upper()}_API_KEY"
-    api_key = os.getenv(env_key, "").strip()
+    api_key = getattr(provider, "api_key", "") or ""
     if not api_key:
-        raise ValueError(f"API key for {provider.slug} is missing in backend .env configuration")
+        env_key = f"{provider.slug.upper()}_API_KEY"
+        api_key = os.getenv(env_key, "").strip()
+    if not api_key:
+        raise ValueError(f"API key for {provider.slug} is missing in configuration")
         
     model = provider.model_name or "default"
     temp = provider.temperature if provider.temperature is not None else 0.7

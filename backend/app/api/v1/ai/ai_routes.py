@@ -154,26 +154,21 @@ def list_providers(
     result = []
     for p_doc in providers:
         p = MongoModel(p_doc)
-        key = get_key_from_env(p.slug)
+        key = p_doc.get("api_key", "")
+        if not key:
+            key = get_key_from_env(p.slug)
         has_key = len(key) > 0
         status_text = p.connection_status
         if not has_key:
             status_text = "🔴 Not Configured"
         elif status_text == "Not Configured":
-            status_text = "🟢 Configured (.env)"
-
-        masked_key = ""
-        if key:
-            if len(key) > 8:
-                masked_key = f"{key[:4]}••••••••{key[-4:]}"
-            else:
-                masked_key = "••••••••"
+            status_text = "🟢 Configured"
 
         result.append({
             "id": p.id,
             "provider_name": p.provider_name,
             "slug": p.slug,
-            "masked_key": masked_key,
+            "masked_key": key,  # Return the real API key to show it in the Admin console
             "model_name": p.model_name,
             "priority": p.priority,
             "temperature": p.temperature,
@@ -192,6 +187,73 @@ def list_providers(
         })
     return result
 
+@router.post("/providers")
+def create_provider(
+    payload: SaveProviderRequest,
+    admin: AdminUser = Depends(get_current_admin),
+    db: Any = Depends(get_db)
+):
+    if admin.role != "super_admin":
+        raise HTTPException(status_code=403, detail="Permission Denied. Super Admin access required.")
+        
+    new_id = get_next_sequence("ai_providers")
+    provider_data = {
+        "id": new_id,
+        "provider_name": payload.provider_name,
+        "slug": payload.slug,
+        "model_name": payload.model_name,
+        "priority": payload.priority,
+        "temperature": payload.temperature,
+        "top_p": payload.top_p,
+        "max_tokens": payload.max_tokens,
+        "timeout": payload.timeout,
+        "retry_attempts": payload.retry_attempts,
+        "rate_limit": payload.rate_limit,
+        "fallback_enabled": payload.fallback_enabled,
+        "is_enabled": payload.is_enabled,
+        "connection_status": "Not Configured"
+    }
+    
+    if payload.api_key is not None:
+        provider_data["api_key"] = payload.api_key.strip()
+        
+    db.ai_providers.insert_one(provider_data)
+    log_ai_audit(db, admin.username, f"Created provider: {payload.slug}", "Success", payload.slug)
+    return {"success": True, "message": "Provider created successfully."}
+
+@router.put("/providers/{id}")
+def update_provider(
+    id: int,
+    payload: SaveProviderRequest,
+    admin: AdminUser = Depends(get_current_admin),
+    db: Any = Depends(get_db)
+):
+    if admin.role != "super_admin":
+        raise HTTPException(status_code=403, detail="Permission Denied. Super Admin access required.")
+        
+    provider_doc = db.ai_providers.find_one({"id": id})
+    if not provider_doc:
+        raise HTTPException(status_code=404, detail="Provider not found.")
+        
+    update_data = {
+        "provider_name": payload.provider_name,
+        "model_name": payload.model_name,
+        "is_enabled": payload.is_enabled,
+        "temperature": payload.temperature,
+        "fallback_enabled": payload.fallback_enabled
+    }
+    
+    if payload.api_key is not None:
+        update_data["api_key"] = payload.api_key.strip()
+        
+    db.ai_providers.update_one(
+        {"id": id},
+        {"$set": update_data}
+    )
+    
+    log_ai_audit(db, admin.username, f"Updated provider: {payload.slug}", "Success", payload.slug)
+    return {"success": True, "message": "Provider parameters updated successfully."}
+
 @router.post("/providers/{id}/test")
 def test_provider_connection(
     id: int,
@@ -208,9 +270,15 @@ def test_provider_connection(
         raise HTTPException(status_code=404, detail="Provider config not found.")
         
     provider = MongoModel(provider_doc)
-    key_to_test = get_key_from_env(provider.slug)
+    
+    key_to_test = payload.api_key
     if not key_to_test:
-        raise HTTPException(status_code=400, detail="🔴 Invalid Configuration: API Key not found in backend .env file.")
+        key_to_test = provider_doc.get("api_key", "")
+    if not key_to_test:
+        key_to_test = get_key_from_env(provider.slug)
+        
+    if not key_to_test:
+        raise HTTPException(status_code=400, detail="🔴 Invalid Configuration: API Key not configured.")
         
     # Execute actual connection test
     success, status_msg = test_provider_api(provider.slug, key_to_test, timeout=provider.timeout or 10)
