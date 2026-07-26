@@ -84,8 +84,7 @@ export const AdminLayout: React.FC = () => {
       label: 'Resume Center',
       icon: FileText,
       subItems: [
-        { label: 'All Resumes', path: '/admin/resumes' },
-        { label: 'Resume Templates', path: '/admin/templates' }
+        { label: 'All Resumes', path: '/admin/resumes' }
       ]
     },
     {
