@@ -267,11 +267,11 @@ body, aside, header, nav, main, table, th, td, button, input, select, textarea, 
 }
 
 /* Hover Overrides */
-.dark .hover:bg-slate-50:hover,
-.dark .hover:bg-slate-100:hover,
-.dark .hover:bg-slate-100\/50:hover,
-.dark .hover:bg-gray-50:hover,
-.dark .hover:bg-slate-50\/50:hover {
+.dark .hover\:bg-slate-50:hover,
+.dark .hover\:bg-slate-100:hover,
+.dark .hover\:bg-slate-100\/50:hover,
+.dark .hover\:bg-gray-50:hover,
+.dark .hover\:bg-slate-50\/50:hover {
   background-color: var(--card-hover-bg) !important;
 }
 

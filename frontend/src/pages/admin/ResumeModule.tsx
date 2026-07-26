@@ -10,6 +10,51 @@ import { apiClient } from '../../services/api';
 import { Button } from '../../components/Button';
 import { Card } from '../../components/Card';
 import { Modal } from '../../components/Modal';
+import { ResumePreviewSheet } from '../../resume/ResumePreviewSheet';
+
+
+const MOCK_PREVIEW_RESUME = {
+  personalInfo: {
+    name: "Bharath Kulal",
+    email: "bharath.kulal@bimba.ai",
+    phone: "+91 98765 43210",
+    address: "Bangalore, India",
+    linkedin: "linkedin.com/in/bharathkulal",
+    github: "github.com/bharathkulal",
+    summary: "Senior Full Stack Engineer & System Architect with 5+ years of experience building scalable web applications and enterprise-grade systems. Proficient in React, Node.js, Python, and cloud infrastructure optimization."
+  },
+  educationList: [
+    { institution: "Indian Institute of Science (IISc)", degree: "B.Tech in Computer Science", passing_year: 2023, cgpa: 9.8, achievements: "Gold medalist in Systems Engineering specialization" }
+  ],
+  experienceList: [
+    { position: "Senior Software Engineer", company: "BIMBA AI", duration: "2024 - Present", description: "Led development of real-time collaboration engines, optimizing WebSocket channels and state synchronization mechanisms. Reduced server-side bundle size by 40%." },
+    { position: "Software Engineer", company: "TechCorp Labs", duration: "2023 - 2024", description: "Built microservice architectures handling 50k+ daily transactions. Programmed automated CI/CD pipelines using Docker and Kubernetes." }
+  ],
+  projectList: [
+    { name: "ATS Optimization Scanner", duration: "3 Months", tech_stack: "Python, FastAPI, NLP", description: "Created an AI-driven parser analyzing resume readability compliance, scoring formats against industry guidelines with 99.8% precision." }
+  ],
+  skillList: [
+    { name: "TypeScript", level: 5 },
+    { name: "FastAPI", level: 5 },
+    { name: "MongoDB", level: 4 },
+    { name: "Docker", level: 4 }
+  ],
+  certificateList: [
+    { name: "AWS Certified Solutions Architect", organization: "Amazon Web Services", issue_date: "Jan 2025" }
+  ],
+  achievements: {
+    hackathons: "Winner of Global AI Builders Hackathon 2025",
+    awards: "Employee of the Year at Bimba AI",
+    soft_skills: "Technical Leadership, Agile Methodologies, System Design"
+  },
+  sectionVisibility: {
+    experience: true,
+    projects: true,
+    skills: true,
+    certificates: true,
+    achievements: true
+  }
+};
 
 export const ResumeModule: React.FC = () => {
   const navigate = useNavigate();
@@ -27,6 +72,17 @@ export const ResumeModule: React.FC = () => {
   const [editingTemplate, setEditingTemplate] = useState<any | null>(null);
   const [previewTemplate, setPreviewTemplate] = useState<any | null>(null);
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
+
+  // Template Preview customization states
+  const [previewViewport, setPreviewViewport] = useState<'desktop' | 'tablet' | 'mobile' | 'a4'>('a4');
+  const [previewTheme, setPreviewTheme] = useState<string>('blue');
+
+  const handleOpenPreview = (tpl: any) => {
+    setPreviewTemplate(tpl);
+    setPreviewTheme(tpl.color_theme || 'blue');
+    setPreviewViewport('a4');
+  };
+
 
   const [templateForm, setTemplateForm] = useState({
     slug: '',
@@ -420,7 +476,7 @@ export const ResumeModule: React.FC = () => {
                   
                   <div className="flex items-center gap-1">
                     <button 
-                      onClick={() => setPreviewTemplate(tpl)}
+                      onClick={() => handleOpenPreview(tpl)}
                       className="p-1.5 rounded-lg bg-white/5 border border-white/5 text-slate-400 hover:text-white transition-colors cursor-pointer"
                       title="Live Preview"
                     >
@@ -583,24 +639,125 @@ export const ResumeModule: React.FC = () => {
 
       {/* PREVIEW TEMPLATE DETAILS OVERLAY */}
       {previewTemplate && (
-        <Modal isOpen={!!previewTemplate} onClose={() => setPreviewTemplate(null)} title={`Code Inspector: ${previewTemplate.name}`}>
-          <div className="flex flex-col gap-4 text-left text-xs font-semibold text-slate-350">
-            <div>
-              <span className="text-[9px] text-slate-450 uppercase font-black tracking-widest block mb-1.5">HTML Structure Layout</span>
-              <pre className="bg-[#102117] border border-white/5 rounded-xl p-3.5 font-mono text-[9.5px] text-emerald-400 overflow-x-auto max-h-40">
-                {previewTemplate.html_content || '<!-- No HTML layout configured -->'}
-              </pre>
+        <Modal 
+          isOpen={!!previewTemplate} 
+          onClose={() => setPreviewTemplate(null)} 
+          title={`Dynamic Preview: ${previewTemplate.name}`}
+        >
+          <div className="flex flex-col gap-6 text-left text-xs font-semibold text-slate-300">
+            {/* Template info bar */}
+            <div className="flex flex-wrap justify-between items-center bg-[#102117] border border-white/5 p-4 rounded-2xl gap-4">
+              <div className="flex flex-col gap-1 text-left">
+                <span className="text-[10px] text-slate-450 uppercase font-black tracking-wider block">Template Metadata</span>
+                <div className="flex items-center gap-2">
+                  <span className="bg-emerald-500/10 border border-emerald-500/20 text-[#22C55E] px-2 py-0.5 rounded text-[8px] font-black uppercase">
+                    {previewTemplate.category}
+                  </span>
+                  <span className="bg-emerald-500/10 border border-emerald-500/20 text-[#22C55E] px-2 py-0.5 rounded text-[8px] font-black uppercase">
+                    {previewTemplate.industry || 'Tech'}
+                  </span>
+                  {previewTemplate.is_premium && (
+                    <span className="bg-amber-500 text-black text-[8px] font-black uppercase px-2 py-0.5 rounded">Premium</span>
+                  )}
+                </div>
+              </div>
+
+              {/* Viewport simulation picker */}
+              <div className="flex flex-col gap-1 text-left">
+                <span className="text-[10px] text-slate-450 uppercase font-black tracking-wider block">Simulated Viewport</span>
+                <div className="flex bg-[#08130D] border border-white/5 p-1 rounded-xl gap-1">
+                  {(['desktop', 'tablet', 'mobile', 'a4'] as const).map((vp) => (
+                    <button
+                      key={vp}
+                      type="button"
+                      onClick={() => setPreviewViewport(vp)}
+                      className={`px-3 py-1.5 rounded-lg text-[9px] font-black uppercase transition-all cursor-pointer ${
+                        previewViewport === vp ? 'bg-emerald-600 text-white shadow-md' : 'text-slate-400 hover:text-white'
+                      }`}
+                    >
+                      {vp}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Color Theme switcher */}
+              <div className="flex flex-col gap-1 text-left">
+                <span className="text-[10px] text-slate-450 uppercase font-black tracking-wider block">Accent Theme</span>
+                <div className="flex gap-1.5">
+                  {['blue', 'emerald', 'indigo', 'slate', 'red', 'purple', 'orange', 'pink', 'green'].map((col) => (
+                    <button
+                      key={col}
+                      type="button"
+                      onClick={() => setPreviewTheme(col)}
+                      className={`w-5 h-5 rounded-full border-2 transition-all cursor-pointer ${
+                        col === 'blue' ? 'bg-blue-600' :
+                        col === 'emerald' ? 'bg-emerald-600' :
+                        col === 'indigo' ? 'bg-indigo-600' :
+                        col === 'slate' ? 'bg-slate-600' :
+                        col === 'red' ? 'bg-red-600' :
+                        col === 'purple' ? 'bg-purple-600' :
+                        col === 'orange' ? 'bg-orange-600' :
+                        col === 'pink' ? 'bg-pink-600' : 'bg-green-600'
+                      } ${
+                        previewTheme === col ? 'border-white scale-110 shadow' : 'border-transparent hover:scale-105'
+                      }`}
+                      title={col}
+                    />
+                  ))}
+                </div>
+              </div>
+
+              {/* ATS target meter */}
+              <div className="flex items-center gap-3 bg-[#08130D] border border-white/5 px-4 py-2 rounded-2xl">
+                <div className="relative w-8 h-8 flex items-center justify-center shrink-0">
+                  <svg className="absolute w-full h-full transform -rotate-90">
+                    <circle cx="16" cy="16" r="13" className="stroke-white/5 fill-none" strokeWidth="2.5" />
+                    <circle cx="16" cy="16" r="13" className="stroke-emerald-500 fill-none" strokeWidth="2.5" strokeDasharray="81" strokeDashoffset={81 - (81 * (previewTemplate.ats_rating || 98)) / 100} strokeLinecap="round" />
+                  </svg>
+                  <span className="text-[8px] font-black text-white">{previewTemplate.ats_rating || 98}%</span>
+                </div>
+                <div className="text-left">
+                  <span className="text-[8px] text-slate-455 uppercase font-black tracking-wider block">ATS Compliance</span>
+                  <span className="text-[9px] text-[#22C55E] font-bold">Highly Optimized</span>
+                </div>
+              </div>
             </div>
 
-            <div>
-              <span className="text-[9px] text-slate-450 uppercase font-black tracking-widest block mb-1.5">ReportLab PDF Export Code</span>
-              <pre className="bg-[#102117] border border-white/5 rounded-xl p-3.5 font-mono text-[9.5px] text-emerald-400 overflow-x-auto max-h-40">
-                {previewTemplate.reportlab_code || '# No Python builder code provided'}
-              </pre>
+            {/* Viewport Frame */}
+            <div className="bg-[#08130D] border border-white/5 rounded-2xl p-6 flex justify-center items-center overflow-x-auto min-h-[450px]">
+              <div 
+                className={`transition-all duration-300 bg-slate-100/5 p-4 rounded-xl flex justify-center ${
+                  previewViewport === 'desktop' ? 'w-full max-w-[900px] aspect-[16/10]' :
+                  previewViewport === 'tablet' ? 'w-[680px] aspect-[4/3]' :
+                  previewViewport === 'mobile' ? 'w-[360px] aspect-[9/16]' :
+                  'w-full max-w-[500px]'
+                }`}
+              >
+                <div className={`overflow-auto w-full flex justify-center items-start ${
+                  previewViewport === 'mobile' ? 'scale-[0.65] origin-top' :
+                  previewViewport === 'tablet' ? 'scale-[0.8] origin-top' : ''
+                }`}>
+                  <ResumePreviewSheet
+                    personalInfo={MOCK_PREVIEW_RESUME.personalInfo}
+                    educationList={MOCK_PREVIEW_RESUME.educationList}
+                    experienceList={MOCK_PREVIEW_RESUME.experienceList}
+                    projectList={MOCK_PREVIEW_RESUME.projectList}
+                    skillList={MOCK_PREVIEW_RESUME.skillList}
+                    certificateList={MOCK_PREVIEW_RESUME.certificateList}
+                    achievements={MOCK_PREVIEW_RESUME.achievements}
+                    sectionVisibility={MOCK_PREVIEW_RESUME.sectionVisibility}
+                    templateId={previewTemplate.slug}
+                    colorTheme={previewTheme}
+                    zoomLevel={0.9}
+                  />
+                </div>
+              </div>
             </div>
 
-            <div className="flex justify-end pt-2">
-              <Button onClick={() => setPreviewTemplate(null)} variant="primary">Close Inspector</Button>
+            {/* Close button */}
+            <div className="flex gap-2.5 justify-end border-t border-white/5 pt-4">
+              <Button onClick={() => setPreviewTemplate(null)} variant="primary">Close Preview</Button>
             </div>
           </div>
         </Modal>

@@ -441,28 +441,6 @@ class TemplateAdminSchema(BaseModel):
 def get_admin_templates(admin: AdminUser = Depends(get_current_admin), db: Any = Depends(get_db)):
     tpls = list(db.resume_templates.find({}))
     result = []
-    for t_doc in tprs:
-        t = MongoModel(t_doc)
-        result.append({
-            "id": t.id,
-            "slug": t.slug,
-            "name": t.name,
-            "category": t.category,
-            "score": t.ats_rating,
-            "is_active": t.is_enabled,
-            "is_premium": t.is_premium,
-            "color_theme": t.color_theme,
-            "description": f"{t.category} layout. ATS Scorecard: {t.ats_rating}%",
-            "html_content": t.html_content,
-            "reportlab_code": t.reportlab_code
-        })
-    return result
-
-# Simple fix for variable name typo in templates fetch above
-@router.get("/templates")
-def get_admin_templates(admin: AdminUser = Depends(get_current_admin), db: Any = Depends(get_db)):
-    tpls = list(db.resume_templates.find({}))
-    result = []
     for t_doc in tpls:
         t = MongoModel(t_doc)
         result.append({

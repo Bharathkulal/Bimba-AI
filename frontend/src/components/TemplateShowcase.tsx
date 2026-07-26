@@ -1,482 +1,140 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Search, Check, Sparkles, Download, X, 
   Award, FileText, ArrowRight, Flame
 } from 'lucide-react';
 import { Button } from './Button';
+import { apiClient } from '../services/api';
+import { ResumePreviewSheet } from '../resume/ResumePreviewSheet';
 
-// Mock sample data to render in the miniature resume previews
-const sampleResumeData = {
-  name: "John Anderson",
-  title: "Senior Product Designer",
-  contact: "San Francisco, CA • john.anderson@email.com • (555) 019-2834",
-  summary: "Award-winning Product Designer with 6+ years of experience leading cross-functional teams to design scalable mobile and web SaaS platforms. Expert in user research, design systems, interactive prototyping, and front-end frameworks.",
-  skills: ["UX/UI Design", "Figma", "Design Systems", "HTML/CSS/JS", "Framer Motion", "User Testing", "SaaS Strategy"],
-  experience: [
-    { role: "Lead UI/UX Designer", company: "Stripe", date: "2022 - Present", desc: "Redesigned checkout flows, increasing transaction conversion rate by 14.8%. Led a design system scaling to 50+ engineers." },
-    { role: "Senior Product Designer", company: "Linear", date: "2020 - 2022", desc: "Designed developer collaboration dashboards. Reduced user-reported interface friction by 32%." }
+const MOCK_STUDENT_RESUME = {
+  personalInfo: {
+    name: "John Anderson",
+    email: "john.anderson@email.com",
+    phone: "(555) 019-2834",
+    address: "San Francisco, CA",
+    linkedin: "linkedin.com/in/johnanderson",
+    github: "github.com/johnanderson",
+    summary: "Award-winning Product Designer with 6+ years of experience leading cross-functional teams to design scalable mobile and web SaaS platforms. Expert in user research, design systems, interactive prototyping, and front-end frameworks."
+  },
+  educationList: [
+    { institution: "UC Berkeley", degree: "B.S. in Human-Computer Interaction", passing_year: 2020 }
   ],
-  education: { degree: "B.S. in Human-Computer Interaction", school: "UC Berkeley", date: "2016 - 2020" }
+  experienceList: [
+    { position: "Lead UI/UX Designer", company: "Stripe", duration: "2022 - Present", description: "Redesigned checkout flows, increasing transaction conversion rate by 14.8%. Led a design system scaling to 50+ engineers." },
+    { position: "Senior Product Designer", company: "Linear", duration: "2020 - 2022", description: "Designed developer collaboration dashboards. Reduced user-reported interface friction by 32%." }
+  ],
+  projectList: [
+    { name: "SaaS Analytics Dashboard", duration: "3 Months", tech_stack: "React, TailwindCSS", description: "Created an interactive reporting interface allowing customers to track metrics in real time with high accessibility." }
+  ],
+  skillList: [
+    { name: "UX/UI Design", level: 5 },
+    { name: "Figma", level: 5 },
+    { name: "Design Systems", level: 4 },
+    { name: "HTML/CSS/JS", level: 4 }
+  ],
+  certificateList: [
+    { name: "Certified Scrum Master", organization: "Scrum Alliance" }
+  ],
+  achievements: {
+    hackathons: "Linear Design Hackathon Winner 2021",
+    awards: "Stripe Design Innovation Award 2023",
+    soft_skills: "Collaborative Leadership, Fast Prototyping"
+  },
+  sectionVisibility: {
+    experience: true,
+    projects: true,
+    skills: true,
+    certificates: true,
+    achievements: true
+  }
 };
 
-interface Template {
-  id: string;
-  name: string;
-  description: string;
-  style: string;
-  tags: string[];
-  atsScore: number;
-  usersCount: string;
-  popularity: 'Trending' | 'Popular' | 'Standard' | 'Hot';
-  badge: 'PRO' | 'AI Optimized' | 'Popular' | 'New' | 'Free';
-  badgeColor: string;
-  // A custom render function to display its specific miniature resume layout
-  renderPreview: (zoom?: boolean) => React.ReactNode;
-}
-
 export const TemplateShowcase: React.FC = () => {
+  const [templates, setTemplates] = useState<any[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('All');
   const [sortBy, setSortBy] = useState('Popularity');
-  const [selectedTemplate, setSelectedTemplate] = useState<string>('celestial');
-  const [previewingTemplate, setPreviewingTemplate] = useState<Template | null>(null);
+  const [selectedTemplate, setSelectedTemplate] = useState<string>('modern');
+  const [previewingTemplate, setPreviewingTemplate] = useState<any | null>(null);
   const [zoomLevel, setZoomLevel] = useState<100 | 125 | 150>(100);
+  const [isLoading, setIsLoading] = useState(true);
 
   const categories = [
-    'All', 'ATS', 'Modern', 'Minimal', 'Creative', 'Corporate', 
-    'Academic', 'Simple', 'Executive', 'Two Column', 'One Column'
+    'All', 'ATS', 'Modern', 'Minimalist', 'Creative', 'Professional', 'Academic', 'Entry Level'
   ];
 
-  const templates: Template[] = [
-    {
-      id: 'cosmos',
-      name: 'Cosmos Pro',
-      description: 'Elegant, modern layout with high readability',
-      style: 'Modern & Compact',
-      tags: ['Modern', 'One Page', 'SaaS'],
-      atsScore: 98,
-      usersCount: '42,000+',
-      popularity: 'Trending',
-      badge: 'PRO',
-      badgeColor: 'from-purple-500 to-indigo-500',
-      renderPreview: (zoom = false) => (
-        <div className={`w-full h-full flex flex-col bg-white text-slate-800 ${zoom ? 'p-8' : 'p-3'} text-[5px] leading-tight select-none`}>
-          {/* Header */}
-          <div className="border-b-[0.5px] border-slate-200 pb-1 mb-1">
-            <h4 className={`${zoom ? 'text-2xl' : 'text-[9px]'} font-extrabold text-slate-900 tracking-tight`}>{sampleResumeData.name}</h4>
-            <p className={`${zoom ? 'text-sm' : 'text-[5px]'} text-blue-600 font-bold tracking-wide uppercase mt-0.5`}>{sampleResumeData.title}</p>
-            <p className={`${zoom ? 'text-[10px]' : 'text-[3.5px]'} text-slate-400 font-medium mt-0.5`}>{sampleResumeData.contact}</p>
-          </div>
-          {/* Summary */}
-          <div className="mb-1">
-            <p className={`${zoom ? 'text-xs' : 'text-[4px]'} text-slate-500 italic`}>{sampleResumeData.summary}</p>
-          </div>
-          {/* Main Layout Grid */}
-          <div className="grid grid-cols-3 gap-1.5 mt-1">
-            <div className="col-span-2 flex flex-col gap-1 border-r-[0.5px] border-slate-100 pr-1">
-              <h5 className="font-bold border-b-[0.5px] border-slate-150 text-slate-700">EXPERIENCE</h5>
-              {sampleResumeData.experience.map((exp, idx) => (
-                <div key={idx} className="flex flex-col gap-0.5">
-                  <div className="flex justify-between font-semibold">
-                    <span>{exp.role}</span>
-                    <span className="text-slate-400">{exp.date}</span>
-                  </div>
-                  <span className="text-slate-500 font-medium">{exp.company}</span>
-                  <p className="text-slate-400 scale-[0.9] origin-left">{exp.desc}</p>
-                </div>
-              ))}
-            </div>
-            <div className="flex flex-col gap-1">
-              <h5 className="font-bold border-b-[0.5px] border-slate-150 text-slate-700">SKILLS</h5>
-              <div className="flex flex-wrap gap-0.5">
-                {sampleResumeData.skills.map((sk) => (
-                  <span key={sk} className="bg-slate-100 px-0.8 py-0.2 rounded-sm text-slate-600 font-medium scale-[0.9] origin-left">{sk}</span>
-                ))}
-              </div>
-              <h5 className="font-bold border-b-[0.5px] border-slate-150 text-slate-700 mt-1">EDUCATION</h5>
-              <div className="flex flex-col text-slate-500 scale-[0.9] origin-left">
-                <span className="font-semibold">{sampleResumeData.education.degree}</span>
-                <span>{sampleResumeData.education.school}</span>
-                <span className="text-slate-400">{sampleResumeData.education.date}</span>
-              </div>
-            </div>
-          </div>
-        </div>
-      )
-    },
-    {
-      id: 'celestial',
-      name: 'Celestial ATS',
-      description: 'Strictly formatted to maximize ATS matching score',
-      style: 'Recruiter Approved',
-      tags: ['ATS', 'Two Column', 'Clean'],
-      atsScore: 99,
-      usersCount: '58,000+',
-      popularity: 'Trending',
-      badge: 'AI Optimized',
-      badgeColor: 'from-emerald-500 to-teal-500',
-      renderPreview: (zoom = false) => (
-        <div className={`w-full h-full grid grid-cols-3 bg-white text-slate-900 ${zoom ? 'p-8' : 'p-3'} text-[5px] leading-tight select-none gap-2`}>
-          {/* Sidebar */}
-          <div className="col-span-1 bg-slate-50 rounded-lg p-1.5 flex flex-col gap-1.5 border-r-[0.5px] border-slate-100">
-            <div className="flex flex-col gap-0.5">
-              <h4 className={`${zoom ? 'text-lg' : 'text-[8px]'} font-extrabold text-slate-800`}>J. Anderson</h4>
-              <span className="text-slate-400 tracking-wider text-[3.5px] uppercase font-bold">Designer</span>
-            </div>
-            <div className="flex flex-col gap-0.8 text-slate-500 text-[3.5px]">
-              <span className="font-semibold text-slate-600">CONTACT</span>
-              <span>San Francisco, CA</span>
-              <span>john.anderson@email.com</span>
-            </div>
-            <div className="flex flex-col gap-0.5">
-              <span className="font-semibold text-slate-600">KEY SKILLS</span>
-              {sampleResumeData.skills.slice(0, 5).map((sk) => (
-                <span key={sk} className="bg-blue-50/50 text-blue-700 px-0.8 py-0.2 rounded-sm font-semibold scale-[0.85] origin-left">{sk}</span>
-              ))}
-            </div>
-          </div>
-          {/* Main Panel */}
-          <div className="col-span-2 flex flex-col gap-1.5 pt-0.5">
-            <div>
-              <h3 className={`${zoom ? 'text-xl' : 'text-[9px]'} font-extrabold text-slate-950`}>{sampleResumeData.name}</h3>
-              <p className="text-slate-500 font-semibold">{sampleResumeData.title}</p>
-            </div>
-            <p className="text-slate-500 scale-[0.95] origin-top-left leading-normal">{sampleResumeData.summary}</p>
-            <div className="flex flex-col gap-1">
-              <h5 className="font-extrabold text-slate-800 border-b-[0.5px] border-slate-200 pb-0.2">WORK EXPERIENCE</h5>
-              {sampleResumeData.experience.map((exp, idx) => (
-                <div key={idx} className="flex flex-col gap-0.2">
-                  <div className="flex justify-between font-bold text-slate-700">
-                    <span>{exp.role} @ {exp.company}</span>
-                    <span className="text-slate-400 font-normal">{exp.date}</span>
-                  </div>
-                  <p className="text-slate-500 scale-[0.9] origin-left">{exp.desc}</p>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-      )
-    },
-    {
-      id: 'galaxy',
-      name: 'Galaxy Professional',
-      description: 'Densely structured standard for technical roles',
-      style: 'Technical Density',
-      tags: ['ATS', 'One Column', 'Minimal'],
-      atsScore: 97,
-      usersCount: '34,000+',
-      popularity: 'Popular',
-      badge: 'Popular',
-      badgeColor: 'from-blue-500 to-cyan-500',
-      renderPreview: (zoom = false) => (
-        <div className={`w-full h-full flex flex-col bg-white text-slate-800 ${zoom ? 'p-8' : 'p-3'} text-[5px] leading-tight select-none gap-1.5`}>
-          {/* Header Centered */}
-          <div className="text-center">
-            <h3 className={`${zoom ? 'text-2xl' : 'text-[10px]'} font-extrabold text-slate-900`}>{sampleResumeData.name}</h3>
-            <p className="text-slate-400 tracking-wide mt-0.5">{sampleResumeData.contact}</p>
-          </div>
-          {/* Professional Summary */}
-          <div className="border-t-[0.5px] border-b-[0.5px] border-slate-200 py-1">
-            <p className="text-slate-500 text-center leading-normal italic">{sampleResumeData.summary}</p>
-          </div>
-          {/* Work Experience */}
-          <div className="flex flex-col gap-1">
-            <h5 className="font-bold text-slate-800 border-b-[0.5px] border-slate-250 pb-0.2">PROFESSIONAL EXPERIENCE</h5>
-            {sampleResumeData.experience.map((exp, idx) => (
-              <div key={idx} className="flex flex-col gap-0.3">
-                <div className="flex justify-between font-bold text-slate-700">
-                  <span>{exp.role} — {exp.company}</span>
-                  <span className="text-slate-400">{exp.date}</span>
-                </div>
-                <p className="text-slate-500 scale-[0.9] origin-left leading-normal">{exp.desc}</p>
-              </div>
-            ))}
-          </div>
-          {/* Skills Grid */}
-          <div className="flex flex-col gap-0.5">
-            <h5 className="font-bold text-slate-800 border-b-[0.5px] border-slate-250 pb-0.2">TECHNICAL STACK</h5>
-            <p className="text-slate-500 font-semibold scale-[0.95] origin-left">
-              Languages & Tools: <span className="font-normal">{sampleResumeData.skills.join(', ')}</span>
-            </p>
-          </div>
-        </div>
-      )
-    },
-    {
-      id: 'astral',
-      name: 'Astral Creative',
-      description: 'Vibrant headings perfect for design & creative roles',
-      style: 'Bold Headings & Accents',
-      tags: ['Creative', 'Modern', 'Two Column'],
-      atsScore: 95,
-      usersCount: '21,000+',
-      popularity: 'Hot',
-      badge: 'New',
-      badgeColor: 'from-pink-500 to-rose-500',
-      renderPreview: (zoom = false) => (
-        <div className={`w-full h-full flex flex-col bg-slate-950 text-white ${zoom ? 'p-8' : 'p-3'} text-[5px] leading-tight select-none`}>
-          {/* Custom Dark Header with Blue Gradient Overlay */}
-          <div className="bg-gradient-to-r from-blue-600 to-indigo-700 rounded-lg p-2 flex justify-between items-center mb-1.5">
-            <div>
-              <h3 className={`${zoom ? 'text-2xl' : 'text-[10px]'} font-extrabold text-white`}>{sampleResumeData.name}</h3>
-              <p className="text-blue-100 font-medium scale-[0.9] origin-left">{sampleResumeData.title}</p>
-            </div>
-            <p className="text-blue-200 text-right text-[3px] scale-[0.8] origin-right max-w-[40%]">{sampleResumeData.contact}</p>
-          </div>
-          {/* Body */}
-          <div className="grid grid-cols-3 gap-1.5 flex-grow">
-            {/* Left side */}
-            <div className="col-span-2 flex flex-col gap-1">
-              <h5 className="font-extrabold text-blue-400 border-b-[0.5px] border-slate-800 pb-0.2 uppercase tracking-wide">Work History</h5>
-              {sampleResumeData.experience.map((exp, idx) => (
-                <div key={idx} className="flex flex-col gap-0.3">
-                  <div className="flex justify-between font-bold text-slate-200">
-                    <span>{exp.role}</span>
-                    <span className="text-slate-500 font-normal">{exp.date}</span>
-                  </div>
-                  <span className="text-blue-300/80 font-medium scale-[0.95] origin-left">{exp.company}</span>
-                  <p className="text-slate-400 scale-[0.88] origin-left leading-normal">{exp.desc}</p>
-                </div>
-              ))}
-            </div>
-            {/* Right side */}
-            <div className="flex flex-col gap-1.5 bg-slate-900/60 rounded-md p-1 border border-slate-800">
-              <div>
-                <h5 className="font-extrabold text-blue-400 border-b-[0.5px] border-slate-800 pb-0.2 uppercase tracking-wide">Skills</h5>
-                <div className="flex flex-wrap gap-0.5 mt-0.5">
-                  {sampleResumeData.skills.map((sk) => (
-                    <span key={sk} className="bg-indigo-950/80 text-blue-300 border border-blue-900/40 px-0.8 py-0.2 rounded-sm font-semibold scale-[0.85] origin-left">{sk}</span>
-                  ))}
-                </div>
-              </div>
-              <div>
-                <h5 className="font-extrabold text-blue-400 border-b-[0.5px] border-slate-800 pb-0.2 uppercase tracking-wide">Education</h5>
-                <p className="text-slate-300 scale-[0.9] origin-left mt-0.5">{sampleResumeData.education.degree}</p>
-                <p className="text-slate-500 scale-[0.85] origin-left">{sampleResumeData.education.school}</p>
-              </div>
-            </div>
-          </div>
-        </div>
-      )
-    },
-    {
-      id: 'astralis',
-      name: 'Astralis Corporate',
-      description: 'Highly polished template preferred by managers',
-      style: 'Modern & Compact',
-      tags: ['Corporate', 'Executive', 'One Column'],
-      atsScore: 98,
-      usersCount: '19,000+',
-      popularity: 'Standard',
-      badge: 'Free',
-      badgeColor: 'from-slate-500 to-slate-600',
-      renderPreview: (zoom = false) => (
-        <div className={`w-full h-full flex flex-col bg-white text-slate-850 ${zoom ? 'p-8' : 'p-3'} text-[5px] leading-tight select-none gap-1`}>
-          <div className="flex justify-between items-end border-b-[0.8px] border-slate-800 pb-1 mb-1">
-            <div>
-              <h3 className={`${zoom ? 'text-2xl' : 'text-[10px]'} font-black text-slate-900 uppercase`}>{sampleResumeData.name}</h3>
-              <p className="text-slate-500 tracking-wider font-bold scale-[0.95] origin-left uppercase">{sampleResumeData.title}</p>
-            </div>
-            <p className="text-slate-400 text-[3.5px] text-right font-medium">{sampleResumeData.contact}</p>
-          </div>
-          <div className="flex flex-col gap-1.5">
-            <div className="flex flex-col gap-0.8">
-              <h5 className="font-extrabold text-slate-800 uppercase tracking-widest text-[4.5px]">Experience</h5>
-              {sampleResumeData.experience.map((exp, idx) => (
-                <div key={idx} className="pl-1 border-l border-slate-300 flex flex-col gap-0.2">
-                  <div className="flex justify-between font-bold">
-                    <span>{exp.role} | {exp.company}</span>
-                    <span className="text-slate-500 font-normal">{exp.date}</span>
-                  </div>
-                  <p className="text-slate-600 scale-[0.9] origin-left">{exp.desc}</p>
-                </div>
-              ))}
-            </div>
-            <div className="flex justify-between pt-0.5 border-t border-slate-100">
-              <div className="w-[60%]">
-                <h5 className="font-extrabold text-slate-800 uppercase tracking-widest text-[4px]">Education</h5>
-                <span className="font-semibold">{sampleResumeData.education.degree}</span>
-              </div>
-              <div className="w-[35%]">
-                <h5 className="font-extrabold text-slate-800 uppercase tracking-widest text-[4px]">Design Skills</h5>
-                <span className="text-slate-500 scale-[0.9] origin-left block">{sampleResumeData.skills.slice(0,4).join(', ')}</span>
-              </div>
-            </div>
-          </div>
-        </div>
-      )
-    },
-    {
-      id: 'pulsar',
-      name: 'Pulsar Two Column',
-      description: 'Elegant dual-colored layout optimized for UX and tech professionals',
-      style: 'Elegant Layout',
-      tags: ['Creative', 'Two Column', 'Modern'],
-      atsScore: 96,
-      usersCount: '27,000+',
-      popularity: 'Trending',
-      badge: 'AI Optimized',
-      badgeColor: 'from-emerald-500 to-teal-500',
-      renderPreview: (zoom = false) => (
-        <div className={`w-full h-full grid grid-cols-4 bg-white text-slate-800 ${zoom ? 'p-8' : 'p-3'} text-[5px] leading-tight select-none`}>
-          {/* Darker Column */}
-          <div className="col-span-1 bg-slate-900 text-white p-1.5 flex flex-col gap-1.5 rounded-l-lg">
-            <div className="text-center pb-1 border-b border-slate-800">
-              <h4 className={`${zoom ? 'text-lg' : 'text-[7px]'} font-extrabold tracking-tight`}>J. Anderson</h4>
-              <p className="text-slate-500 text-[3px] scale-[0.8] origin-center uppercase mt-0.5">Product</p>
-            </div>
-            <div className="flex flex-col gap-0.8 text-[3px]">
-              <span className="font-bold text-blue-400">CONTACT</span>
-              <span className="scale-[0.85] origin-left">SF, California</span>
-              <span className="scale-[0.85] origin-left">john.a@email.com</span>
-            </div>
-            <div className="flex flex-col gap-0.5 text-[3px]">
-              <span className="font-bold text-blue-400">SKILLS</span>
-              {sampleResumeData.skills.slice(0, 5).map((sk) => (
-                <span key={sk} className="bg-slate-800 px-1 py-0.2 rounded-sm text-slate-300 font-medium scale-[0.85] origin-left">{sk}</span>
-              ))}
-            </div>
-          </div>
-          {/* Main White Column */}
-          <div className="col-span-3 p-2 flex flex-col gap-1">
-            <div>
-              <h3 className={`${zoom ? 'text-xl' : 'text-[9px]'} font-extrabold text-slate-900`}>{sampleResumeData.name}</h3>
-              <p className="text-blue-600 font-semibold">{sampleResumeData.title}</p>
-            </div>
-            <p className="text-slate-500 italic scale-[0.9] origin-left mb-0.5">{sampleResumeData.summary}</p>
-            <div className="flex flex-col gap-0.8">
-              <h5 className="font-bold text-slate-800 border-b-[0.5px] border-slate-200 pb-0.2">PROFESSIONAL EXPERIENCE</h5>
-              {sampleResumeData.experience.map((exp, idx) => (
-                <div key={idx} className="flex flex-col gap-0.2">
-                  <div className="flex justify-between font-bold text-slate-700">
-                    <span>{exp.role} @ {exp.company}</span>
-                    <span className="text-slate-400 font-normal">{exp.date}</span>
-                  </div>
-                  <p className="text-slate-500 scale-[0.85] origin-left leading-normal">{exp.desc}</p>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-      )
-    },
-    {
-      id: 'eclipse',
-      name: 'Eclipse Executive',
-      description: 'Sophisticated typography standard for managers & leads',
-      style: 'Executive Standard',
-      tags: ['Executive', 'One Column', 'Academic'],
-      atsScore: 99,
-      usersCount: '15,000+',
-      popularity: 'Popular',
-      badge: 'PRO',
-      badgeColor: 'from-purple-500 to-indigo-500',
-      renderPreview: (zoom = false) => (
-        <div className={`w-full h-full flex flex-col bg-stone-50 text-stone-900 ${zoom ? 'p-8' : 'p-3'} text-[5px] leading-tight select-none gap-1.5`}>
-          <div className="text-center pb-1 border-b-[0.8px] border-stone-300">
-            <h3 className={`${zoom ? 'text-2xl' : 'text-[10px]'} font-extrabold text-stone-950 tracking-wider uppercase serif`}>{sampleResumeData.name}</h3>
-            <p className="text-stone-600 font-bold scale-[0.9] uppercase tracking-widest">{sampleResumeData.title}</p>
-            <p className="text-stone-400 text-[3.5px] mt-0.5">{sampleResumeData.contact}</p>
-          </div>
-          <p className="text-stone-600 leading-normal italic scale-[0.95] origin-top text-center">{sampleResumeData.summary}</p>
-          <div className="flex flex-col gap-1">
-            <h5 className="font-bold text-stone-850 border-b-[0.5px] border-stone-300 pb-0.2 tracking-wider">CHRONOLOGICAL HISTORY</h5>
-            {sampleResumeData.experience.map((exp, idx) => (
-              <div key={idx} className="flex flex-col gap-0.2">
-                <div className="flex justify-between font-bold text-stone-800">
-                  <span>{exp.role} — {exp.company}</span>
-                  <span className="text-stone-450 font-normal">{exp.date}</span>
-                </div>
-                <p className="text-stone-600 scale-[0.88] origin-left leading-normal">{exp.desc}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      )
-    }
-  ];
+  useEffect(() => {
+    const fetchTemplates = async () => {
+      try {
+        const res = await apiClient.get('/api/resume-studio/templates');
+        setTemplates(res.data || []);
+      } catch (err) {
+        console.error("Error loading templates in student showcase:", err);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    fetchTemplates();
+  }, []);
 
-  // Filters, search, and sort logic
   const filteredTemplates = useMemo(() => {
     return templates
+      .filter((tpl) => tpl.is_enabled)
       .filter((tpl) => {
-        // Search filter
         const matchesSearch = tpl.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          tpl.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          tpl.tags.some(tag => tag.toLowerCase().includes(searchQuery.toLowerCase()));
+          tpl.category.toLowerCase().includes(searchQuery.toLowerCase());
 
-        // Category filter
         if (selectedCategory === 'All') return matchesSearch;
-        
-        // Match specific categories (which could map to tags, style properties, etc.)
-        const categoryLower = selectedCategory.toLowerCase();
-        const matchesCategory = 
-          tpl.tags.some(tag => tag.toLowerCase() === categoryLower) ||
-          tpl.style.toLowerCase().includes(categoryLower) ||
-          (selectedCategory === 'One Column' && tpl.tags.includes('One Column')) ||
-          (selectedCategory === 'Two Column' && tpl.tags.includes('Two Column')) ||
-          (selectedCategory === 'Executive' && tpl.tags.includes('Executive'));
+        const matchesCategory = tpl.category.toLowerCase() === selectedCategory.toLowerCase();
 
         return matchesSearch && matchesCategory;
       })
       .sort((a, b) => {
         if (sortBy === 'ATS Score') {
-          return b.atsScore - a.atsScore;
+          return b.ats_rating - a.ats_rating;
         }
         if (sortBy === 'Popularity') {
-          // Compare approximate counts
-          const numA = parseInt(a.usersCount.replace(/[^0-9]/g, ''));
-          const numB = parseInt(b.usersCount.replace(/[^0-9]/g, ''));
-          return numB - numA;
+          return b.popularity - a.popularity;
         }
         return a.name.localeCompare(b.name);
       });
-  }, [searchQuery, selectedCategory, sortBy]);
+  }, [templates, searchQuery, selectedCategory, sortBy]);
 
-  // Framer Motion viewport animation configs
   const containerVariants = {
     hidden: { opacity: 0 },
     show: {
       opacity: 1,
-      transition: {
-        staggerChildren: 0.1
-      }
+      transition: { staggerChildren: 0.05 }
     }
   };
 
   const cardVariants: any = {
-    hidden: { opacity: 0, y: 30 },
+    hidden: { opacity: 0, y: 20 },
     show: { 
       opacity: 1, 
       y: 0,
-      transition: {
-        type: "spring",
-        stiffness: 100,
-        damping: 15
-      }
+      transition: { type: "spring", stiffness: 100, damping: 15 }
     }
   };
 
-  const handleDownloadSample = (template: Template) => {
+  const handleDownloadSample = (template: any) => {
     alert(`Downloading Sample Resume PDF for: ${template.name}`);
   };
 
   return (
     <section id="templates" className="py-24 bg-white text-slate-800 relative z-10 font-sans border-t border-slate-100">
-      {/* Background radial effects */}
       <div className="absolute top-0 right-0 w-[40%] h-[40%] rounded-full bg-blue-500/5 blur-[120px] pointer-events-none" />
       <div className="absolute bottom-0 left-0 w-[30%] h-[30%] rounded-full bg-indigo-500/5 blur-[100px] pointer-events-none" />
 
       <div className="max-w-7xl mx-auto px-6">
-        {/* Header Block */}
         <div className="text-center max-w-3xl mx-auto mb-16">
           <motion.div 
             initial={{ opacity: 0, y: -20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
-            className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-blue-50 border border-blue-200 text-xs font-semibold text-blue-600 mb-4"
+            className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-blue-55 border border-blue-200 text-xs font-semibold text-blue-600 mb-4"
           >
             <Sparkles size={12} />
             ATS Friendly Templates
@@ -485,7 +143,7 @@ export const TemplateShowcase: React.FC = () => {
             initial={{ opacity: 0, y: 10 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
-            className="text-4xl md:text-5xl font-extrabold tracking-tight text-slate-905 mb-4"
+            className="text-4xl md:text-5xl font-extrabold tracking-tight text-slate-900 mb-4"
           >
             Professional Resume Templates
           </motion.h2>
@@ -499,28 +157,25 @@ export const TemplateShowcase: React.FC = () => {
           </motion.p>
         </div>
 
-        {/* Filter and Search Bar */}
-        <div className="bg-slate-50/50 border border-slate-200/60 rounded-3xl p-5 mb-10 flex flex-col gap-5">
+        <div className="bg-slate-50 border border-slate-200/60 rounded-3xl p-5 mb-10 flex flex-col gap-5">
           <div className="flex flex-col lg:flex-row gap-4 items-center justify-between">
-            {/* Search Input */}
-            <div className="relative w-full lg:w-96">
+            <div className="relative w-full lg:w-96 text-left">
               <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-450" size={16} />
               <input 
                 type="text"
-                placeholder="Search premium templates..."
+                placeholder="Search templates..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-white border border-slate-200/80 focus:border-blue-500 focus:outline-none text-sm text-slate-700 placeholder:text-slate-450 transition-smooth"
+                className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-white border border-slate-200/80 focus:border-blue-500 focus:outline-none text-sm text-slate-700 placeholder:text-slate-450 transition-all font-medium"
               />
             </div>
 
-            {/* Sort Selection */}
             <div className="flex items-center gap-3 w-full lg:w-auto justify-end">
               <span className="text-xs text-slate-500 font-medium">Sort by:</span>
               <select
                 value={sortBy}
                 onChange={(e) => setSortBy(e.target.value)}
-                className="bg-white border border-slate-200 rounded-xl px-4 py-2.5 text-xs font-semibold text-slate-600 focus:border-blue-500 focus:outline-none cursor-pointer transition-smooth"
+                className="bg-white border border-slate-200 rounded-xl px-4 py-2.5 text-xs font-semibold text-slate-650 focus:border-blue-500 focus:outline-none cursor-pointer"
               >
                 <option value="Popularity">Popularity</option>
                 <option value="ATS Score">ATS Match Score</option>
@@ -529,13 +184,12 @@ export const TemplateShowcase: React.FC = () => {
             </div>
           </div>
 
-          {/* Category Chips Container */}
           <div className="border-t border-slate-200/60 pt-4 overflow-x-auto no-scrollbar flex items-center gap-2">
             {categories.map((cat) => (
               <button
                 key={cat}
                 onClick={() => setSelectedCategory(cat)}
-                className={`px-4 py-2 rounded-xl text-xs font-semibold whitespace-nowrap cursor-pointer transition-smooth ${
+                className={`px-4 py-2 rounded-xl text-xs font-semibold whitespace-nowrap cursor-pointer transition-all ${
                   selectedCategory === cat 
                     ? 'bg-blue-600 text-white shadow shadow-blue-500/10' 
                     : 'bg-white text-slate-550 border border-slate-200/60 hover:bg-slate-50 hover:text-slate-800'
@@ -547,124 +201,119 @@ export const TemplateShowcase: React.FC = () => {
           </div>
         </div>
 
-        {/* Templates Grid */}
-        <motion.div 
-          variants={containerVariants}
-          initial="hidden"
-          whileInView="show"
-          viewport={{ once: true, margin: "-50px" }}
-          className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6"
-        >
-          <AnimatePresence mode="popLayout">
-            {filteredTemplates.map((tpl) => {
-              const isSelected = selectedTemplate === tpl.id;
-              return (
-                <motion.div
-                  key={tpl.id}
-                  layout
-                  variants={cardVariants}
-                  onClick={() => setSelectedTemplate(tpl.id)}
-                  className={`group relative rounded-3xl bg-white border p-4.5 flex flex-col justify-between overflow-hidden cursor-pointer h-[420px] transition-all duration-250 ease-out hover:-translate-y-2 hover:shadow-xl hover:shadow-slate-200/50 ${
-                    isSelected 
-                      ? 'border-blue-500 bg-blue-50/5 shadow-md shadow-blue-500/5' 
-                      : 'border-slate-200/60 hover:border-blue-500/50'
-                  }`}
-                >
-                  {/* Selected Indicator Banner */}
-                  {isSelected && (
-                    <div className="absolute top-0 right-0 bg-blue-600 text-white px-3 py-1 rounded-bl-xl text-[10px] font-extrabold flex items-center gap-1 shadow z-20 animate-pulse">
-                      <Check size={10} strokeWidth={3} /> Selected
-                    </div>
-                  )}
-
-                  {/* Header / Badges */}
-                  <div className="flex justify-between items-start mb-3 z-10">
-                    <span className={`bg-gradient-to-r ${tpl.badgeColor} text-white text-[9px] font-black tracking-wider uppercase px-2 py-0.8 rounded-md shadow`}>
-                      {tpl.badge}
-                    </span>
-                    <div className="flex items-center gap-1 text-slate-550 text-[10px] font-semibold bg-slate-50 px-2 py-0.8 rounded-md border border-slate-200">
-                      <Award size={10} className="text-blue-600" /> ATS {tpl.atsScore}%
-                    </div>
-                  </div>
-
-                  {/* High Quality miniature Resume Preview */}
-                  <div className="relative flex-grow rounded-2xl overflow-hidden border border-slate-200/60 shadow bg-slate-50 group-hover:border-blue-200 transition-all duration-250">
-                    {/* Render specific template preview layout */}
-                    <div className="w-full h-full transform transition-transform duration-250 group-hover:scale-105">
-                      {tpl.renderPreview(false)}
-                    </div>
-
-                    {/* Gradient Overlay for Unselected or Hover */}
-                    <div className="absolute inset-0 bg-gradient-to-t from-slate-100/10 via-transparent to-transparent opacity-60 pointer-events-none" />
-
-                    {/* Active Gradient Overlay on Selected */}
+        {isLoading ? (
+          <div className="py-12 text-center text-slate-500 font-bold text-xs">
+            Loading design registry...
+          </div>
+        ) : (
+          <motion.div 
+            variants={containerVariants}
+            initial="hidden"
+            whileInView="show"
+            viewport={{ once: true, margin: "-50px" }}
+            className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6"
+          >
+            <AnimatePresence mode="popLayout">
+              {filteredTemplates.map((tpl) => {
+                const isSelected = selectedTemplate === tpl.slug;
+                return (
+                  <motion.div
+                    key={tpl.id}
+                    layout
+                    variants={cardVariants}
+                    onClick={() => setSelectedTemplate(tpl.slug)}
+                    className={`group relative rounded-3xl bg-white border p-4.5 flex flex-col justify-between overflow-hidden cursor-pointer h-[420px] transition-all duration-250 ease-out hover:-translate-y-2 hover:shadow-xl hover:shadow-slate-200/50 ${
+                      isSelected 
+                        ? 'border-blue-500 bg-blue-50/5 shadow-md shadow-blue-500/5' 
+                        : 'border-slate-200/60 hover:border-blue-500/50'
+                    }`}
+                  >
                     {isSelected && (
-                      <div className="absolute inset-0 bg-blue-500/5 border border-blue-500/10 pointer-events-none" />
+                      <div className="absolute top-0 right-0 bg-blue-600 text-white px-3 py-1 rounded-bl-xl text-[10px] font-extrabold flex items-center gap-1 shadow z-20">
+                        <Check size={10} strokeWidth={3} /> Selected
+                      </div>
                     )}
 
-                    {/* Action buttons sliding upwards on Hover */}
-                    <div className="absolute inset-0 bg-white/90 backdrop-blur-sm flex flex-col justify-center gap-2.5 px-4 opacity-0 group-hover:opacity-100 transition-opacity duration-250">
-                      <Button 
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setPreviewingTemplate(tpl);
-                        }}
-                        variant="outline" 
-                        size="sm" 
-                        className="w-full py-2 text-xs font-bold border-slate-200 text-slate-650 hover:bg-slate-50 hover:text-slate-800"
-                      >
-                        Preview Design
-                      </Button>
-                      <Button 
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setSelectedTemplate(tpl.id);
-                        }}
-                        variant="primary" 
-                        size="sm" 
-                        className="w-full py-2 text-xs font-bold bg-blue-600 hover:bg-blue-750 shadow shadow-blue-500/5 gap-1.5"
-                      >
-                        Use Template <ArrowRight size={12} />
-                      </Button>
-                    </div>
-                  </div>
-
-                  {/* Bottom details block */}
-                  <div className="mt-3.5 pt-3 border-t border-slate-100 z-10">
-                    <div className="flex justify-between items-start">
-                      <div>
-                        <h4 className="font-extrabold text-sm text-slate-800 group-hover:text-blue-600 transition-smooth">{tpl.name}</h4>
-                        <p className="text-[10px] text-slate-500 font-medium mt-0.5">{tpl.style}</p>
-                      </div>
-                      <div className="text-right">
-                        <span className="text-[9px] font-black text-slate-400 block tracking-wide uppercase">Used By</span>
-                        <span className="text-[10px] font-extrabold text-slate-700">{tpl.usersCount}</span>
+                    <div className="flex justify-between items-start mb-3 z-10">
+                      <span className={`bg-gradient-to-r ${tpl.is_premium ? 'from-amber-500 to-orange-500' : 'from-blue-500 to-indigo-500'} text-white text-[9px] font-black tracking-wider uppercase px-2 py-0.8 rounded-md shadow`}>
+                        {tpl.is_premium ? 'PREMIUM' : 'FREE'}
+                      </span>
+                      <div className="flex items-center gap-1 text-slate-550 text-[10px] font-semibold bg-slate-50 px-2 py-0.8 rounded-md border border-slate-200">
+                        <Award size={10} className="text-blue-600" /> ATS {tpl.ats_rating}%
                       </div>
                     </div>
 
-                    {/* Tags row */}
-                    <div className="flex flex-wrap gap-1 mt-2.5">
-                      {tpl.tags.slice(0, 3).map((tag) => (
-                        <span key={tag} className="text-[9px] font-semibold bg-slate-50 text-slate-500 border border-slate-200/50 px-2 py-0.5 rounded-md">
-                          {tag}
-                        </span>
-                      ))}
-                    </div>
-                  </div>
-                </motion.div>
-              );
-            })}
-          </AnimatePresence>
-        </motion.div>
+                    <div className="relative flex-grow rounded-2xl overflow-hidden border border-slate-200/60 shadow bg-slate-50 group-hover:border-blue-200 transition-all duration-250 h-[220px]">
+                      <div className="w-full h-full transform transition-transform duration-250 group-hover:scale-105 overflow-hidden">
+                        <div className="w-[540px] h-[756px] scale-[0.34] origin-top-left p-4">
+                          <ResumePreviewSheet
+                            personalInfo={MOCK_STUDENT_RESUME.personalInfo}
+                            educationList={MOCK_STUDENT_RESUME.educationList}
+                            experienceList={MOCK_STUDENT_RESUME.experienceList}
+                            projectList={MOCK_STUDENT_RESUME.projectList}
+                            skillList={MOCK_STUDENT_RESUME.skillList}
+                            certificateList={MOCK_STUDENT_RESUME.certificateList}
+                            achievements={MOCK_STUDENT_RESUME.achievements}
+                            sectionVisibility={MOCK_STUDENT_RESUME.sectionVisibility}
+                            templateId={tpl.slug}
+                            colorTheme={tpl.color_theme || 'blue'}
+                            zoomLevel={1}
+                          />
+                        </div>
+                      </div>
 
-        {/* Empty Placeholder State */}
-        {filteredTemplates.length === 0 && (
+                      <div className="absolute inset-0 bg-white/95 backdrop-blur-sm flex flex-col justify-center gap-2.5 px-4 opacity-0 group-hover:opacity-100 transition-opacity duration-250">
+                        <Button 
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setPreviewingTemplate(tpl);
+                          }}
+                          variant="outline" 
+                          size="sm" 
+                          className="w-full py-2 text-xs font-bold border-slate-200 text-slate-600 hover:bg-slate-50 hover:text-slate-800"
+                        >
+                          Preview Design
+                        </Button>
+                        <Button 
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setSelectedTemplate(tpl.slug);
+                          }}
+                          variant="primary" 
+                          size="sm" 
+                          className="w-full py-2 text-xs font-bold bg-blue-600 hover:bg-blue-700 shadow shadow-blue-500/5 gap-1.5"
+                        >
+                          Use Template <ArrowRight size={12} />
+                        </Button>
+                      </div>
+                    </div>
+
+                    <div className="mt-3.5 pt-3 border-t border-slate-100 z-10 text-left">
+                      <div className="flex justify-between items-start">
+                        <div>
+                          <h4 className="font-extrabold text-sm text-slate-800 group-hover:text-blue-600 transition-smooth">{tpl.name}</h4>
+                          <p className="text-[10px] text-slate-500 font-medium mt-0.5">{tpl.category} style</p>
+                        </div>
+                        <div className="text-right">
+                          <span className="text-[9px] font-black text-slate-450 block tracking-wide uppercase">Popularity</span>
+                          <span className="text-[10px] font-extrabold text-slate-700">{tpl.popularity * 12} Views</span>
+                        </div>
+                      </div>
+                    </div>
+                  </motion.div>
+                );
+              })}
+            </AnimatePresence>
+          </motion.div>
+        )}
+
+        {!isLoading && filteredTemplates.length === 0 && (
           <div className="bg-slate-50 border border-slate-200/60 rounded-3xl p-16 text-center max-w-xl mx-auto flex flex-col items-center gap-4">
             <div className="w-14 h-14 bg-white rounded-2xl border border-slate-200/60 flex items-center justify-center text-slate-400 mb-2 shadow-sm">
               <FileText size={24} />
             </div>
-            <h4 className="text-lg font-bold text-slate-800">No Premium Templates Match Your Filters</h4>
-            <p className="text-slate-500 text-sm leading-relaxed">
+            <h4 className="text-lg font-bold text-slate-800">No Templates Match Your Filters</h4>
+            <p className="text-slate-550 text-sm leading-relaxed">
               We couldn't find any templates for "{searchQuery}" matching your current selection. Try broadening your criteria or reset the search.
             </p>
             <Button 
@@ -682,7 +331,6 @@ export const TemplateShowcase: React.FC = () => {
         )}
       </div>
 
-      {/* Fullscreen Preview Modal */}
       <AnimatePresence>
         {previewingTemplate && (
           <motion.div 
@@ -696,50 +344,27 @@ export const TemplateShowcase: React.FC = () => {
               animate={{ scale: 1, y: 0 }}
               exit={{ scale: 0.95, y: 15 }}
               transition={{ type: "spring", duration: 0.4 }}
-              className="bg-white border border-slate-200 rounded-3xl w-full max-w-4xl h-[90vh] flex flex-col overflow-hidden shadow-2xl relative"
+              className="bg-white border border-slate-200 rounded-3xl w-full max-w-2xl h-[90vh] flex flex-col overflow-hidden shadow-2xl relative text-left"
             >
-              {/* Modal Top Bar */}
               <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200 bg-slate-50/50">
-                <div>
+                <div className="text-left">
                   <h3 className="font-extrabold text-lg text-slate-900">{previewingTemplate.name}</h3>
-                  <p className="text-xs text-slate-500 mt-0.5">{previewingTemplate.description}</p>
+                  <p className="text-xs text-slate-500 mt-0.5">{previewingTemplate.category} Style template</p>
                 </div>
 
-                {/* Controls & Zoom Panel */}
                 <div className="flex items-center gap-4">
-                  {/* Zoom Controls */}
                   <div className="hidden md:flex items-center bg-slate-100 border border-slate-200 rounded-xl p-1 gap-1">
-                    <button 
-                      onClick={() => setZoomLevel(100)}
-                      className={`px-3 py-1.5 rounded-lg text-xs font-extrabold transition-smooth ${zoomLevel === 100 ? 'bg-blue-600 text-white' : 'text-slate-500 hover:text-slate-800'}`}
-                    >
-                      100%
-                    </button>
-                    <button 
-                      onClick={() => setZoomLevel(125)}
-                      className={`px-3 py-1.5 rounded-lg text-xs font-extrabold transition-smooth ${zoomLevel === 125 ? 'bg-blue-600 text-white' : 'text-slate-500 hover:text-slate-800'}`}
-                    >
-                      125%
-                    </button>
-                    <button 
-                      onClick={() => setZoomLevel(150)}
-                      className={`px-3 py-1.5 rounded-lg text-xs font-extrabold transition-smooth ${zoomLevel === 150 ? 'bg-blue-600 text-white' : 'text-slate-500 hover:text-slate-800'}`}
-                    >
-                      150%
-                    </button>
+                    {[100, 125, 150].map((level) => (
+                      <button 
+                        key={level}
+                        onClick={() => setZoomLevel(level as any)}
+                        className={`px-3 py-1.5 rounded-lg text-xs font-extrabold transition-all cursor-pointer ${zoomLevel === level ? 'bg-blue-600 text-white' : 'text-slate-500 hover:text-slate-800'}`}
+                      >
+                        {level}%
+                      </button>
+                    ))}
                   </div>
 
-                  {/* Actions */}
-                  <Button 
-                    onClick={() => handleDownloadSample(previewingTemplate)}
-                    variant="outline" 
-                    size="sm" 
-                    className="gap-2 border-slate-200 text-slate-700 hover:bg-slate-50"
-                  >
-                    <Download size={14} /> <span className="hidden sm:inline">Download Sample PDF</span>
-                  </Button>
-                  
-                  {/* Close button */}
                   <button 
                     onClick={() => setPreviewingTemplate(null)}
                     className="w-10 h-10 rounded-xl bg-white border border-slate-200 flex items-center justify-center text-slate-500 hover:text-slate-800 hover:border-slate-300 transition-smooth cursor-pointer shadow-sm"
@@ -749,32 +374,39 @@ export const TemplateShowcase: React.FC = () => {
                 </div>
               </div>
 
-              {/* Modal Content Scroll Area */}
               <div className="flex-grow p-6 md:p-10 overflow-y-auto bg-slate-100/10 no-scrollbar flex justify-center items-start">
                 <div 
-                  className="w-full max-w-2xl bg-white rounded-2xl shadow-xl transition-all duration-300"
-                  style={{ transform: `scale(${zoomLevel / 100})`, transformOrigin: 'top center' }}
+                  className="w-[540px] bg-white rounded-2xl shadow-xl transition-all duration-300 transform origin-top"
+                  style={{ transform: `scale(${zoomLevel / 100})` }}
                 >
-                  <div className="aspect-[1/1.414]">
-                    {previewingTemplate.renderPreview(true)}
-                  </div>
+                  <ResumePreviewSheet
+                    personalInfo={MOCK_STUDENT_RESUME.personalInfo}
+                    educationList={MOCK_STUDENT_RESUME.educationList}
+                    experienceList={MOCK_STUDENT_RESUME.experienceList}
+                    projectList={MOCK_STUDENT_RESUME.projectList}
+                    skillList={MOCK_STUDENT_RESUME.skillList}
+                    certificateList={MOCK_STUDENT_RESUME.certificateList}
+                    achievements={MOCK_STUDENT_RESUME.achievements}
+                    sectionVisibility={MOCK_STUDENT_RESUME.sectionVisibility}
+                    templateId={previewingTemplate.slug}
+                    colorTheme={previewingTemplate.color_theme || 'blue'}
+                    zoomLevel={1}
+                  />
                 </div>
               </div>
 
-              {/* Modal Bottom Bar */}
               <div className="px-6 py-4 border-t border-slate-200 bg-slate-50/50 flex justify-between items-center">
                 <div className="flex items-center gap-4 text-xs font-semibold text-slate-500">
-                  <span className="flex items-center gap-1"><Award size={13} className="text-blue-600" /> ATS Optimized {previewingTemplate.atsScore}%</span>
-                  <span className="flex items-center gap-1"><Flame size={13} className="text-orange-500" /> {previewingTemplate.popularity}</span>
+                  <span className="flex items-center gap-1"><Award size={13} className="text-blue-600" /> ATS Optimized {previewingTemplate.ats_rating}%</span>
                 </div>
                 <Button
                   onClick={() => {
-                    setSelectedTemplate(previewingTemplate.id);
+                    setSelectedTemplate(previewingTemplate.slug);
                     setPreviewingTemplate(null);
                   }}
                   variant="primary"
                   size="sm"
-                  className="bg-blue-600 hover:bg-blue-755 gap-1.5"
+                  className="bg-blue-600 hover:bg-blue-700 gap-1.5"
                 >
                   Use This Template <ArrowRight size={14} />
                 </Button>
@@ -786,4 +418,5 @@ export const TemplateShowcase: React.FC = () => {
     </section>
   );
 };
+
 export default TemplateShowcase;

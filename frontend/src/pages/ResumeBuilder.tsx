@@ -13,6 +13,10 @@ import { Input } from '../components/Input';
 import { adminService } from '../services/admin';
 import { useUserStore } from '../store/userStore';
 import { API_BASE_URL } from '../services/api';
+import { TEMPLATE_REGISTRY, COLOR_THEMES, FONTS } from '../resume/templatesRegistry';
+import type { LayoutType } from '../resume/templatesRegistry';
+import { ResumePreviewSheet } from '../resume/ResumePreviewSheet';
+
 
 
 // Static categories for searchable skills
@@ -293,6 +297,7 @@ export const ResumeBuilder: React.FC = () => {
     return { primary: 'text-blue-650', border: 'border-blue-100', bg: 'bg-blue-50', line: 'bg-blue-650' };
   };
   const themeColors = getThemeColors();
+
 
   // Fetch templates and current resume details if editing
   useEffect(() => {
@@ -2052,94 +2057,22 @@ export const ResumeBuilder: React.FC = () => {
                 </button>
               </div>
 
-              {/* Dynamic Theme classes based on color_theme */}
-              <div 
-                className="w-full max-w-[540px] bg-white rounded shadow-2xl p-8 aspect-[1/1.4] flex flex-col gap-4 border border-slate-200/40 transform origin-top transition-transform duration-250 select-text text-left"
-                style={{ transform: `scale(${zoomLevel})` }}
-              >
-                {/* Header Title block */}
-                <div className={`text-center pb-4 border-b ${themeColors.border}`}>
-                  <h2 className={`text-2xl font-black ${themeColors.primary}`}>{personalInfo.name}</h2>
-                  
-                  <p className="text-[10px] text-slate-500 font-semibold mt-1">
-                    {personalInfo.email} • {personalInfo.phone} • {personalInfo.address}
-                  </p>
-                  <p className="text-[9px] text-slate-400 font-bold uppercase mt-1">
-                    LinkedIn: {personalInfo.linkedin} | GitHub: {personalInfo.github}
-                  </p>
-                </div>
-
-                {/* Profile Summary section */}
-                <div className="flex flex-col gap-1">
-                  <h4 className="text-[10px] font-black uppercase tracking-wider text-slate-500">Professional Summary</h4>
-                  <p className="text-[10px] text-slate-600 leading-relaxed font-medium">{personalInfo.summary}</p>
-                </div>
-
-                {/* Education section */}
-                <div className="flex flex-col gap-1.5">
-                  <h4 className="text-[10px] font-black uppercase tracking-wider text-slate-500">Education Details</h4>
-                  <hr className="border-slate-100" />
-                  {educationList.map((edu, idx) => (
-                    <div key={idx} className="flex justify-between items-start text-[10px]">
-                      <div>
-                        <strong className="text-slate-800">{edu.institution}</strong> — <span>{edu.degree}</span>
-                        {edu.achievements && <p className="text-[9px] text-slate-500 font-medium">{edu.achievements}</p>}
-                      </div>
-                      <span className="font-bold text-slate-450 shrink-0">{edu.passing_year}</span>
-                    </div>
-                  ))}
-                </div>
-
-                {/* Skills section */}
-                {sectionVisibility.skills && skillList.length > 0 && (
-                  <div className="flex flex-col gap-1.5">
-                    <h4 className="text-[10px] font-black uppercase tracking-wider text-slate-500">Technical Skills</h4>
-                    <hr className="border-slate-100" />
-                    <div className="flex flex-wrap gap-1.5">
-                      {skillList.map((sk) => (
-                        <span key={sk.name} className="px-2 py-0.5 bg-slate-50 border border-slate-200/60 rounded text-[9px] font-bold text-slate-650">
-                          {sk.name} (Lvl {sk.level})
-                        </span>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                {/* Projects section */}
-                {sectionVisibility.projects && projectList.length > 0 && (
-                  <div className="flex flex-col gap-1.5">
-                    <h4 className="text-[10px] font-black uppercase tracking-wider text-slate-500">Academic Projects</h4>
-                    <hr className="border-slate-100" />
-                    {projectList.map((p, idx) => (
-                      <div key={idx} className="flex flex-col gap-0.5 text-[10px] leading-relaxed">
-                        <div className="flex justify-between items-center">
-                          <strong className="text-slate-850">{p.name}</strong>
-                          <span className="text-[9px] text-slate-400 font-semibold">{p.duration || '2 Months'}</span>
-                        </div>
-                        <p className="text-[9px] text-slate-450 font-bold">Tech: {p.tech_stack}</p>
-                        <p className="text-[9px] text-slate-600 font-medium">{p.description}</p>
-                      </div>
-                    ))}
-                  </div>
-                )}
-
-                {/* Experience section */}
-                {sectionVisibility.experience && experienceList.length > 0 && (
-                  <div className="flex flex-col gap-1.5">
-                    <h4 className="text-[10px] font-black uppercase tracking-wider text-slate-500">Experience</h4>
-                    <hr className="border-slate-100" />
-                    {experienceList.map((e, idx) => (
-                      <div key={idx} className="flex flex-col gap-0.5 text-[10px] leading-relaxed">
-                        <div className="flex justify-between items-center">
-                          <strong className="text-slate-850">{e.position} @ {e.company}</strong>
-                          <span className="text-[9px] text-slate-400 font-semibold">{e.duration}</span>
-                        </div>
-                        <p className="text-[9px] text-slate-600 font-medium">{e.description}</p>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
+              <ResumePreviewSheet
+                personalInfo={{
+                  ...personalInfo,
+                  summary: personalInfo.summary || ''
+                }}
+                educationList={educationList}
+                experienceList={experienceList}
+                projectList={projectList}
+                skillList={skillList}
+                certificateList={certificateList}
+                achievements={achievements}
+                sectionVisibility={sectionVisibility}
+                templateId={masterForm.template_id}
+                colorTheme={masterForm.color_theme}
+                zoomLevel={zoomLevel}
+              />
 
               <div className="text-[9px] font-black text-slate-400 uppercase tracking-widest mt-8">
                 Canvas Template: {masterForm.template_id} ({masterForm.color_theme})

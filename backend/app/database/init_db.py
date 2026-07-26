@@ -330,81 +330,54 @@ def init_db():
             print("Seeded student accounts.")
 
         # 7. Seed Default Resume Templates
-        if db.resume_templates.count_documents({}) == 0:
-            db.resume_templates.insert_many([
-                {
-                    "id": 1,
-                    "slug": "celestial",
-                    "name": "Celestial ATS",
-                    "category": "Minimal ATS",
-                    "ats_rating": 99,
-                    "popularity": 150,
-                    "color_theme": "blue",
-                    "is_enabled": True,
-                    "is_premium": False,
-                    "is_ats_optimized": True,
-                    "html_content": "<div class='theme-blue font-serif'>...</div>",
-                    "reportlab_code": '{"margins": [40, 40, 40, 40], "primary_color": "#1E3A8A"}'
-                },
-                {
-                    "id": 2,
-                    "slug": "cosmos",
-                    "name": "Cosmos Pro",
-                    "category": "Modern",
-                    "ats_rating": 98,
-                    "popularity": 120,
-                    "color_theme": "indigo",
-                    "is_enabled": True,
-                    "is_premium": True,
-                    "is_ats_optimized": True,
-                    "html_content": "<div class='theme-indigo font-sans'>...</div>",
-                    "reportlab_code": '{"margins": [30, 30, 30, 30], "primary_color": "#4F46E5"}'
-                },
-                {
-                    "id": 3,
-                    "slug": "galaxy",
-                    "name": "Galaxy Professional",
-                    "category": "Professional",
-                    "ats_rating": 97,
-                    "popularity": 110,
-                    "color_theme": "blue",
-                    "is_enabled": True,
-                    "is_premium": False,
-                    "is_ats_optimized": True,
-                    "html_content": "<div class='theme-blue font-sans'>...</div>",
-                    "reportlab_code": '{"margins": [40, 40, 40, 40], "primary_color": "#0F172A"}'
-                },
-                {
-                    "id": 4,
-                    "slug": "astral",
-                    "name": "Astral Creative",
-                    "category": "Creative",
-                    "ats_rating": 95,
-                    "popularity": 95,
-                    "color_theme": "emerald",
-                    "is_enabled": True,
-                    "is_premium": False,
-                    "is_ats_optimized": False,
-                    "html_content": "<div class='theme-emerald font-sans'>...</div>",
-                    "reportlab_code": '{"margins": [35, 35, 35, 35], "primary_color": "#059669"}'
-                },
-                {
-                    "id": 5,
-                    "slug": "minimal",
-                    "name": "Minimal Minimalist",
-                    "category": "Minimal ATS",
-                    "ats_rating": 96,
-                    "popularity": 85,
-                    "color_theme": "slate",
-                    "is_enabled": True,
-                    "is_premium": False,
-                    "is_ats_optimized": True,
-                    "html_content": "<div class='theme-slate font-sans-narrow'>...</div>",
-                    "reportlab_code": '{"margins": [45, 45, 45, 45], "primary_color": "#334155"}'
-                }
-            ])
-            db.counters.update_one({"_id": "resume_templates"}, {"$set": {"seq": 5}}, upsert=True)
-            print("Seeded resume templates.")
+        db.resume_templates.delete_many({})
+        templates_list = [
+            # Free templates
+            {"id": 1, "slug": "modern", "name": "Modern Professional", "category": "Professional", "ats_rating": 99, "popularity": 150, "color_theme": "blue", "is_enabled": True, "is_premium": False, "is_ats_optimized": True, "html_content": "<div class='theme-blue font-sans'>Modern Professional Layout</div>", "reportlab_code": '{"margins": [40, 40, 40, 40], "primary_color": "#1E3A8A"}'},
+            {"id": 2, "slug": "harvard", "name": "Harvard Resume", "category": "Minimalist", "ats_rating": 100, "popularity": 140, "color_theme": "slate", "is_enabled": True, "is_premium": False, "is_ats_optimized": True, "html_content": "<div class='theme-slate font-serif'>Harvard Layout</div>", "reportlab_code": '{"margins": [40, 40, 40, 40], "primary_color": "#0F172A"}'},
+            {"id": 3, "slug": "google", "name": "Google Resume", "category": "Minimalist", "ats_rating": 100, "popularity": 130, "color_theme": "slate", "is_enabled": True, "is_premium": False, "is_ats_optimized": True, "html_content": "<div class='theme-slate font-sans'>Google Layout</div>", "reportlab_code": '{"margins": [40, 40, 40, 40], "primary_color": "#1F2937"}'},
+            {"id": 4, "slug": "faang", "name": "FAANG Resume", "category": "Technical", "ats_rating": 99, "popularity": 120, "color_theme": "slate", "is_enabled": True, "is_premium": False, "is_ats_optimized": True, "html_content": "<div class='theme-slate font-sans'>FAANG Layout</div>", "reportlab_code": '{"margins": [30, 30, 30, 30], "primary_color": "#111827"}'},
+            {"id": 5, "slug": "fresher", "name": "Fresher Resume", "category": "Entry Level", "ats_rating": 98, "popularity": 110, "color_theme": "emerald", "is_enabled": True, "is_premium": False, "is_ats_optimized": True, "html_content": "<div class='theme-emerald font-sans'>Fresher Layout</div>", "reportlab_code": '{"margins": [40, 40, 40, 40], "primary_color": "#059669"}'},
+            {"id": 6, "slug": "experienced", "name": "Experienced Resume", "category": "Professional", "ats_rating": 98, "popularity": 100, "color_theme": "indigo", "is_enabled": True, "is_premium": False, "is_ats_optimized": True, "html_content": "<div class='theme-indigo font-sans'>Experienced Layout</div>", "reportlab_code": '{"margins": [35, 35, 35, 35], "primary_color": "#4F46E5"}'},
+            {"id": 7, "slug": "executive", "name": "Executive Resume", "category": "Executive", "ats_rating": 97, "popularity": 95, "color_theme": "blue", "is_enabled": True, "is_premium": False, "is_ats_optimized": True, "html_content": "<div class='theme-blue font-sans'>Executive Layout</div>", "reportlab_code": '{"margins": [40, 40, 40, 40], "primary_color": "#1E40AF"}'},
+            {"id": 8, "slug": "creative", "name": "Creative ATS Resume", "category": "Creative", "ats_rating": 95, "popularity": 90, "color_theme": "emerald", "is_enabled": True, "is_premium": False, "is_ats_optimized": True, "html_content": "<div class='theme-emerald font-sans'>Creative Layout</div>", "reportlab_code": '{"margins": [35, 35, 35, 35], "primary_color": "#10B981"}'},
+            {"id": 9, "slug": "minimal", "name": "Minimal Resume", "category": "Minimalist", "ats_rating": 100, "popularity": 85, "color_theme": "slate", "is_enabled": True, "is_premium": False, "is_ats_optimized": True, "html_content": "<div class='theme-slate font-sans'>Minimal Layout</div>", "reportlab_code": '{"margins": [45, 45, 45, 45], "primary_color": "#475569"}'},
+            {"id": 10, "slug": "twocolumn", "name": "Two Column ATS Resume", "category": "Modern", "ats_rating": 96, "popularity": 80, "color_theme": "blue", "is_enabled": True, "is_premium": False, "is_ats_optimized": True, "html_content": "<div class='theme-blue font-sans'>Two Column Layout</div>", "reportlab_code": '{"margins": [40, 40, 40, 40], "primary_color": "#2563EB"}'},
+            # Premium templates
+            {"id": 11, "slug": "stanford", "name": "Stanford Resume", "category": "Academic", "ats_rating": 99, "popularity": 75, "color_theme": "red", "is_enabled": True, "is_premium": True, "is_ats_optimized": True, "html_content": "", "reportlab_code": ""},
+            {"id": 12, "slug": "oxford", "name": "Oxford Resume", "category": "Academic", "ats_rating": 99, "popularity": 70, "color_theme": "blue", "is_enabled": True, "is_premium": True, "is_ats_optimized": True, "html_content": "", "reportlab_code": ""},
+            {"id": 13, "slug": "ivyleague", "name": "Ivy League Resume", "category": "Executive", "ats_rating": 98, "popularity": 65, "color_theme": "indigo", "is_enabled": True, "is_premium": True, "is_ats_optimized": True, "html_content": "", "reportlab_code": ""},
+            {"id": 14, "slug": "corporate", "name": "Corporate Resume", "category": "Professional", "ats_rating": 97, "popularity": 60, "color_theme": "slate", "is_enabled": True, "is_premium": True, "is_ats_optimized": True, "html_content": "", "reportlab_code": ""},
+            {"id": 15, "slug": "startup", "name": "Startup Resume", "category": "Creative", "ats_rating": 96, "popularity": 55, "color_theme": "purple", "is_enabled": True, "is_premium": True, "is_ats_optimized": True, "html_content": "", "reportlab_code": ""},
+            {"id": 16, "slug": "developer", "name": "Developer Resume", "category": "Technical", "ats_rating": 98, "popularity": 50, "color_theme": "slate", "is_enabled": True, "is_premium": True, "is_ats_optimized": True, "html_content": "", "reportlab_code": ""},
+            {"id": 17, "slug": "datascientist", "name": "Data Scientist Resume", "category": "Technical", "ats_rating": 99, "popularity": 45, "color_theme": "blue", "is_enabled": True, "is_premium": True, "is_ats_optimized": True, "html_content": "", "reportlab_code": ""},
+            {"id": 18, "slug": "aiengineer", "name": "AI Engineer Resume", "category": "Technical", "ats_rating": 100, "popularity": 40, "color_theme": "emerald", "is_enabled": True, "is_premium": True, "is_ats_optimized": True, "html_content": "", "reportlab_code": ""},
+            {"id": 19, "slug": "cybersecurity", "name": "Cyber Security Resume", "category": "Technical", "ats_rating": 98, "popularity": 35, "color_theme": "red", "is_enabled": True, "is_premium": True, "is_ats_optimized": True, "html_content": "", "reportlab_code": ""},
+            {"id": 20, "slug": "devops", "name": "DevOps Resume", "category": "Technical", "ats_rating": 98, "popularity": 30, "color_theme": "orange", "is_enabled": True, "is_premium": True, "is_ats_optimized": True, "html_content": "", "reportlab_code": ""},
+            {"id": 21, "slug": "cloudengineer", "name": "Cloud Engineer Resume", "category": "Technical", "ats_rating": 97, "popularity": 25, "color_theme": "blue", "is_enabled": True, "is_premium": True, "is_ats_optimized": True, "html_content": "", "reportlab_code": ""},
+            {"id": 22, "slug": "businessanalyst", "name": "Business Analyst Resume", "category": "Professional", "ats_rating": 97, "popularity": 20, "color_theme": "slate", "is_enabled": True, "is_premium": True, "is_ats_optimized": True, "html_content": "", "reportlab_code": ""},
+            {"id": 23, "slug": "finance", "name": "Finance Resume", "category": "Professional", "ats_rating": 98, "popularity": 15, "color_theme": "blue", "is_enabled": True, "is_premium": True, "is_ats_optimized": True, "html_content": "", "reportlab_code": ""},
+            {"id": 24, "slug": "marketing", "name": "Marketing Resume", "category": "Creative", "ats_rating": 96, "popularity": 10, "color_theme": "pink", "is_enabled": True, "is_premium": True, "is_ats_optimized": True, "html_content": "", "reportlab_code": ""},
+            {"id": 25, "slug": "sales", "name": "Sales Resume", "category": "Professional", "ats_rating": 96, "popularity": 5, "color_theme": "orange", "is_enabled": True, "is_premium": True, "is_ats_optimized": True, "html_content": "", "reportlab_code": ""},
+            {"id": 26, "slug": "hr", "name": "HR Resume", "category": "Professional", "ats_rating": 97, "popularity": 5, "color_theme": "purple", "is_enabled": True, "is_premium": True, "is_ats_optimized": True, "html_content": "", "reportlab_code": ""},
+            {"id": 27, "slug": "teacher", "name": "Teacher Resume", "category": "Entry Level", "ats_rating": 97, "popularity": 5, "color_theme": "green", "is_enabled": True, "is_premium": True, "is_ats_optimized": True, "html_content": "", "reportlab_code": ""},
+            {"id": 28, "slug": "medical", "name": "Medical Resume", "category": "Professional", "ats_rating": 98, "popularity": 5, "color_theme": "blue", "is_enabled": True, "is_premium": True, "is_ats_optimized": True, "html_content": "", "reportlab_code": ""},
+            {"id": 29, "slug": "mba", "name": "MBA Resume", "category": "Executive", "ats_rating": 99, "popularity": 5, "color_theme": "blue", "is_enabled": True, "is_premium": True, "is_ats_optimized": True, "html_content": "", "reportlab_code": ""},
+            {"id": 30, "slug": "law", "name": "Law Resume", "category": "Academic", "ats_rating": 98, "popularity": 5, "color_theme": "slate", "is_enabled": True, "is_premium": True, "is_ats_optimized": True, "html_content": "", "reportlab_code": ""},
+            {"id": 31, "slug": "research", "name": "Research Resume", "category": "Academic", "ats_rating": 99, "popularity": 5, "color_theme": "slate", "is_enabled": True, "is_premium": True, "is_ats_optimized": True, "html_content": "", "reportlab_code": ""},
+            {"id": 32, "slug": "productmanager", "name": "Product Manager Resume", "category": "Executive", "ats_rating": 98, "popularity": 5, "color_theme": "blue", "is_enabled": True, "is_premium": True, "is_ats_optimized": True, "html_content": "", "reportlab_code": ""},
+            {"id": 33, "slug": "uiuxdesigner", "name": "UI UX Designer Resume", "category": "Creative", "ats_rating": 95, "popularity": 5, "color_theme": "purple", "is_enabled": True, "is_premium": True, "is_ats_optimized": True, "html_content": "", "reportlab_code": ""},
+            {"id": 34, "slug": "graphicdesigner", "name": "Graphic Designer Resume", "category": "Creative", "ats_rating": 94, "popularity": 5, "color_theme": "pink", "is_enabled": True, "is_premium": True, "is_ats_optimized": True, "html_content": "", "reportlab_code": ""},
+            {"id": 35, "slug": "consultant", "name": "Consultant Resume", "category": "Professional", "ats_rating": 98, "popularity": 5, "color_theme": "slate", "is_enabled": True, "is_premium": True, "is_ats_optimized": True, "html_content": "", "reportlab_code": ""},
+            {"id": 36, "slug": "government", "name": "Government Resume", "category": "Minimalist", "ats_rating": 99, "popularity": 5, "color_theme": "slate", "is_enabled": True, "is_premium": True, "is_ats_optimized": True, "html_content": "", "reportlab_code": ""},
+            {"id": 37, "slug": "international", "name": "International Resume", "category": "Professional", "ats_rating": 97, "popularity": 5, "color_theme": "blue", "is_enabled": True, "is_premium": True, "is_ats_optimized": True, "html_content": "", "reportlab_code": ""},
+            {"id": 38, "slug": "internship", "name": "Internship Resume", "category": "Entry Level", "ats_rating": 98, "popularity": 5, "color_theme": "emerald", "is_enabled": True, "is_premium": True, "is_ats_optimized": True, "html_content": "", "reportlab_code": ""},
+            {"id": 39, "slug": "graduate", "name": "Graduate Resume", "category": "Entry Level", "ats_rating": 98, "popularity": 5, "color_theme": "blue", "is_enabled": True, "is_premium": True, "is_ats_optimized": True, "html_content": "", "reportlab_code": ""},
+            {"id": 40, "slug": "academic_cv", "name": "Academic CV", "category": "Academic", "ats_rating": 99, "popularity": 5, "color_theme": "slate", "is_enabled": True, "is_premium": True, "is_ats_optimized": True, "html_content": "", "reportlab_code": ""}
+        ]
+        db.resume_templates.insert_many(templates_list)
+        db.counters.update_one({"_id": "resume_templates"}, {"$set": {"seq": 40}}, upsert=True)
+        print(f"Seeded {len(templates_list)} resume templates.")
             
         print("Successfully initialized and seeded MongoDB database!")
     except Exception as e:
