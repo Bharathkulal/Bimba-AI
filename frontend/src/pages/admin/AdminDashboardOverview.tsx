@@ -116,10 +116,10 @@ export const AdminDashboardOverview: React.FC = () => {
     <div className="flex flex-col gap-6 w-full max-w-7xl mx-auto text-left animate-fadeIn">
       
       {/* Header Banner */}
-      <section className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-[#102117] border border-white/5 rounded-2xl p-6 shadow-md relative overflow-hidden">
+      <section className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-sidebar border border-border rounded-2xl p-6 shadow-md relative overflow-hidden">
         <div className="absolute right-0 top-0 w-60 h-full bg-gradient-to-l from-emerald-500/5 to-transparent blur-3xl pointer-events-none" />
         <div className="relative z-10 text-left">
-          <h1 className="text-xl font-extrabold text-white tracking-tight">Admin Dashboard Overview</h1>
+          <h1 className="text-xl font-extrabold text-slate-900 tracking-tight">Admin Dashboard Overview</h1>
           <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider block mt-1">
             Real-time college application metrics & AI resume builder logs
           </p>
@@ -128,7 +128,7 @@ export const AdminDashboardOverview: React.FC = () => {
           onClick={handleSync} 
           variant="secondary" 
           size="sm" 
-          className="border-white/10 text-[#22C55E] gap-1.5 shrink-0"
+          className="border-border text-[#22C55E] gap-1.5 shrink-0"
         >
           <RefreshCw size={13} className={syncing ? 'animate-spin' : ''} /> Sync Analytics
         </Button>
@@ -140,23 +140,23 @@ export const AdminDashboardOverview: React.FC = () => {
           const Icon = kpi.icon;
           const isUp = kpi.trend === 'up';
           return (
-            <Card key={idx} className="p-4 bg-[#13261B] border-white/5 hover:border-emerald-500/30 flex flex-col justify-between h-[120px] transition-all">
+            <Card key={idx} className="p-4 hover:border-emerald-500/30 flex flex-col justify-between h-[120px] transition-all">
               <div className="flex justify-between items-start">
                 <div>
                   <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wide block truncate max-w-[100px]">
                     {kpi.label}
                   </span>
-                  <span className="text-xl font-black text-white mt-1.5 block tracking-tight">
+                  <span className="text-xl font-black text-slate-900 mt-1.5 block tracking-tight">
                     {kpi.value}
                   </span>
                 </div>
-                <div className={`w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center border border-white/5 shrink-0 ${kpi.color}`}>
+                <div className={`w-8 h-8 rounded-lg bg-slate-100/50 flex items-center justify-center border border-border shrink-0 ${kpi.color}`}>
                   <Icon size={14} />
                 </div>
               </div>
 
               {/* Sparkline & trend */}
-              <div className="flex justify-between items-center pt-2 mt-1.5 border-t border-white/5">
+              <div className="flex justify-between items-center pt-2 mt-1.5 border-t border-border">
                 <span className="text-[8.5px] font-black flex items-center gap-0.5 text-emerald-400">
                   <ArrowUpRight size={10} />
                   {kpi.growth}
@@ -181,14 +181,14 @@ export const AdminDashboardOverview: React.FC = () => {
         
         {/* Left: 4 Analytical SVG Charts Grid */}
         <div className="lg:col-span-2 flex flex-col gap-6">
-          <Card className="p-5 bg-[#13261B] border-white/5 text-left flex-grow">
-            <h3 className="font-extrabold text-sm text-white border-b border-white/5 pb-2 mb-4">
+          <Card className="p-5 text-left flex-grow">
+            <h3 className="font-extrabold text-sm text-slate-900 border-b border-border pb-2 mb-4">
               AI Resume Analytics Workspace
             </h3>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
               {/* Chart 1: Resume Growth */}
-              <div className="border border-white/5 p-3.5 rounded-xl bg-white/5">
+              <div className="border border-border p-3.5 rounded-xl bg-slate-50/30">
                 <p className="text-[9.5px] font-bold text-slate-400 uppercase tracking-wide">Resume Growth Trend</p>
                 <div className="h-28 flex items-end mt-2">
                   <svg className="w-full h-full" viewBox="0 0 200 100">
@@ -199,7 +199,7 @@ export const AdminDashboardOverview: React.FC = () => {
               </div>
 
               {/* Chart 2: ATS Score Trend */}
-              <div className="border border-white/5 p-3.5 rounded-xl bg-white/5">
+              <div className="border border-border p-3.5 rounded-xl bg-slate-50/30">
                 <p className="text-[9.5px] font-bold text-slate-400 uppercase tracking-wide">ATS Score keyword Distribution</p>
                 <div className="h-28 flex items-end mt-2">
                   <svg className="w-full h-full" viewBox="0 0 200 100">
@@ -209,7 +209,7 @@ export const AdminDashboardOverview: React.FC = () => {
               </div>
 
               {/* Chart 3: Student Registrations */}
-              <div className="border border-white/5 p-3.5 rounded-xl bg-white/5">
+              <div className="border border-border p-3.5 rounded-xl bg-slate-50/30">
                 <p className="text-[9.5px] font-bold text-slate-400 uppercase tracking-wide">Student Profile Registrations</p>
                 <div className="h-28 flex items-end justify-around gap-2 mt-2 px-2">
                   {[45, 60, 35, 70, 50, 95].map((val, idx) => (
@@ -222,7 +222,7 @@ export const AdminDashboardOverview: React.FC = () => {
               </div>
 
               {/* Chart 4: Resume Downloads */}
-              <div className="border border-white/5 p-3.5 rounded-xl bg-white/5">
+              <div className="border border-border p-3.5 rounded-xl bg-slate-50/30">
                 <p className="text-[9.5px] font-bold text-slate-400 uppercase tracking-wide">Resume Download Volume</p>
                 <div className="h-28 flex items-end mt-2">
                   <svg className="w-full h-full" viewBox="0 0 200 100">
@@ -237,43 +237,43 @@ export const AdminDashboardOverview: React.FC = () => {
         {/* Right: Quick Actions & Recent Activity timeline */}
         <div className="flex flex-col gap-6">
           {/* Quick Actions Panel */}
-          <Card className="p-5 bg-[#13261B] border-white/5 text-left">
-            <h3 className="font-extrabold text-sm text-white border-b border-white/5 pb-2 mb-3.5">
+          <Card className="p-5 text-left">
+            <h3 className="font-extrabold text-sm text-slate-900 border-b border-border pb-2 mb-3.5">
               Quick Admin Actions
             </h3>
             
             <div className="flex flex-col gap-2">
               <button 
                 onClick={() => navigate('/admin/users')}
-                className="w-full flex items-center gap-2.5 p-3 bg-white/5 border border-white/5 hover:border-emerald-500/20 rounded-xl transition-all cursor-pointer text-left text-xs font-bold text-slate-200"
+                className="w-full flex items-center gap-2.5 p-3 bg-slate-100/50 border border-border hover:bg-slate-100 rounded-xl transition-all cursor-pointer text-left text-xs font-bold text-slate-700 hover:text-slate-900"
               >
                 <Plus size={14} className="text-emerald-500" />
                 <span>Add Student Account</span>
               </button>
               <button 
                 onClick={() => navigate('/admin/announcements')}
-                className="w-full flex items-center gap-2.5 p-3 bg-white/5 border border-white/5 hover:border-emerald-500/20 rounded-xl transition-all cursor-pointer text-left text-xs font-bold text-slate-200"
+                className="w-full flex items-center gap-2.5 p-3 bg-slate-100/50 border border-border hover:bg-slate-100 rounded-xl transition-all cursor-pointer text-left text-xs font-bold text-slate-700 hover:text-slate-900"
               >
                 <Plus size={14} className="text-emerald-500" />
                 <span>Create Announcement</span>
               </button>
               <button 
                 onClick={() => navigate('/admin/templates')}
-                className="w-full flex items-center gap-2.5 p-3 bg-white/5 border border-white/5 hover:border-emerald-500/20 rounded-xl transition-all cursor-pointer text-left text-xs font-bold text-slate-200"
+                className="w-full flex items-center gap-2.5 p-3 bg-slate-100/50 border border-border hover:bg-slate-100 rounded-xl transition-all cursor-pointer text-left text-xs font-bold text-slate-700 hover:text-slate-900"
               >
                 <Plus size={14} className="text-emerald-500" />
                 <span>Create Resume Template</span>
               </button>
               <button 
                 onClick={handleSync}
-                className="w-full flex items-center gap-2.5 p-3 bg-white/5 border border-white/5 hover:border-emerald-500/20 rounded-xl transition-all cursor-pointer text-left text-xs font-bold text-slate-200"
+                className="w-full flex items-center gap-2.5 p-3 bg-slate-100/50 border border-border hover:bg-slate-100 rounded-xl transition-all cursor-pointer text-left text-xs font-bold text-slate-700 hover:text-slate-900"
               >
                 <Database size={14} className="text-emerald-500" />
                 <span>Backup Database Snapshot</span>
               </button>
               <button 
                 onClick={handleSync}
-                className="w-full flex items-center gap-2.5 p-3 bg-white/5 border border-white/5 hover:border-emerald-500/20 rounded-xl transition-all cursor-pointer text-left text-xs font-bold text-slate-200"
+                className="w-full flex items-center gap-2.5 p-3 bg-slate-100/50 border border-border hover:bg-slate-100 rounded-xl transition-all cursor-pointer text-left text-xs font-bold text-slate-700 hover:text-slate-900"
               >
                 <RefreshCw size={14} className="text-emerald-500" />
                 <span>Refresh Analytical stats</span>
@@ -282,8 +282,8 @@ export const AdminDashboardOverview: React.FC = () => {
           </Card>
 
           {/* Activity Timeline */}
-          <Card className="p-5 bg-[#13261B] border-white/5 text-left flex-grow">
-            <h3 className="font-extrabold text-sm text-white border-b border-white/5 pb-2 mb-3.5">
+          <Card className="p-5 text-left flex-grow">
+            <h3 className="font-extrabold text-sm text-slate-900 border-b border-border pb-2 mb-3.5">
               Recent Activity Timeline
             </h3>
 
@@ -295,11 +295,11 @@ export const AdminDashboardOverview: React.FC = () => {
                 { label: 'Database Backup Completed', desc: 'bimba_db_snap generated successfully', time: '4h ago' },
                 { label: 'AI Prompt template updated', desc: 'Refined ATS parser temperature key', time: '6h ago' }
               ].map((act, idx) => (
-                <div key={idx} className="flex gap-2.5 items-start text-xs pb-2 border-b border-white/5 last:border-0">
+                <div key={idx} className="flex gap-2.5 items-start text-xs pb-2 border-b border-border last:border-0">
                   <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 mt-1.5 shrink-0" />
                   <div>
-                    <p className="font-bold text-white text-[11px] leading-tight">{act.label}</p>
-                    <p className="text-[9.5px] text-slate-400 mt-0.5 leading-snug">{act.desc}</p>
+                    <p className="font-bold text-slate-900 text-[11px] leading-tight">{act.label}</p>
+                    <p className="text-[9.5px] text-slate-500 mt-0.5 leading-snug">{act.desc}</p>
                     <span className="text-[8.5px] text-slate-500 font-bold block mt-1">{act.time}</span>
                   </div>
                 </div>

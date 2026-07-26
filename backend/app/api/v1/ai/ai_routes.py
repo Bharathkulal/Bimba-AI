@@ -154,18 +154,26 @@ def list_providers(
     result = []
     for p_doc in providers:
         p = MongoModel(p_doc)
-        has_key = len(get_key_from_env(p.slug)) > 0
+        key = get_key_from_env(p.slug)
+        has_key = len(key) > 0
         status_text = p.connection_status
         if not has_key:
             status_text = "🔴 Not Configured"
         elif status_text == "Not Configured":
             status_text = "🟢 Configured (.env)"
 
+        masked_key = ""
+        if key:
+            if len(key) > 8:
+                masked_key = f"{key[:4]}••••••••{key[-4:]}"
+            else:
+                masked_key = "••••••••"
+
         result.append({
             "id": p.id,
             "provider_name": p.provider_name,
             "slug": p.slug,
-            "masked_key": "",
+            "masked_key": masked_key,
             "model_name": p.model_name,
             "priority": p.priority,
             "temperature": p.temperature,

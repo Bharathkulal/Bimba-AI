@@ -14,8 +14,8 @@ export const Card: React.FC<CardProps> = ({
   onClick,
   hoverEffect = true,
 }) => {
-  const isAdmin = typeof window !== 'undefined' && window.location.hostname && window.location.pathname.startsWith('/admin');
-  const themeBg = isAdmin ? 'bg-[#13261B] border-white/5 text-white' : 'bg-white border-slate-200 text-slate-800';
+  const isAdmin = typeof window !== 'undefined' && window.location.pathname.startsWith('/admin');
+  const themeBg = 'bg-card border-border text-slate-800';
 
   return (
     <motion.div

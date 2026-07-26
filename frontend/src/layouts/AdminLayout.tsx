@@ -7,6 +7,7 @@ import {
 } from 'lucide-react';
 import { adminService } from '../services/admin';
 import { AdminCommandPalette } from '../components/AdminCommandPalette';
+import { ThemeToggle } from '../components/ThemeToggle';
 
 export const AdminLayout: React.FC = () => {
   const navigate = useNavigate();
@@ -115,10 +116,10 @@ export const AdminLayout: React.FC = () => {
   const breadcrumbs = location.pathname.split('/').filter(Boolean);
 
   return (
-    <div className="min-h-screen bg-[#08130D] text-white flex overflow-x-hidden font-sans relative selection:bg-emerald-600/25 w-full">
+    <div className="min-h-screen bg-background text-slate-900 flex overflow-x-hidden font-sans relative selection:bg-emerald-600/25 w-full">
       {/* Toast Notification */}
       {toastMessage && (
-        <div className="fixed top-6 right-6 z-50 flex items-center gap-2.5 px-4 py-3 rounded-xl shadow-2xl border border-emerald-500/20 bg-[#102117] text-[#22C55E] animate-fadeIn text-xs font-semibold">
+        <div className="fixed top-6 right-6 z-50 flex items-center gap-2.5 px-4 py-3 rounded-xl shadow-2xl border border-emerald-500/20 bg-sidebar text-[#22C55E] animate-fadeIn text-xs font-semibold">
           <RefreshCw size={14} className="animate-spin" />
           <span>{toastMessage}</span>
         </div>
@@ -132,7 +133,7 @@ export const AdminLayout: React.FC = () => {
 
       {/* Collapsible Vercel-style Left Sidebar */}
       <aside 
-        className={`hidden md:flex flex-col justify-between items-stretch py-6 px-4 bg-[#102117] border-r border-white/5 h-screen fixed left-0 top-0 z-40 transition-all duration-300 ${
+        className={`hidden md:flex flex-col justify-between items-stretch py-6 px-4 bg-sidebar border-r border-border h-screen fixed left-0 top-0 z-40 transition-all duration-300 ${
           isCollapsed ? 'w-20' : 'w-[260px]'
         }`}
       >
@@ -143,7 +144,7 @@ export const AdminLayout: React.FC = () => {
               B
             </div>
             {!isCollapsed && (
-              <span className="font-extrabold text-white text-sm tracking-tight whitespace-nowrap">
+              <span className="font-extrabold text-slate-900 text-sm tracking-tight whitespace-nowrap">
                 Bimba Admin
               </span>
             )}
@@ -176,12 +177,12 @@ export const AdminLayout: React.FC = () => {
                     className={`flex items-center justify-between w-full px-3 py-2.5 rounded-xl transition-all duration-200 relative group cursor-pointer ${
                       isActive 
                         ? 'bg-[#16A34A]/10 text-[#22C55E] font-bold' 
-                        : 'text-[#B3B3B3] hover:text-white hover:bg-white/5'
+                        : 'text-slate-400 hover:text-slate-900 hover:bg-slate-100 font-bold'
                     }`}
                   >
                     <div className="flex items-center">
                       <div className="flex items-center shrink-0 justify-center w-5 h-5 mr-3">
-                        <Icon size={16} className={isActive ? 'text-[#22C55E]' : 'text-[#B3B3B3]'} />
+                        <Icon size={16} className={isActive ? 'text-[#22C55E]' : 'text-slate-400'} />
                       </div>
                       {!isCollapsed && (
                         <span className="text-xs font-bold tracking-wide whitespace-nowrap">
@@ -210,7 +211,7 @@ export const AdminLayout: React.FC = () => {
                             className={`w-full text-left py-2 px-3 rounded-lg text-[11px] font-semibold transition-all cursor-pointer ${
                               isSubActive 
                                 ? 'text-[#22C55E] bg-[#16A34A]/5 font-extrabold' 
-                                : 'text-[#B3B3B3] hover:text-white hover:bg-white/5'
+                                : 'text-slate-400 hover:text-slate-900 hover:bg-slate-100'
                             }`}
                           >
                             {sub.label}
@@ -244,12 +245,12 @@ export const AdminLayout: React.FC = () => {
         }`}
       >
         {/* Top Navbar */}
-        <header className="bg-[#102117]/85 backdrop-blur-md border-b border-white/5 h-15 flex items-center justify-between px-6 sticky top-0 z-30 shadow-md">
+        <header className="bg-sidebar/85 backdrop-blur-md border-b border-border h-15 flex items-center justify-between px-6 sticky top-0 z-30 shadow-md">
           {/* Breadcrumb */}
           <div className="flex items-center gap-3">
             <button 
               onClick={() => setIsCollapsed(!isCollapsed)}
-              className="hidden md:block p-1.5 hover:bg-white/5 rounded-lg text-slate-400 hover:text-white cursor-pointer"
+              className="hidden md:block p-1.5 hover:bg-slate-100 rounded-lg text-slate-400 hover:text-slate-900 cursor-pointer"
             >
               <RefreshCw size={12} className={isSyncing ? 'animate-spin' : ''} />
             </button>
@@ -258,7 +259,7 @@ export const AdminLayout: React.FC = () => {
               {breadcrumbs.map((crumb, idx) => (
                 <React.Fragment key={crumb}>
                   <ChevronRight size={10} className="text-slate-650" />
-                  <span className={idx === breadcrumbs.length - 1 ? 'text-white font-extrabold' : ''}>
+                  <span className={idx === breadcrumbs.length - 1 ? 'text-slate-900 font-extrabold' : ''}>
                     {crumb}
                   </span>
                 </React.Fragment>
@@ -271,27 +272,31 @@ export const AdminLayout: React.FC = () => {
             {/* Command Palette Trigger */}
             <button 
               onClick={() => setIsPaletteOpen(true)}
-              className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-lg bg-white/5 border border-white/5 text-[#B3B3B3] hover:text-white cursor-pointer"
+              className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-lg bg-slate-100/50 border border-border text-slate-400 hover:text-slate-900 cursor-pointer"
             >
               <Search size={12} />
               <span className="text-[10px] font-bold">Search...</span>
-              <kbd className="text-[9px] font-mono bg-white/10 px-1.5 py-0.5 rounded border border-white/5">Ctrl+K</kbd>
+              <kbd className="text-[9px] font-mono bg-slate-100 px-1.5 py-0.5 rounded border border-border">Ctrl+K</kbd>
             </button>
 
             <button 
               onClick={triggerSync}
-              className="p-1.8 bg-white/5 hover:bg-white/10 border border-white/5 rounded-xl text-slate-400 hover:text-white transition-colors cursor-pointer"
+              className="p-1.8 bg-slate-100/50 hover:bg-slate-100 border border-border text-slate-400 hover:text-slate-900 transition-colors cursor-pointer"
               title="Sync Platform Databases"
             >
               <RefreshCw size={13} className={isSyncing ? 'animate-spin' : ''} />
             </button>
 
-            <button className="p-1.8 bg-white/5 hover:bg-white/10 border border-white/5 rounded-xl text-slate-400 hover:text-white relative cursor-pointer">
+            <button className="p-1.8 bg-slate-100/50 hover:bg-slate-100 border border-border text-slate-400 hover:text-slate-900 relative cursor-pointer">
               <Bell size={13} />
               <span className="absolute top-1 right-1 w-1.5 h-1.5 rounded-full bg-[#22C55E]" />
             </button>
 
-            <div className="w-[1px] h-4 bg-white/10" />
+            <div className="w-[1px] h-4 bg-border" />
+
+            <ThemeToggle />
+
+            <div className="w-[1px] h-4 bg-border" />
 
             {/* Profile badge */}
             <div className="flex items-center gap-2">
@@ -299,7 +304,7 @@ export const AdminLayout: React.FC = () => {
                 A
               </div>
               <div className="hidden xl:block text-left leading-none">
-                <h5 className="font-extrabold text-xs text-white">Administrator</h5>
+                <h5 className="font-extrabold text-xs text-slate-900">Administrator</h5>
                 <span className="text-[9px] text-[#22C55E] block mt-0.5">Console Admin</span>
               </div>
             </div>

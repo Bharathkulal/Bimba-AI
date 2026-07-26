@@ -152,16 +152,15 @@ body, aside, header, nav, main, table, th, td, button, input, select, textarea, 
 .dark .bg-white\/75,
 .dark .bg-white\/95,
 .dark .bg-white\/50,
-.dark .bg-slate-50,
+.dark .bg-slate-55,
 .dark .bg-slate-50\/50,
-.dark .bg-slate-50\/60,
 .dark .bg-slate-50\/80,
 .dark .bg-slate-100,
-.dark .bg-slate-100/50,
+.dark .bg-slate-100\/50,
 .dark .bg-slate-100\/50,
 .dark .bg-slate-100\/70,
 .dark .bg-slate-100\/80,
-.dark .bg-slate-100/40,
+.dark .bg-slate-100\/40,
 .dark .bg-slate-200\/50,
 .dark .bg-slate-200\/60,
 .dark .bg-slate-200\/40,
@@ -173,15 +172,15 @@ body, aside, header, nav, main, table, th, td, button, input, select, textarea, 
   background-color: var(--card-bg) !important;
 }
 
-.dark .bg-slate-900/5,
-.dark .bg-emerald-50/60,
-.dark .bg-slate-100/70,
-.dark .bg-slate-100/40 {
+.dark .bg-slate-900\/5,
+.dark .bg-emerald-50\/60,
+.dark .bg-slate-100\/70,
+.dark .bg-slate-100\/40 {
   background-color: var(--bg-secondary) !important;
 }
 
 .dark aside,
-.dark .bg-white/70,
+.dark .bg-white\/70,
 .dark header,
 .dark nav {
   background-color: var(--sidebar-bg) !important;
@@ -225,8 +224,8 @@ body, aside, header, nav, main, table, th, td, button, input, select, textarea, 
 .dark .border-slate-100,
 .dark .border-slate-150,
 .dark .border-slate-200,
-.dark .border-slate-200/60,
-.dark .border-slate-200/40,
+.dark .border-slate-200\/60,
+.dark .border-slate-200\/40,
 .dark .border-slate-300,
 .dark .border-slate-350,
 .dark .border-slate-400,
@@ -270,9 +269,9 @@ body, aside, header, nav, main, table, th, td, button, input, select, textarea, 
 /* Hover Overrides */
 .dark .hover:bg-slate-50:hover,
 .dark .hover:bg-slate-100:hover,
-.dark .hover:bg-slate-100/50:hover,
+.dark .hover:bg-slate-100\/50:hover,
 .dark .hover:bg-gray-50:hover,
-.dark .hover:bg-slate-50/50:hover {
+.dark .hover:bg-slate-50\/50:hover {
   background-color: var(--card-hover-bg) !important;
 }
 
@@ -400,8 +399,8 @@ input:-webkit-autofill:active {
 .dark .bg-emerald-50,
 .dark .bg-emerald-100,
 .dark .bg-emerald-155,
-.dark .bg-emerald-100/10,
-.dark .bg-emerald-50/10 {
+.dark .bg-emerald-100\/10,
+.dark .bg-emerald-55\/10 {
   background-color: rgba(34, 197, 94, 0.1) !important;
   color: var(--accent) !important;
   border-color: rgba(34, 197, 94, 0.2) !important;
@@ -504,4 +503,83 @@ input:-webkit-autofill:active {
 .no-scrollbar {
   -ms-overflow-style: none;
   scrollbar-width: none;
+}
+
+/* ==========================================
+   Admin Console Light Mode Accessibility Fixes
+   ========================================== */
+html:not(.dark) main .bg-\[\#102117\] {
+  background-color: var(--card-bg) !important;
+}
+html:not(.dark) main .bg-\[\#13261B\] {
+  background-color: var(--card-bg) !important;
+}
+html:not(.dark) main .bg-white\/5 {
+  background-color: var(--card-bg) !important;
+}
+
+html:not(.dark) main select.bg-\[\#102117\],
+html:not(.dark) main select.bg-white\/5 {
+  background-color: var(--input-bg) !important;
+  color: var(--text-primary) !important;
+  border-color: var(--border) !important;
+}
+html:not(.dark) main input.bg-\[\#102117\],
+html:not(.dark) main input.bg-white\/5 {
+  background-color: var(--input-bg) !important;
+  color: var(--text-primary) !important;
+  border-color: var(--border) !important;
+}
+html:not(.dark) main textarea.bg-\[\#102117\],
+html:not(.dark) main textarea.bg-white\/5 {
+  background-color: var(--input-bg) !important;
+  color: var(--text-primary) !important;
+  border-color: var(--border) !important;
+}
+
+html:not(.dark) main .border-white\/5,
+html:not(.dark) main .border-white\/10,
+html:not(.dark) main .border-white\/20,
+html:not(.dark) main .border-white\/30,
+html:not(.dark) main .border-white\/40,
+html:not(.dark) main .border-white\/50 {
+  border-color: var(--border) !important;
+}
+
+html:not(.dark) main .text-white,
+html:not(.dark) main .text-slate-100,
+html:not(.dark) main .text-slate-200 {
+  color: var(--text-primary) !important;
+}
+
+html:not(.dark) main button.text-white,
+html:not(.dark) main button .text-white,
+html:not(.dark) main a.text-white,
+html:not(.dark) main a .text-white,
+html:not(.dark) main .bg-emerald-600 .text-white,
+html:not(.dark) main [class*="bg-emerald"] .text-white {
+  color: #FFFFFF !important;
+}
+
+html:not(.dark) main .text-slate-300,
+html:not(.dark) main .text-slate-400,
+html:not(.dark) main .text-slate-500,
+html:not(.dark) main .text-slate-450 {
+  color: var(--text-secondary) !important;
+}
+
+html:not(.dark) main button.bg-white\/5,
+html:not(.dark) main div.bg-white\/5 {
+  background-color: var(--bg-secondary) !important;
+}
+
+html:not(.dark) main tr.bg-\[\#102117\] {
+  background-color: var(--bg-secondary) !important;
+}
+html:not(.dark) main tr.bg-\[\#13261B\] {
+  background-color: var(--bg-secondary) !important;
+}
+html:not(.dark) main tr.bg-slate-50\/70,
+html:not(.dark) main tr.bg-slate-50\/80 {
+  background-color: var(--bg-secondary) !important;
 }
