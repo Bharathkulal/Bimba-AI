@@ -23,8 +23,15 @@
   --color-white: var(--card-bg);
   --color-slate-50: var(--bg-secondary);
   --color-slate-100: var(--bg-secondary);
+  --color-slate-150: var(--border);
   --color-slate-200: var(--border);
+  --color-slate-205: var(--border);
   --color-slate-350: var(--border);
+  --color-slate-450: var(--text-secondary);
+  --color-slate-705: var(--text-primary);
+  --color-slate-750: var(--text-primary);
+  --color-slate-805: var(--text-primary);
+  --color-slate-655: var(--text-primary);
   
   --color-slate-800: var(--text-primary);
   --color-slate-900: var(--text-primary);
@@ -204,8 +211,11 @@ body, aside, header, nav, main, table, th, td, button, input, select, textarea, 
   color: var(--text-secondary) !important;
 }
 
-.dark .text-emerald-600,
+.dark .text-emerald-505,
 .dark .text-emerald-500,
+.dark .text-emerald-600,
+.dark .text-emerald-700,
+.dark .text-emerald-800,
 .dark .text-primary {
   color: var(--accent) !important;
 }
@@ -213,15 +223,23 @@ body, aside, header, nav, main, table, th, td, button, input, select, textarea, 
 /* Border Overrides */
 .dark .border,
 .dark .border-slate-100,
+.dark .border-slate-150,
 .dark .border-slate-200,
 .dark .border-slate-200/60,
 .dark .border-slate-200/40,
 .dark .border-slate-300,
+.dark .border-slate-350,
 .dark .border-slate-400,
 .dark .border-gray-200,
 .dark .border-gray-100,
 .dark .border-slate-50 {
   border-color: var(--border) !important;
+}
+
+.dark .border-emerald-100,
+.dark .border-emerald-150,
+.dark .border-emerald-200 {
+  border-color: rgba(34, 197, 94, 0.2) !important;
 }
 
 /* Cards & Glassmorphism */
@@ -367,8 +385,20 @@ input:-webkit-autofill:active {
   border-color: var(--border) !important;
 }
 
+/* Image elements in dark mode to reduce jarring brightness */
+.dark img {
+  opacity: 0.9;
+  filter: brightness(0.85) contrast(1.05);
+  transition: opacity 0.3s ease, filter 0.3s ease;
+}
+.dark img:hover {
+  opacity: 1;
+  filter: brightness(1) contrast(1);
+}
+
 /* Badges */
 .dark .bg-emerald-50,
+.dark .bg-emerald-100,
 .dark .bg-emerald-155,
 .dark .bg-emerald-100/10,
 .dark .bg-emerald-50/10 {

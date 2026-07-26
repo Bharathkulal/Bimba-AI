@@ -59,7 +59,7 @@ export const DashboardLayout: React.FC = () => {
       </div>
 
       {/* Premium Bottom Navigation Tab Bar - MOBILE */}
-      <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-[#111827]/95 backdrop-blur-lg border-t border-slate-800 py-2 px-3 flex items-center justify-around z-45 shadow-2xl">
+      <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-sidebar/95 backdrop-blur-lg border-t border-border py-2 px-3 flex items-center justify-around z-45 shadow-2xl">
         {menuItems.map((item) => {
           const Icon = item.icon;
           const isActive = item.path === '/dashboard' 

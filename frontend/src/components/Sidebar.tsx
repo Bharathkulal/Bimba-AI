@@ -39,14 +39,14 @@ export const Sidebar: React.FC<SidebarProps> = ({
   const sidebarContent = (isDesktop: boolean) => {
     const showExpanded = isDesktop ? isHovered : true;
     return (
-      <div className="flex flex-col justify-between h-full py-6 px-4 text-slate-350">
+      <div className="flex flex-col justify-between h-full py-6 px-4 text-slate-400">
         <div className="flex flex-col gap-8">
           {/* Logo Section */}
           <div className="flex items-center px-2 overflow-hidden shrink-0">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-emerald-600 to-emerald-500 flex items-center justify-center text-white font-black text-2xl shadow-lg shadow-emerald-500/20 shrink-0">
+            <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-emerald-600 to-emerald-500 flex items-center justify-center text-[#FFFFFF] font-black text-2xl shadow-lg shadow-emerald-500/20 shrink-0">
               B
             </div>
-            <span className={`font-extrabold text-white text-lg tracking-tight ml-3.5 whitespace-nowrap transition-all duration-300 ease-in-out ${
+            <span className={`font-extrabold text-slate-900 text-lg tracking-tight ml-3.5 whitespace-nowrap transition-all duration-300 ease-in-out ${
               showExpanded ? 'opacity-100 max-w-[150px]' : 'opacity-0 max-w-0 overflow-hidden pointer-events-none'
             }`}>
               Bimba AI
@@ -67,8 +67,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
                   onClick={() => handleNavClick(item.path)}
                   className={`flex items-center w-full px-3.5 py-3 rounded-xl transition-all duration-200 relative group cursor-pointer ${
                     isActive 
-                      ? 'bg-emerald-600 text-white font-semibold shadow-md shadow-emerald-600/10' 
-                      : 'text-slate-400 hover:text-slate-100 hover:bg-slate-800/40 font-medium'
+                      ? 'bg-emerald-600 text-[#FFFFFF] font-semibold shadow-md shadow-emerald-600/10' 
+                      : 'text-slate-400 hover:text-slate-900 hover:bg-slate-100 font-medium'
                   }`}
                 >
                   <div className="flex items-center shrink-0 justify-center w-5 h-5 relative z-10">
@@ -83,7 +83,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
                   {/* Tooltip when collapsed */}
                   {!showExpanded && (
-                    <div className="absolute left-20 bg-slate-900 border border-slate-800 text-white px-2.5 py-1.5 rounded-lg text-[10px] font-bold tracking-wider uppercase opacity-0 pointer-events-none group-hover:opacity-100 transition-opacity duration-200 shadow-xl whitespace-nowrap z-50">
+                    <div className="absolute left-20 bg-slate-900 border border-slate-800 text-[#FFFFFF] px-2.5 py-1.5 rounded-lg text-[10px] font-bold tracking-wider uppercase opacity-0 pointer-events-none group-hover:opacity-100 transition-opacity duration-200 shadow-xl whitespace-nowrap z-50">
                       {item.label}
                     </div>
                   )}
@@ -96,7 +96,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
         {/* Logout Footer */}
         <button
           onClick={() => logout()}
-          className="flex items-center px-3.5 py-3 rounded-xl text-rose-450 hover:text-rose-300 hover:bg-rose-500/10 transition-all duration-200 cursor-pointer font-semibold relative group overflow-hidden"
+          className="flex items-center px-3.5 py-3 rounded-xl text-danger hover:bg-danger/10 transition-all duration-200 cursor-pointer font-semibold relative group overflow-hidden"
         >
           <div className="flex items-center shrink-0 justify-center w-5 h-5">
             <LogOut size={20} />
@@ -107,7 +107,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
             Log Out
           </span>
           {!showExpanded && (
-            <div className="absolute left-20 bg-slate-900 border border-slate-800 text-rose-400 px-2.5 py-1.5 rounded-lg text-[10px] font-bold tracking-wider uppercase opacity-0 pointer-events-none group-hover:opacity-100 transition-opacity duration-200 shadow-xl whitespace-nowrap z-50">
+            <div className="absolute left-20 bg-slate-900 border border-slate-800 text-danger px-2.5 py-1.5 rounded-lg text-[10px] font-bold tracking-wider uppercase opacity-0 pointer-events-none group-hover:opacity-100 transition-opacity duration-200 shadow-xl whitespace-nowrap z-50">
               Log Out
             </div>
           )}
@@ -122,7 +122,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
       <aside 
         onMouseEnter={() => setIsHovered(true)}
         onMouseLeave={() => setIsHovered(false)}
-        className={`hidden md:block bg-[#111827] border-r border-slate-800 fixed left-4 top-4 bottom-4 z-40 rounded-[24px] shadow-2xl transition-all duration-300 ease-in-out ${
+        className={`hidden md:block bg-sidebar border-r border-border fixed left-4 top-4 bottom-4 z-40 rounded-[24px] shadow-2xl transition-all duration-300 ease-in-out ${
           isHovered ? 'w-[280px]' : 'w-20'
         }`}
       >
@@ -139,7 +139,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
       {/* Mobile Navigation Drawer */}
       <aside 
-        className={`md:hidden bg-[#111827] fixed top-0 bottom-0 left-0 w-[280px] z-50 shadow-2xl transition-transform duration-300 ease-in-out ${
+        className={`md:hidden bg-sidebar fixed top-0 bottom-0 left-0 w-[280px] z-50 shadow-2xl transition-transform duration-300 ease-in-out ${
           isMobileOpen ? 'translate-x-0' : '-translate-x-full'
         }`}
       >
