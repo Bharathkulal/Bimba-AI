@@ -249,7 +249,37 @@ def create_resume(payload: ResumeCreateRequest, student: Student = Depends(get_c
     db.activity_logs.insert_one({
         "id": get_next_sequence("activity_logs"),
         "student_id": student.id,
-        "activity": f"Created Resume Studio: {payload.name}",
+        "activity": f"Resume Uploaded" if payload.visibility == "Private" and "AI Parsed" in payload.name else f"Resume Created",
+        "created_at": datetime.utcnow()
+    })
+
+    # Save original version state
+    state = {
+        "master": {
+            "name": payload.name,
+            "resume_type": payload.resume_type,
+            "target_role": payload.target_role,
+            "career_objective": payload.career_objective,
+            "preferred_industry": payload.preferred_industry,
+            "language": payload.language,
+            "expected_salary": payload.expected_salary,
+            "visibility": payload.visibility,
+            "template_id": "celestial",
+            "color_theme": "blue"
+        },
+        "education": default_education,
+        "experience": [],
+        "projects": [],
+        "skills": [],
+        "certificates": []
+    }
+    db.resume_versions.insert_one({
+        "id": get_next_sequence("resume_versions"),
+        "resume_id": next_id,
+        "version_number": 1,
+        "name": "Original",
+        "data": json.dumps(state),
+        "ats_score": 72,
         "created_at": datetime.utcnow()
     })
 
@@ -793,6 +823,12 @@ def get_pdf_export(id: int, student: Student = Depends(get_current_student), db:
         "format": "PDF",
         "created_at": datetime.utcnow()
     })
+    db.activity_logs.insert_one({
+        "id": get_next_sequence("activity_logs"),
+        "student_id": student.id,
+        "activity": "Resume Downloaded",
+        "created_at": datetime.utcnow()
+    })
     
     primary_color = colors.HexColor('#1E3A8A')
     if resume.color_theme:
@@ -1053,7 +1089,7 @@ def get_public_resume(id: int, db: Any = Depends(get_db)):
 
 # --- NEW PLATFORM ENDPOINTS ---
 
-# Helper to extract text from pdf / docx
+# Helper to extract text from pdf / docx / txt
 def extract_text_from_file(file_content: bytes, filename: str) -> str:
     text = ""
     import pypdf
@@ -1071,6 +1107,11 @@ def extract_text_from_file(file_content: bytes, filename: str) -> str:
             text = "\n".join([p.text for p in doc.paragraphs])
         except Exception as e:
             print(f"[DOCX Extraction Error] {e}")
+    elif filename.lower().endswith(".txt"):
+        try:
+            text = file_content.decode("utf-8", errors="ignore")
+        except Exception as e:
+            print(f"[TXT Extraction Error] {e}")
     return text.strip()
 
 # Helper for parser fallback
@@ -1155,12 +1196,12 @@ async def upload_resume_file(
     student: Student = Depends(get_current_student),
     db: Any = Depends(get_db)
 ):
-    if not file.filename.lower().endswith((".pdf", ".docx")):
-        raise HTTPException(status_code=400, detail="Unsupported file format. Please upload PDF or DOCX.")
+    if not file.filename.lower().endswith((".pdf", ".docx", ".txt")):
+        raise HTTPException(status_code=400, detail="Unsupported file format. Please upload PDF, DOCX or TXT.")
     
     content = await file.read()
-    if len(content) > 5 * 1024 * 1024:
-        raise HTTPException(status_code=400, detail="File size exceeds limit of 5MB.")
+    if len(content) > 10 * 1024 * 1024:
+        raise HTTPException(status_code=400, detail="File size exceeds limit of 10MB.")
         
     os.makedirs("uploads/resumes", exist_ok=True)
     file_id = str(uuid.uuid4())
@@ -1344,6 +1385,52 @@ def improve_resume_endpoint(
         "original_data": json.dumps(resume_state),
         "improved_data": json.dumps(improved_json)
     })
+
+    # Save to versions history
+    last_v_doc = db.resume_versions.find_one(
+        {"resume_id": id},
+        sort=[("version_number", -1)]
+    )
+    latest_ver = last_v_doc["version_number"] if last_v_doc else 1
+    
+    # Save version
+    state_to_save = {
+        "master": {
+            "name": resume.name,
+            "resume_type": resume.resume_type,
+            "target_role": resume.target_role,
+            "career_objective": improved_json.get("personal_info", {}).get("summary") or resume.career_objective,
+            "preferred_industry": resume.preferred_industry,
+            "language": resume.language,
+            "expected_salary": resume.expected_salary,
+            "visibility": resume.visibility,
+            "template_id": resume.template_id,
+            "color_theme": resume.color_theme,
+        },
+        "education": improved_json.get("education", []),
+        "experience": improved_json.get("experience", []),
+        "projects": improved_json.get("projects", []),
+        "skills": improved_json.get("skills", []),
+        "certificates": improved_json.get("certifications", [])
+    }
+    
+    db.resume_versions.insert_one({
+        "id": get_next_sequence("resume_versions"),
+        "resume_id": id,
+        "version_number": latest_ver + 1,
+        "name": f"AI Optimized ({payload.improvement_goal})",
+        "data": json.dumps(state_to_save),
+        "ats_score": resume.ats_score or 72,
+        "created_at": datetime.utcnow()
+    })
+    
+    # Log activity
+    db.activity_logs.insert_one({
+        "id": get_next_sequence("activity_logs"),
+        "student_id": student.id,
+        "activity": "Resume Optimized",
+        "created_at": datetime.utcnow()
+    })
     
     return {"original": resume_state, "improved": improved_json}
 
@@ -1418,6 +1505,47 @@ def optimize_jd_endpoint(
         "important_technologies": ",".join(match_data.get("important_technologies", [])),
         "required_certifications": ",".join(match_data.get("required_certifications", [])),
         "optimized_resume_data": json.dumps(optimized_resume)
+    })
+    
+    # Save optimized version state
+    last_v_doc = db.resume_versions.find_one(
+        {"resume_id": id},
+        sort=[("version_number", -1)]
+    )
+    latest_ver = last_v_doc["version_number"] if last_v_doc else 1
+    
+    db.resume_versions.insert_one({
+        "id": get_next_sequence("resume_versions"),
+        "resume_id": id,
+        "version_number": latest_ver + 1,
+        "name": "Job Optimized",
+        "data": json.dumps(optimized_resume),
+        "ats_score": match_data.get("overall_match_score") or resume.ats_score or 72,
+        "created_at": datetime.utcnow()
+    })
+    
+    # Update master resume's details directly with optimized content
+    m = optimized_resume.get("personal_info") or {}
+    db.resumes.update_one(
+        {"id": id},
+        {"$set": {
+            "career_objective": m.get("summary") or resume.career_objective,
+            "education": optimized_resume.get("education") or resume.get("education", []),
+            "experience": optimized_resume.get("experience") or resume.get("experience", []),
+            "projects": optimized_resume.get("projects") or resume.get("projects", []),
+            "skills": optimized_resume.get("skills") or resume.get("skills", []),
+            "certificates": optimized_resume.get("certifications") or optimized_resume.get("certificates") or resume.get("certificates", []),
+            "ats_score": match_data.get("overall_match_score") or resume.ats_score or 72,
+            "updated_at": datetime.utcnow()
+        }}
+    )
+    
+    # Log activity
+    db.activity_logs.insert_one({
+        "id": get_next_sequence("activity_logs"),
+        "student_id": student.id,
+        "activity": "Resume Optimized",
+        "created_at": datetime.utcnow()
     })
     
     return {"match_metrics": match_data, "optimized_resume": optimized_resume}
@@ -1541,6 +1669,12 @@ def get_docx_export_endpoint(
         "id": get_next_sequence("resume_downloads"),
         "resume_id": id,
         "format": "DOCX",
+        "created_at": datetime.utcnow()
+    })
+    db.activity_logs.insert_one({
+        "id": get_next_sequence("activity_logs"),
+        "student_id": student.id,
+        "activity": "Resume Downloaded",
         "created_at": datetime.utcnow()
     })
     

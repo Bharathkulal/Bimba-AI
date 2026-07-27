@@ -74,6 +74,21 @@ export const ResumePage: React.FC = () => {
     fetchResumeData();
   }, []);
 
+  useEffect(() => {
+    if (!isLoading) {
+      const query = new URLSearchParams(window.location.search);
+      if (query.get('trigger_upload') === 'true') {
+        // Clean up the URL search parameter so it doesn't trigger on reload
+        const newUrl = window.location.pathname;
+        window.history.replaceState({}, document.title, newUrl);
+        // Trigger file input click
+        setTimeout(() => {
+          document.getElementById('resume-page-upload-input')?.click();
+        }, 100);
+      }
+    }
+  }, [isLoading]);
+
   const handleTrackAction = async (
     type: 'ai_use' | 'download' | 'edit' | 'session' | 'activity',
     detail: string,
@@ -128,8 +143,12 @@ export const ResumePage: React.FC = () => {
     if (!file) return;
     
     const ext = file.name.split('.').pop()?.toLowerCase();
-    if (ext !== 'pdf' && ext !== 'docx') {
-      alert("Unsupported file format. Please upload PDF or DOCX.");
+    if (ext !== 'pdf' && ext !== 'docx' && ext !== 'txt') {
+      alert("Unsupported file format. Please upload PDF, DOCX or TXT.");
+      return;
+    }
+    if (file.size > 10 * 1024 * 1024) {
+      alert("File size exceeds limit of 10MB.");
       return;
     }
     
@@ -262,7 +281,7 @@ export const ResumePage: React.FC = () => {
             className="flex items-center gap-2"
           >
             <UploadCloud size={15} />
-            Upload PDF/DOCX
+            Upload PDF/DOCX/TXT
           </Button>
           <Button 
             onClick={() => navigate('/resume-builder')}
@@ -280,7 +299,7 @@ export const ResumePage: React.FC = () => {
       <input 
         type="file" 
         id="resume-page-upload-input" 
-        accept=".pdf,.docx" 
+        accept=".pdf,.docx,.txt" 
         className="hidden" 
         onChange={handleFileUpload} 
       />

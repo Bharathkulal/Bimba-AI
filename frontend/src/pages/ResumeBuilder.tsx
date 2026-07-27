@@ -1624,14 +1624,16 @@ export const ResumeBuilder: React.FC = () => {
                       </button>
                     </div>
 
-                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-5 mb-6">
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-5 mb-6">
                       {[
-                        { label: 'Overall Score', score: atsScorecard.overall_score || 72, color: 'stroke-blue-600' },
-                        { label: 'Formatting Audit', score: atsScorecard.formatting_score || 75, color: 'stroke-teal-500' },
-                        { label: 'Keyword Match', score: atsScorecard.keyword_match || 68, color: 'stroke-purple-500' },
-                        { label: 'Grammar Accuracy', score: atsScorecard.grammar_score || 80, color: 'stroke-emerald-500' },
+                        { label: 'Resume Score', score: atsScorecard.overall_score || 72, color: 'stroke-blue-600' },
+                        { label: 'ATS Score', score: atsScorecard.overall_score || 72, color: 'stroke-purple-600' },
+                        { label: 'Keyword Score', score: atsScorecard.keyword_match || 68, color: 'stroke-pink-500' },
+                        { label: 'Formatting Score', score: atsScorecard.formatting_score || 75, color: 'stroke-teal-500' },
                         { label: 'Readability Score', score: atsScorecard.readability_score || 70, color: 'stroke-amber-500' },
-                        { label: 'Recruiter Score', score: atsScorecard.recruiter_score || 68, color: 'stroke-rose-500' }
+                        { label: 'Grammar Score', score: atsScorecard.grammar_score || 80, color: 'stroke-emerald-500' },
+                        { label: 'Professionalism Score', score: atsScorecard.recruiter_score || 68, color: 'stroke-slate-650' },
+                        { label: 'Project Quality Score', score: atsScorecard.recruiter_score || 68, color: 'stroke-rose-500' }
                       ].map((item) => (
                         <div key={item.label} className="p-4 bg-slate-50/50 border border-slate-100 rounded-2xl flex flex-col items-center gap-2">
                           <div className="relative w-16 h-16 flex items-center justify-center">
@@ -1644,6 +1646,40 @@ export const ResumeBuilder: React.FC = () => {
                           <span className="text-[9px] text-slate-400 font-extrabold uppercase text-center mt-1 leading-snug">{item.label}</span>
                         </div>
                       ))}
+                    </div>
+
+                    {/* AI SUGGESTIONS CARDS */}
+                    <div className="flex flex-col gap-3.5 mb-6">
+                      <span className="text-[10px] text-slate-400 font-black uppercase tracking-wider block">AI Improvement Suggestions</span>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        {[
+                          { title: 'Improve Summary', section: 'summary', text: 'Revise bio summaries with targeted action-words to increase search visibility.' },
+                          { title: 'Improve Skills', section: 'skills', text: 'Inject missing tech-stack tools such as Docker, AWS, and system architectures.' },
+                          { title: 'Improve Projects', section: 'projects', text: 'Quantify project accomplishments (e.g. Optimized queries, reducing latency 30%).' },
+                          { title: 'Improve ATS', section: 'ats', text: 'Re-align summary vocabulary keywords targeting recruiter search index parameters.' },
+                          { title: 'Improve Experience', section: 'experience', text: 'Use active action verbs in experience descriptors to emphasize execution value.' },
+                          { title: 'Improve Grammar', section: 'grammar', text: 'Correct structural syntax and verb-tenses in role achievement bullet points.' },
+                          { title: 'Improve Formatting', section: 'formatting', text: 'Reduce font sizing inconsistencies and spacing block dimensions to 1 page layout.' },
+                          { title: 'Add Missing Sections', section: 'missing', text: 'Create achievements or certifications catalogs to validate specialized skills.' }
+                        ].map((sug) => (
+                          <div key={sug.title} className="p-4.5 bg-slate-50/50 border border-slate-200/60 rounded-2xl flex flex-col justify-between gap-3 text-left">
+                            <div>
+                              <h4 className="font-extrabold text-xs text-slate-800 flex items-center gap-1.5">
+                                <Sparkles size={13} className="text-blue-650" /> {sug.title}
+                              </h4>
+                              <p className="text-[11px] text-slate-500 mt-1 leading-normal">{sug.text}</p>
+                            </div>
+                            <button
+                              onClick={() => {
+                                handleATSAutoFix();
+                              }}
+                              className="text-[10px] bg-blue-600 hover:bg-blue-700 text-white font-bold px-3 py-1.5 rounded-lg transition-smooth shadow-sm cursor-pointer self-start"
+                            >
+                              Fix Now
+                            </button>
+                          </div>
+                        ))}
+                      </div>
                     </div>
 
                     <div className="flex flex-col gap-4">
@@ -1821,6 +1857,27 @@ export const ResumeBuilder: React.FC = () => {
                     </div>
 
                     <div className="flex flex-col gap-4">
+                      {/* Personas Quick Selection Selectbox */}
+                      <div>
+                        <label className="text-[10px] font-black text-slate-400 uppercase block mb-1">Target Persona Optimization Goal</label>
+                        <select 
+                          value={improvementGoal}
+                          onChange={(e) => setImprovementGoal(e.target.value)}
+                          className="w-full p-2.5 rounded-xl bg-slate-55 border border-slate-200 text-xs font-semibold text-slate-700 bg-white focus:outline-none focus:border-blue-500 cursor-pointer"
+                        >
+                          <option value="ATS Friendly">ATS Friendly</option>
+                          <option value="Professional Tone">Professional Tone</option>
+                          <option value="Freshers">Freshers Resume Boost</option>
+                          <option value="Experienced">Experienced Bullet Points</option>
+                          <option value="One Page Resume">One Page Resume Optimization</option>
+                          <option value="Internship Resume">Internship Resume Focus</option>
+                          <option value="Software Engineer Resume">Software Engineer Profile</option>
+                          <option value="Frontend Resume">Frontend Developer Target</option>
+                          <option value="Backend Resume">Backend Engineer Target</option>
+                          <option value="AI Engineer Resume">AI Engineer Specialization</option>
+                        </select>
+                      </div>
+
                       <div className="flex items-center gap-3">
                         <input 
                           type="text"
@@ -1834,7 +1891,7 @@ export const ResumeBuilder: React.FC = () => {
                           disabled={isImproving || !improvementGoal.trim()}
                           className="bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold px-4 py-2.5 rounded-xl transition-smooth shadow-sm cursor-pointer whitespace-nowrap"
                         >
-                          {isImproving ? 'Improving...' : 'Run Rewrite Check'}
+                          {isImproving ? 'Improving...' : 'Improve Entire Resume'}
                         </button>
                       </div>
 

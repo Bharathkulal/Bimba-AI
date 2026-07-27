@@ -121,8 +121,114 @@ export const Dashboard: React.FC = () => {
   };
   const profileCompletion = getProfileCompletion();
 
+  // Uploader & Actions
+  const [isUploading, setIsUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState('');
+
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    
+    const ext = file.name.split('.').pop()?.toLowerCase();
+    if (ext !== 'pdf' && ext !== 'docx' && ext !== 'txt') {
+      alert("Unsupported file format. Please upload PDF, DOCX or TXT.");
+      return;
+    }
+    if (file.size > 10 * 1024 * 1024) {
+      alert("File size exceeds limit of 10MB.");
+      return;
+    }
+    
+    try {
+      setIsUploading(true);
+      setUploadProgress('Uploading file to secure server...');
+      
+      const formData = new FormData();
+      formData.append('file', file);
+      
+      const { apiClient } = await import('../services/api');
+      const uploadRes = await apiClient.post('/api/resume-studio/upload', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+      });
+      
+      const parsedData = uploadRes.data.parsed_data;
+      setUploadProgress('Extracting and parsing sections with Gemini AI...');
+      
+      const createRes = await apiClient.post('/api/resume-studio/create', {
+        name: `AI Parsed - ${parsedData.personal_info?.name || 'Resume'}`,
+        resume_type: parsedData.experience?.length > 0 ? 'Experienced' : 'Fresher',
+        target_role: parsedData.personal_info?.title || parsedData.projects?.[0]?.role || 'Software Engineer',
+        career_objective: parsedData.personal_info?.summary || 'ATS friendly resume.',
+        preferred_industry: 'Technology',
+        language: 'English',
+        visibility: 'Private'
+      });
+      
+      const newResumeId = createRes.data.id;
+      setUploadProgress('Analyzing resume structure & creating details...');
+      
+      await apiClient.post(`/api/resume-studio/${newResumeId}/save-final`, {
+        master: {
+          name: `AI Parsed - ${parsedData.personal_info?.name || 'Resume'}`,
+          resume_type: parsedData.experience?.length > 0 ? 'Experienced' : 'Fresher',
+          target_role: parsedData.personal_info?.title || parsedData.projects?.[0]?.role || 'Software Engineer',
+          career_objective: parsedData.personal_info?.summary || 'ATS friendly resume.',
+          preferred_industry: 'Technology',
+          language: 'English',
+          visibility: 'Private',
+          phone: parsedData.personal_info?.phone || '',
+          address: parsedData.personal_info?.address || '',
+          linkedin: parsedData.personal_info?.linkedin || '',
+          github: parsedData.personal_info?.github || '',
+          portfolio: parsedData.personal_info?.portfolio || '',
+          website: parsedData.personal_info?.website || '',
+          summary: parsedData.personal_info?.summary || '',
+          achievements_list: JSON.stringify(parsedData.achievements || {})
+        },
+        personal_info: parsedData.personal_info,
+        education: parsedData.education || [],
+        experience: parsedData.experience || [],
+        projects: parsedData.projects || [],
+        skills: parsedData.skills || [],
+        certifications: parsedData.certifications || parsedData.certificates || [],
+        achievements: parsedData.achievements || {}
+      });
+      
+      setUploadProgress('Conducting AI Resume Intelligence Audit...');
+      await apiClient.post(`/api/resume-studio/${newResumeId}/analyze`);
+      
+      setIsUploading(false);
+      navigate(`/resume-builder?id=${newResumeId}&is_parsed=true`);
+    } catch (err) {
+      console.error(err);
+      alert("Failed to parse and save resume.");
+      setIsUploading(false);
+    }
+  };
+
   return (
     <div className="flex flex-col gap-6 text-left w-full max-w-7xl mx-auto">
+      {/* Uploader Progress Backdrop Overlay */}
+      {isUploading && (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-md z-50 flex items-center justify-center p-6">
+          <div className="bg-white border border-slate-200 p-6 rounded-3xl max-w-md w-full shadow-2xl flex flex-col items-center gap-4 text-center">
+            <div className="w-12 h-12 border-4 border-emerald-600 border-t-transparent rounded-full animate-spin" />
+            <div className="leading-normal">
+              <h3 className="font-extrabold text-slate-900 text-sm">Parsing with Gemini AI</h3>
+              <p className="text-[11px] text-slate-450 font-bold mt-1 uppercase tracking-wider">{uploadProgress}</p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Hidden File Input */}
+      <input 
+        type="file" 
+        id="dashboard-resume-upload-input" 
+        accept=".pdf,.docx,.txt" 
+        className="hidden" 
+        onChange={handleFileUpload} 
+      />
       
       {/* Welcome Banner */}
       <section className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white border border-slate-200/80 rounded-2xl p-6 shadow-sm relative overflow-hidden">
@@ -178,7 +284,7 @@ export const Dashboard: React.FC = () => {
             </h3>
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
               <button 
-                onClick={() => navigate('/resume')}
+                onClick={() => document.getElementById('dashboard-resume-upload-input')?.click()}
                 className="flex flex-col items-center gap-2.5 p-4 rounded-xl border border-slate-200/80 hover:border-emerald-200 hover:bg-emerald-50/10 cursor-pointer transition-all"
               >
                 <div className="w-9 h-9 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center">

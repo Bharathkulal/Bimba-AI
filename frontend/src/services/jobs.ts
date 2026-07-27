@@ -122,5 +122,10 @@ export const jobsService = {
   async updateApplication(id: number, status: string, notes?: string): Promise<JobApplication> {
     const response = await apiClient.patch(`/api/jobs/applications/${id}`, { status, notes });
     return response.data;
+  },
+
+  async getRecommendations(resumeId: number): Promise<any> {
+    const response = await apiClient.get('/api/jobs/recommendations', { params: { resume_id: resumeId } });
+    return response.data;
   }
 };

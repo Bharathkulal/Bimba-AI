@@ -98,3 +98,15 @@ class JobApplicationResponse(BaseModel):
 
     class Config:
         from_attributes = True
+
+class MatchBreakdown(BaseModel):
+    why_recommended: List[str]
+    missing_skills_learn: List[Dict[str, Any]] # {"name": "Docker", "courses": "Udemy Docker Masterclass", "importance": "High"}
+
+class RecommendedJobListItem(JobListItem):
+    match_breakdown: MatchBreakdown
+
+class JobRecommendationsResponse(BaseModel):
+    jobs: List[RecommendedJobListItem]
+    extracted_keywords: Dict[str, Any]
+    query_used: str

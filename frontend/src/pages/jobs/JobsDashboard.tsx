@@ -10,13 +10,14 @@ import { Button } from '../../components/Button';
 import { jobsService } from '../../services/jobs';
 import type { JobListItem, JobDetailResponse, JobApplication } from '../../services/jobs';
 import { useUserStore } from '../../store/userStore';
+import { apiClient } from '../../services/api';
 
 export const JobsDashboard: React.FC = () => {
   const navigate = useNavigate();
   const user = useUserStore((state) => state.user);
 
-  // Active Tab: 'explore' | 'saved' | 'applications'
-  const [activeTab, setActiveTab] = useState<'explore' | 'saved' | 'applications'>('explore');
+  // Active Tab: 'explore' | 'saved' | 'applications' | 'recommended'
+  const [activeTab, setActiveTab] = useState<'explore' | 'saved' | 'applications' | 'recommended'>('explore');
 
   // Search & Filter State
   const [keyword, setKeyword] = useState('');
@@ -30,13 +31,14 @@ export const JobsDashboard: React.FC = () => {
   const [jobs, setJobs] = useState<JobListItem[]>([]);
   const [savedJobs, setSavedJobs] = useState<any[]>([]);
   const [applications, setApplications] = useState<JobApplication[]>([]);
+  const [recommendedJobs, setRecommendedJobs] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [savedJobIds, setSavedJobIds] = useState<string[]>([]);
   
   // Selected Job (for right pane)
-  const [selectedJob, setSelectedJob] = useState<JobDetailResponse | null>(null);
+  const [selectedJob, setSelectedJob] = useState<any | null>(null);
   const [detailLoading, setDetailLoading] = useState(false);
 
   // Application Modal State
@@ -134,6 +136,32 @@ export const JobsDashboard: React.FC = () => {
     }
   };
 
+  const fetchRecommendedJobs = async () => {
+    try {
+      setLoading(true);
+      // Fetch active student resumes
+      const { analyticsService } = await import('../../services/analytics');
+      const resumes = await analyticsService.getResumes();
+      if (resumes.length === 0) {
+        showToast("Please create or upload a resume to get matches!", "error");
+        setRecommendedJobs([]);
+        return;
+      }
+      // Get highest score resume ID
+      const best = resumes.reduce((prev, current) => (prev.atsScore > current.atsScore) ? prev : current);
+      const rec = await jobsService.getRecommendations(best.id);
+      setRecommendedJobs(rec.jobs || []);
+      if (rec.jobs && rec.jobs.length > 0) {
+        setSelectedJob(rec.jobs[0]);
+      }
+    } catch (err) {
+      console.error(err);
+      showToast("Unable to fetch recommendations.", "error");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   useEffect(() => {
     if (activeTab === 'explore') {
       fetchJobs();
@@ -141,6 +169,8 @@ export const JobsDashboard: React.FC = () => {
       fetchSavedJobs();
     } else if (activeTab === 'applications') {
       fetchApplications();
+    } else if (activeTab === 'recommended') {
+      fetchRecommendedJobs();
     }
   }, [activeTab, fetchJobs]);
 
@@ -242,6 +272,16 @@ export const JobsDashboard: React.FC = () => {
             Saved Jobs
           </button>
           <button 
+            onClick={() => { setActiveTab('recommended'); setSelectedJob(null); }}
+            className={`px-4 py-2 rounded-lg text-xs font-bold cursor-pointer transition-all flex items-center gap-1.5 ${
+              activeTab === 'recommended' 
+                ? 'bg-white text-emerald-600 shadow-sm' 
+                : 'text-slate-500 hover:text-slate-800'
+            }`}
+          >
+            <Sparkles size={12} className="text-emerald-500 animate-pulse" /> Recommended Jobs
+          </button>
+          <button 
             onClick={() => { setActiveTab('applications'); setSelectedJob(null); }}
             className={`px-4 py-2 rounded-lg text-xs font-bold cursor-pointer transition-all ${
               activeTab === 'applications' 
@@ -316,18 +356,24 @@ export const JobsDashboard: React.FC = () => {
             <div className="text-center py-12 text-slate-400 text-xs font-semibold">
               Loading jobs...
             </div>
-          ) : (activeTab === 'explore' ? jobs : activeTab === 'saved' ? savedJobs : applications).length === 0 ? (
+          ) : (activeTab === 'explore' ? jobs : activeTab === 'saved' ? savedJobs : activeTab === 'recommended' ? recommendedJobs : applications).length === 0 ? (
             <div className="text-center py-12 text-slate-400 text-xs font-semibold bg-white border border-slate-200/80 rounded-2xl">
               No jobs found.
             </div>
           ) : (
-            (activeTab === 'explore' ? jobs : activeTab === 'saved' ? savedJobs : applications).map((job: any) => {
+            (activeTab === 'explore' ? jobs : activeTab === 'saved' ? savedJobs : activeTab === 'recommended' ? recommendedJobs : applications).map((job: any) => {
               const jobId = job.job_id || job.id;
               const isSelected = selectedJob?.id === jobId;
               return (
                 <div
                   key={job.id}
-                  onClick={() => loadJobDetails(jobId)}
+                  onClick={() => {
+                    if (activeTab === 'recommended') {
+                      setSelectedJob(job);
+                    } else {
+                      loadJobDetails(jobId);
+                    }
+                  }}
                   className={`p-4 border rounded-2xl cursor-pointer text-left transition-all ${
                     isSelected 
                       ? 'bg-emerald-50/10 border-emerald-500 shadow-sm' 
@@ -472,8 +518,69 @@ export const JobsDashboard: React.FC = () => {
                 </div>
               </div>
 
-              {/* Apply Action CTA */}
-              <div className="flex justify-end pt-4 border-t border-slate-100 shrink-0">
+                  {/* Why this job match breakdown */}
+                  {selectedJob.match_breakdown && (
+                    <div className="mt-4 bg-emerald-50/10 border border-emerald-250 p-4 rounded-xl text-left">
+                      <span className="text-[10px] text-emerald-700 font-black uppercase tracking-wider block mb-2">🎯 Why we recommended this</span>
+                      <ul className="flex flex-col gap-1 text-xs font-semibold text-slate-700 list-inside">
+                        {selectedJob.match_breakdown.why_recommended.map((reason: string, idx: number) => (
+                          <li key={idx} className="flex items-center gap-1.5 text-emerald-800">
+                            <span className="text-emerald-600">✓</span> {reason}
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+
+                  {/* Skills you should learn courses list */}
+                  {selectedJob.match_breakdown && selectedJob.match_breakdown.missing_skills_learn && selectedJob.match_breakdown.missing_skills_learn.length > 0 && (
+                    <div className="mt-4">
+                      <span className="text-[10px] text-slate-400 font-black uppercase tracking-wider block mb-2.5">💡 Skills You Should Learn</span>
+                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                        {selectedJob.match_breakdown.missing_skills_learn.map((c: any) => (
+                          <div key={c.name} className="p-3 bg-slate-50 border border-slate-200/80 rounded-xl text-left flex flex-col justify-between min-h-24">
+                            <div>
+                              <span className="bg-rose-50 text-rose-700 text-[8px] font-bold px-1.5 py-0.5 rounded border border-rose-100 uppercase tracking-widest">{c.name}</span>
+                              <p className="text-[10px] text-slate-500 font-semibold mt-1.5 leading-snug">{c.courses}</p>
+                            </div>
+                            <span className="text-[8.5px] text-slate-400 font-bold block mt-1.5">Priority: {c.importance}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Apply Action CTA & Optimize Resume */}
+              <div className="flex justify-between items-center pt-4 border-t border-slate-100 shrink-0">
+                <Button 
+                  onClick={async () => {
+                    try {
+                      showToast("Gemini AI tailoring resume matching this job description...", "success");
+                      // Fetch resumes
+                      const { analyticsService } = await import('../../services/analytics');
+                      const resumes = await analyticsService.getResumes();
+                      if (resumes.length === 0) {
+                        showToast("Please upload or create a resume first!", "error");
+                        return;
+                      }
+                      const best = resumes.reduce((prev, current) => (prev.atsScore > current.atsScore) ? prev : current);
+                      await apiClient.post(`/api/resume-studio/${best.id}/optimize-jd`, {
+                        job_description: `${selectedJob.title} ${selectedJob.company} requirements: ${selectedJob.description}`
+                      });
+                      showToast("Resume tailored successfully! Version updated.", "success");
+                      navigate(`/resume-builder?id=${best.id}`);
+                    } catch (e) {
+                      showToast("Optimization failed.", "error");
+                    }
+                  }}
+                  variant="outline"
+                  size="sm"
+                  className="flex items-center gap-1.5 border-emerald-500 text-emerald-600 hover:bg-emerald-50/10"
+                >
+                  <Sparkles size={13} className="text-emerald-500" /> Optimize Resume
+                </Button>
                 <Button 
                   onClick={() => setIsApplyModalOpen(true)}
                   variant="primary"
