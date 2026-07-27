@@ -7,10 +7,13 @@ import {
 } from 'lucide-react';
 import { Sidebar } from '../components/Sidebar';
 import { DashboardNavbar } from '../components/DashboardNavbar';
+import { useThemeStore } from '../store/themeStore';
 
 export const DashboardLayout: React.FC = () => {
   const location = useLocation();
   const navigate = useNavigate();
+  const { theme } = useThemeStore();
+  const isDark = theme === 'dark';
 
   const menuItems = [
     { label: 'Dashboard', path: '/dashboard', icon: Home },
@@ -22,10 +25,19 @@ export const DashboardLayout: React.FC = () => {
   ];
 
   return (
-    <div className="min-h-screen bg-[#F8F8F8] text-[#111111] flex overflow-x-hidden font-sans relative">
-      {/* Decorative subtle gradient background blur */}
-      <div className="absolute top-[-10%] left-[-15%] w-[45%] h-[45%] rounded-full bg-[#111111]/3 blur-[120px] pointer-events-none z-0" />
-      <div className="absolute bottom-[-10%] right-[-15%] w-[40%] h-[40%] rounded-full bg-[#111111]/3 blur-[120px] pointer-events-none z-0" />
+    <div 
+      className={`min-h-screen flex overflow-x-hidden font-sans relative transition-colors duration-300 ${
+        isDark ? 'text-white' : 'bg-[#F8F8F8] text-[#111111]'
+      }`}
+      style={isDark ? { background: 'linear-gradient(180deg, #08111D 0%, #0F172A 40%, #111827 100%)' } : {}}
+    >
+      {/* Decorative subtle gradient background blur — light mode only */}
+      {!isDark && (
+        <>
+          <div className="absolute top-[-10%] left-[-15%] w-[45%] h-[45%] rounded-full bg-[#111111]/3 blur-[120px] pointer-events-none z-0" />
+          <div className="absolute bottom-[-10%] right-[-15%] w-[40%] h-[40%] rounded-full bg-[#111111]/3 blur-[120px] pointer-events-none z-0" />
+        </>
+      )}
 
       {/* Floating Hover-Collapsible Sidebar (Desktop/Tablet) */}
       <Sidebar 
@@ -56,7 +68,11 @@ export const DashboardLayout: React.FC = () => {
       </div>
 
       {/* Premium Bottom Navigation Tab Bar - MOBILE */}
-      <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-sidebar/95 backdrop-blur-lg border-t border-border py-2 px-3 flex items-center justify-around z-45 shadow-2xl">
+      <nav className={`md:hidden fixed bottom-0 left-0 right-0 backdrop-blur-lg border-t py-2 px-3 flex items-center justify-around z-45 shadow-2xl transition-colors duration-300 ${
+        isDark 
+          ? 'bg-[#111827]/90 border-white/5' 
+          : 'bg-white/95 border-[#E5E7EB]'
+      }`}>
         {menuItems.map((item) => {
           const Icon = item.icon;
           const isActive = item.path === '/dashboard' 
@@ -72,11 +88,15 @@ export const DashboardLayout: React.FC = () => {
               <Icon 
                 size={18} 
                 className={`transition-colors duration-200 ${
-                  isActive ? 'text-[#111111]' : 'text-[#9CA3AF]'
+                  isActive 
+                    ? isDark ? 'text-[#10B981]' : 'text-[#111111]' 
+                    : 'text-[#9CA3AF]'
                 }`}
               />
               <span className={`text-[8.5px] mt-1 tracking-wide transition-colors duration-200 ${
-                isActive ? 'text-[#111111] font-extrabold' : 'text-[#6B7280] font-medium'
+                isActive 
+                  ? isDark ? 'text-[#10B981] font-extrabold' : 'text-[#111111] font-extrabold' 
+                  : 'text-[#6B7280] font-medium'
               }`}>
                 {item.label}
               </span>
