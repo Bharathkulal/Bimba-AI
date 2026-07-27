@@ -107,7 +107,7 @@ export const DepartmentsModule: React.FC = () => {
       {toast && (
         <div className={`fixed top-6 right-6 z-50 flex items-center gap-3 px-5 py-4 rounded-xl shadow-xl border animate-fadeIn ${
           toast.type === 'success' 
-            ? 'bg-[#102117] border-[#22C55E]/20 text-[#22C55E]' 
+            ? 'bg-[#102117] border-[#111111]/20 text-[#111111]' 
             : 'bg-[#1F1116] border-rose-500/20 text-rose-500'
         }`}>
           {toast.type === 'success' ? <CheckCircle2 size={18} /> : <AlertTriangle size={18} />}
@@ -117,7 +117,7 @@ export const DepartmentsModule: React.FC = () => {
 
       {/* Header Banner */}
       <section className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-[#102117] border border-white/5 rounded-2xl p-6 shadow-md relative overflow-hidden">
-        <div className="absolute right-0 top-0 w-80 h-full bg-gradient-to-l from-emerald-500/5 to-transparent blur-3xl pointer-events-none" />
+        <div className="absolute right-0 top-0 w-80 h-full bg-gradient-to-l -[#111111]/5 to-transparent blur-3xl pointer-events-none" />
         <div className="relative z-10 text-left">
           <h1 className="text-xl font-extrabold text-white tracking-tight">Academic Departments</h1>
           <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider block mt-1">
@@ -164,7 +164,7 @@ export const DepartmentsModule: React.FC = () => {
                       {dept.code}
                     </td>
                     <td className="py-4 px-6 font-bold text-slate-200 flex items-center gap-2">
-                      <Building size={14} className="text-emerald-500 shrink-0" />
+                      <Building size={14} className="-[#111111] shrink-0" />
                       {dept.name}
                     </td>
                     <td className="py-4 px-6 text-slate-400">
@@ -176,7 +176,7 @@ export const DepartmentsModule: React.FC = () => {
                     <td className="py-4 px-6">
                       <span className={`px-2 py-0.5 rounded text-[9.5px] font-black uppercase ${
                         dept.status === 'Active' 
-                          ? 'bg-[#16A34A]/10 text-emerald-400 border border-emerald-500/20' 
+                          ? 'bg-[#111111]/10 -[#111111] border -[#111111]/20' 
                           : 'bg-rose-500/10 text-rose-500 border border-rose-500/20'
                       }`}>
                         {dept.status}
@@ -186,7 +186,7 @@ export const DepartmentsModule: React.FC = () => {
                       <div className="flex items-center justify-center gap-2">
                         <button
                           onClick={() => handleEdit(dept)}
-                          className="p-1.5 rounded-lg bg-white/5 border border-white/5 text-slate-400 hover:text-white hover:border-emerald-500/30 transition-colors cursor-pointer"
+                          className="p-1.5 rounded-lg bg-white/5 border border-white/5 text-slate-400 hover:text-white hover:-[#111111]/30 transition-colors cursor-pointer"
                           title="Edit Details"
                         >
                           <Edit3 size={12} />
@@ -248,7 +248,7 @@ export const DepartmentsModule: React.FC = () => {
             <textarea 
               value={form.description}
               onChange={(e) => setForm({ ...form, description: e.target.value })}
-              className="w-full p-2.5 bg-[#102117] border border-white/10 focus:border-emerald-500/30 rounded-xl text-white outline-none"
+              className="w-full p-2.5 bg-[#102117] border border-white/10 focus:-[#111111]/30 rounded-xl text-white outline-none"
               rows={3}
               placeholder="e.g. Core computing division"
             />

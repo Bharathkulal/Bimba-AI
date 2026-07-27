@@ -199,7 +199,7 @@ export const Profile: React.FC = () => {
       {message && (
         <div className={`p-4 rounded-xl border text-xs font-semibold ${
           message.type === 'success' 
-            ? 'bg-emerald-50 border-emerald-200 text-emerald-800' 
+            ? 'bg-[#F8F8F8] border-[#E5E7EB] -[#111111]' 
             : 'bg-rose-50 border-rose-200 text-rose-800'
         }`}>
           {message.text}
@@ -210,7 +210,7 @@ export const Profile: React.FC = () => {
         
         {/* LEFT COLUMN: AVATAR & COMPLETENESS */}
         <div className="flex flex-col gap-6 lg:col-span-1">
-          <Card className="flex flex-col items-center p-6 text-center hover:border-emerald-300">
+          <Card className="flex flex-col items-center p-6 text-center hover:border-[#E5E7EB]">
             
             {/* Avatar block */}
             <div className="relative group">
@@ -221,7 +221,7 @@ export const Profile: React.FC = () => {
                   className="w-28 h-28 rounded-full object-cover border border-slate-200 shadow-md"
                 />
               ) : (
-                <div className="w-28 h-28 rounded-full bg-gradient-to-tr from-emerald-600 to-emerald-400 flex items-center justify-center text-white text-4xl font-extrabold shadow-md">
+                <div className="w-28 h-28 rounded-full bg-gradient-to-tr -[#111111] -[#111111] flex items-center justify-center text-white text-4xl font-extrabold shadow-md">
                   {name.charAt(0).toUpperCase() || 'S'}
                 </div>
               )}
@@ -247,11 +247,11 @@ export const Profile: React.FC = () => {
             <div className="w-full border-t border-slate-100 mt-6 pt-6 flex flex-col gap-2.5">
               <div className="flex justify-between items-center text-[10px] font-bold text-slate-400 uppercase tracking-widest">
                 <span>Profile Completion</span>
-                <span className="text-emerald-600 font-extrabold">{completeness}%</span>
+                <span className="-[#111111] font-extrabold">{completeness}%</span>
               </div>
               <div className="w-full bg-slate-100 rounded-full h-1.5 overflow-hidden">
                 <div 
-                  className="bg-emerald-600 h-full rounded-full transition-all duration-300"
+                  className="-[#111111] h-full rounded-full transition-all duration-300"
                   style={{ width: `${completeness}%` }}
                 />
               </div>
@@ -259,7 +259,7 @@ export const Profile: React.FC = () => {
           </Card>
 
           {/* Change Password Card */}
-          <Card className="p-6 flex flex-col gap-4 hover:border-emerald-300">
+          <Card className="p-6 flex flex-col gap-4 hover:border-[#E5E7EB]">
             <div className="flex items-center gap-2 border-b border-slate-100 pb-3">
               <Lock size={16} className="text-slate-700" />
               <h4 className="text-xs font-bold text-slate-800 uppercase tracking-wider">Change Password</h4>
@@ -297,7 +297,7 @@ export const Profile: React.FC = () => {
 
         {/* RIGHT COLUMN: CORE PROFILE INFO EDIT */}
         <div className="lg:col-span-2 flex flex-col gap-6">
-          <Card className="p-6 flex flex-col gap-6 hover:border-emerald-300">
+          <Card className="p-6 flex flex-col gap-6 hover:border-[#E5E7EB]">
             <div className="flex items-center gap-2 border-b border-slate-100 pb-3">
               <User size={16} className="text-slate-700" />
               <h4 className="text-xs font-bold text-slate-800 uppercase tracking-wider">Personal & Academic Details</h4>
@@ -315,7 +315,7 @@ export const Profile: React.FC = () => {
                   <select 
                     value={gender} 
                     onChange={(e) => setGender(e.target.value)}
-                    className="w-full px-3 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-xs font-semibold text-slate-700 focus:outline-none focus:border-emerald-500"
+                    className="w-full px-3 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-xs font-semibold text-slate-700 focus:outline-none focus:-[#111111]"
                   >
                     <option value="Male">Male</option>
                     <option value="Female">Female</option>
@@ -338,7 +338,7 @@ export const Profile: React.FC = () => {
                   onChange={(e) => setBio(e.target.value)} 
                   rows={3} 
                   placeholder="Tell recruiters about yourself..."
-                  className="w-full p-3.5 rounded-xl bg-slate-50 border border-slate-200 text-xs text-slate-700 focus:outline-none focus:border-emerald-500 font-medium"
+                  className="w-full p-3.5 rounded-xl bg-slate-50 border border-slate-200 text-xs text-slate-700 focus:outline-none focus:-[#111111] font-medium"
                 />
               </div>
 
@@ -348,7 +348,7 @@ export const Profile: React.FC = () => {
                   value={address} 
                   onChange={(e) => setAddress(e.target.value)} 
                   rows={2}
-                  className="w-full p-3.5 rounded-xl bg-slate-50 border border-slate-200 text-xs text-slate-700 focus:outline-none focus:border-emerald-500 font-medium"
+                  className="w-full p-3.5 rounded-xl bg-slate-50 border border-slate-200 text-xs text-slate-700 focus:outline-none focus:-[#111111] font-medium"
                 />
               </div>
 
@@ -377,7 +377,7 @@ export const Profile: React.FC = () => {
                       onChange={(e) => setObjective(e.target.value)} 
                       rows={3} 
                       placeholder="Seeking a challenging position to leverage software development capabilities..."
-                      className="w-full p-3.5 rounded-xl bg-slate-50 border border-slate-200 text-xs text-slate-700 focus:outline-none focus:border-emerald-500 font-medium"
+                      className="w-full p-3.5 rounded-xl bg-slate-50 border border-slate-200 text-xs text-slate-700 focus:outline-none focus:-[#111111] font-medium"
                     />
                   </div>
                 </div>

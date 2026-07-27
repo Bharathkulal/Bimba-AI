@@ -88,7 +88,7 @@ export const AdminCommandPalette: React.FC<AdminCommandPaletteProps> = ({ isOpen
                   className="flex items-center justify-between w-full p-3.5 hover:bg-white/5 rounded-xl transition-colors cursor-pointer text-left"
                 >
                   <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 rounded-lg bg-white/5 border border-white/5 flex items-center justify-center text-emerald-500 shrink-0">
+                    <div className="w-8 h-8 rounded-lg bg-white/5 border border-white/5 flex items-center justify-center -[#111111] shrink-0">
                       <Icon size={14} />
                     </div>
                     <div>

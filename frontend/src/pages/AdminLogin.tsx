@@ -164,7 +164,7 @@ export const AdminLogin: React.FC = () => {
                 onClick={() => copyToClipboard('admin', setCopiedUser)}
                 className="p-1.5 rounded-lg bg-slate-50 border border-slate-250 text-slate-500 hover:text-slate-800 transition-colors cursor-pointer flex items-center gap-1 text-[10px]"
               >
-                {copiedUser ? <Check size={12} className="text-emerald-600" /> : <Copy size={12} />}
+                {copiedUser ? <Check size={12} className="-[#111111]" /> : <Copy size={12} />}
                 <span>{copiedUser ? 'Copied' : 'Copy'}</span>
               </button>
             </div>
@@ -174,7 +174,7 @@ export const AdminLogin: React.FC = () => {
                 onClick={() => copyToClipboard('admin', setCopiedPass)}
                 className="p-1.5 rounded-lg bg-slate-50 border border-slate-250 text-slate-500 hover:text-slate-800 transition-colors cursor-pointer flex items-center gap-1 text-[10px]"
               >
-                {copiedPass ? <Check size={12} className="text-emerald-600" /> : <Copy size={12} />}
+                {copiedPass ? <Check size={12} className="-[#111111]" /> : <Copy size={12} />}
                 <span>{copiedPass ? 'Copied' : 'Copy'}</span>
               </button>
             </div>

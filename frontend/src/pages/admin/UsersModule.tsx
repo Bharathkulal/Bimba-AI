@@ -147,7 +147,7 @@ export const UsersModule: React.FC = () => {
                     </div>
                   </td>
                   <td className="py-3.5 px-4">
-                    <span className="bg-emerald-50 border border-emerald-100 text-emerald-600 px-2 py-0.5 rounded-lg text-[10px] font-black">
+                    <span className="bg-[#F8F8F8] border border-[#E5E7EB] -[#111111] px-2 py-0.5 rounded-lg text-[10px] font-black">
                       {user.resumes_count} resumes
                     </span>
                   </td>
@@ -157,7 +157,7 @@ export const UsersModule: React.FC = () => {
                   <td className="py-3.5 px-4">
                     <span className={`px-2 py-0.5 rounded-lg text-[9px] font-black border ${
                       user.status === 'Active'
-                        ? 'bg-emerald-50 border-emerald-100 text-emerald-600'
+                        ? 'bg-[#F8F8F8] border-[#E5E7EB] -[#111111]'
                         : 'bg-rose-50 border-rose-100 text-rose-600'
                     }`}>
                       {user.status}
@@ -184,7 +184,7 @@ export const UsersModule: React.FC = () => {
                       ) : (
                         <button
                           onClick={() => handleAction(user.roll_number, 'activate')}
-                          className="p-1.5 rounded-lg border border-emerald-250 text-emerald-600 hover:bg-emerald-50 cursor-pointer"
+                          className="p-1.5 rounded-lg border border-[#E5E7EB] -[#111111] hover:bg-[#F8F8F8] cursor-pointer"
                           title="Activate Session Credentials"
                         >
                           <CheckCircle size={12} />

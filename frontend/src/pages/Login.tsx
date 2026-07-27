@@ -414,7 +414,7 @@ export const Login: React.FC = () => {
               {/* Step 4: Success Screen */}
               {step === 4 && (
                 <div className="text-center py-6 flex flex-col items-center gap-6">
-                  <div className="w-16 h-16 bg-emerald-50 text-emerald-500 rounded-full border border-emerald-100 flex items-center justify-center shadow-md">
+                  <div className="w-16 h-16 bg-[#F8F8F8] -[#111111] rounded-full border border-[#E5E7EB] flex items-center justify-center shadow-md">
                     <CheckCircle size={32} />
                   </div>
                   <div>
@@ -453,7 +453,7 @@ export const Login: React.FC = () => {
                     onClick={() => copyToClipboard('BCA24001', setCopiedRoll)}
                     className="p-1 rounded bg-slate-50 border border-slate-250 text-slate-500 hover:text-slate-800 transition-colors cursor-pointer flex items-center gap-1 text-[10px]"
                   >
-                    {copiedRoll ? <Check size={12} className="text-emerald-600" /> : <Copy size={12} />}
+                    {copiedRoll ? <Check size={12} className="-[#111111]" /> : <Copy size={12} />}
                     <span>{copiedRoll ? 'Copied' : 'Copy'}</span>
                   </button>
                 </div>
@@ -463,7 +463,7 @@ export const Login: React.FC = () => {
                     onClick={() => copyToClipboard('15-08-2005', setCopiedPass)}
                     className="p-1 rounded bg-slate-50 border border-slate-250 text-slate-500 hover:text-slate-800 transition-colors cursor-pointer flex items-center gap-1 text-[10px]"
                   >
-                    {copiedPass ? <Check size={12} className="text-emerald-600" /> : <Copy size={12} />}
+                    {copiedPass ? <Check size={12} className="-[#111111]" /> : <Copy size={12} />}
                     <span>{copiedPass ? 'Copied' : 'Copy'}</span>
                   </button>
                 </div>

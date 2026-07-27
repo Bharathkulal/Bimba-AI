@@ -42,7 +42,7 @@ export const Applications: React.FC = () => {
       case 'Interview': return 'bg-purple-50 text-purple-700 border-purple-200';
       case 'Rejected': return 'bg-rose-50 text-rose-700 border-rose-200';
       case 'Offer': return 'bg-teal-50 text-teal-700 border-teal-200 font-extrabold';
-      case 'Accepted': return 'bg-emerald-50 text-emerald-800 border-emerald-250 font-black';
+      case 'Accepted': return 'bg-[#F8F8F8] -[#111111] border-[#E5E7EB] font-black';
       default: return 'bg-slate-50 text-slate-700 border-slate-200';
     }
   };
@@ -59,7 +59,7 @@ export const Applications: React.FC = () => {
       {toast && (
         <div className={`fixed top-5 right-5 z-50 flex items-center gap-2 px-4 py-3 rounded-xl border shadow-xl transition-all duration-300 transform scale-100 ${
           toast.type === 'success' 
-            ? 'bg-emerald-50 border-emerald-200 text-emerald-800' 
+            ? 'bg-[#F8F8F8] border-[#E5E7EB] -[#111111]' 
             : 'bg-rose-50 border-rose-200 text-rose-800'
         }`}>
           {toast.type === 'success' ? <Check size={16} /> : <X size={16} />}
@@ -95,7 +95,7 @@ export const Applications: React.FC = () => {
         {[
           { label: 'Applied', val: appliedCount, col: 'text-blue-600', bg: 'bg-blue-500/5' },
           { label: 'Interviews', val: interviewCount, col: 'text-purple-650', bg: 'bg-purple-500/5' },
-          { label: 'Offers / Hired', val: offerCount, col: 'text-emerald-600', bg: 'bg-emerald-500/5' },
+          { label: 'Offers / Hired', val: offerCount, col: '-[#111111]', bg: '-[#111111]/5' },
           { label: 'Archived / Rejected', val: rejectedCount, col: 'text-rose-500', bg: 'bg-rose-500/5' }
         ].map((s, idx) => (
           <div key={idx} className="bg-white border border-slate-200/60 rounded-[18px] p-4.5 flex justify-between items-center shadow-sm relative overflow-hidden">

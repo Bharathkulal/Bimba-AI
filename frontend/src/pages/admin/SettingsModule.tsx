@@ -74,7 +74,7 @@ export const SettingsModule: React.FC = () => {
       {toast && (
         <div className={`fixed top-6 right-6 z-50 flex items-center gap-3 px-5 py-4 rounded-xl shadow-xl border animate-fadeIn ${
           toast.type === 'success' 
-            ? 'bg-[#102117] border-[#22C55E]/20 text-[#22C55E]' 
+            ? 'bg-[#102117] border-[#111111]/20 text-[#111111]' 
             : 'bg-[#1F1116] border-rose-500/20 text-rose-500'
         }`}>
           {toast.type === 'success' ? <CheckCircle2 size={18} /> : <AlertTriangle size={18} />}
@@ -84,7 +84,7 @@ export const SettingsModule: React.FC = () => {
 
       {/* Header Banner */}
       <section className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-[#102117] border border-white/5 rounded-2xl p-6 shadow-md relative overflow-hidden">
-        <div className="absolute right-0 top-0 w-80 h-full bg-gradient-to-l from-emerald-500/5 to-transparent blur-3xl pointer-events-none" />
+        <div className="absolute right-0 top-0 w-80 h-full bg-gradient-to-l -[#111111]/5 to-transparent blur-3xl pointer-events-none" />
         <div className="relative z-10 text-left">
           <h1 className="text-xl font-extrabold text-white tracking-tight">System Settings</h1>
           <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider block mt-1">
@@ -117,7 +117,7 @@ export const SettingsModule: React.FC = () => {
                 onClick={() => setActiveSubTab(tab.id as any)}
                 className={`flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-xs font-bold text-left transition-all cursor-pointer ${
                   activeSubTab === tab.id 
-                    ? 'bg-[#16A34A]/10 text-[#22C55E]' 
+                    ? 'bg-[#111111]/10 text-[#111111]' 
                     : 'text-slate-400 hover:text-white hover:bg-[#102117]'
                 }`}
               >
@@ -144,7 +144,7 @@ export const SettingsModule: React.FC = () => {
                         type="text"
                         value={settings.app_name}
                         onChange={(e) => setSettings({ ...settings, app_name: e.target.value })}
-                        className="w-full p-2.5 bg-[#102117] border border-white/10 focus:border-emerald-500/30 rounded-xl text-xs text-white outline-none font-bold"
+                        className="w-full p-2.5 bg-[#102117] border border-white/10 focus:-[#111111]/30 rounded-xl text-xs text-white outline-none font-bold"
                         placeholder="e.g. Bimba AI Placement Portal"
                         required
                       />
@@ -157,7 +157,7 @@ export const SettingsModule: React.FC = () => {
                           type="number"
                           value={settings.session_timeout}
                           onChange={(e) => setSettings({ ...settings, session_timeout: parseInt(e.target.value) || 15 })}
-                          className="w-full p-2.5 bg-[#102117] border border-white/10 focus:border-emerald-500/30 rounded-xl text-xs text-white outline-none font-bold"
+                          className="w-full p-2.5 bg-[#102117] border border-white/10 focus:-[#111111]/30 rounded-xl text-xs text-white outline-none font-bold"
                           min={5}
                           max={120}
                           required
@@ -169,7 +169,7 @@ export const SettingsModule: React.FC = () => {
                           type="text"
                           value={settings.smtp_host}
                           onChange={(e) => setSettings({ ...settings, smtp_host: e.target.value })}
-                          className="w-full p-2.5 bg-[#102117] border border-white/10 focus:border-emerald-500/30 rounded-xl text-xs text-white outline-none font-bold"
+                          className="w-full p-2.5 bg-[#102117] border border-white/10 focus:-[#111111]/30 rounded-xl text-xs text-white outline-none font-bold"
                           required
                         />
                       </div>
@@ -210,12 +210,12 @@ export const SettingsModule: React.FC = () => {
                           <tr>
                             <td className="py-3 px-4 font-bold text-white">admin</td>
                             <td className="py-3 px-4">Super Administrator</td>
-                            <td className="py-3 px-4"><span className="text-emerald-400 font-extrabold text-[10px]">ACTIVE</span></td>
+                            <td className="py-3 px-4"><span className="-[#111111] font-extrabold text-[10px]">ACTIVE</span></td>
                           </tr>
                           <tr>
                             <td className="py-3 px-4 font-bold text-white">placement_officer</td>
                             <td className="py-3 px-4">Placement Head</td>
-                            <td className="py-3 px-4"><span className="text-emerald-400 font-extrabold text-[10px]">ACTIVE</span></td>
+                            <td className="py-3 px-4"><span className="-[#111111] font-extrabold text-[10px]">ACTIVE</span></td>
                           </tr>
                         </tbody>
                       </table>
@@ -234,7 +234,7 @@ export const SettingsModule: React.FC = () => {
                           <p className="font-bold text-white">Rate Limit Protection</p>
                           <p className="text-[9.5px] text-slate-500 mt-0.5">Limit student API operations to 100 requests per minute</p>
                         </div>
-                        <span className="text-[#22C55E] font-black uppercase text-[10px]">ENABLED</span>
+                        <span className="text-[#111111] font-black uppercase text-[10px]">ENABLED</span>
                       </div>
                       
                       <div className="p-3 bg-white/5 rounded-xl border border-white/5 flex justify-between items-center text-xs">
@@ -242,7 +242,7 @@ export const SettingsModule: React.FC = () => {
                           <p className="font-bold text-white">JWT Token Signatures</p>
                           <p className="text-[9.5px] text-slate-500 mt-0.5">Default HS256 encryption keys rotation</p>
                         </div>
-                        <span className="text-[#22C55E] font-black uppercase text-[10px]">ACTIVE</span>
+                        <span className="text-[#111111] font-black uppercase text-[10px]">ACTIVE</span>
                       </div>
                     </div>
                   </div>
@@ -261,7 +261,7 @@ export const SettingsModule: React.FC = () => {
                         type="button"
                         onClick={handleBackupTrigger}
                         variant="secondary"
-                        className="border-white/10 text-emerald-400 flex items-center gap-1.5"
+                        className="border-white/10 -[#111111] flex items-center gap-1.5"
                       >
                         <Database size={13} /> Trigger Manual Database Backup Snapshot
                       </Button>
@@ -275,7 +275,7 @@ export const SettingsModule: React.FC = () => {
                     type="submit" 
                     disabled={saving} 
                     variant="primary" 
-                    className="w-full font-bold bg-[#16A34A] hover:bg-[#22C55E] justify-center mt-4"
+                    className="w-full font-bold bg-[#111111] hover:bg-[#111111] justify-center mt-4"
                   >
                     <Save size={13} className="mr-1.5 inline" /> {saving ? 'Saving System Config...' : 'Save Configuration Changes'}
                   </Button>

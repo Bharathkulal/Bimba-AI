@@ -52,7 +52,7 @@ export const SavedJobs: React.FC = () => {
       {toast && (
         <div className={`fixed top-5 right-5 z-50 flex items-center gap-2 px-4 py-3 rounded-xl border shadow-xl transition-all duration-300 transform scale-100 ${
           toast.type === 'success' 
-            ? 'bg-emerald-50 border-emerald-200 text-emerald-800' 
+            ? 'bg-[#F8F8F8] border-[#E5E7EB] -[#111111]' 
             : 'bg-rose-50 border-rose-200 text-rose-800'
         }`}>
           {toast.type === 'success' ? <Check size={16} /> : <X size={16} />}

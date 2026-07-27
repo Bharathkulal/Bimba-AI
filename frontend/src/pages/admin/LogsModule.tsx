@@ -101,7 +101,7 @@ export const LogsModule: React.FC = () => {
                   <td className="py-3.5 px-4 text-right">
                     <span className={`px-2 py-0.5 rounded text-[8px] font-black uppercase border ${
                       log.status === 'Success'
-                        ? 'bg-emerald-50 border-emerald-100 text-emerald-600'
+                        ? 'bg-[#F8F8F8] border-[#E5E7EB] -[#111111]'
                         : 'bg-rose-50 border-rose-100 text-rose-600'
                     }`}>
                       {log.status}

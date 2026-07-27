@@ -70,7 +70,7 @@ export const DashboardNavbar: React.FC<DashboardNavbarProps> = ({ onToggleMobile
         >
           <Bell size={16} />
           {notificationCount > 0 && (
-            <span className="absolute top-2.5 right-2.5 w-2 h-2 rounded-full bg-[#10B981] shadow-sm shadow-[#10B981]/30" />
+            <span className="absolute top-2.5 right-2.5 w-2 h-2 rounded-full bg-[#111111] dark:bg-[#FFFFFF] shadow-sm" />
           )}
         </button>
         
@@ -87,12 +87,12 @@ export const DashboardNavbar: React.FC<DashboardNavbarProps> = ({ onToggleMobile
             onClick={() => setIsDropdownOpen(!isDropdownOpen)}
             className="flex items-center gap-2.5 pl-1 cursor-pointer focus:outline-none"
           >
-            <div className="w-8 h-8 rounded-xl bg-[#10B981] text-white font-extrabold flex items-center justify-center text-xs shadow-sm">
+            <div className="w-8 h-8 rounded-xl bg-[#111111] dark:bg-[#FFFFFF] dark:text-[#111827] text-white font-extrabold flex items-center justify-center text-xs shadow-sm">
               {displayName.charAt(0).toUpperCase()}
             </div>
             <div className="hidden lg:block text-left leading-none">
               <h5 className={`font-bold text-xs transition-colors duration-300 ${isDark ? 'text-white' : 'text-slate-800'}`}>{displayName}</h5>
-              <span className="text-[9px] font-semibold text-[#10B981] mt-0.5 block">Plus Member</span>
+              <span className="text-[9px] font-semibold text-[#111111] dark:text-[#D1D5DB] mt-0.5 block">Plus Member</span>
             </div>
           </button>
 

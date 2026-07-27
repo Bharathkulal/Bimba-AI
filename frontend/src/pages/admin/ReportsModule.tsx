@@ -93,7 +93,7 @@ export const ReportsModule: React.FC = () => {
               <path
                 d="M 30 130 L 110 110 L 190 90 L 270 95 L 350 60 L 430 40 L 490 30"
                 fill="none"
-                stroke="#10B981"
+                stroke="#111111"
                 strokeWidth="3.5"
                 strokeLinecap="round"
               />
@@ -106,7 +106,7 @@ export const ReportsModule: React.FC = () => {
                 { x: 430, y: 40, w: 'W6', score: '88%' }
               ].map((pt, i) => (
                 <g key={i}>
-                  <circle cx={pt.x} cy={pt.y} r="5" fill="#FFFFFF" stroke="#10B981" strokeWidth="2.5" />
+                  <circle cx={pt.x} cy={pt.y} r="5" fill="#FFFFFF" stroke="#111111" strokeWidth="2.5" />
                   <text x={pt.x} y="160" textAnchor="middle" fill="#94A3B8" fontSize="9" fontWeight="bold">
                     {pt.w}
                   </text>

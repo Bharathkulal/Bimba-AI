@@ -189,7 +189,7 @@ export const AiGatewayModule: React.FC = () => {
       {toast && (
         <div className={`fixed top-6 right-6 z-50 flex items-center gap-3 px-5 py-4 rounded-xl shadow-xl border animate-fadeIn ${
           toast.type === 'success' 
-            ? 'bg-[#102117] border-[#22C55E]/20 text-[#22C55E]' 
+            ? 'bg-[#102117] border-[#111111]/20 text-[#111111]' 
             : 'bg-[#1F1116] border-rose-500/20 text-rose-500'
         }`}>
           {toast.type === 'success' ? <CheckCircle2 size={18} /> : <AlertTriangle size={18} />}
@@ -199,7 +199,7 @@ export const AiGatewayModule: React.FC = () => {
 
       {/* Header Banner */}
       <section className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-sidebar border border-border rounded-2xl p-6 shadow-md relative overflow-hidden">
-        <div className="absolute right-0 top-0 w-80 h-full bg-gradient-to-l from-emerald-500/5 to-transparent blur-3xl pointer-events-none" />
+        <div className="absolute right-0 top-0 w-80 h-full bg-gradient-to-l -[#111111]/5 to-transparent blur-3xl pointer-events-none" />
         <div className="relative z-10 text-left">
           <h1 style={{ color: 'var(--text-primary)' }} className="text-xl font-extrabold tracking-tight">AI Configuration Center</h1>
           <p className="text-[10px] text-slate-505 dark:text-slate-400 font-bold uppercase tracking-wider block mt-1">
@@ -210,7 +210,7 @@ export const AiGatewayModule: React.FC = () => {
           onClick={loadConfig} 
           variant="secondary" 
           size="sm" 
-          className="border-border text-[#22C55E] gap-1.5 shrink-0"
+          className="border-border text-[#111111] gap-1.5 shrink-0"
         >
           <RefreshCw size={13} /> Refresh Config
         </Button>
@@ -223,7 +223,7 @@ export const AiGatewayModule: React.FC = () => {
         <div className="lg:col-span-2 flex flex-col gap-6">
           <Card className="p-5">
             <h3 style={{ color: 'var(--text-primary)' }} className="font-extrabold text-sm border-b border-border dark:border-white/5 pb-2 mb-5 flex items-center gap-2">
-              <Cpu size={16} className="text-[#22C55E]" /> Generative AI Provider API Tunnels
+              <Cpu size={16} className="text-[#111111]" /> Generative AI Provider API Tunnels
             </h3>
 
             <div className="flex flex-col gap-6">
@@ -255,7 +255,7 @@ export const AiGatewayModule: React.FC = () => {
                             ...prev,
                             [provider.slug]: { ...prev[provider.slug], is_active: e.target.checked }
                           }))}
-                          className="w-4 h-4 rounded text-emerald-600 focus:ring-emerald-500 border-border dark:border-white/10"
+                          className="w-4 h-4 rounded -[#111111] focus:-[#111111] border-border dark:border-white/10"
                         />
                         <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Gateway Active</span>
                       </label>
@@ -276,7 +276,7 @@ export const AiGatewayModule: React.FC = () => {
                               ...prev,
                               [provider.slug]: { ...prev[provider.slug], api_key: e.target.value }
                             }))}
-                            className="w-full pl-3 pr-9 py-2 bg-slate-100/50 dark:bg-[#102117] border border-border dark:border-white/5 focus:border-emerald-500/30 rounded-xl text-xs text-slate-900 dark:text-white outline-none font-medium"
+                            className="w-full pl-3 pr-9 py-2 bg-slate-100/50 dark:bg-[#102117] border border-border dark:border-white/5 focus:-[#111111]/30 rounded-xl text-xs text-slate-900 dark:text-white outline-none font-medium"
                           />
                           <button
                             type="button"
@@ -336,7 +336,7 @@ export const AiGatewayModule: React.FC = () => {
                             ...prev,
                             [provider.slug]: { ...prev[provider.slug], fallback_enabled: e.target.checked }
                           }))}
-                          className="w-4 h-4 rounded text-emerald-600 focus:ring-emerald-500 border-border dark:border-white/10"
+                          className="w-4 h-4 rounded -[#111111] focus:-[#111111] border-border dark:border-white/10"
                         />
                         <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Redundancy Fallback Enabled</span>
                       </label>
@@ -348,14 +348,14 @@ export const AiGatewayModule: React.FC = () => {
                         <span className="text-[9.5px] text-slate-500 font-bold">Gateway status:</span>
                         <span className={`px-2 py-0.5 rounded text-[9.5px] font-black uppercase ${
                           state.connection_status === 'Active' || state.connection_status === 'Healthy'
-                            ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400'
+                            ? '-[#111111]/10 -[#111111] dark:-[#111111]'
                             : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-450'
                         }`}>
                           {state.connection_status}
                         </span>
                         {testStatus && (
                           <span className={`text-[9.5px] font-bold ${
-                            testStatus === 'Success' ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-450'
+                            testStatus === 'Success' ? '-[#111111] dark:-[#111111]' : 'text-rose-600 dark:text-rose-450'
                           }`}>
                             ({testStatus})
                           </span>
@@ -370,14 +370,14 @@ export const AiGatewayModule: React.FC = () => {
                           className="border-border dark:border-white/10 font-bold text-slate-700 dark:text-slate-200"
                           disabled={isTesting}
                         >
-                          <Play size={10} className="mr-1 inline text-emerald-500" />
+                          <Play size={10} className="mr-1 inline -[#111111]" />
                           {isTesting ? 'Testing...' : 'Test Connection'}
                         </Button>
                         <Button 
                           onClick={() => handleSaveProvider(provider.slug)}
                           variant="primary"
                           size="sm"
-                          className="font-bold bg-[#16A34A] hover:bg-[#22C55E] text-white"
+                          className="font-bold bg-[#111111] hover:bg-[#111111] text-white"
                         >
                           <Save size={11} className="mr-1 inline" /> Save Parameters
                         </Button>
@@ -397,7 +397,7 @@ export const AiGatewayModule: React.FC = () => {
           {/* Prompt Templates */}
           <Card className="p-5 text-left">
             <h3 style={{ color: 'var(--text-primary)' }} className="font-extrabold text-sm border-b border-border dark:border-white/5 pb-2 mb-4 flex items-center gap-2">
-              <Sliders size={16} className="text-[#22C55E]" /> Prompt Settings Studio
+              <Sliders size={16} className="text-[#111111]" /> Prompt Settings Studio
             </h3>
 
             {prompts.length === 0 ? (
@@ -420,7 +420,7 @@ export const AiGatewayModule: React.FC = () => {
                   <textarea 
                     value={promptText}
                     onChange={(e) => setPromptText(e.target.value)}
-                    className="w-full p-3 font-mono text-[10px] bg-slate-100/50 dark:bg-[#102117] border border-border dark:border-white/5 focus:border-emerald-500/30 rounded-xl text-slate-900 dark:text-emerald-400 outline-none"
+                    className="w-full p-3 font-mono text-[10px] bg-slate-100/50 dark:bg-[#102117] border border-border dark:border-white/5 focus:-[#111111]/30 rounded-xl text-slate-900 dark:-[#111111] outline-none"
                     rows={8}
                     placeholder="Act as a system ATS scorer..."
                   />
@@ -429,7 +429,7 @@ export const AiGatewayModule: React.FC = () => {
                 <Button 
                   onClick={handleSavePrompt}
                   variant="primary"
-                  className="w-full font-bold bg-[#16A34A] hover:bg-[#22C55E] text-white"
+                  className="w-full font-bold bg-[#111111] hover:bg-[#111111] text-white"
                 >
                   <Save size={12} className="mr-1.5 inline" /> Save Prompt Template
                 </Button>
@@ -440,13 +440,13 @@ export const AiGatewayModule: React.FC = () => {
           {/* Usage Stats panel */}
           <Card className="p-5 text-left flex-grow">
             <h3 style={{ color: 'var(--text-primary)' }} className="font-extrabold text-sm border-b border-border dark:border-white/5 pb-2 mb-4 flex items-center gap-2">
-              <Activity size={16} className="text-[#22C55E]" /> AI Gateway Analytics
+              <Activity size={16} className="text-[#111111]" /> AI Gateway Analytics
             </h3>
 
             <div className="flex flex-col gap-4 text-xs font-semibold text-slate-600 dark:text-slate-300">
               <div className="flex justify-between items-center p-2.5 bg-slate-50/50 dark:bg-white/5 border border-border dark:border-white/5 rounded-xl">
                 <span>Active Tunnels Online</span>
-                <span className="font-extrabold text-emerald-600 dark:text-emerald-400">{analytics?.providersOnline ?? 3} / 4</span>
+                <span className="font-extrabold -[#111111] dark:-[#111111]">{analytics?.providersOnline ?? 3} / 4</span>
               </div>
               <div className="flex justify-between items-center p-2.5 bg-slate-50/50 dark:bg-white/5 border border-border dark:border-white/5 rounded-xl">
                 <span>Total Gateway Calls</span>
@@ -458,7 +458,7 @@ export const AiGatewayModule: React.FC = () => {
               </div>
               <div className="flex justify-between items-center p-2.5 bg-slate-50/50 dark:bg-white/5 border border-border dark:border-white/5 rounded-xl">
                 <span>Model Success Rate</span>
-                <span className="font-extrabold text-emerald-600 dark:text-emerald-400">{analytics?.successRate ?? '99.2%'}</span>
+                <span className="font-extrabold -[#111111] dark:-[#111111]">{analytics?.successRate ?? '99.2%'}</span>
               </div>
             </div>
           </Card>

@@ -79,8 +79,8 @@ export const LandingPage: React.FC = () => {
     <div className="overflow-hidden bg-white">
       {/* Background soft blurs */}
       <div className="absolute top-0 inset-x-0 h-[1000px] pointer-events-none overflow-hidden z-0">
-        <div className="absolute top-[-10%] left-[-20%] w-[60%] h-[50%] rounded-full bg-emerald-100/10 blur-[130px]" />
-        <div className="absolute top-[30%] right-[-20%] w-[50%] h-[50%] rounded-full bg-emerald-50/10 blur-[140px]" />
+        <div className="absolute top-[-10%] left-[-20%] w-[60%] h-[50%] rounded-full bg-[#F8F8F8] blur-[130px]" />
+        <div className="absolute top-[30%] right-[-20%] w-[50%] h-[50%] rounded-full bg-[#F8F8F8] blur-[140px]" />
       </div>
 
       {/* 1. HERO SECTION */}
@@ -97,16 +97,16 @@ export const LandingPage: React.FC = () => {
             className="flex flex-col gap-6"
           >
             {/* Resumes created today indicator */}
-            <div className="flex items-center gap-2 self-start bg-emerald-50 border border-emerald-100/60 rounded-full px-3.5 py-1.5 text-xs font-semibold text-emerald-600 shadow-sm">
+            <div className="flex items-center gap-2 self-start bg-[#F8F8F8] border border-[#E5E7EB]/60 rounded-full px-3.5 py-1.5 text-xs font-semibold -[#111111] shadow-sm">
               <span className="relative flex h-2 w-2">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full -[#111111] opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-2 w-2 -[#111111]"></span>
               </span>
               <span><AnimatedNumber value={48827} duration={1500} /> resumes created today</span>
             </div>
 
             <h1 className="text-4xl md:text-6xl font-extrabold text-slate-800 tracking-tight leading-[1.1] !my-0">
-              Your <span className="text-emerald-500">professional AI resume</span>, ready in minutes
+              Your <span className="-[#111111]">professional AI resume</span>, ready in minutes
             </h1>
 
             <p className="text-base md:text-lg text-slate-500 leading-relaxed max-w-lg">
@@ -129,7 +129,7 @@ export const LandingPage: React.FC = () => {
             {/* Placement stats */}
             <div className="flex items-center gap-8 mt-6 pt-6 border-t border-slate-100">
               <div>
-                <span className="bg-emerald-100 text-emerald-700 text-xs font-bold px-2 py-1 rounded-md">
+                <span className="bg-[#F8F8F8] -[#111111] text-xs font-bold px-2 py-1 rounded-md">
                   <AnimatedNumber value={48} suffix="%" />
                 </span>
                 <p className="text-xs text-slate-400 font-medium mt-2">more likely to get hired</p>
@@ -188,7 +188,7 @@ export const LandingPage: React.FC = () => {
 
                 {/* Floating "Generate with AI" button on resume */}
                 <div className="absolute bottom-2 left-1/2 -translate-x-1/2 z-20">
-                  <button className="bg-emerald-500 hover:bg-emerald-600 text-white font-bold text-[9px] px-3.5 py-1.5 rounded-full shadow-md flex items-center gap-1.5 transition-smooth uppercase tracking-wider cursor-pointer">
+                  <button className="-[#111111] hover:-[#111111] text-white font-bold text-[9px] px-3.5 py-1.5 rounded-full shadow-md flex items-center gap-1.5 transition-smooth uppercase tracking-wider cursor-pointer">
                     <Sparkles size={9} /> Generate with AI
                   </button>
                 </div>
@@ -347,13 +347,13 @@ export const LandingPage: React.FC = () => {
             {/* Rating Widget */}
             <motion.div variants={childVariants} className="lg:col-span-1 flex flex-col items-center lg:items-start text-center lg:text-left bg-white p-6 rounded-[20px] border border-slate-150 shadow-sm gap-4">
               <span className="text-slate-800 font-extrabold text-3xl">4.5 out of 5</span>
-              <div className="flex items-center gap-1 text-emerald-500">
+              <div className="flex items-center gap-1 -[#111111]">
                 {[1, 2, 3, 4, 5].map((st) => (
-                  <Star key={st} size={18} className="fill-emerald-500" />
+                  <Star key={st} size={18} className="-[#111111]" />
                 ))}
               </div>
               <div className="flex items-center gap-1.5 text-slate-700 font-bold text-sm">
-                <span className="text-emerald-500">★</span> Trustpilot
+                <span className="-[#111111]">★</span> Trustpilot
               </div>
               <p className="text-[11px] text-slate-400">based on 3,112 reviews</p>
             </motion.div>
@@ -367,9 +367,9 @@ export const LandingPage: React.FC = () => {
               ].map((rev, idx) => (
                 <Card key={idx} className="flex flex-col justify-between gap-5 p-5 bg-white border border-slate-150 shadow-sm h-full hover:-translate-y-1 transition-all duration-250 hover:shadow-md">
                   <div>
-                    <div className="flex items-center gap-0.5 text-emerald-500 mb-3">
+                    <div className="flex items-center gap-0.5 -[#111111] mb-3">
                       {[1, 2, 3, 4, 5].map((st) => (
-                        <Star key={st} size={10} className="fill-emerald-500" />
+                        <Star key={st} size={10} className="-[#111111]" />
                       ))}
                     </div>
                     <p className="text-xs text-slate-600 leading-relaxed font-medium">"{rev.text}"</p>
@@ -455,7 +455,7 @@ export const LandingPage: React.FC = () => {
                 visual: (
                   <div className="w-full h-24 bg-blue-50/50 rounded-xl border border-slate-100 flex items-center justify-center p-3 relative overflow-hidden">
                     <div className="bg-white rounded-lg p-2.5 shadow-sm border border-slate-150 text-center w-full flex flex-col items-center justify-center gap-1.5">
-                      <div className="w-6 h-6 rounded-full bg-emerald-100 text-emerald-650 flex items-center justify-center font-bold text-[10px]">
+                      <div className="w-6 h-6 rounded-full bg-[#F8F8F8] text-emerald-650 flex items-center justify-center font-bold text-[10px]">
                         ✓
                       </div>
                       <span className="text-[8px] font-bold text-slate-650">Accept the offer!</span>

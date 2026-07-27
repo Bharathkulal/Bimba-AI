@@ -167,8 +167,8 @@ export const JobDetails: React.FC = () => {
   let scoreColor = 'from-blue-650 to-sky-500';
   let scoreBg = 'bg-blue-50 text-blue-700 border-blue-200';
   if (score >= 90) {
-    scoreColor = 'from-emerald-500 to-teal-500';
-    scoreBg = 'bg-emerald-50 text-emerald-800 border-emerald-200';
+    scoreColor = '-[#111111] to-teal-500';
+    scoreBg = 'bg-[#F8F8F8] -[#111111] border-[#E5E7EB]';
   } else if (score >= 80) {
     scoreColor = 'from-teal-500 to-cyan-550';
     scoreBg = 'bg-teal-50 text-teal-850 border-teal-200';
@@ -182,7 +182,7 @@ export const JobDetails: React.FC = () => {
       {toast && (
         <div className={`fixed top-5 right-5 z-50 flex items-center gap-2 px-4 py-3 rounded-xl border shadow-xl transition-all duration-300 transform scale-100 ${
           toast.type === 'success' 
-            ? 'bg-emerald-50 border-emerald-200 text-emerald-800' 
+            ? 'bg-[#F8F8F8] border-[#E5E7EB] -[#111111]' 
             : 'bg-rose-50 border-rose-200 text-rose-800'
         }`}>
           {toast.type === 'success' ? <Check size={16} /> : <X size={16} />}
@@ -262,7 +262,7 @@ export const JobDetails: React.FC = () => {
 
           <div className="flex items-center gap-3 w-full md:w-auto pt-3 border-t md:border-t-0 border-slate-100">
             {application ? (
-              <span className="px-4 py-2.5 bg-emerald-50 text-emerald-800 border border-emerald-250 font-black text-xs rounded-xl flex items-center gap-1.5">
+              <span className="px-4 py-2.5 bg-[#F8F8F8] -[#111111] border border-[#E5E7EB] font-black text-xs rounded-xl flex items-center gap-1.5">
                 <Check size={14} /> Applied & Tracked
               </span>
             ) : (
@@ -391,7 +391,7 @@ export const JobDetails: React.FC = () => {
               <div className="flex flex-wrap gap-1.5 mt-2">
                 {job.skills_matched && job.skills_matched.length > 0 ? (
                   job.skills_matched.map((s, i) => (
-                    <span key={i} className="text-[9.5px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-150 px-2.5 py-0.5 rounded-lg">
+                    <span key={i} className="text-[9.5px] font-bold bg-[#F8F8F8] -[#111111] border border-[#E5E7EB] px-2.5 py-0.5 rounded-lg">
                       {s}
                     </span>
                   ))
@@ -436,7 +436,7 @@ export const JobDetails: React.FC = () => {
                   if (isCurrent) {
                     dotColor = isRejected ? 'bg-rose-500 border-rose-250 shadow shadow-rose-500/30' : 'bg-blue-600 border-blue-200 shadow shadow-blue-600/30';
                   } else if (isCompleted) {
-                    dotColor = 'bg-emerald-500 border-emerald-250';
+                    dotColor = '-[#111111] border-[#E5E7EB]';
                   }
 
                   return (
@@ -482,7 +482,7 @@ export const JobDetails: React.FC = () => {
                       </button>
                       <button 
                         onClick={handleSaveNotes}
-                        className="text-[9px] font-black text-emerald-600 hover:underline cursor-pointer"
+                        className="text-[9px] font-black -[#111111] hover:underline cursor-pointer"
                       >
                         Save
                       </button>

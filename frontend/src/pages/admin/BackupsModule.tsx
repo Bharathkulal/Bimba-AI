@@ -108,7 +108,7 @@ export const BackupsModule: React.FC = () => {
                   <td className="py-3.5 px-4 font-bold text-slate-600">{(bak.size_bytes / 1024).toFixed(1)} KB</td>
                   <td className="py-3.5 px-4 font-semibold text-slate-450">{new Date(bak.created_at).toLocaleString()}</td>
                   <td className="py-3.5 px-4">
-                    <span className="bg-emerald-50 border border-emerald-100 text-emerald-600 px-2 py-0.5 rounded text-[8px] font-black uppercase">
+                    <span className="bg-[#F8F8F8] border border-[#E5E7EB] -[#111111] px-2 py-0.5 rounded text-[8px] font-black uppercase">
                       {bak.status}
                     </span>
                   </td>

@@ -118,7 +118,7 @@ export const Notifications: React.FC = () => {
       case 'Resume':
         return { icon: FileText, color: 'text-blue-600 bg-blue-50 border-blue-100' };
       case 'Profile':
-        return { icon: CheckCircle, color: 'text-emerald-600 bg-emerald-50 border-emerald-100' };
+        return { icon: CheckCircle, color: '-[#111111] bg-[#F8F8F8] border-[#E5E7EB]' };
       case 'Certificates':
         return { icon: Award, color: 'text-amber-600 bg-amber-50 border-amber-100' };
       case 'System':

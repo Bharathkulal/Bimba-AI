@@ -65,7 +65,7 @@ export const MonitorModule: React.FC = () => {
                 <span>{health?.ram ?? 44}%</span>
               </div>
               <div className="w-full h-2 bg-slate-100 rounded-full overflow-hidden">
-                <div className="h-full bg-emerald-500" style={{ width: `${health?.ram ?? 44}%` }} />
+                <div className="h-full -[#111111]" style={{ width: `${health?.ram ?? 44}%` }} />
               </div>
             </div>
 
@@ -99,7 +99,7 @@ export const MonitorModule: React.FC = () => {
             </div>
             <div className="p-3 bg-slate-50 border border-slate-100 rounded-xl">
               <span className="text-[9px] text-slate-400 font-bold uppercase tracking-wider">Core Framework daemon</span>
-              <h4 className="text-xs font-bold text-emerald-600 mt-1 uppercase">FastAPI (Python)</h4>
+              <h4 className="text-xs font-bold -[#111111] mt-1 uppercase">FastAPI (Python)</h4>
             </div>
             <div className="p-3 bg-slate-50 border border-slate-100 rounded-xl">
               <span className="text-[9px] text-slate-400 font-bold uppercase tracking-wider">Network latency</span>

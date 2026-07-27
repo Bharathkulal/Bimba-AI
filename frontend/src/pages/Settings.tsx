@@ -87,11 +87,11 @@ export const Settings: React.FC = () => {
       {toast && (
         <div className={`fixed top-6 right-6 z-50 flex items-center gap-3 px-5 py-4 rounded-xl shadow-xl border animate-fadeIn ${
           toast.type === 'success' 
-            ? 'bg-emerald-50 border-emerald-100 text-emerald-800' 
+            ? 'bg-[#F8F8F8] border-[#E5E7EB] -[#111111]' 
             : 'bg-rose-50 border-rose-100 text-rose-800'
         }`}>
           {toast.type === 'success' ? (
-            <CheckCircle2 className="text-emerald-500 shrink-0" size={20} />
+            <CheckCircle2 className="-[#111111] shrink-0" size={20} />
           ) : (
             <AlertTriangle className="text-rose-500 shrink-0" size={20} />
           )}
@@ -117,12 +117,12 @@ export const Settings: React.FC = () => {
                 onClick={() => setActiveCategory(cat.id as any)}
                 className={`p-4 border rounded-2xl flex items-center gap-3.5 text-left cursor-pointer transition-all ${
                   isActive 
-                    ? 'bg-emerald-50/10 border-emerald-500 shadow-sm'
+                    ? 'bg-[#F8F8F8] -[#111111] shadow-sm'
                     : 'bg-white border-slate-200/80 hover:border-slate-350'
                 }`}
               >
                 <div className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 ${
-                  isActive ? 'bg-emerald-50 text-emerald-600' : 'bg-slate-50 text-slate-400'
+                  isActive ? 'bg-[#F8F8F8] -[#111111]' : 'bg-slate-50 text-slate-400'
                 }`}>
                   <Icon size={18} />
                 </div>
@@ -148,8 +148,8 @@ export const Settings: React.FC = () => {
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                  <button className="flex flex-col items-center gap-3 p-5 rounded-2xl border-2 border-emerald-500 bg-emerald-50/5 cursor-pointer">
-                    <Sun className="text-emerald-600" size={24} />
+                  <button className="flex flex-col items-center gap-3 p-5 rounded-2xl border-2 -[#111111] bg-[#F8F8F8] cursor-pointer">
+                    <Sun className="-[#111111]" size={24} />
                     <span className="text-xs font-bold text-slate-855">Light Mode</span>
                   </button>
                   <button 
@@ -192,7 +192,7 @@ export const Settings: React.FC = () => {
                       <input 
                         type="checkbox" 
                         defaultChecked 
-                        className="w-4 h-4 rounded text-emerald-600 focus:ring-emerald-500 border-slate-300 mt-0.5 cursor-pointer"
+                        className="w-4 h-4 rounded -[#111111] focus:-[#111111] border-slate-300 mt-0.5 cursor-pointer"
                       />
                     </div>
                   ))}
@@ -262,7 +262,7 @@ export const Settings: React.FC = () => {
                         type={isApiKeyVisible ? 'text' : 'password'}
                         value={rapidApiKey}
                         onChange={(e) => setRapidApiKey(e.target.value)}
-                        className="w-full pl-3 pr-10 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 focus:outline-none focus:border-emerald-500 font-semibold"
+                        className="w-full pl-3 pr-10 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 focus:outline-none focus:-[#111111] font-semibold"
                       />
                       <button
                         onClick={() => setIsApiKeyVisible(!isApiKeyVisible)}

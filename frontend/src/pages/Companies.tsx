@@ -142,7 +142,7 @@ export const Companies: React.FC = () => {
       
       {/* Page Header */}
       <section className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white border border-slate-200/80 rounded-2xl p-6 shadow-sm relative overflow-hidden">
-        <div className="absolute right-0 top-0 w-80 h-full bg-gradient-to-l from-emerald-500/5 to-transparent blur-3xl pointer-events-none" />
+        <div className="absolute right-0 top-0 w-80 h-full bg-gradient-to-l -[#111111]/5 to-transparent blur-3xl pointer-events-none" />
         <div className="relative z-10 text-left">
           <h1 className="text-3xl font-extrabold text-slate-900 tracking-tight">
             Company Explorer
@@ -182,7 +182,7 @@ export const Companies: React.FC = () => {
                   onClick={() => setSelectedCompanyId(company.id)}
                   className={`p-4 border rounded-2xl cursor-pointer text-left transition-all ${
                     selectedCompany?.id === company.id 
-                      ? 'bg-emerald-50/10 border-emerald-500 shadow-sm'
+                      ? 'bg-[#F8F8F8] -[#111111] shadow-sm'
                       : 'bg-white border-slate-200/80 hover:border-slate-350'
                   }`}
                 >
@@ -201,7 +201,7 @@ export const Companies: React.FC = () => {
                     {/* Status Badge */}
                     <span className={`text-[8px] font-bold px-2 py-0.5 rounded-full shrink-0 ${
                       company.hiringStatus === 'Hiring' 
-                        ? 'bg-emerald-50 text-emerald-700' 
+                        ? 'bg-[#F8F8F8] -[#111111]' 
                         : company.hiringStatus === 'Slow Hiring'
                         ? 'bg-amber-50 text-amber-700'
                         : 'bg-slate-50 text-slate-500'
@@ -248,7 +248,7 @@ export const Companies: React.FC = () => {
                 <div className="flex flex-col gap-1.5 items-start sm:items-end">
                   <span className={`text-[9.5px] font-black px-2.5 py-1 rounded-full uppercase ${
                     selectedCompany.hiringStatus === 'Hiring' 
-                      ? 'bg-emerald-50 text-emerald-700 border border-emerald-100' 
+                      ? 'bg-[#F8F8F8] -[#111111] border border-[#E5E7EB]' 
                       : selectedCompany.hiringStatus === 'Slow Hiring'
                       ? 'bg-amber-50 text-amber-700 border border-amber-100'
                       : 'bg-slate-50 text-slate-600 border border-slate-200'
@@ -259,7 +259,7 @@ export const Companies: React.FC = () => {
                     href={`https://${selectedCompany.website}`} 
                     target="_blank" 
                     rel="noreferrer"
-                    className="text-[10px] font-bold text-emerald-600 hover:underline flex items-center gap-0.5 mt-1"
+                    className="text-[10px] font-bold -[#111111] hover:underline flex items-center gap-0.5 mt-1"
                   >
                     <Globe size={11} /> {selectedCompany.website}
                   </a>

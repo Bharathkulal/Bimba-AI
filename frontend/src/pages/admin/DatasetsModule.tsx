@@ -138,7 +138,7 @@ export const DatasetsModule: React.FC = () => {
                             {rec.issues.join(", ")}
                           </span>
                         ) : (
-                          <span className="text-emerald-600 font-black text-[9px] uppercase border border-emerald-100 bg-emerald-50 px-1.5 py-0.5 rounded">
+                          <span className="-[#111111] font-black text-[9px] uppercase border border-[#E5E7EB] bg-[#F8F8F8] px-1.5 py-0.5 rounded">
                             OK ({rec.is_update ? 'Update' : 'New'})
                           </span>
                         )}
@@ -187,7 +187,7 @@ export const DatasetsModule: React.FC = () => {
                         {dataset.import_type}
                       </span>
                     </td>
-                    <td className="py-3.5 px-4 font-bold text-emerald-600">
+                    <td className="py-3.5 px-4 font-bold -[#111111]">
                       +{dataset.imported_count} / ~{dataset.updated_count}
                     </td>
                     <td className="py-3.5 px-4 font-bold text-rose-500">

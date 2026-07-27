@@ -15,11 +15,11 @@ export const StatsCard: React.FC<StatsCardProps> = ({
   value,
   percentage,
   icon: Icon,
-  color = 'text-emerald-600',
+  color = '-[#111111]',
   description,
 }) => {
   return (
-    <Card className="hover:border-emerald-300">
+    <Card className="hover:border-[#E5E7EB]">
       <div className="flex justify-between items-start">
         <div className="text-left">
           <span className="text-[9.5px] font-bold text-slate-400 uppercase tracking-wider block">
@@ -47,7 +47,7 @@ export const StatsCard: React.FC<StatsCardProps> = ({
                 d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
               />
               <path
-                className="text-emerald-500 transition-all duration-500"
+                className="-[#111111] transition-all duration-500"
                 strokeDasharray={`${percentage}, 100`}
                 strokeWidth="3.5"
                 strokeLinecap="round"
@@ -61,8 +61,8 @@ export const StatsCard: React.FC<StatsCardProps> = ({
               <Icon size={18} />
             </div>
           ) : (
-            <div className="w-2.5 h-2.5 rounded-full bg-emerald-500/20 flex items-center justify-center">
-              <div className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+            <div className="w-2.5 h-2.5 rounded-full -[#111111]/20 flex items-center justify-center">
+              <div className="w-1.5 h-1.5 rounded-full -[#111111]" />
             </div>
           )}
         </div>

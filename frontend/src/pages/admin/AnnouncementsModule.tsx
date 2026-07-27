@@ -109,7 +109,7 @@ export const AnnouncementsModule: React.FC = () => {
       {toast && (
         <div className={`fixed top-6 right-6 z-50 flex items-center gap-3 px-5 py-4 rounded-xl shadow-xl border animate-fadeIn ${
           toast.type === 'success' 
-            ? 'bg-[#102117] border-[#22C55E]/20 text-[#22C55E]' 
+            ? 'bg-[#102117] border-[#111111]/20 text-[#111111]' 
             : 'bg-[#1F1116] border-rose-500/20 text-rose-500'
         }`}>
           {toast.type === 'success' ? <CheckCircle2 size={18} /> : <AlertTriangle size={18} />}
@@ -119,7 +119,7 @@ export const AnnouncementsModule: React.FC = () => {
 
       {/* Header Banner */}
       <section className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-[#102117] border border-white/5 rounded-2xl p-6 shadow-md relative overflow-hidden">
-        <div className="absolute right-0 top-0 w-80 h-full bg-gradient-to-l from-emerald-500/5 to-transparent blur-3xl pointer-events-none" />
+        <div className="absolute right-0 top-0 w-80 h-full bg-gradient-to-l -[#111111]/5 to-transparent blur-3xl pointer-events-none" />
         <div className="relative z-10 text-left">
           <h1 className="text-xl font-extrabold text-white tracking-tight">Announcements</h1>
           <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider block mt-1">
@@ -164,13 +164,13 @@ export const AnnouncementsModule: React.FC = () => {
                   <tr key={ann.id} className="hover:bg-white/5 transition-colors">
                     <td className="py-4 px-6 text-center">
                       {ann.pinned ? (
-                        <Pin size={13} className="text-[#22C55E] mx-auto animate-pulse" />
+                        <Pin size={13} className="text-[#111111] mx-auto animate-pulse" />
                       ) : (
                         <span className="text-slate-600">-</span>
                       )}
                     </td>
                     <td className="py-4 px-6 font-bold text-slate-200 flex items-center gap-2">
-                      <Megaphone size={14} className="text-emerald-500 shrink-0" />
+                      <Megaphone size={14} className="-[#111111] shrink-0" />
                       {ann.title}
                     </td>
                     <td className="py-4 px-6 text-slate-400 truncate max-w-xs">
@@ -182,7 +182,7 @@ export const AnnouncementsModule: React.FC = () => {
                     <td className="py-4 px-6">
                       <span className={`px-2 py-0.5 rounded text-[9.5px] font-black uppercase ${
                         ann.status === 'Published' 
-                          ? 'bg-[#16A34A]/10 text-emerald-400 border border-emerald-500/20' 
+                          ? 'bg-[#111111]/10 -[#111111] border -[#111111]/20' 
                           : 'bg-slate-800 text-slate-450 border border-white/5'
                       }`}>
                         {ann.status}
@@ -192,7 +192,7 @@ export const AnnouncementsModule: React.FC = () => {
                       <div className="flex items-center justify-center gap-2">
                         <button
                           onClick={() => handleEdit(ann)}
-                          className="p-1.5 rounded-lg bg-white/5 border border-white/5 text-slate-400 hover:text-white hover:border-emerald-500/30 transition-colors cursor-pointer"
+                          className="p-1.5 rounded-lg bg-white/5 border border-white/5 text-slate-400 hover:text-white hover:-[#111111]/30 transition-colors cursor-pointer"
                           title="Edit Announcement"
                         >
                           <Edit3 size={12} />
@@ -237,7 +237,7 @@ export const AnnouncementsModule: React.FC = () => {
             <textarea 
               value={form.content}
               onChange={(e) => setForm({ ...form, content: e.target.value })}
-              className="w-full p-2.5 bg-[#102117] border border-white/10 focus:border-emerald-500/30 rounded-xl text-white outline-none"
+              className="w-full p-2.5 bg-[#102117] border border-white/10 focus:-[#111111]/30 rounded-xl text-white outline-none"
               rows={4}
               required
               placeholder="Provide job details, links, or dates..."
@@ -276,7 +276,7 @@ export const AnnouncementsModule: React.FC = () => {
               type="checkbox"
               checked={form.pinned}
               onChange={(e) => setForm({ ...form, pinned: e.target.checked })}
-              className="w-4 h-4 rounded text-emerald-600 focus:ring-emerald-500 border-white/10"
+              className="w-4 h-4 rounded -[#111111] focus:-[#111111] border-white/10"
             />
             <span className="text-[9.5px] font-bold uppercase tracking-wider text-slate-300">Pin to top of student bulletin board</span>
           </label>

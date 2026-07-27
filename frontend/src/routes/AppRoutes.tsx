@@ -74,7 +74,7 @@ const ProtectedRoute: React.FC = () => {
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-slate-50">
-        <div className="w-12 h-12 border-4 border-emerald-600 border-t-transparent rounded-full animate-spin" />
+        <div className="w-12 h-12 border-4 border-slate-800 border-t-transparent rounded-full animate-spin" />
       </div>
     );
   }
@@ -112,7 +112,7 @@ const AdminGuestRoute: React.FC = () => {
 
 const SuspenseLoader: React.FC = () => (
   <div className="min-h-[400px] flex items-center justify-center w-full">
-    <div className="w-10 h-10 border-3 border-emerald-600 border-t-transparent rounded-full animate-spin" />
+    <div className="w-10 h-10 border-3 border-slate-800 border-t-transparent rounded-full animate-spin" />
   </div>
 );
 

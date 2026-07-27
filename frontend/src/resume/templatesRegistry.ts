@@ -60,14 +60,14 @@ export const TEMPLATE_REGISTRY: Record<string, TemplateConfig> = {
 
 export const COLOR_THEMES: Record<string, { primary: string; text: string; border: string; bg: string }> = {
   blue: { primary: 'text-blue-700 dark:text-blue-400', text: 'text-slate-800', border: 'border-blue-200 dark:border-blue-900/40', bg: 'bg-blue-50/10' },
-  emerald: { primary: 'text-emerald-700 dark:text-emerald-400', text: 'text-slate-800', border: 'border-emerald-200 dark:border-emerald-900/40', bg: 'bg-emerald-50/10' },
+  emerald: { primary: '-[#111111] dark:-[#111111]', text: 'text-slate-800', border: 'border-[#E5E7EB] dark:border-emerald-900/40', bg: 'bg-[#F8F8F8]' },
   indigo: { primary: 'text-indigo-700 dark:text-indigo-400', text: 'text-slate-800', border: 'border-indigo-200 dark:border-indigo-900/40', bg: 'bg-indigo-50/10' },
   slate: { primary: 'text-slate-800 dark:text-slate-200', text: 'text-slate-800', border: 'border-slate-300 dark:border-slate-700', bg: 'bg-slate-50/50' },
   red: { primary: 'text-rose-700 dark:text-rose-400', text: 'text-slate-800', border: 'border-rose-200 dark:border-rose-900/40', bg: 'bg-rose-50/10' },
   purple: { primary: 'text-purple-700 dark:text-purple-400', text: 'text-slate-800', border: 'border-purple-200 dark:border-purple-900/40', bg: 'bg-purple-50/10' },
   orange: { primary: 'text-orange-700 dark:text-orange-400', text: 'text-slate-800', border: 'border-orange-200 dark:border-orange-900/40', bg: 'bg-orange-50/10' },
   pink: { primary: 'text-pink-700 dark:text-pink-400', text: 'text-slate-800', border: 'border-pink-200 dark:border-pink-900/40', bg: 'bg-pink-50/10' },
-  green: { primary: 'text-green-700 dark:text-green-400', text: 'text-slate-800', border: 'border-green-200 dark:border-green-900/40', bg: 'bg-green-50/10' }
+  green: { primary: '-[#111111] dark:-[#111111]', text: 'text-slate-800', border: 'border-[#E5E7EB] dark:border-green-900/40', bg: 'bg-[#F8F8F8]' }
 };
 
 export const FONTS: Record<string, string> = {

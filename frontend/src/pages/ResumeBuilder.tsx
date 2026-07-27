@@ -290,7 +290,7 @@ export const ResumeBuilder: React.FC = () => {
   const getThemeColors = () => {
     const theme = masterForm.color_theme || 'blue';
     if (theme === 'indigo') return { primary: 'text-indigo-600', border: 'border-indigo-100', bg: 'bg-indigo-50', line: 'bg-indigo-600' };
-    if (theme === 'emerald' || theme === 'green') return { primary: 'text-emerald-600', border: 'border-emerald-100', bg: 'bg-emerald-50', line: 'bg-emerald-600' };
+    if (theme === 'emerald' || theme === 'green') return { primary: '-[#111111]', border: 'border-[#E5E7EB]', bg: 'bg-[#F8F8F8]', line: '-[#111111]' };
     if (theme === 'slate' || theme === 'charcoal') return { primary: 'text-slate-700', border: 'border-slate-200', bg: 'bg-slate-50', line: 'bg-slate-700' };
     if (theme === 'red') return { primary: 'text-red-650', border: 'border-red-100', bg: 'bg-red-50', line: 'bg-red-600' };
     if (theme === 'orange') return { primary: 'text-orange-650', border: 'border-orange-100', bg: 'bg-orange-50', line: 'bg-orange-600' };
@@ -1427,7 +1427,7 @@ export const ResumeBuilder: React.FC = () => {
               <div>
                 <h1 className="text-xl font-black text-slate-850 tracking-tight">{masterForm.name}</h1>
                 <p className="text-[10px] text-slate-450 font-semibold uppercase tracking-wider flex items-center gap-1.5 mt-0.5">
-                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" /> {saveStatus}
+                  <span className="w-1.5 h-1.5 rounded-full -[#111111]" /> {saveStatus}
                 </p>
               </div>
             </div>
@@ -1631,7 +1631,7 @@ export const ResumeBuilder: React.FC = () => {
                         { label: 'Keyword Score', score: atsScorecard.keyword_match || 68, color: 'stroke-pink-500' },
                         { label: 'Formatting Score', score: atsScorecard.formatting_score || 75, color: 'stroke-teal-500' },
                         { label: 'Readability Score', score: atsScorecard.readability_score || 70, color: 'stroke-amber-500' },
-                        { label: 'Grammar Score', score: atsScorecard.grammar_score || 80, color: 'stroke-emerald-500' },
+                        { label: 'Grammar Score', score: atsScorecard.grammar_score || 80, color: '-[#111111]' },
                         { label: 'Professionalism Score', score: atsScorecard.recruiter_score || 68, color: 'stroke-slate-650' },
                         { label: 'Project Quality Score', score: atsScorecard.recruiter_score || 68, color: 'stroke-rose-500' }
                       ].map((item) => (
@@ -1769,7 +1769,7 @@ export const ResumeBuilder: React.FC = () => {
                                 </button>
                               ))}
                               {(!jdOptimizeData.match_metrics?.missing_skills || jdOptimizeData.match_metrics.missing_skills.length === 0) && (
-                                <span className="text-xs text-emerald-600 font-semibold bg-emerald-50 px-3 py-1.5 rounded-xl border border-emerald-100">All matching skills satisfied!</span>
+                                <span className="text-xs -[#111111] font-semibold bg-[#F8F8F8] px-3 py-1.5 rounded-xl border border-[#E5E7EB]">All matching skills satisfied!</span>
                               )}
                             </div>
                           </div>
@@ -1817,8 +1817,8 @@ export const ResumeBuilder: React.FC = () => {
                                       <span className="text-[9px] font-bold block mb-1 uppercase tracking-widest text-slate-400">Current</span>
                                       {matchLocal.description}
                                     </div>
-                                    <div className="bg-emerald-50/20 border border-emerald-250 p-3 rounded-xl text-[11px] leading-relaxed text-slate-800 font-medium">
-                                      <span className="text-[9px] font-bold block mb-1 uppercase tracking-widest text-emerald-600">JD Wording Suggestion</span>
+                                    <div className="bg-slate-50 border border-slate-200 p-3 rounded-xl text-[11px] leading-relaxed text-slate-800 font-medium">
+                                      <span className="text-[9px] font-bold block mb-1 uppercase tracking-widest text-slate-900">JD Wording Suggestion</span>
                                       {op.description}
                                     </div>
                                   </div>
@@ -1909,8 +1909,8 @@ export const ResumeBuilder: React.FC = () => {
                                   <span className="text-[9px] font-bold block mb-1 uppercase tracking-widest text-slate-400">Original</span>
                                   {improvementData.original.personal_info.summary}
                                 </div>
-                                <div className="bg-emerald-50/20 border border-emerald-250 p-3 rounded-xl text-[11px] leading-relaxed text-slate-800 font-medium">
-                                  <span className="text-[9px] font-bold block mb-1 uppercase tracking-widest text-emerald-600">Improved Rewrite</span>
+                                <div className="bg-slate-50 border border-slate-200 p-3 rounded-xl text-[11px] leading-relaxed text-slate-800 font-medium">
+                                  <span className="text-[9px] font-bold block mb-1 uppercase tracking-widest text-slate-900">Improved Rewrite</span>
                                   {improvementData.improved.personal_info.summary}
                                 </div>
                               </div>
@@ -1943,8 +1943,8 @@ export const ResumeBuilder: React.FC = () => {
                                     <span className="text-[9px] font-bold block mb-1 uppercase tracking-widest text-slate-400">Original</span>
                                     {matchLocal.description}
                                   </div>
-                                  <div className="bg-emerald-50/20 border border-emerald-250 p-3 rounded-xl text-[11px] leading-relaxed text-slate-800 font-medium">
-                                    <span className="text-[9px] font-bold block mb-1 uppercase tracking-widest text-emerald-600">Improved Rewrite</span>
+                                  <div className="bg-slate-50 border border-slate-200 p-3 rounded-xl text-[11px] leading-relaxed text-slate-800 font-medium">
+                                    <span className="text-[9px] font-bold block mb-1 uppercase tracking-widest text-slate-900">Improved Rewrite</span>
                                     {op.description}
                                   </div>
                                 </div>
@@ -1984,7 +1984,7 @@ export const ResumeBuilder: React.FC = () => {
                     <div className="grid grid-cols-2 gap-4">
                       <div className="p-4 bg-slate-50 border border-slate-150 rounded-2xl text-center">
                         <span className="text-[9px] text-slate-400 font-bold uppercase block">Job Readiness Status</span>
-                        <h4 className="text-lg font-black text-emerald-600 mt-1">{readinessReport.job_readiness}</h4>
+                        <h4 className="text-lg font-black -[#111111] mt-1">{readinessReport.job_readiness}</h4>
                       </div>
                       <div className="p-4 bg-slate-50 border border-slate-150 rounded-2xl text-center">
                         <span className="text-[9px] text-slate-400 font-bold uppercase block">Interview Score</span>
@@ -2159,8 +2159,8 @@ export const ResumeBuilder: React.FC = () => {
                 <div key={idx} className="flex items-center gap-2">
                   <div className={`w-3.5 h-3.5 rounded-full flex items-center justify-center text-[9px] font-black ${
                     generationStep > idx 
-                      ? 'bg-emerald-50 border border-emerald-250 text-emerald-600' 
-                      : generationStep === idx ? 'bg-blue-50 border border-blue-200 text-blue-600' : 'bg-slate-50 border border-slate-200'
+                      ? 'bg-slate-100 border border-slate-300 text-slate-600' 
+                      : generationStep === idx ? 'bg-slate-100 border border-slate-200 text-slate-600' : 'bg-slate-50 border border-slate-200'
                   }`}>
                     {generationStep > idx ? '✓' : '○'}
                   </div>
@@ -2175,8 +2175,8 @@ export const ResumeBuilder: React.FC = () => {
       {toast && (
         <div className={`fixed bottom-6 right-6 z-50 flex items-center gap-2 px-4.5 py-3 rounded-2xl shadow-lg border text-xs font-bold animate-fadeIn transition-all duration-300 ${
           toast.type === 'success'
-            ? 'bg-emerald-50 border-emerald-200 text-emerald-700'
-            : 'bg-rose-50 border-rose-200 text-rose-700'
+            ? 'bg-slate-50 border-slate-200 text-slate-700'
+            : 'bg-slate-50 border-slate-200 text-slate-700'
         }`}>
           {toast.type === 'success' ? <Check size={14} /> : <AlertCircle size={14} />}
           <span>{toast.message}</span>

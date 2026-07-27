@@ -78,7 +78,7 @@ export const SecurityModule: React.FC = () => {
                     onClick={() => handleToggle(sw.key)}
                     className={`px-3 py-1 rounded-xl text-[9px] font-black uppercase border cursor-pointer shrink-0 ml-4 ${
                       active 
-                        ? 'bg-emerald-50 border-emerald-250 text-emerald-600' 
+                        ? 'bg-[#F8F8F8] border-[#E5E7EB] -[#111111]' 
                         : 'bg-rose-50 border-rose-250 text-rose-600'
                     }`}
                   >

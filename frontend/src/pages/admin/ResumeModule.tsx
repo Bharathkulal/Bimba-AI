@@ -261,7 +261,7 @@ export const ResumeModule: React.FC = () => {
       {toast && (
         <div className={`fixed top-6 right-6 z-50 flex items-center gap-3 px-5 py-4 rounded-xl shadow-xl border animate-fadeIn ${
           toast.type === 'success' 
-            ? 'bg-[#102117] border-[#22C55E]/20 text-[#22C55E]' 
+            ? 'bg-[#102117] border-[#111111]/20 text-[#111111]' 
             : 'bg-[#1F1116] border-rose-500/20 text-rose-500'
         }`}>
           {toast.type === 'success' ? <CheckCircle2 size={18} /> : <AlertTriangle size={18} />}
@@ -271,7 +271,7 @@ export const ResumeModule: React.FC = () => {
 
       {/* Header Panel */}
       <section className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-[#102117] border border-white/5 rounded-2xl p-6 shadow-md relative overflow-hidden">
-        <div className="absolute right-0 top-0 w-80 h-full bg-gradient-to-l from-emerald-500/5 to-transparent blur-3xl pointer-events-none" />
+        <div className="absolute right-0 top-0 w-80 h-full bg-gradient-to-l -[#111111]/5 to-transparent blur-3xl pointer-events-none" />
         <div className="relative z-10 text-left">
           <h1 className="text-xl font-extrabold text-white tracking-tight">Resume Center</h1>
           <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider block mt-1">
@@ -284,7 +284,7 @@ export const ResumeModule: React.FC = () => {
           <button
             onClick={() => { setActiveTab('resumes'); setSearchQuery(''); }}
             className={`px-4 py-2 rounded-lg text-xs font-bold transition-all cursor-pointer ${
-              activeTab === 'resumes' ? 'bg-emerald-600 text-white shadow-md' : 'text-slate-400 hover:text-white'
+              activeTab === 'resumes' ? '-[#111111] text-white shadow-md' : 'text-slate-400 hover:text-white'
             }`}
           >
             All Resumes
@@ -292,7 +292,7 @@ export const ResumeModule: React.FC = () => {
           <button
             onClick={() => { setActiveTab('templates'); setSearchQuery(''); }}
             className={`px-4 py-2 rounded-lg text-xs font-bold transition-all cursor-pointer ${
-              activeTab === 'templates' ? 'bg-emerald-600 text-white shadow-md' : 'text-slate-400 hover:text-white'
+              activeTab === 'templates' ? '-[#111111] text-white shadow-md' : 'text-slate-400 hover:text-white'
             }`}
           >
             Resume Templates
@@ -310,7 +310,7 @@ export const ResumeModule: React.FC = () => {
               placeholder={activeTab === 'resumes' ? "Search resumes by name or roll number..." : "Search templates by name or category..."}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-10 pr-4 py-2.5 bg-[#102117] border border-white/5 rounded-xl text-xs text-white focus:outline-none focus:border-emerald-500/30 font-medium"
+              className="w-full pl-10 pr-4 py-2.5 bg-[#102117] border border-white/5 rounded-xl text-xs text-white focus:outline-none focus:-[#111111]/30 font-medium"
             />
           </div>
           
@@ -369,20 +369,20 @@ export const ResumeModule: React.FC = () => {
                     return (
                       <tr key={resume.id} className="hover:bg-white/5 transition-colors">
                         <td className="py-4 px-6 font-bold text-white flex items-center gap-2">
-                          <FileText size={16} className="text-emerald-500 shrink-0" />
+                          <FileText size={16} className="-[#111111] shrink-0" />
                           {resume.name}
                         </td>
                         <td className="py-4 px-6 font-extrabold text-slate-300">{resume.student_roll}</td>
                         <td className="py-4 px-6 text-slate-400">{resume.template}</td>
                         <td className="py-4 px-6 font-bold">
                           <span className={`px-2 py-0.5 rounded text-[10px] ${
-                            resume.ats_score >= 80 ? 'bg-emerald-500/10 text-emerald-400' : 'bg-amber-500/10 text-amber-400'
+                            resume.ats_score >= 80 ? '-[#111111]/10 -[#111111]' : 'bg-amber-500/10 text-amber-400'
                           }`}>
                             ATS {resume.ats_score}%
                           </span>
                         </td>
                         <td className="py-4 px-6">
-                          <span className="px-2.5 py-0.5 rounded-full text-[9px] bg-emerald-500/10 text-emerald-400">
+                          <span className="px-2.5 py-0.5 rounded-full text-[9px] -[#111111]/10 -[#111111]">
                             {resume.status}
                           </span>
                         </td>
@@ -433,7 +433,7 @@ export const ResumeModule: React.FC = () => {
             filteredTemplates.map((tpl) => (
               <Card 
                 key={tpl.id} 
-                className={`p-5 flex flex-col justify-between min-h-[190px] bg-[#13261B] border-white/5 transition-all duration-200 hover:border-emerald-500/30 relative overflow-hidden ${
+                className={`p-5 flex flex-col justify-between min-h-[190px] bg-[#13261B] border-white/5 transition-all duration-200 hover:-[#111111]/30 relative overflow-hidden ${
                   !tpl.is_active ? 'opacity-60' : ''
                 }`}
               >
@@ -442,16 +442,16 @@ export const ResumeModule: React.FC = () => {
                   {tpl.is_premium ? (
                     <span className="bg-amber-500 text-black text-[8px] font-black uppercase px-2.5 py-0.5 rounded-bl">Premium</span>
                   ) : (
-                    <span className="bg-emerald-600 text-white text-[8px] font-black uppercase px-2.5 py-0.5 rounded-bl">Free</span>
+                    <span className="-[#111111] text-white text-[8px] font-black uppercase px-2.5 py-0.5 rounded-bl">Free</span>
                   )}
                 </div>
 
                 <div>
                   <div className="flex justify-between items-start gap-1">
-                    <span className="bg-emerald-500/10 border border-emerald-500/20 text-[#22C55E] px-2 py-0.5 rounded text-[8px] font-black uppercase">
+                    <span className="-[#111111]/10 border -[#111111]/20 text-[#111111] px-2 py-0.5 rounded text-[8px] font-black uppercase">
                       {tpl.category}
                     </span>
-                    <span className="bg-emerald-500/10 border border-emerald-500/20 text-[#22C55E] px-2 py-0.5 rounded text-[8px] font-black uppercase">
+                    <span className="-[#111111]/10 border -[#111111]/20 text-[#111111] px-2 py-0.5 rounded text-[8px] font-black uppercase">
                       {tpl.industry || 'Tech'}
                     </span>
                   </div>
@@ -460,7 +460,7 @@ export const ResumeModule: React.FC = () => {
                   <p className="text-[9.5px] text-slate-400 mt-1 font-semibold leading-relaxed line-clamp-2">{tpl.description || 'No description provided.'}</p>
                   
                   <div className="flex items-center gap-1.5 mt-2">
-                    <span className="bg-emerald-500/10 border border-emerald-500/25 text-emerald-400 text-[8.5px] font-bold px-1.5 py-0.5 rounded">
+                    <span className="-[#111111]/10 border -[#111111]/25 -[#111111] text-[8.5px] font-bold px-1.5 py-0.5 rounded">
                       ATS Optimized
                     </span>
                     <span className="text-[9.5px] text-slate-500">ATS Target: {tpl.score || 95}%</span>
@@ -470,7 +470,7 @@ export const ResumeModule: React.FC = () => {
                 {/* Footer Controls */}
                 <div className="flex justify-between items-center border-t border-white/5 pt-3.5 mt-3.5">
                   <span className="text-[8.5px] text-slate-400 font-bold uppercase flex items-center gap-1">
-                    <span className={`w-1.5 h-1.5 rounded-full ${tpl.is_active ? 'bg-emerald-500 animate-pulse' : 'bg-rose-500'}`} />
+                    <span className={`w-1.5 h-1.5 rounded-full ${tpl.is_active ? '-[#111111] animate-pulse' : 'bg-rose-500'}`} />
                     {tpl.is_active ? 'Published' : 'Draft'}
                   </span>
                   
@@ -532,7 +532,7 @@ export const ResumeModule: React.FC = () => {
                 type="text" 
                 value={templateForm.slug} 
                 onChange={(e) => setTemplateForm({ ...templateForm, slug: e.target.value })} 
-                className="w-full p-2.5 bg-[#102117] border border-white/10 focus:border-emerald-500/30 rounded-xl text-white outline-none"
+                className="w-full p-2.5 bg-[#102117] border border-white/10 focus:-[#111111]/30 rounded-xl text-white outline-none"
                 disabled={!!editingTemplate}
                 required
                 placeholder="e.g. elegant_minimalist"
@@ -544,7 +544,7 @@ export const ResumeModule: React.FC = () => {
                 type="text" 
                 value={templateForm.name} 
                 onChange={(e) => setTemplateForm({ ...templateForm, name: e.target.value })} 
-                className="w-full p-2.5 bg-[#102117] border border-white/10 focus:border-emerald-500/30 rounded-xl text-white outline-none"
+                className="w-full p-2.5 bg-[#102117] border border-white/10 focus:-[#111111]/30 rounded-xl text-white outline-none"
                 required
                 placeholder="e.g. Elegant Minimalist"
               />
@@ -558,7 +558,7 @@ export const ResumeModule: React.FC = () => {
                 type="text" 
                 value={templateForm.category} 
                 onChange={(e) => setTemplateForm({ ...templateForm, category: e.target.value })} 
-                className="w-full p-2.5 bg-[#102117] border border-white/10 focus:border-emerald-500/30 rounded-xl text-white outline-none"
+                className="w-full p-2.5 bg-[#102117] border border-white/10 focus:-[#111111]/30 rounded-xl text-white outline-none"
                 required
                 placeholder="e.g. Creative"
               />
@@ -569,7 +569,7 @@ export const ResumeModule: React.FC = () => {
                 type="text" 
                 value={templateForm.industry} 
                 onChange={(e) => setTemplateForm({ ...templateForm, industry: e.target.value })} 
-                className="w-full p-2.5 bg-[#102117] border border-white/10 focus:border-emerald-500/30 rounded-xl text-white outline-none"
+                className="w-full p-2.5 bg-[#102117] border border-white/10 focus:-[#111111]/30 rounded-xl text-white outline-none"
                 required
                 placeholder="e.g. Tech / Business"
               />
@@ -580,7 +580,7 @@ export const ResumeModule: React.FC = () => {
                 type="number" 
                 value={templateForm.ats_rating} 
                 onChange={(e) => setTemplateForm({ ...templateForm, ats_rating: parseInt(e.target.value) || 95 })} 
-                className="w-full p-2.5 bg-[#102117] border border-white/10 focus:border-emerald-500/30 rounded-xl text-white outline-none"
+                className="w-full p-2.5 bg-[#102117] border border-white/10 focus:-[#111111]/30 rounded-xl text-white outline-none"
                 required
               />
             </div>
@@ -593,7 +593,7 @@ export const ResumeModule: React.FC = () => {
                 type="checkbox" 
                 checked={templateForm.is_premium} 
                 onChange={(e) => setTemplateForm({ ...templateForm, is_premium: e.target.checked })} 
-                className="w-4 h-4 rounded text-emerald-600 focus:ring-emerald-500 border-white/10"
+                className="w-4 h-4 rounded -[#111111] focus:-[#111111] border-white/10"
               />
               <span className="text-[9.5px] font-bold uppercase tracking-wider text-slate-300">Premium layout</span>
             </label>
@@ -602,7 +602,7 @@ export const ResumeModule: React.FC = () => {
                 type="checkbox" 
                 checked={templateForm.is_enabled} 
                 onChange={(e) => setTemplateForm({ ...templateForm, is_enabled: e.target.checked })} 
-                className="w-4 h-4 rounded text-emerald-600 focus:ring-emerald-500 border-white/10"
+                className="w-4 h-4 rounded -[#111111] focus:-[#111111] border-white/10"
               />
               <span className="text-[9.5px] font-bold uppercase tracking-wider text-slate-300">Publish immediately</span>
             </label>
@@ -613,7 +613,7 @@ export const ResumeModule: React.FC = () => {
             <textarea 
               value={templateForm.html_content} 
               onChange={(e) => setTemplateForm({ ...templateForm, html_content: e.target.value })} 
-              className="w-full p-2.5 font-mono text-[10px] bg-[#102117] border border-white/10 focus:border-emerald-500/30 rounded-xl text-emerald-400 outline-none animate-fadeIn"
+              className="w-full p-2.5 font-mono text-[10px] bg-[#102117] border border-white/10 focus:-[#111111]/30 rounded-xl -[#111111] outline-none animate-fadeIn"
               rows={4}
               placeholder="<div>Layout code here...</div>"
             />
@@ -624,7 +624,7 @@ export const ResumeModule: React.FC = () => {
             <textarea 
               value={templateForm.reportlab_code} 
               onChange={(e) => setTemplateForm({ ...templateForm, reportlab_code: e.target.value })} 
-              className="w-full p-2.5 font-mono text-[10px] bg-[#102117] border border-white/10 focus:border-emerald-500/30 rounded-xl text-emerald-400 outline-none animate-fadeIn"
+              className="w-full p-2.5 font-mono text-[10px] bg-[#102117] border border-white/10 focus:-[#111111]/30 rounded-xl -[#111111] outline-none animate-fadeIn"
               rows={4}
               placeholder="# Python formatting details..."
             />
@@ -650,10 +650,10 @@ export const ResumeModule: React.FC = () => {
               <div className="flex flex-col gap-1 text-left">
                 <span className="text-[10px] text-slate-450 uppercase font-black tracking-wider block">Template Metadata</span>
                 <div className="flex items-center gap-2">
-                  <span className="bg-emerald-500/10 border border-emerald-500/20 text-[#22C55E] px-2 py-0.5 rounded text-[8px] font-black uppercase">
+                  <span className="-[#111111]/10 border -[#111111]/20 text-[#111111] px-2 py-0.5 rounded text-[8px] font-black uppercase">
                     {previewTemplate.category}
                   </span>
-                  <span className="bg-emerald-500/10 border border-emerald-500/20 text-[#22C55E] px-2 py-0.5 rounded text-[8px] font-black uppercase">
+                  <span className="-[#111111]/10 border -[#111111]/20 text-[#111111] px-2 py-0.5 rounded text-[8px] font-black uppercase">
                     {previewTemplate.industry || 'Tech'}
                   </span>
                   {previewTemplate.is_premium && (
@@ -672,7 +672,7 @@ export const ResumeModule: React.FC = () => {
                       type="button"
                       onClick={() => setPreviewViewport(vp)}
                       className={`px-3 py-1.5 rounded-lg text-[9px] font-black uppercase transition-all cursor-pointer ${
-                        previewViewport === vp ? 'bg-emerald-600 text-white shadow-md' : 'text-slate-400 hover:text-white'
+                        previewViewport === vp ? '-[#111111] text-white shadow-md' : 'text-slate-400 hover:text-white'
                       }`}
                     >
                       {vp}
@@ -692,13 +692,13 @@ export const ResumeModule: React.FC = () => {
                       onClick={() => setPreviewTheme(col)}
                       className={`w-5 h-5 rounded-full border-2 transition-all cursor-pointer ${
                         col === 'blue' ? 'bg-blue-600' :
-                        col === 'emerald' ? 'bg-emerald-600' :
+                        col === 'emerald' ? '-[#111111]' :
                         col === 'indigo' ? 'bg-indigo-600' :
                         col === 'slate' ? 'bg-slate-600' :
                         col === 'red' ? 'bg-red-600' :
                         col === 'purple' ? 'bg-purple-600' :
                         col === 'orange' ? 'bg-orange-600' :
-                        col === 'pink' ? 'bg-pink-600' : 'bg-green-600'
+                        col === 'pink' ? 'bg-pink-600' : '-[#111111]'
                       } ${
                         previewTheme === col ? 'border-white scale-110 shadow' : 'border-transparent hover:scale-105'
                       }`}
@@ -713,13 +713,13 @@ export const ResumeModule: React.FC = () => {
                 <div className="relative w-8 h-8 flex items-center justify-center shrink-0">
                   <svg className="absolute w-full h-full transform -rotate-90">
                     <circle cx="16" cy="16" r="13" className="stroke-white/5 fill-none" strokeWidth="2.5" />
-                    <circle cx="16" cy="16" r="13" className="stroke-emerald-500 fill-none" strokeWidth="2.5" strokeDasharray="81" strokeDashoffset={81 - (81 * (previewTemplate.ats_rating || 98)) / 100} strokeLinecap="round" />
+                    <circle cx="16" cy="16" r="13" className="-[#111111] fill-none" strokeWidth="2.5" strokeDasharray="81" strokeDashoffset={81 - (81 * (previewTemplate.ats_rating || 98)) / 100} strokeLinecap="round" />
                   </svg>
                   <span className="text-[8px] font-black text-white">{previewTemplate.ats_rating || 98}%</span>
                 </div>
                 <div className="text-left">
                   <span className="text-[8px] text-slate-455 uppercase font-black tracking-wider block">ATS Compliance</span>
-                  <span className="text-[9px] text-[#22C55E] font-bold">Highly Optimized</span>
+                  <span className="text-[9px] text-[#111111] font-bold">Highly Optimized</span>
                 </div>
               </div>
             </div>

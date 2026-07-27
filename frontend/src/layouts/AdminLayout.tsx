@@ -115,10 +115,10 @@ export const AdminLayout: React.FC = () => {
   const breadcrumbs = location.pathname.split('/').filter(Boolean);
 
   return (
-    <div className="min-h-screen bg-background text-slate-900 flex overflow-x-hidden font-sans relative selection:bg-emerald-600/25 w-full">
+    <div className="min-h-screen bg-background text-slate-900 flex overflow-x-hidden font-sans relative selection:bg-slate-600/25 w-full">
       {/* Toast Notification */}
       {toastMessage && (
-        <div className="fixed top-6 right-6 z-50 flex items-center gap-2.5 px-4 py-3 rounded-xl shadow-2xl border border-emerald-500/20 bg-sidebar text-[#22C55E] animate-fadeIn text-xs font-semibold">
+        <div className="fixed top-6 right-6 z-50 flex items-center gap-2.5 px-4 py-3 rounded-xl shadow-2xl border border-slate-200 bg-sidebar text-slate-900 animate-fadeIn text-xs font-semibold">
           <RefreshCw size={14} className="animate-spin" />
           <span>{toastMessage}</span>
         </div>
@@ -139,7 +139,7 @@ export const AdminLayout: React.FC = () => {
         <div className="flex flex-col gap-6 overflow-hidden">
           {/* Logo */}
           <div className="flex items-center gap-3 px-2 overflow-hidden">
-            <div className="w-8.5 h-8.5 rounded-xl bg-gradient-to-tr from-[#16A34A] to-[#22C55E] flex items-center justify-center text-white font-black text-lg shadow-lg shrink-0">
+            <div className="w-8.5 h-8.5 rounded-xl bg-gradient-to-tr from-[#111111] to-[#333333] flex items-center justify-center text-white font-black text-lg shadow-lg shrink-0">
               B
             </div>
             {!isCollapsed && (
@@ -175,13 +175,13 @@ export const AdminLayout: React.FC = () => {
                     }}
                     className={`flex items-center justify-between w-full px-3 py-2.5 rounded-xl transition-all duration-200 relative group cursor-pointer ${
                       isActive 
-                        ? 'bg-[#16A34A]/10 text-[#22C55E] font-bold' 
+                        ? 'bg-[#111111]/10 text-[#111111] font-bold' 
                         : 'text-slate-400 hover:text-slate-900 hover:bg-slate-100 font-bold'
                     }`}
                   >
                     <div className="flex items-center">
                       <div className="flex items-center shrink-0 justify-center w-5 h-5 mr-3">
-                        <Icon size={16} className={isActive ? 'text-[#22C55E]' : 'text-slate-400'} />
+                        <Icon size={16} className={isActive ? 'text-[#111111]' : 'text-slate-400'} />
                       </div>
                       {!isCollapsed && (
                         <span className="text-xs font-bold tracking-wide whitespace-nowrap">
@@ -209,7 +209,7 @@ export const AdminLayout: React.FC = () => {
                             onClick={() => navigate(sub.path)}
                             className={`w-full text-left py-2 px-3 rounded-lg text-[11px] font-semibold transition-all cursor-pointer ${
                               isSubActive 
-                                ? 'text-[#22C55E] bg-[#16A34A]/5 font-extrabold' 
+                                ? 'text-[#111111] bg-[#111111]/5 font-extrabold' 
                                 : 'text-slate-400 hover:text-slate-900 hover:bg-slate-100'
                             }`}
                           >
@@ -288,7 +288,7 @@ export const AdminLayout: React.FC = () => {
 
             <button className="p-1.8 bg-slate-100/50 hover:bg-slate-100 border border-border text-slate-400 hover:text-slate-900 relative cursor-pointer">
               <Bell size={13} />
-              <span className="absolute top-1 right-1 w-1.5 h-1.5 rounded-full bg-[#22C55E]" />
+              <span className="absolute top-1 right-1 w-1.5 h-1.5 rounded-full bg-[#111111]" />
             </button>
 
             <div className="w-[1px] h-4 bg-border" />
@@ -299,12 +299,12 @@ export const AdminLayout: React.FC = () => {
 
             {/* Profile badge */}
             <div className="flex items-center gap-2">
-              <div className="w-7.5 h-7.5 rounded-xl bg-gradient-to-tr from-[#16A34A] to-[#22C55E] flex items-center justify-center text-white font-extrabold text-xs shadow">
+              <div className="w-7.5 h-7.5 rounded-xl bg-gradient-to-tr from-[#111111] to-[#111111] flex items-center justify-center text-white font-extrabold text-xs shadow">
                 A
               </div>
               <div className="hidden xl:block text-left leading-none">
                 <h5 className="font-extrabold text-xs text-slate-900">Administrator</h5>
-                <span className="text-[9px] text-[#22C55E] block mt-0.5">Console Admin</span>
+                <span className="text-[9px] text-[#111111] block mt-0.5">Console Admin</span>
               </div>
             </div>
           </div>

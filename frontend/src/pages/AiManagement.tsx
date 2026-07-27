@@ -238,7 +238,7 @@ export const AiManagement: React.FC = () => {
               </div>
               <div className="bg-white border border-slate-200/60 rounded-2xl p-4 text-center shadow-sm">
                 <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Success Rate</span>
-                <h3 className="text-xl font-black text-emerald-600 mt-1">{analytics.successRate}</h3>
+                <h3 className="text-xl font-black -[#111111] mt-1">{analytics.successRate}</h3>
               </div>
               <div className="bg-white border border-slate-200/60 rounded-2xl p-4 text-center shadow-sm">
                 <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Fallback Triggers</span>
@@ -299,7 +299,7 @@ export const AiManagement: React.FC = () => {
                       key={p.slug} 
                       className={`flex items-center gap-2.5 px-3.5 py-2 rounded-xl border text-xs font-bold w-48 shadow-sm ${
                         p.status === 'Healthy'
-                          ? 'bg-emerald-50 border-emerald-200/60 text-emerald-800'
+                          ? 'bg-[#F8F8F8] border-[#E5E7EB]/60 -[#111111]'
                           : p.status === 'Connected'
                           ? 'bg-blue-50/40 border-blue-200/40 text-blue-800'
                           : 'bg-rose-50 border-rose-200/50 text-rose-800'
@@ -338,7 +338,7 @@ export const AiManagement: React.FC = () => {
                       </div>
                       <span className={`text-[10px] font-black uppercase px-2.5 py-0.8 rounded-lg shadow-sm border ${
                         p.status === 'Healthy' 
-                          ? 'bg-emerald-50 border-emerald-200/60 text-emerald-600'
+                          ? 'bg-[#F8F8F8] border-[#E5E7EB]/60 -[#111111]'
                           : p.status === 'Connected'
                           ? 'bg-blue-50 border-blue-100 text-blue-650'
                           : 'bg-rose-50 border-rose-150 text-rose-600'
@@ -381,7 +381,7 @@ export const AiManagement: React.FC = () => {
                   {testResult && targetSecretSlug === p.slug && !testingProvider && (
                     <div className={`mt-3.5 border rounded-xl p-3 text-xs text-left ${
                       testResult.status === 'Healthy' 
-                        ? 'bg-emerald-50 border-emerald-200 text-emerald-800' 
+                        ? 'bg-[#F8F8F8] border-[#E5E7EB] -[#111111]' 
                         : 'bg-rose-50 border-rose-200 text-rose-800'
                     }`}>
                       <div className="flex justify-between items-center font-bold">
@@ -565,7 +565,7 @@ export const AiManagement: React.FC = () => {
                     <h5 className="font-extrabold text-sm text-slate-800">{hItem.provider}</h5>
                     <span className={`text-[10px] font-extrabold px-2.5 py-0.8 rounded-lg shadow-sm border ${
                       hItem.status === 'Healthy' 
-                        ? 'bg-emerald-50 border-emerald-200 text-emerald-600'
+                        ? 'bg-[#F8F8F8] border-[#E5E7EB] -[#111111]'
                         : 'bg-rose-50 border-rose-150 text-rose-650'
                     }`}>
                       🟢 {hItem.status}
@@ -578,7 +578,7 @@ export const AiManagement: React.FC = () => {
                       <span>Latency: {hItem.latency}</span>
                     </div>
                     <div className="flex items-center gap-1.5">
-                      <CheckCircle2 size={14} className="text-emerald-500" />
+                      <CheckCircle2 size={14} className="-[#111111]" />
                       <span>API: {hItem.api}</span>
                     </div>
                     <div className="flex items-center gap-1.5">
@@ -630,7 +630,7 @@ export const AiManagement: React.FC = () => {
                         <td className="py-3 px-4">
                           <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${
                             log.status === 'Success' 
-                              ? 'bg-emerald-50 text-emerald-600' 
+                              ? 'bg-[#F8F8F8] -[#111111]' 
                               : 'bg-rose-50 text-rose-600'
                           }`}>
                             {log.status}

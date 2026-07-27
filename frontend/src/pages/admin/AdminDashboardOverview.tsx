@@ -63,7 +63,7 @@ export const AdminDashboardOverview: React.FC = () => {
       trend: 'up',
       icon: Users,
       chart: 'M0 25 Q15 15, 30 20 T60 5 T95 10',
-      color: 'text-[#22C55E]'
+      color: 'text-[#111111]'
     },
     {
       label: 'Verified Students',
@@ -72,7 +72,7 @@ export const AdminDashboardOverview: React.FC = () => {
       trend: 'up',
       icon: CheckCircle,
       chart: 'M0 25 Q15 20, 30 10 T60 15 T95 5',
-      color: 'text-emerald-400'
+      color: '-[#111111]'
     },
     {
       label: 'Total Resumes',
@@ -81,7 +81,7 @@ export const AdminDashboardOverview: React.FC = () => {
       trend: 'up',
       icon: FileText,
       chart: 'M0 30 Q15 25, 30 15 T60 8 T95 2',
-      color: 'text-[#22C55E]'
+      color: 'text-[#111111]'
     },
     {
       label: 'Avg ATS Score',
@@ -99,7 +99,7 @@ export const AdminDashboardOverview: React.FC = () => {
       trend: 'up',
       icon: Download,
       chart: 'M0 28 Q15 12, 30 22 T60 8 T95 2',
-      color: 'text-[#22C55E]'
+      color: 'text-[#111111]'
     },
     {
       label: 'AI Requests',
@@ -108,7 +108,7 @@ export const AdminDashboardOverview: React.FC = () => {
       trend: 'up',
       icon: Cpu,
       chart: 'M0 30 Q15 18, 30 28 T60 8 T95 2',
-      color: 'text-[#22C55E]'
+      color: 'text-[#111111]'
     }
   ];
 
@@ -117,7 +117,7 @@ export const AdminDashboardOverview: React.FC = () => {
       
       {/* Header Banner */}
       <section className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-sidebar border border-border rounded-2xl p-6 shadow-md relative overflow-hidden">
-        <div className="absolute right-0 top-0 w-60 h-full bg-gradient-to-l from-emerald-500/5 to-transparent blur-3xl pointer-events-none" />
+        <div className="absolute right-0 top-0 w-60 h-full bg-gradient-to-l -[#111111]/5 to-transparent blur-3xl pointer-events-none" />
         <div className="relative z-10 text-left">
           <h1 className="text-xl font-extrabold text-slate-900 tracking-tight">Admin Dashboard Overview</h1>
           <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider block mt-1">
@@ -128,7 +128,7 @@ export const AdminDashboardOverview: React.FC = () => {
           onClick={handleSync} 
           variant="secondary" 
           size="sm" 
-          className="border-border text-[#22C55E] gap-1.5 shrink-0"
+          className="border-border text-[#111111] gap-1.5 shrink-0"
         >
           <RefreshCw size={13} className={syncing ? 'animate-spin' : ''} /> Sync Analytics
         </Button>
@@ -140,7 +140,7 @@ export const AdminDashboardOverview: React.FC = () => {
           const Icon = kpi.icon;
           const isUp = kpi.trend === 'up';
           return (
-            <Card key={idx} className="p-4 hover:border-emerald-500/30 flex flex-col justify-between h-[120px] transition-all">
+            <Card key={idx} className="p-4 hover:-[#111111]/30 flex flex-col justify-between h-[120px] transition-all">
               <div className="flex justify-between items-start">
                 <div>
                   <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wide block truncate max-w-[100px]">
@@ -157,7 +157,7 @@ export const AdminDashboardOverview: React.FC = () => {
 
               {/* Sparkline & trend */}
               <div className="flex justify-between items-center pt-2 mt-1.5 border-t border-border">
-                <span className="text-[8.5px] font-black flex items-center gap-0.5 text-emerald-400">
+                <span className="text-[8.5px] font-black flex items-center gap-0.5 -[#111111]">
                   <ArrowUpRight size={10} />
                   {kpi.growth}
                 </span>
@@ -165,7 +165,7 @@ export const AdminDashboardOverview: React.FC = () => {
                   <path
                     d={kpi.chart}
                     fill="none"
-                    stroke="#22C55E"
+                    stroke="#111111"
                     strokeWidth="1.5"
                     strokeLinecap="round"
                   />
@@ -192,7 +192,7 @@ export const AdminDashboardOverview: React.FC = () => {
                 <p className="text-[9.5px] font-bold text-slate-400 uppercase tracking-wide">Resume Growth Trend</p>
                 <div className="h-28 flex items-end mt-2">
                   <svg className="w-full h-full" viewBox="0 0 200 100">
-                    <path d="M0 80 Q50 40, 100 65 T200 15" fill="none" stroke="#22C55E" strokeWidth="2.2" />
+                    <path d="M0 80 Q50 40, 100 65 T200 15" fill="none" stroke="#111111" strokeWidth="2.2" />
                     <path d="M0 80 Q50 40, 100 65 T200 15 L200 100 L0 100 Z" fill="rgba(34, 197, 94, 0.08)" />
                   </svg>
                 </div>
@@ -214,7 +214,7 @@ export const AdminDashboardOverview: React.FC = () => {
                 <div className="h-28 flex items-end justify-around gap-2 mt-2 px-2">
                   {[45, 60, 35, 70, 50, 95].map((val, idx) => (
                     <div key={idx} className="flex flex-col items-center flex-1">
-                      <div className="w-3.5 bg-emerald-600 rounded-t" style={{ height: `${val * 0.7}px` }} />
+                      <div className="w-3.5 -[#111111] rounded-t" style={{ height: `${val * 0.7}px` }} />
                       <span className="text-[8px] text-slate-500 mt-1">M{idx+1}</span>
                     </div>
                   ))}
@@ -226,7 +226,7 @@ export const AdminDashboardOverview: React.FC = () => {
                 <p className="text-[9.5px] font-bold text-slate-400 uppercase tracking-wide">Resume Download Volume</p>
                 <div className="h-28 flex items-end mt-2">
                   <svg className="w-full h-full" viewBox="0 0 200 100">
-                    <path d="M0 90 L30 50 L60 80 L90 30 L120 70 L150 20 L200 40" fill="none" stroke="#22C55E" strokeWidth="2.2" />
+                    <path d="M0 90 L30 50 L60 80 L90 30 L120 70 L150 20 L200 40" fill="none" stroke="#111111" strokeWidth="2.2" />
                   </svg>
                 </div>
               </div>
@@ -247,35 +247,35 @@ export const AdminDashboardOverview: React.FC = () => {
                 onClick={() => navigate('/admin/users')}
                 className="w-full flex items-center gap-2.5 p-3 bg-slate-100/50 border border-border hover:bg-slate-100 rounded-xl transition-all cursor-pointer text-left text-xs font-bold text-slate-700 hover:text-slate-900"
               >
-                <Plus size={14} className="text-emerald-500" />
+                <Plus size={14} className="-[#111111]" />
                 <span>Add Student Account</span>
               </button>
               <button 
                 onClick={() => navigate('/admin/announcements')}
                 className="w-full flex items-center gap-2.5 p-3 bg-slate-100/50 border border-border hover:bg-slate-100 rounded-xl transition-all cursor-pointer text-left text-xs font-bold text-slate-700 hover:text-slate-900"
               >
-                <Plus size={14} className="text-emerald-500" />
+                <Plus size={14} className="-[#111111]" />
                 <span>Create Announcement</span>
               </button>
               <button 
                 onClick={() => navigate('/admin/templates')}
                 className="w-full flex items-center gap-2.5 p-3 bg-slate-100/50 border border-border hover:bg-slate-100 rounded-xl transition-all cursor-pointer text-left text-xs font-bold text-slate-700 hover:text-slate-900"
               >
-                <Plus size={14} className="text-emerald-500" />
+                <Plus size={14} className="-[#111111]" />
                 <span>Create Resume Template</span>
               </button>
               <button 
                 onClick={handleSync}
                 className="w-full flex items-center gap-2.5 p-3 bg-slate-100/50 border border-border hover:bg-slate-100 rounded-xl transition-all cursor-pointer text-left text-xs font-bold text-slate-700 hover:text-slate-900"
               >
-                <Database size={14} className="text-emerald-500" />
+                <Database size={14} className="-[#111111]" />
                 <span>Backup Database Snapshot</span>
               </button>
               <button 
                 onClick={handleSync}
                 className="w-full flex items-center gap-2.5 p-3 bg-slate-100/50 border border-border hover:bg-slate-100 rounded-xl transition-all cursor-pointer text-left text-xs font-bold text-slate-700 hover:text-slate-900"
               >
-                <RefreshCw size={14} className="text-emerald-500" />
+                <RefreshCw size={14} className="-[#111111]" />
                 <span>Refresh Analytical stats</span>
               </button>
             </div>
@@ -296,7 +296,7 @@ export const AdminDashboardOverview: React.FC = () => {
                 { label: 'AI Prompt template updated', desc: 'Refined ATS parser temperature key', time: '6h ago' }
               ].map((act, idx) => (
                 <div key={idx} className="flex gap-2.5 items-start text-xs pb-2 border-b border-border last:border-0">
-                  <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 mt-1.5 shrink-0" />
+                  <div className="w-1.5 h-1.5 rounded-full -[#111111] mt-1.5 shrink-0" />
                   <div>
                     <p className="font-bold text-slate-900 text-[11px] leading-tight">{act.label}</p>
                     <p className="text-[9.5px] text-slate-500 mt-0.5 leading-snug">{act.desc}</p>

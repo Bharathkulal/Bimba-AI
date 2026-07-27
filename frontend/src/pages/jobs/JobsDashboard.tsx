@@ -229,7 +229,7 @@ export const JobsDashboard: React.FC = () => {
       {toast && (
         <div className={`fixed top-5 right-5 z-50 flex items-center gap-2 px-4 py-3 rounded-xl border shadow-xl transition-all duration-300 transform ${
           toast.type === 'success' 
-            ? 'bg-emerald-50 border-emerald-200 text-emerald-800' 
+            ? 'bg-[#F8F8F8] border-[#E5E7EB] -[#111111]' 
             : 'bg-rose-50 border-rose-200 text-rose-800'
         }`}>
           {toast.type === 'success' ? <Check size={16} /> : <X size={16} />}
@@ -239,7 +239,7 @@ export const JobsDashboard: React.FC = () => {
 
       {/* Page Header */}
       <section className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white border border-slate-200/80 rounded-2xl p-6 shadow-sm relative overflow-hidden">
-        <div className="absolute right-0 top-0 w-80 h-full bg-gradient-to-l from-emerald-500/5 to-transparent blur-3xl pointer-events-none" />
+        <div className="absolute right-0 top-0 w-80 h-full bg-gradient-to-l -[#111111]/5 to-transparent blur-3xl pointer-events-none" />
         <div className="relative z-10 text-left">
           <h1 className="text-3xl font-extrabold text-slate-900 tracking-tight">
             Careers Portal
@@ -255,7 +255,7 @@ export const JobsDashboard: React.FC = () => {
             onClick={() => { setActiveTab('explore'); setSelectedJob(null); }}
             className={`px-4 py-2 rounded-lg text-xs font-bold cursor-pointer transition-all ${
               activeTab === 'explore' 
-                ? 'bg-white text-emerald-600 shadow-sm' 
+                ? 'bg-white -[#111111] shadow-sm' 
                 : 'text-slate-500 hover:text-slate-800'
             }`}
           >
@@ -265,7 +265,7 @@ export const JobsDashboard: React.FC = () => {
             onClick={() => { setActiveTab('saved'); setSelectedJob(null); }}
             className={`px-4 py-2 rounded-lg text-xs font-bold cursor-pointer transition-all ${
               activeTab === 'saved' 
-                ? 'bg-white text-emerald-600 shadow-sm' 
+                ? 'bg-white -[#111111] shadow-sm' 
                 : 'text-slate-500 hover:text-slate-800'
             }`}
           >
@@ -275,17 +275,17 @@ export const JobsDashboard: React.FC = () => {
             onClick={() => { setActiveTab('recommended'); setSelectedJob(null); }}
             className={`px-4 py-2 rounded-lg text-xs font-bold cursor-pointer transition-all flex items-center gap-1.5 ${
               activeTab === 'recommended' 
-                ? 'bg-white text-emerald-600 shadow-sm' 
+                ? 'bg-white -[#111111] shadow-sm' 
                 : 'text-slate-500 hover:text-slate-800'
             }`}
           >
-            <Sparkles size={12} className="text-emerald-500 animate-pulse" /> Recommended Jobs
+            <Sparkles size={12} className="-[#111111] animate-pulse" /> Recommended Jobs
           </button>
           <button 
             onClick={() => { setActiveTab('applications'); setSelectedJob(null); }}
             className={`px-4 py-2 rounded-lg text-xs font-bold cursor-pointer transition-all ${
               activeTab === 'applications' 
-                ? 'bg-white text-emerald-600 shadow-sm' 
+                ? 'bg-white -[#111111] shadow-sm' 
                 : 'text-slate-500 hover:text-slate-800'
             }`}
           >
@@ -306,7 +306,7 @@ export const JobsDashboard: React.FC = () => {
                 placeholder="Search jobs, titles, or skills..." 
                 value={keyword}
                 onChange={(e) => setKeyword(e.target.value)}
-                className="w-full pl-11 pr-4 py-2.5 bg-slate-50 border border-slate-200 focus:border-emerald-500 rounded-xl text-xs text-slate-700 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 transition-all font-semibold"
+                className="w-full pl-11 pr-4 py-2.5 bg-slate-50 border border-slate-200 focus:-[#111111] rounded-xl text-xs text-slate-700 focus:outline-none focus:ring-2 focus:-[#111111]/20 transition-all font-semibold"
               />
             </div>
 
@@ -318,7 +318,7 @@ export const JobsDashboard: React.FC = () => {
                 placeholder="City, region, or Remote..." 
                 value={location}
                 onChange={(e) => setLocation(e.target.value)}
-                className="w-full pl-11 pr-4 py-2.5 bg-slate-50 border border-slate-200 focus:border-emerald-500 rounded-xl text-xs text-slate-700 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 transition-all font-semibold"
+                className="w-full pl-11 pr-4 py-2.5 bg-slate-50 border border-slate-200 focus:-[#111111] rounded-xl text-xs text-slate-700 focus:outline-none focus:ring-2 focus:-[#111111]/20 transition-all font-semibold"
               />
             </div>
 
@@ -327,7 +327,7 @@ export const JobsDashboard: React.FC = () => {
               <select
                 value={experience}
                 onChange={(e) => setExperience(e.target.value)}
-                className="w-1/2 px-3 py-2.5 rounded-xl border border-slate-200 text-xs bg-slate-50 text-slate-750 focus:outline-none focus:border-emerald-500 cursor-pointer font-bold"
+                className="w-1/2 px-3 py-2.5 rounded-xl border border-slate-200 text-xs bg-slate-50 text-slate-750 focus:outline-none focus:-[#111111] cursor-pointer font-bold"
               >
                 <option value="">Experience</option>
                 <option value="Entry-level">Entry</option>
@@ -376,7 +376,7 @@ export const JobsDashboard: React.FC = () => {
                   }}
                   className={`p-4 border rounded-2xl cursor-pointer text-left transition-all ${
                     isSelected 
-                      ? 'bg-emerald-50/10 border-emerald-500 shadow-sm' 
+                      ? 'bg-[#F8F8F8] -[#111111] shadow-sm' 
                       : 'bg-white border-slate-200/80 hover:border-slate-350'
                   }`}
                 >
@@ -389,7 +389,7 @@ export const JobsDashboard: React.FC = () => {
                           className="w-10 h-10 rounded-lg object-cover border border-slate-100 shrink-0" 
                         />
                       ) : (
-                        <div className="w-10 h-10 rounded-lg bg-emerald-50 border border-emerald-100 flex items-center justify-center text-emerald-600 shrink-0">
+                        <div className="w-10 h-10 rounded-lg bg-[#F8F8F8] border border-[#E5E7EB] flex items-center justify-center -[#111111] shrink-0">
                           <Building size={16} />
                         </div>
                       )}
@@ -404,7 +404,7 @@ export const JobsDashboard: React.FC = () => {
 
                     <div className="flex flex-col items-end gap-1.5 shrink-0">
                       {job.ai_match_score !== undefined && (
-                        <span className="bg-emerald-50 text-emerald-700 text-[8px] font-bold px-2 py-0.5 rounded border border-emerald-100">
+                        <span className="bg-[#F8F8F8] -[#111111] text-[8px] font-bold px-2 py-0.5 rounded border border-[#E5E7EB]">
                           {job.ai_match_score}% Match
                         </span>
                       )}
@@ -425,7 +425,7 @@ export const JobsDashboard: React.FC = () => {
         <div className="lg:col-span-7">
           {detailLoading ? (
             <div className="bg-white border border-slate-200/80 rounded-2xl p-8 flex items-center justify-center h-full min-h-[400px]">
-              <div className="w-8 h-8 border-3 border-emerald-600 border-t-transparent rounded-full animate-spin" />
+              <div className="w-8 h-8 border-3 -[#111111] border-t-transparent rounded-full animate-spin" />
             </div>
           ) : selectedJob ? (
             <Card className="p-6 h-full flex flex-col justify-between gap-5 min-h-[400px] text-left">
@@ -440,7 +440,7 @@ export const JobsDashboard: React.FC = () => {
                         className="w-12 h-12 rounded-lg object-cover border border-slate-100 shrink-0" 
                       />
                     ) : (
-                      <div className="w-12 h-12 rounded-lg bg-emerald-50 border border-emerald-100 flex items-center justify-center text-emerald-600 shrink-0">
+                      <div className="w-12 h-12 rounded-lg bg-[#F8F8F8] border border-[#E5E7EB] flex items-center justify-center -[#111111] shrink-0">
                         <Building size={20} />
                       </div>
                     )}
@@ -459,7 +459,7 @@ export const JobsDashboard: React.FC = () => {
                       onClick={() => handleSaveToggle(selectedJob)}
                       className={`p-2 rounded-xl border transition-colors cursor-pointer ${
                         savedJobIds.includes(selectedJob.id)
-                          ? 'bg-emerald-50 border-emerald-200 text-emerald-600'
+                          ? 'bg-[#F8F8F8] border-[#E5E7EB] -[#111111]'
                           : 'bg-white border-slate-200 text-slate-400 hover:text-slate-700'
                       }`}
                     >
@@ -560,9 +560,9 @@ export const JobsDashboard: React.FC = () => {
                   }}
                   variant="outline"
                   size="sm"
-                  className="flex items-center gap-1.5 border-emerald-500 text-emerald-600 hover:bg-emerald-50/10"
+                  className="flex items-center gap-1.5 -[#111111] -[#111111] hover:bg-[#F8F8F8]"
                 >
-                  <Sparkles size={13} className="text-emerald-500" /> Optimize Resume
+                  <Sparkles size={13} className="-[#111111]" /> Optimize Resume
                 </Button>
                 <Button 
                   onClick={() => setIsApplyModalOpen(true)}
@@ -607,7 +607,7 @@ export const JobsDashboard: React.FC = () => {
                 placeholder="Introduce yourself or add portfolio links..."
                 value={applyNotes}
                 onChange={(e) => setApplyNotes(e.target.value)}
-                className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 focus:outline-none focus:border-emerald-500 h-28 font-medium"
+                className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 focus:outline-none focus:-[#111111] h-28 font-medium"
               />
             </div>
 
