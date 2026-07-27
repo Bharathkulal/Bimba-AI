@@ -42,7 +42,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
   const sidebarContent = (isDesktop: boolean) => {
     const showExpanded = isDesktop ? isHovered : true;
-    const springConfig = { type: 'spring', stiffness: 200, damping: 25 };
+    const springConfig: any = { type: 'spring', stiffness: 200, damping: 25 };
 
     return (
       <div className={`flex flex-col justify-between h-full py-6 px-4 transition-colors duration-300 ${
