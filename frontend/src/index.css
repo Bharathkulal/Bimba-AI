@@ -19,35 +19,9 @@
   
   --radius-card: 20px;
 
-  /* Map standard tailwind utility color names to CSS variables */
-  --color-white: var(--card-bg);
-  --color-slate-50: var(--bg-secondary);
-  --color-slate-100: var(--bg-secondary);
-  --color-slate-150: var(--border);
-  --color-slate-200: var(--border);
-  --color-slate-205: var(--border);
-  --color-slate-350: var(--border);
-  --color-slate-450: var(--text-secondary);
-  --color-slate-705: var(--text-primary);
-  --color-slate-750: var(--text-primary);
-  --color-slate-805: var(--text-primary);
-  --color-slate-655: var(--text-primary);
-  
-  --color-slate-800: var(--text-primary);
-  --color-slate-900: var(--text-primary);
-  --color-slate-700: var(--text-primary);
-  --color-slate-600: var(--text-primary);
-  
-  --color-slate-400: var(--text-secondary);
-  --color-slate-500: var(--text-secondary);
-  
-  --color-gray-900: var(--text-primary);
-  --color-gray-800: var(--text-primary);
-  --color-gray-700: var(--text-primary);
-  --color-gray-600: var(--text-primary);
-  --color-gray-400: var(--text-secondary);
-  --color-gray-500: var(--text-secondary);
-  
+  /* IMPORTANT: Do NOT remap --color-white. 
+     text-white must always be #fff regardless of theme. */
+
   --font-sans: 'Inter', sans-serif;
 }
 
@@ -178,12 +152,7 @@ body, aside, header, nav, main, table, th, td, button, input, select, textarea, 
   background-color: var(--bg-secondary) !important;
 }
 
-.dark aside,
-.dark .bg-white\/70,
-.dark header,
-.dark nav {
-  background-color: var(--sidebar-bg) !important;
-}
+/* Sidebar/header glass bg handled directly in components — no global override */
 
 /* Text Overrides */
 .dark .text-slate-900,
@@ -219,8 +188,7 @@ body, aside, header, nav, main, table, th, td, button, input, select, textarea, 
   color: var(--accent) !important;
 }
 
-/* Border Overrides */
-.dark .border,
+/* Border Overrides — scoped to non-custom borders only */
 .dark .border-slate-100,
 .dark .border-slate-150,
 .dark .border-slate-200,
@@ -241,30 +209,16 @@ body, aside, header, nav, main, table, th, td, button, input, select, textarea, 
   border-color: rgba(34, 197, 94, 0.2) !important;
 }
 
-/* Cards & Glassmorphism */
+/* Cards & Glassmorphism — scoped to utility classes only */
 .dark .glass-card,
 .dark .glass-panel,
-.dark .glass-panel-dark,
-.dark .rounded-3xl,
-.dark .bg-white.rounded-3xl {
+.dark .glass-panel-dark {
   background-color: var(--card-bg) !important;
   border-color: var(--border) !important;
   box-shadow: var(--glass-card-shadow) !important;
-  border-radius: 20px !important;
 }
 
-.dark .shadow-sm,
-.dark .shadow-md,
-.dark .shadow-lg,
-.dark .shadow-xl {
-  box-shadow: var(--glass-card-shadow) !important;
-}
-
-/* Card hover lift effect */
-.dark .rounded-3xl:hover {
-  transform: translateY(-4px) !important;
-  background-color: var(--card-hover-bg) !important;
-}
+/* Shadow overrides removed — handled inline per component */
 
 /* Hover Overrides */
 .dark .hover\:bg-slate-50:hover,
