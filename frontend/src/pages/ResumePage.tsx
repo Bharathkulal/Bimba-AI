@@ -8,10 +8,12 @@ import { Card } from '../components/Card';
 import { Button } from '../components/Button';
 import { StatsCard } from '../components/StatsCard';
 import { useUserStore } from '../store/userStore';
+import { useThemeStore } from '../store/themeStore';
 import { apiClient, API_BASE_URL } from '../services/api';
 import { analyticsService } from '../services/analytics';
 import type { ResumeAnalyticsItem, AtsData } from '../services/analytics';
 import { TemplateShowcase } from '../components/TemplateShowcase';
+import { UploadResumeWizard } from '../components/UploadResumeWizard';
 
 export const ResumePage: React.FC = () => {
   const navigate = useNavigate();
@@ -45,6 +47,9 @@ export const ResumePage: React.FC = () => {
 
   // Active Tab: 'resumes' | 'templates' | 'ats-scanner'
   const [activeSubTab, setActiveSubTab] = useState<'resumes' | 'templates' | 'ats-scanner'>('resumes');
+  const [showWizard, setShowWizard] = useState(false);
+  const { theme } = useThemeStore();
+  const isDark = theme === 'dark';
 
   useEffect(() => {
     setChatMessages([
@@ -265,7 +270,7 @@ export const ResumePage: React.FC = () => {
         </div>
         <div className="flex gap-3 shrink-0 relative z-10">
           <Button 
-            onClick={() => document.getElementById('resume-page-upload-input')?.click()}
+            onClick={() => setShowWizard(true)}
             variant="secondary" 
             size="sm"
             className="flex items-center gap-2"
@@ -594,6 +599,19 @@ export const ResumePage: React.FC = () => {
         )}
       </div>
 
+      {showWizard && (
+        <UploadResumeWizard 
+          onClose={() => {
+            setShowWizard(false);
+            fetchResumeData();
+          }}
+          onSuccess={() => {
+            setShowWizard(false);
+            fetchResumeData();
+          }}
+          isDark={isDark}
+        />
+      )}
     </div>
   );
 };
