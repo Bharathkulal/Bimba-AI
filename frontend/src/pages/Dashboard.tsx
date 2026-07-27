@@ -58,8 +58,19 @@ export const Dashboard: React.FC = () => {
 
   // Fetch dashboard summary analytics
   const fetchDashboardOverview = async () => {
+    // Check if we have cached data to prevent network lags on tab switches
+    const cached = (window as any).__dashboardCache;
+    if (cached) {
+      setDashboardData(cached.dash);
+      setAtsData(cached.ats);
+      setActivities(cached.act);
+      setResumes(cached.resList);
+      setLatestJobs(cached.latestJobs);
+      setApplications(cached.appsRes);
+      setIsLoading(false);
+    }
+
     try {
-      setIsLoading(true);
       const [dash, ats, act, resList, jobsRes, appsRes] = await Promise.all([
         analyticsService.getDashboard(),
         analyticsService.getAts(),
@@ -74,6 +85,11 @@ export const Dashboard: React.FC = () => {
       setResumes(resList);
       setLatestJobs(jobsRes.jobs);
       setApplications(appsRes);
+
+      // Cache the result
+      (window as any).__dashboardCache = {
+        dash, ats, act, resList, latestJobs: jobsRes.jobs, appsRes
+      };
     } catch (err) {
       console.error("Error loading dashboard overview:", err);
     } finally {
@@ -84,24 +100,6 @@ export const Dashboard: React.FC = () => {
   useEffect(() => {
     fetchDashboardOverview();
   }, []);
-
-  if (isLoading) {
-    return (
-      <div className="flex flex-col gap-6 min-h-screen pb-12 text-left animate-pulse">
-        <div className="h-32 w-full bg-slate-100 rounded-2xl" />
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
-          <div className="h-28 bg-slate-100 rounded-2xl" />
-          <div className="h-28 bg-slate-100 rounded-2xl" />
-          <div className="h-28 bg-slate-100 rounded-2xl" />
-          <div className="h-28 bg-slate-100 rounded-2xl" />
-        </div>
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <div className="lg:col-span-2 h-72 bg-slate-100 rounded-2xl" />
-          <div className="h-72 bg-slate-100 rounded-2xl" />
-        </div>
-      </div>
-    );
-  }
 
   // Derived statistics
   const bestResume = resumes.find(r => r.atsScore === Math.max(...resumes.map(x => x.atsScore))) || resumes[0];

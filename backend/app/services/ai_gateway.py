@@ -105,8 +105,8 @@ def execute_llm_call(provider: AIProvider, prompt: str) -> str:
     slug = provider.slug
     
     if slug == "gemini":
-        if model == "default":
-            model = "gemini-2.5-flash"
+        if model == "default" or model == "gemini-2.5-flash":
+            model = "gemini-2.0-flash"
         return call_gemini(api_key, model, prompt, temp, max_t, timeout)
     elif slug == "openai":
         if model == "default":

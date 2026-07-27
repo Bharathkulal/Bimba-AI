@@ -25,6 +25,8 @@ app = FastAPI(
 def on_startup():
     init_db()
 
+from fastapi.middleware.gzip import GZipMiddleware
+
 # CORS setup
 app.add_middleware(
     CORSMiddleware,
@@ -33,6 +35,8 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+# Gzip compression setup
+app.add_middleware(GZipMiddleware, minimum_size=1000)
 
 # Include Routers
 app.include_router(health_router, prefix=settings.API_V1_STR)

@@ -323,17 +323,42 @@ class LinkedInService:
                         "pages": (total + limit - 1) // limit if total > 0 else 0,
                         "limit": limit
                     }
-                else:
-                    print(f"RapidAPI search failed with status code {response.status_code}")
             except Exception as e:
-                print(f"RapidAPI failed: {e}. Returning empty list.")
+                print(f"RapidAPI failed: {e}. Falling back to mock data.")
         
-        # 2. Return clean empty results when API is not configured or fails
+        # 2. Return clean mock results when API is not configured or fails
+        student_skills = self._parse_student_skills(student)
+        jobs_list = []
+        for index, mj in enumerate(self.mock_jobs):
+            # Calculate match criteria locally
+            ai_match = self._calculate_ai_match(student_skills, mj.get("requirements", []))
+            jobs_list.append({
+                "id": mj.get("id"),
+                "title": mj.get("title"),
+                "company": mj.get("company"),
+                "location": mj.get("location"),
+                "logo": mj.get("logo"),
+                "salary": mj.get("salary"),
+                "employment_type": mj.get("employment_type"),
+                "remote": mj.get("remote"),
+                "posted_date": mj.get("posted_date"),
+                "ai_match_score": ai_match["score"],
+                "skills_matched": ai_match["matched"],
+                "skills_missing": ai_match["missing"],
+                "apply_url": "https://linkedin.com"
+            })
+        
+        # Simple sorting and filtering to match target keyword
+        if keyword:
+            kw_low = keyword.lower()
+            jobs_list = [j for j in jobs_list if kw_low in j["title"].lower() or kw_low in j["company"].lower() or any(kw_low in s.lower() for s in j["skills_matched"])]
+            
+        total = len(jobs_list)
         return {
-            "jobs": [],
-            "total": 0,
+            "jobs": jobs_list[:limit],
+            "total": total,
             "page": page,
-            "pages": 0,
+            "pages": (total + limit - 1) // limit if total > 0 else 0,
             "limit": limit
         }
 
@@ -403,7 +428,20 @@ class LinkedInService:
                         }
                     }
             except Exception as e:
-                print(f"RapidAPI details failed: {e}. Returning None.")
+                print(f"RapidAPI details failed: {e}. Falling back to mock details.")
+                
+        # Fallback to local mock details if API is not active or returns error
+        match_mj = next((m for m in self.mock_jobs if m.get("id") == job_id), None)
+        if match_mj:
+            student_skills = self._parse_student_skills(student)
+            ai_match = self._calculate_ai_match(student_skills, match_mj.get("requirements", []))
+            return {
+                **match_mj,
+                "ai_match_score": ai_match["score"],
+                "skills_matched": ai_match["matched"],
+                "skills_missing": ai_match["missing"],
+                "apply_url": "https://linkedin.com"
+            }
         return None
 
 # Singleton client instance

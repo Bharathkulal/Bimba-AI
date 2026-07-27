@@ -504,7 +504,7 @@ export const JobsDashboard: React.FC = () => {
                         Requirements
                       </h4>
                       <div className="flex flex-wrap gap-1.5">
-                        {selectedJob.requirements.map((req, index) => (
+                        {selectedJob.requirements.map((req: any, index: number) => (
                           <span 
                             key={index}
                             className="bg-slate-50 text-slate-700 border border-slate-200 text-[10px] font-semibold px-2 py-0.5 rounded-md"
@@ -515,23 +515,6 @@ export const JobsDashboard: React.FC = () => {
                       </div>
                     </div>
                   )}
-                </div>
-              </div>
-
-                  {/* Why this job match breakdown */}
-                  {selectedJob.match_breakdown && (
-                    <div className="mt-4 bg-emerald-50/10 border border-emerald-250 p-4 rounded-xl text-left">
-                      <span className="text-[10px] text-emerald-700 font-black uppercase tracking-wider block mb-2">🎯 Why we recommended this</span>
-                      <ul className="flex flex-col gap-1 text-xs font-semibold text-slate-700 list-inside">
-                        {selectedJob.match_breakdown.why_recommended.map((reason: string, idx: number) => (
-                          <li key={idx} className="flex items-center gap-1.5 text-emerald-800">
-                            <span className="text-emerald-600">✓</span> {reason}
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-                  )}
-
                   {/* Skills you should learn courses list */}
                   {selectedJob.match_breakdown && selectedJob.match_breakdown.missing_skills_learn && selectedJob.match_breakdown.missing_skills_learn.length > 0 && (
                     <div className="mt-4">

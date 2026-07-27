@@ -4,8 +4,15 @@ from pymongo import MongoClient, ASCENDING
 
 from app.core.config import settings
 
-# Initialize client
-client = MongoClient(settings.MONGODB_URI)
+# Initialize client with connection pooling optimizations
+client = MongoClient(
+    settings.MONGODB_URI,
+    maxPoolSize=100,
+    minPoolSize=10,
+    maxIdleTimeMS=30000,
+    waitQueueTimeoutMS=5000,
+    connectTimeoutMS=5000
+)
 db = client[settings.DATABASE_NAME]
 
 class MongoModel(dict):
@@ -116,8 +123,13 @@ def create_indexes():
     # Secondary index on user_id / student_id for resumes, jobs, applications, saved_jobs
     db.resumes.create_index([("student_id", ASCENDING)])
     db.resumes.create_index([("id", ASCENDING)], unique=True)
+    db.resumes.create_index([("skills.name", ASCENDING)])
+    db.resumes.create_index([("target_role", ASCENDING)])
     db.saved_jobs.create_index([("user_id", ASCENDING)])
+    db.saved_jobs.create_index([("job_id", ASCENDING)])
     db.job_applications.create_index([("user_id", ASCENDING)])
+    db.job_applications.create_index([("job_id", ASCENDING)])
+    db.job_applications.create_index([("status", ASCENDING)])
     db.notifications.create_index([("student_id", ASCENDING)])
     
     # Secondary index on created_at/date for ordering and analytics
@@ -125,5 +137,10 @@ def create_indexes():
     db.ai_usage_logs.create_index([("created_at", ASCENDING)])
     db.activity_logs.create_index([("created_at", ASCENDING)])
     db.download_logs.create_index([("created_at", ASCENDING)])
+    
+    # Versioning indexes
+    db.resume_versions.create_index([("resume_id", ASCENDING)])
+    db.resume_versions.create_index([("created_at", ASCENDING)])
+    db.resume_analyses.create_index([("resume_id", ASCENDING)])
     
     print("MongoDB indexes created successfully!")

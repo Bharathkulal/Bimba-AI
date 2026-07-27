@@ -41,20 +41,17 @@ export const DashboardLayout: React.FC = () => {
           onToggleMobileSidebar={() => {}}
         />
         
-        {/* Main Content Pane with Framer Motion Page Transition */}
+        {/* Main Content Pane with Lightweight Page Transition */}
         <main className="p-4 md:p-8 flex-grow pb-20 md:pb-8 w-full overflow-hidden">
-          <AnimatePresence mode="wait">
-            <motion.div
-              key={location.pathname}
-              initial={{ opacity: 0, y: 12 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -12 }}
-              transition={{ duration: 0.25, ease: 'easeInOut' }}
-              className="w-full h-full"
-            >
-              <Outlet />
-            </motion.div>
-          </AnimatePresence>
+          <motion.div
+            key={location.pathname}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.15 }}
+            className="w-full h-full"
+          >
+            <Outlet />
+          </motion.div>
         </main>
       </div>
 

@@ -244,16 +244,6 @@ export const ResumePage: React.FC = () => {
     fetchResumeData();
   };
 
-  if (isLoading) {
-    return (
-      <div className="flex flex-col gap-6 min-h-screen pb-12 text-left animate-pulse">
-        <div className="h-10 w-64 bg-slate-100 rounded-lg" />
-        <div className="h-44 w-full bg-slate-100 rounded-2xl" />
-        <div className="h-64 w-full bg-slate-100 rounded-2xl" />
-      </div>
-    );
-  }
-
   const bestResume = resumes.find(r => r.atsScore === Math.max(...resumes.map(x => x.atsScore))) || resumes[0];
   const resumeHealth = bestResume?.completion || 0;
   const atsScore = bestResume?.atsScore || 0;
