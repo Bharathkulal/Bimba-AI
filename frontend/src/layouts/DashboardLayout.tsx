@@ -22,10 +22,10 @@ export const DashboardLayout: React.FC = () => {
   ];
 
   return (
-    <div className="min-h-screen bg-background text-slate-900 flex overflow-x-hidden font-sans relative">
+    <div className="min-h-screen bg-[#F8F8F8] text-[#111111] flex overflow-x-hidden font-sans relative">
       {/* Decorative subtle gradient background blur */}
-      <div className="absolute top-[-10%] left-[-15%] w-[45%] h-[45%] rounded-full bg-emerald-50/5 blur-[120px] pointer-events-none z-0" />
-      <div className="absolute bottom-[-10%] right-[-15%] w-[40%] h-[40%] rounded-full bg-emerald-50/5 blur-[120px] pointer-events-none z-0" />
+      <div className="absolute top-[-10%] left-[-15%] w-[45%] h-[45%] rounded-full bg-[#111111]/3 blur-[120px] pointer-events-none z-0" />
+      <div className="absolute bottom-[-10%] right-[-15%] w-[40%] h-[40%] rounded-full bg-[#111111]/3 blur-[120px] pointer-events-none z-0" />
 
       {/* Floating Hover-Collapsible Sidebar (Desktop/Tablet) */}
       <Sidebar 
@@ -72,11 +72,11 @@ export const DashboardLayout: React.FC = () => {
               <Icon 
                 size={18} 
                 className={`transition-colors duration-200 ${
-                  isActive ? 'text-emerald-500' : 'text-slate-400'
+                  isActive ? 'text-[#111111]' : 'text-[#9CA3AF]'
                 }`}
               />
               <span className={`text-[8.5px] mt-1 tracking-wide transition-colors duration-200 ${
-                isActive ? 'text-emerald-500 font-extrabold' : 'text-slate-400 font-medium'
+                isActive ? 'text-[#111111] font-extrabold' : 'text-[#6B7280] font-medium'
               }`}>
                 {item.label}
               </span>
