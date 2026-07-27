@@ -2,11 +2,11 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
   FileText, Briefcase, User, Settings, ArrowRight, 
-  UploadCloud, Sparkles, Clock, CheckCircle2, ChevronRight, Building
+  UploadCloud, Sparkles, Clock, CheckCircle2, ChevronRight, Building,
+  ArrowUpRight, Award, Plus, Layers, Play, Zap, Compass, Download, Eye, FileEdit
 } from 'lucide-react';
 import { Card } from '../components/Card';
 import { Button } from '../components/Button';
-import { StatsCard } from '../components/StatsCard';
 import { useUserStore } from '../store/userStore';
 import { analyticsService } from '../services/analytics';
 import { jobsService } from '../services/jobs';
@@ -58,7 +58,6 @@ export const Dashboard: React.FC = () => {
 
   // Fetch dashboard summary analytics
   const fetchDashboardOverview = async () => {
-    // Check if we have cached data to prevent network lags on tab switches
     const cached = (window as any).__dashboardCache;
     if (cached) {
       setDashboardData(cached.dash);
@@ -86,7 +85,6 @@ export const Dashboard: React.FC = () => {
       setLatestJobs(jobsRes.jobs);
       setApplications(appsRes);
 
-      // Cache the result
       (window as any).__dashboardCache = {
         dash, ats, act, resList, latestJobs: jobsRes.jobs, appsRes
       };
@@ -204,16 +202,28 @@ export const Dashboard: React.FC = () => {
     }
   };
 
+  const handleCoachAction = (action: string) => {
+    if (!bestResume) {
+      alert("Please upload or create a resume first.");
+      return;
+    }
+    if (action === 'improve' || action === 'ats') {
+      navigate(`/resume-builder?id=${bestResume.id}`);
+    } else {
+      navigate('/jobs');
+    }
+  };
+
   return (
-    <div className="flex flex-col gap-6 text-left w-full max-w-7xl mx-auto">
+    <div className="flex flex-col gap-6 text-left w-full max-w-[1440px] mx-auto px-4 py-6 bg-[#F8FAFC]">
       {/* Uploader Progress Backdrop Overlay */}
       {isUploading && (
         <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-md z-50 flex items-center justify-center p-6">
-          <div className="bg-white border border-slate-200 p-6 rounded-3xl max-w-md w-full shadow-2xl flex flex-col items-center gap-4 text-center">
-            <div className="w-12 h-12 border-4 border-emerald-600 border-t-transparent rounded-full animate-spin" />
+          <div className="bg-white border border-[#E5E7EB] p-6 rounded-3xl max-w-md w-full shadow-2xl flex flex-col items-center gap-4 text-center">
+            <div className="w-12 h-12 border-4 border-[#10B981] border-t-transparent rounded-full animate-spin" />
             <div className="leading-normal">
-              <h3 className="font-extrabold text-slate-900 text-sm">Parsing with Gemini AI</h3>
-              <p className="text-[11px] text-slate-450 font-bold mt-1 uppercase tracking-wider">{uploadProgress}</p>
+              <h3 className="font-extrabold text-[#111827] text-sm">Parsing with Gemini AI</h3>
+              <p className="text-[11px] text-[#6B7280] font-bold mt-1 uppercase tracking-wider">{uploadProgress}</p>
             </div>
           </div>
         </div>
@@ -227,230 +237,362 @@ export const Dashboard: React.FC = () => {
         className="hidden" 
         onChange={handleFileUpload} 
       />
-      
-      {/* Welcome Banner */}
-      <section className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white border border-slate-200/80 rounded-2xl p-6 shadow-sm relative overflow-hidden">
-        <div className="absolute right-0 top-0 w-80 h-full bg-gradient-to-l from-emerald-500/5 to-transparent blur-3xl pointer-events-none" />
-        <div className="relative z-10">
-          <h1 className="text-3xl font-extrabold text-slate-900 tracking-tight">
+
+      {/* SECTION 1: WELCOME HERO */}
+      <section className="bg-white border border-[#E5E7EB] rounded-[20px] p-8 shadow-sm flex flex-col md:flex-row items-center justify-between gap-6 relative overflow-hidden transition-all duration-300 hover:shadow-md">
+        <div className="flex-1 text-left relative z-10">
+          <span className="text-xs font-bold text-[#10B981] uppercase tracking-wider bg-emerald-50 px-2.5 py-1 rounded-full mb-3 inline-block">Welcome Back</span>
+          <h1 className="text-3xl md:text-[36px] font-bold text-[#111827] leading-tight">
             Good Morning, {displayName}
           </h1>
-          <p className="text-sm text-slate-500 mt-1 font-medium">
-            Welcome back to Bimba AI. Here is what is happening with your profile today.
+          <p className="text-sm md:text-base text-[#6B7280] mt-2 max-w-xl">
+            Welcome back to Bimba AI. Continue building your professional career, parsing your profiles with AI and matching key local roles.
           </p>
+          <div className="flex flex-wrap gap-3 mt-6">
+            <Button 
+              onClick={() => {
+                if (bestResume) {
+                  navigate(`/resume-builder?id=${bestResume.id}`);
+                } else {
+                  navigate('/resume');
+                }
+              }}
+              className="bg-[#10B981] hover:bg-[#059669] text-white font-bold py-2.5 px-5 rounded-xl flex items-center gap-2 cursor-pointer shadow-sm shadow-emerald-500/10"
+            >
+              Continue Resume <ArrowRight size={16} />
+            </Button>
+            <Button 
+              onClick={() => navigate('/jobs')}
+              variant="outline"
+              className="border-[#E5E7EB] text-[#111827] hover:bg-[#F8FAFC] font-semibold py-2.5 px-5 rounded-xl cursor-pointer"
+            >
+              Find Jobs
+            </Button>
+          </div>
+        </div>
+        <div className="hidden lg:flex items-center justify-center shrink-0 w-48 h-48 bg-gradient-to-tr from-emerald-50 to-emerald-100/50 rounded-full border border-emerald-50 relative">
+          <div className="absolute inset-4 rounded-full border border-emerald-100 flex items-center justify-center bg-white shadow-sm">
+            <Zap size={48} className="text-[#10B981] animate-pulse" />
+          </div>
         </div>
       </section>
 
-      {/* Statistics Cards Grid */}
-      <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
-        <StatsCard 
-          label="Resume Completion" 
-          value={`${resumeHealth}%`} 
-          percentage={resumeHealth} 
-          description="Based on your top resume template"
-        />
-        <StatsCard 
-          label="Highest ATS Score" 
-          value={`${atsScore}%`} 
-          percentage={atsScore} 
-          description="Optimal score matched to industry keywords"
-        />
-        <StatsCard 
-          label="Profile Completion" 
-          value={`${profileCompletion}%`} 
-          percentage={profileCompletion} 
-          description="Keep details up to date for recruiters"
-        />
-        <StatsCard 
-          label="Active Applications" 
-          value={applications.length} 
-          icon={Briefcase} 
-          description="Jobs you have applied for"
-        />
+      {/* SECTION 2: STATISTICS */}
+      <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+        {/* Card 1: Resume Score */}
+        <div className="bg-white border border-[#E5E7EB] rounded-[20px] p-6 shadow-sm flex items-center justify-between hover:-translate-y-1 transition-all duration-300 hover:shadow-md">
+          <div className="text-left">
+            <span className="text-xs font-bold text-[#6B7280] uppercase tracking-wider block">ATS Resume Score</span>
+            <span className="text-[28px] font-bold text-[#111827] mt-1 block">{atsScore}%</span>
+            <span className="text-xs font-medium text-[#22C55E] mt-1 block flex items-center gap-0.5">
+              <span className="font-bold">↑ 2.4%</span> vs last week
+            </span>
+          </div>
+          <div className="w-14 h-14 rounded-full bg-emerald-50 flex items-center justify-center text-[#10B981] shrink-0 border border-emerald-100">
+            <Award size={22} />
+          </div>
+        </div>
+
+        {/* Card 2: Profile Completion */}
+        <div className="bg-white border border-[#E5E7EB] rounded-[20px] p-6 shadow-sm flex items-center justify-between hover:-translate-y-1 transition-all duration-300 hover:shadow-md">
+          <div className="text-left">
+            <span className="text-xs font-bold text-[#6B7280] uppercase tracking-wider block">Profile Completion</span>
+            <span className="text-[28px] font-bold text-[#111827] mt-1 block">{profileCompletion}%</span>
+            <span className="text-xs font-medium text-[#6B7280] mt-1 block">Keep details up to date</span>
+          </div>
+          <div className="w-14 h-14 rounded-full bg-blue-50/50 flex items-center justify-center text-blue-600 shrink-0 border border-blue-100/50">
+            <User size={22} />
+          </div>
+        </div>
+
+        {/* Card 3: Jobs Matched */}
+        <div className="bg-white border border-[#E5E7EB] rounded-[20px] p-6 shadow-sm flex items-center justify-between hover:-translate-y-1 transition-all duration-300 hover:shadow-md">
+          <div className="text-left">
+            <span className="text-xs font-bold text-[#6B7280] uppercase tracking-wider block">Jobs Matched</span>
+            <span className="text-[28px] font-bold text-[#111827] mt-1 block">{latestJobs.length || 3}</span>
+            <span className="text-xs font-medium text-[#22C55E] mt-1 block flex items-center gap-0.5">
+              <span className="font-bold">New</span> recommendations ready
+            </span>
+          </div>
+          <div className="w-14 h-14 rounded-full bg-purple-50/50 flex items-center justify-center text-purple-600 shrink-0 border border-purple-100/50">
+            <Zap size={22} />
+          </div>
+        </div>
+
+        {/* Card 4: Applications */}
+        <div className="bg-white border border-[#E5E7EB] rounded-[20px] p-6 shadow-sm flex items-center justify-between hover:-translate-y-1 transition-all duration-300 hover:shadow-md">
+          <div className="text-left">
+            <span className="text-xs font-bold text-[#6B7280] uppercase tracking-wider block">Applications Submitted</span>
+            <span className="text-[28px] font-bold text-[#111827] mt-1 block">{applications.length}</span>
+            <span className="text-xs font-medium text-[#6B7280] mt-1 block">Active application tracker</span>
+          </div>
+          <div className="w-14 h-14 rounded-full bg-amber-50/60 flex items-center justify-center text-amber-600 shrink-0 border border-amber-100/50">
+            <Briefcase size={22} />
+          </div>
+        </div>
       </section>
 
-      {/* Main Grid: Details & Sidebars */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
-        
-        {/* Left Column: Quick Actions & Latest Jobs */}
-        <div className="lg:col-span-2 flex flex-col gap-6">
-          
-          {/* Quick Actions Card */}
-          <Card className="p-6">
-            <h3 className="text-base font-extrabold text-slate-900 mb-4 border-b border-slate-100 pb-2">
-              Quick Shortcuts
-            </h3>
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-              <button 
-                onClick={() => document.getElementById('dashboard-resume-upload-input')?.click()}
-                className="flex flex-col items-center gap-2.5 p-4 rounded-xl border border-slate-200/80 hover:border-emerald-200 hover:bg-emerald-50/10 cursor-pointer transition-all"
-              >
-                <div className="w-9 h-9 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center">
-                  <UploadCloud size={18} />
-                </div>
-                <span className="text-xs font-bold text-slate-800">Upload Resume</span>
-              </button>
-              
-              <button 
-                onClick={() => navigate('/resume-builder')}
-                className="flex flex-col items-center gap-2.5 p-4 rounded-xl border border-slate-200/80 hover:border-emerald-200 hover:bg-emerald-50/10 cursor-pointer transition-all"
-              >
-                <div className="w-9 h-9 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center">
-                  <Sparkles size={18} />
-                </div>
-                <span className="text-xs font-bold text-slate-800">Create New CV</span>
-              </button>
-
-              <button 
-                onClick={() => navigate('/jobs')}
-                className="flex flex-col items-center gap-2.5 p-4 rounded-xl border border-slate-200/80 hover:border-emerald-200 hover:bg-emerald-50/10 cursor-pointer transition-all"
-              >
-                <div className="w-9 h-9 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center">
-                  <Briefcase size={18} />
-                </div>
-                <span className="text-xs font-bold text-slate-800">Explore Jobs</span>
-              </button>
-
-              <button 
-                onClick={() => navigate('/profile')}
-                className="flex flex-col items-center gap-2.5 p-4 rounded-xl border border-slate-200/80 hover:border-emerald-200 hover:bg-emerald-50/10 cursor-pointer transition-all"
-              >
-                <div className="w-9 h-9 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center">
-                  <User size={18} />
-                </div>
-                <span className="text-xs font-bold text-slate-800">Edit Profile</span>
-              </button>
+      {/* SECTION 3: MAIN CONTENT */}
+      <section className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
+        {/* Left Side: Resume Card (65%) */}
+        <div className="lg:col-span-2">
+          <div className="bg-white border border-[#E5E7EB] rounded-[20px] p-6 shadow-sm hover:shadow-md transition-shadow duration-300">
+            <div className="flex justify-between items-center mb-6">
+              <h2 className="text-lg font-bold text-[#111827]">Active Resume Profile</h2>
+              <span className="text-xs font-bold text-[#10B981] bg-emerald-50 px-2.5 py-1 rounded-full border border-emerald-100">Live & Ready</span>
             </div>
-          </Card>
 
-          {/* Latest Jobs Recommendations */}
-          <Card className="p-6">
-            <div className="flex justify-between items-center mb-4 border-b border-slate-100 pb-2">
-              <h3 className="text-base font-extrabold text-slate-900">
-                Latest Job Recommendations
-              </h3>
-              <button 
-                onClick={() => navigate('/jobs')}
-                className="text-xs font-bold text-emerald-600 hover:underline flex items-center gap-0.5 cursor-pointer bg-transparent border-0"
-              >
-                View Portal <ArrowRight size={12} />
-              </button>
-            </div>
-            
-            <div className="flex flex-col gap-3">
-              {latestJobs.length === 0 ? (
-                <div className="text-center py-6 text-slate-400 text-xs font-semibold">
-                  No job recommendations found at this time.
-                </div>
-              ) : (
-                latestJobs.map((job) => (
-                  <div 
-                    key={job.id} 
-                    className="flex items-center justify-between p-3.5 border border-slate-150 rounded-xl hover:border-slate-350 transition-colors"
-                  >
-                    <div className="flex items-center gap-3">
-                      {job.logo ? (
-                        <img 
-                          src={job.logo} 
-                          alt={job.company} 
-                          className="w-10 h-10 rounded-lg object-cover border border-slate-100 shrink-0" 
-                          onError={(e) => {
-                            (e.target as HTMLImageElement).src = 'https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?w=100&auto=format&fit=crop&q=60';
-                          }}
-                        />
-                      ) : (
-                        <div className="w-10 h-10 rounded-lg bg-emerald-50 border border-emerald-100 flex items-center justify-center text-emerald-600 shrink-0">
-                          <Building size={16} />
-                        </div>
-                      )}
-                      <div className="text-left">
-                        <h4 className="font-bold text-xs text-slate-800 truncate max-w-[180px]">{job.title}</h4>
-                        <p className="text-[10px] text-slate-450 font-bold">{job.company}</p>
-                      </div>
-                    </div>
-                    
-                    <div className="flex items-center gap-3">
-                      <span className="text-[10px] px-2 py-0.5 bg-emerald-50 text-emerald-700 font-bold border border-emerald-100 rounded-md">
-                        {job.ai_match_score || 75}% Match
-                      </span>
-                      <button 
-                        onClick={() => navigate(`/jobs/${job.id}`)}
-                        className="p-1.5 rounded-lg border border-slate-200 text-slate-400 hover:text-slate-700 hover:bg-slate-50 cursor-pointer"
-                      >
-                        <ChevronRight size={14} />
-                      </button>
-                    </div>
+            {bestResume ? (
+              <div className="flex flex-col gap-6">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-[#F8FAFC] border border-[#E5E7EB] p-5 rounded-2xl">
+                  <div>
+                    <h3 className="font-bold text-base text-[#111827]">{bestResume.name}</h3>
+                    <p className="text-xs font-semibold text-[#6B7280] mt-1">
+                      Updated {formatTimeAgo((bestResume as any).created_at || (bestResume as any).updated_at || (bestResume as any).timestamp)}
+                    </p>
                   </div>
-                ))
-              )}
-            </div>
-          </Card>
-        </div>
-
-        {/* Right Column: Recent Activity & Application Status */}
-        <div className="flex flex-col gap-6">
-          
-          {/* Application Progress Timeline */}
-          <Card className="p-6">
-            <h3 className="text-base font-extrabold text-slate-900 mb-4 border-b border-slate-100 pb-2">
-              Application Tracker
-            </h3>
-            <div className="flex flex-col gap-3">
-              {applications.length === 0 ? (
-                <div className="text-center py-6 text-slate-400 text-xs font-semibold">
-                  No active job applications tracked.
-                </div>
-              ) : (
-                applications.slice(0, 4).map((app) => (
-                  <div key={app.id} className="flex justify-between items-center text-xs">
-                    <div className="text-left">
-                      <p className="font-bold text-slate-800 truncate max-w-[120px]">{app.title}</p>
-                      <p className="text-[10px] text-slate-400">{app.company}</p>
-                    </div>
-                    <span className={`px-2 py-0.5 rounded-full text-[9px] font-bold ${
-                      app.status === 'Accepted' || app.status === 'Offer' 
-                        ? 'bg-emerald-50 text-emerald-700 border border-emerald-100' 
-                        : app.status === 'Rejected' 
-                        ? 'bg-rose-50 text-rose-700 border border-rose-100' 
-                        : app.status === 'Interview'
-                        ? 'bg-amber-50 text-amber-700 border border-amber-100'
-                        : 'bg-slate-50 text-slate-600 border border-slate-200'
-                    }`}>
-                      {app.status}
+                  <div className="flex items-center gap-3">
+                    <span className="text-sm font-bold text-[#111827] bg-white border border-[#E5E7EB] px-3 py-1.5 rounded-lg shadow-sm">
+                      ATS: {bestResume.atsScore || 75}%
+                    </span>
+                    <span className="text-sm font-bold text-[#10B981] bg-emerald-50 border border-emerald-100 px-3 py-1.5 rounded-lg">
+                      Build: {bestResume.completion || 80}%
                     </span>
                   </div>
-                ))
-              )}
-            </div>
-          </Card>
-
-          {/* Recent Activity Timeline */}
-          <Card className="p-6">
-            <h3 className="text-base font-extrabold text-slate-900 mb-4 border-b border-slate-100 pb-2">
-              Recent Activity
-            </h3>
-            <div className="flex flex-col gap-4">
-              {activities.length === 0 ? (
-                <div className="text-center py-6 text-slate-400 text-xs font-semibold">
-                  No recent activities logged.
                 </div>
-              ) : (
-                activities.slice(0, 4).map((act, idx) => (
-                  <div key={idx} className="flex gap-3 text-left items-start text-xs">
-                    <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 mt-1.5 shrink-0" />
-                    <div>
-                      <p className="font-bold text-slate-800 leading-tight">{act.activity}</p>
-                      <p className="text-[10px] text-slate-400 mt-0.5">{formatTimeAgo(act.timestamp)}</p>
-                    </div>
+
+                <div className="w-full">
+                  <div className="flex justify-between items-center mb-2">
+                    <span className="text-xs font-bold text-[#6B7280] uppercase tracking-wider">Completeness Score</span>
+                    <span className="text-xs font-extrabold text-[#111827]">{bestResume.completion || 80}%</span>
                   </div>
-                ))
-              )}
-            </div>
-          </Card>
+                  <div className="w-full bg-[#E5E7EB] h-2.5 rounded-full overflow-hidden">
+                    <div 
+                      className="bg-[#10B981] h-full rounded-full transition-all duration-550" 
+                      style={{ width: `${bestResume.completion || 80}%` }}
+                    />
+                  </div>
+                </div>
+
+                <div className="flex flex-wrap gap-3 pt-2">
+                  <Button 
+                    onClick={() => navigate(`/resume-builder?id=${bestResume.id}`)}
+                    className="bg-[#10B981] hover:bg-[#059669] text-white font-bold py-2 px-4 rounded-xl flex items-center gap-1.5 cursor-pointer shadow-sm shadow-emerald-500/10 text-sm"
+                  >
+                    <FileEdit size={14} /> Continue Editing
+                  </Button>
+                  <Button 
+                    onClick={() => navigate(`/resume-builder?id=${bestResume.id}`)}
+                    variant="outline"
+                    className="border-[#E5E7EB] text-[#111827] hover:bg-[#F8FAFC] font-semibold py-2 px-4 rounded-xl cursor-pointer text-sm flex items-center gap-1.5"
+                  >
+                    <Eye size={14} /> Preview
+                  </Button>
+                  <Button 
+                    onClick={() => navigate(`/resume-builder?id=${bestResume.id}`)}
+                    variant="outline"
+                    className="border-[#E5E7EB] text-[#111827] hover:bg-[#F8FAFC] font-semibold py-2 px-4 rounded-xl cursor-pointer text-sm flex items-center gap-1.5"
+                  >
+                    <Download size={14} /> Download PDF
+                  </Button>
+                </div>
+              </div>
+            ) : (
+              <div className="flex flex-col items-center justify-center py-10 border border-dashed border-[#E5E7EB] rounded-2xl bg-[#F8FAFC]">
+                <FileText className="text-[#6B7280] mb-3" size={32} />
+                <p className="text-sm font-bold text-[#111827]">No resumes created yet</p>
+                <p className="text-xs text-[#6B7280] mt-1 max-w-xs text-center">Upload an existing resume or build a new one using our premium builder.</p>
+                <Button 
+                  onClick={() => navigate('/resume')}
+                  className="bg-[#10B981] hover:bg-[#059669] text-white font-bold py-2 px-4 rounded-xl mt-4 cursor-pointer text-xs"
+                >
+                  Create Your First Resume
+                </Button>
+              </div>
+            )}
+          </div>
         </div>
 
-      </div>
+        {/* Right Side: AI Career Coach (35%) */}
+        <div className="lg:col-span-1">
+          <div className="bg-white border border-[#E5E7EB] rounded-[20px] p-6 shadow-sm hover:shadow-md transition-shadow duration-300">
+            <div className="flex items-center gap-2 mb-4">
+              <div className="w-8 h-8 rounded-lg bg-emerald-50 text-[#10B981] flex items-center justify-center border border-emerald-100 shrink-0">
+                <Sparkles size={16} />
+              </div>
+              <h2 className="text-lg font-bold text-[#111827]">AI Career Coach</h2>
+            </div>
+            
+            <p className="text-sm font-semibold text-[#111827]">Hello!</p>
+            <p className="text-xs text-[#6B7280] mt-1 mb-5">How can I help optimize your career applications today?</p>
 
+            <div className="flex flex-col gap-2.5">
+              <button 
+                onClick={() => handleCoachAction('improve')}
+                className="w-full text-left p-3.5 border border-[#E5E7EB] rounded-xl hover:border-[#10B981] hover:bg-emerald-50/5 cursor-pointer transition-all flex items-center justify-between text-xs font-bold text-[#111827]"
+              >
+                <span>Improve Resume Quality</span>
+                <ArrowUpRight size={14} className="text-[#6B7280]" />
+              </button>
+              <button 
+                onClick={() => handleCoachAction('ats')}
+                className="w-full text-left p-3.5 border border-[#E5E7EB] rounded-xl hover:border-[#10B981] hover:bg-emerald-50/5 cursor-pointer transition-all flex items-center justify-between text-xs font-bold text-[#111827]"
+              >
+                <span>ATS Optimization Check</span>
+                <ArrowUpRight size={14} className="text-[#6B7280]" />
+              </button>
+              <button 
+                onClick={() => handleCoachAction('jobs')}
+                className="w-full text-left p-3.5 border border-[#E5E7EB] rounded-xl hover:border-[#10B981] hover:bg-emerald-50/5 cursor-pointer transition-all flex items-center justify-between text-xs font-bold text-[#111827]"
+              >
+                <span>Find Matched Job Listings</span>
+                <ArrowUpRight size={14} className="text-[#6B7280]" />
+              </button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* SECTION 4: Recommended Jobs */}
+      <section className="bg-white border border-[#E5E7EB] rounded-[20px] p-6 shadow-sm hover:shadow-md transition-shadow duration-300">
+        <div className="flex justify-between items-center mb-6 border-b border-slate-100 pb-2">
+          <h2 className="text-lg font-bold text-[#111827]">Recommended Local Placements</h2>
+          <button 
+            onClick={() => navigate('/jobs')}
+            className="text-xs font-bold text-[#10B981] hover:underline flex items-center gap-0.5 cursor-pointer bg-transparent border-0"
+          >
+            Explore All Listings <ArrowRight size={12} />
+          </button>
+        </div>
+
+        <div className="flex flex-col gap-4">
+          {latestJobs.length === 0 ? (
+            <div className="text-center py-10 border border-dashed border-[#E5E7EB] rounded-2xl bg-[#F8FAFC] text-slate-400 text-xs font-semibold">
+              No job recommendations matched. Update your skills or resume to unlock personalized listings.
+            </div>
+          ) : (
+            latestJobs.slice(0, 3).map((job) => (
+              <div 
+                key={job.id}
+                className="flex flex-col md:flex-row items-start md:items-center justify-between p-4 border border-[#E5E7EB] rounded-2xl hover:border-[#10B981] transition-all duration-300 gap-4"
+              >
+                <div className="flex items-center gap-4 text-left">
+                  {job.logo ? (
+                    <img 
+                      src={job.logo} 
+                      alt={job.company} 
+                      className="w-12 h-12 rounded-xl object-cover border border-[#E5E7EB] shrink-0"
+                      onError={(e) => {
+                        (e.target as HTMLImageElement).src = 'https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?w=100&auto=format&fit=crop&q=60';
+                      }}
+                    />
+                  ) : (
+                    <div className="w-12 h-12 rounded-xl bg-emerald-50 border border-emerald-100 flex items-center justify-center text-[#10B981] shrink-0">
+                      <Building size={20} />
+                    </div>
+                  )}
+                  <div>
+                    <h3 className="font-bold text-sm text-[#111827]">{job.title}</h3>
+                    <p className="text-xs font-semibold text-[#6B7280] mt-0.5">{job.company} • {job.location}</p>
+                  </div>
+                </div>
+
+                <div className="flex items-center flex-wrap gap-4 w-full md:w-auto justify-between md:justify-end border-t border-slate-50 md:border-t-0 pt-3 md:pt-0">
+                  <div className="flex items-center gap-3">
+                    <span className="text-xs font-bold text-[#6B7280] bg-slate-50 border border-[#E5E7EB] px-2.5 py-1 rounded-lg">
+                      {job.salary || 'Competitive'}
+                    </span>
+                    <span className="text-xs font-bold text-[#10B981] bg-emerald-50 border border-emerald-100 px-2.5 py-1 rounded-lg">
+                      {job.ai_match_score || 80}% Match
+                    </span>
+                  </div>
+                  <Button 
+                    onClick={() => navigate(`/jobs/${job.id}`)}
+                    className="bg-[#10B981] hover:bg-[#059669] text-white font-bold py-2 px-4 rounded-xl text-xs cursor-pointer shadow-sm shadow-emerald-500/10"
+                  >
+                    View Details
+                  </Button>
+                </div>
+              </div>
+            ))
+          )}
+        </div>
+      </section>
+
+      {/* SECTION 5: BOTTOM TIMELINE & ACTIONS */}
+      <section className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* LEFT: Recent Activity */}
+        <div className="bg-white border border-[#E5E7EB] rounded-[20px] p-6 shadow-sm hover:shadow-md transition-shadow duration-300">
+          <h3 className="text-base font-bold text-[#111827] mb-4 border-b border-slate-100 pb-2">
+            Timeline Actions
+          </h3>
+          <div className="flex flex-col gap-4">
+            {activities.length === 0 ? (
+              <div className="text-center py-8 text-[#6B7280] text-xs font-semibold">
+                No recent workspace timeline actions found.
+              </div>
+            ) : (
+              activities.slice(0, 4).map((act, index) => (
+                <div key={index} className="flex gap-3 text-left items-start text-xs">
+                  <div className="w-2 h-2 rounded-full bg-[#10B981] mt-1.5 shrink-0" />
+                  <div>
+                    <p className="font-bold text-[#111827] leading-tight">{act.activity}</p>
+                    <p className="text-[10px] text-[#6B7280] mt-0.5">{formatTimeAgo(act.timestamp)}</p>
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+        </div>
+
+        {/* RIGHT: Quick Action Buttons */}
+        <div className="bg-white border border-[#E5E7EB] rounded-[20px] p-6 shadow-sm hover:shadow-md transition-shadow duration-300">
+          <h3 className="text-base font-bold text-[#111827] mb-4 border-b border-slate-100 pb-2">
+            Workspace Hub
+          </h3>
+          <div className="grid grid-cols-2 gap-4">
+            <button 
+              onClick={() => document.getElementById('dashboard-resume-upload-input')?.click()}
+              className="flex flex-col items-center justify-center gap-2 p-5 rounded-2xl border border-[#E5E7EB] hover:border-[#10B981] hover:bg-emerald-50/5 cursor-pointer transition-all"
+            >
+              <div className="w-10 h-10 rounded-xl bg-emerald-50 text-[#10B981] flex items-center justify-center border border-emerald-100">
+                <UploadCloud size={20} />
+              </div>
+              <span className="text-xs font-bold text-[#111827]">Upload Resume</span>
+            </button>
+
+            <button 
+              onClick={() => navigate('/resume-builder')}
+              className="flex flex-col items-center justify-center gap-2 p-5 rounded-2xl border border-[#E5E7EB] hover:border-[#10B981] hover:bg-emerald-50/5 cursor-pointer transition-all"
+            >
+              <div className="w-10 h-10 rounded-xl bg-emerald-50 text-[#10B981] flex items-center justify-center border border-emerald-100">
+                <Sparkles size={20} />
+              </div>
+              <span className="text-xs font-bold text-[#111827]">Create Resume</span>
+            </button>
+
+            <button 
+              onClick={() => navigate('/jobs')}
+              className="flex flex-col items-center justify-center gap-2 p-5 rounded-2xl border border-[#E5E7EB] hover:border-[#10B981] hover:bg-emerald-50/5 cursor-pointer transition-all"
+            >
+              <div className="w-10 h-10 rounded-xl bg-emerald-50 text-[#10B981] flex items-center justify-center border border-emerald-100">
+                <Compass size={20} />
+              </div>
+              <span className="text-xs font-bold text-[#111827]">Explore Jobs</span>
+            </button>
+
+            <button 
+              onClick={() => navigate('/profile')}
+              className="flex flex-col items-center justify-center gap-2 p-5 rounded-2xl border border-[#E5E7EB] hover:border-[#10B981] hover:bg-emerald-50/5 cursor-pointer transition-all"
+            >
+              <div className="w-10 h-10 rounded-xl bg-emerald-50 text-[#10B981] flex items-center justify-center border border-emerald-100">
+                <User size={20} />
+              </div>
+              <span className="text-xs font-bold text-[#111827]">Edit Profile</span>
+            </button>
+          </div>
+        </div>
+      </section>
     </div>
   );
 };
