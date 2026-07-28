@@ -23,7 +23,6 @@ from app.models.academic import Department, Subject
 from app.models.analytics import ActivityLog
 from app.api.analytics import get_current_student
 from app.core.mongodb import MongoModel, get_next_sequence
-from app.services.ai_gateway import run_ai_gateway_request
 from app.ai.resume_prompts import (
     RESUME_PARSE_PROMPT, RESUME_ANALYZE_PROMPT, RESUME_IMPROVE_PROMPT,
     JD_MATCH_PROMPT, ATS_OPTIMIZATION_PROMPT
