@@ -42,51 +42,9 @@ router = APIRouter(prefix="/resume-studio", tags=["AI Resume Studio"])
 
 class ResumeCreateRequest(BaseModel):
     name: str
-    resume_type: str  # "Fresher" | "Internship" | "Experienced"
-    target_role: str
-    career_objective: str
-    preferred_industry: str
-    language: str
-    expected_salary: Optional[str] = None
-    visibility: str  # "Public" | "Private"
 
-class EducationSchema(BaseModel):
-    institution: str
-    degree: str
-    board: Optional[str] = None
-    percentage: Optional[float] = None
-    cgpa: Optional[float] = None
-    passing_year: int
-    achievements: Optional[str] = None
-
-class ExperienceSchema(BaseModel):
-    company: str
-    position: str
-    duration: str
-    description: str
-    achievements: Optional[str] = None
-
-class ProjectSchema(BaseModel):
-    name: str
-    description: str
-    tech_stack: str
-    role: Optional[str] = None
-    duration: Optional[str] = None
-    github_link: Optional[str] = None
-    live_demo: Optional[str] = None
-    achievements: Optional[str] = None
-
-class SkillSchema(BaseModel):
-    category: str
-    name: str
-    level: int
-
-class CertificateSchema(BaseModel):
-    name: str
-    organization: str
-    issue_date: Optional[str] = None
-    credential_id: Optional[str] = None
-    credential_url: Optional[str] = None
+    class Config:
+        extra = "allow"
 
 class AISummaryRequest(BaseModel):
     role: str
@@ -128,12 +86,12 @@ def get_student_resumes(student: Student = Depends(get_current_student), db: Any
         result.append({
             "id": r.id,
             "name": r.name,
-            "resume_type": r.resume_type,
-            "target_role": r.target_role,
-            "status": r.status,
-            "ats_score": r.ats_score,
+            "resume_type": r.get("resume_type") or "Fresher",
+            "target_role": r.get("target_role") or "Software Engineer",
+            "status": r.get("status") or "Draft",
+            "ats_score": r.get("ats_score") or 72,
             "updated_at": r.updated_at.isoformat() if r.updated_at else datetime.utcnow().isoformat(),
-            "visibility": r.visibility,
+            "visibility": r.get("visibility") or "Private",
             "downloads_count": downloads
         })
     return result
@@ -142,12 +100,7 @@ def get_student_resumes(student: Student = Depends(get_current_student), db: Any
 def get_resume_detail(id: int, student: Student = Depends(get_current_student), db: Any = Depends(get_db)):
     resume = verify_ownership(id, student.id, db)
     
-    # Retrieve nested attributes or default to empty list
-    education = resume.get("education", [])
-    experience = resume.get("experience", [])
-    projects = resume.get("projects", [])
-    skills = resume.get("skills", [])
-    certificates = resume.get("certificates", [])
+    resume_data = resume.get("resume", {})
     
     # Retrieve ATS and Readiness docs
     ats_doc = db.resume_ats.find_one({"resume_id": id})
@@ -156,21 +109,45 @@ def get_resume_detail(id: int, student: Student = Depends(get_current_student), 
     readiness_doc = db.career_readiness.find_one({"resume_id": id})
     readiness = CareerReadiness(readiness_doc) if readiness_doc else None
 
-    return {
-        "master": {
+    # Merge dynamic resume data with key metadata fields
+    response = {
+        **resume_data,
+        "id": resume.id,
+        "student_id": resume.student_id,
+        "userId": resume.student_id,
+        "name": resume.name,
+        "resume_type": resume.get("resume_type") or "Fresher",
+        "target_role": resume.get("target_role") or "Software Engineer",
+        "status": resume.get("status") or "Draft",
+        "ats_score": resume.get("ats_score") or 72,
+        "visibility": resume.get("visibility") or "Private",
+        "template_id": resume.get("template_id") or "celestial",
+        "color_theme": resume.get("color_theme") or "blue",
+        "updated_at": resume.updated_at.isoformat() if resume.updated_at else datetime.utcnow().isoformat(),
+        "ats": ats,
+        "career_readiness": readiness
+    }
+    
+    # Backward compatibility fallbacks
+    for k in ["education", "experience", "projects", "skills", "certificates"]:
+        if k not in response:
+            response[k] = resume.get(k) or []
+            
+    if "master" not in response:
+        response["master"] = {
             "id": resume.id,
             "name": resume.name,
-            "resume_type": resume.resume_type,
-            "target_role": resume.target_role,
-            "career_objective": resume.career_objective,
-            "preferred_industry": resume.preferred_industry,
-            "language": resume.language,
-            "expected_salary": resume.expected_salary,
-            "visibility": resume.visibility,
-            "template_id": resume.template_id,
-            "color_theme": resume.color_theme,
-            "status": resume.status,
-            "ats_score": resume.ats_score,
+            "resume_type": resume.get("resume_type") or "Fresher",
+            "target_role": resume.get("target_role") or "Software Engineer",
+            "career_objective": resume.get("career_objective") or "",
+            "preferred_industry": resume.get("preferred_industry") or "",
+            "language": resume.get("language") or "English",
+            "expected_salary": resume.get("expected_salary"),
+            "visibility": resume.get("visibility") or "Private",
+            "template_id": resume.get("template_id") or "celestial",
+            "color_theme": resume.get("color_theme") or "blue",
+            "status": resume.get("status") or "Draft",
+            "ats_score": resume.get("ats_score") or 72,
             "phone": resume.get("phone") or "",
             "address": resume.get("address") or "",
             "linkedin": resume.get("linkedin") or "",
@@ -179,18 +156,11 @@ def get_resume_detail(id: int, student: Student = Depends(get_current_student), 
             "website": resume.get("website") or "",
             "summary": resume.get("summary") or "",
             "updated_at": resume.updated_at.isoformat() if resume.updated_at else datetime.utcnow().isoformat()
-        },
-        "education": education,
-        "experience": experience,
-        "projects": projects,
-        "skills": skills,
-        "certificates": certificates,
-        "ats": ats,
-        "career_readiness": readiness
-    }
+        }
+    return response
 
 @router.post("/create")
-def create_resume(payload: ResumeCreateRequest, student: Student = Depends(get_current_student), db: Any = Depends(get_db)):
+def create_resume(payload: dict, student: Student = Depends(get_current_student), db: Any = Depends(get_db)):
     next_id = get_next_sequence("resumes")
     
     # Initialize default education from student database
@@ -212,29 +182,52 @@ def create_resume(payload: ResumeCreateRequest, student: Student = Depends(get_c
     resume_doc = {
         "id": next_id,
         "student_id": student.id,
-        "name": payload.name,
-        "resume_type": payload.resume_type,
-        "target_role": payload.target_role,
-        "career_objective": payload.career_objective,
-        "preferred_industry": payload.preferred_industry,
-        "language": payload.language,
-        "expected_salary": payload.expected_salary,
-        "visibility": payload.visibility,
+        "userId": student.id,
+        "name": payload.get("name") or "New Resume",
+        "resume_type": payload.get("resume_type") or "Fresher",
+        "target_role": payload.get("target_role") or "Software Engineer",
+        "career_objective": payload.get("career_objective") or "",
+        "preferred_industry": payload.get("preferred_industry") or "",
+        "language": payload.get("language") or "English",
+        "expected_salary": payload.get("expected_salary"),
+        "visibility": payload.get("visibility") or "Private",
         "status": "Draft",
-        "template_id": "celestial",
-        "color_theme": "blue",
+        "template_id": payload.get("template_id") or "celestial",
+        "color_theme": payload.get("color_theme") or "blue",
         "ats_score": 72,
         
-        # Sub sections nested inside
-        "education": default_education,
-        "experience": [],
-        "projects": [],
-        "skills": [],
-        "certificates": [],
+        # Nested dynamic resume structure
+        "resume": payload,
         
         "created_at": datetime.utcnow(),
         "updated_at": datetime.utcnow()
     }
+    
+    # Ensure default fields exist in the nested resume structure for compat
+    if "education" not in resume_doc["resume"]:
+        resume_doc["resume"]["education"] = default_education
+    if "experience" not in resume_doc["resume"]:
+        resume_doc["resume"]["experience"] = []
+    if "projects" not in resume_doc["resume"]:
+        resume_doc["resume"]["projects"] = []
+    if "skills" not in resume_doc["resume"]:
+        resume_doc["resume"]["skills"] = []
+    if "certificates" not in resume_doc["resume"]:
+        resume_doc["resume"]["certificates"] = []
+    if "master" not in resume_doc["resume"]:
+        resume_doc["resume"]["master"] = {
+            "name": resume_doc["name"],
+            "resume_type": resume_doc["resume_type"],
+            "target_role": resume_doc["target_role"],
+            "career_objective": resume_doc["career_objective"],
+            "preferred_industry": resume_doc["preferred_industry"],
+            "language": resume_doc["language"],
+            "expected_salary": resume_doc["expected_salary"],
+            "visibility": resume_doc["visibility"],
+            "template_id": resume_doc["template_id"],
+            "color_theme": resume_doc["color_theme"]
+        }
+        
     print("[MongoDB] Saving resume...")
     try:
         db.resumes.insert_one(resume_doc)
@@ -275,38 +268,19 @@ def create_resume(payload: ResumeCreateRequest, student: Student = Depends(get_c
         db.activity_logs.insert_one({
             "id": get_next_sequence("activity_logs"),
             "student_id": student.id,
-            "activity": f"Resume Uploaded" if payload.visibility == "Private" and "AI Parsed" in payload.name else f"Resume Created",
+            "activity": f"Resume Uploaded" if payload.get("visibility") == "Private" and "AI Parsed" in payload.get("name", "") else f"Resume Created",
             "created_at": datetime.utcnow()
         })
     except Exception as e:
         print(f"[MongoDB Error] Activity log insert failed: {e}")
 
     # Save original version state
-    state = {
-        "master": {
-            "name": payload.name,
-            "resume_type": payload.resume_type,
-            "target_role": payload.target_role,
-            "career_objective": payload.career_objective,
-            "preferred_industry": payload.preferred_industry,
-            "language": payload.language,
-            "expected_salary": payload.expected_salary,
-            "visibility": payload.visibility,
-            "template_id": "celestial",
-            "color_theme": "blue"
-        },
-        "education": default_education,
-        "experience": [],
-        "projects": [],
-        "skills": [],
-        "certificates": []
-    }
     db.resume_versions.insert_one({
         "id": get_next_sequence("resume_versions"),
         "resume_id": next_id,
         "version_number": 1,
         "name": "Original",
-        "data": json.dumps(state),
+        "data": json.dumps(resume_doc["resume"]),
         "ats_score": 72,
         "created_at": datetime.utcnow()
     })
@@ -317,14 +291,28 @@ def create_resume(payload: ResumeCreateRequest, student: Student = Depends(get_c
 def update_resume(id: int, payload: dict, student: Student = Depends(get_current_student), db: Any = Depends(get_db)):
     verify_ownership(id, student.id, db)
     
-    # Update fields dynamically
-    update_fields = {}
-    for key, val in payload.items():
-        if key not in ["education", "experience", "projects", "skills", "certificates"]:
-            update_fields[key] = val
-    update_fields["updated_at"] = datetime.utcnow()
+    # Save the payload exactly as received into the dynamic resume field
+    # Also extract any root-level metadata if sent in payload
+    update_fields = {
+        "updated_at": datetime.utcnow()
+    }
     
-    db.resumes.update_one({"id": id}, {"$set": update_fields})
+    # Root level helpers
+    for key in ["name", "resume_type", "target_role", "visibility", "template_id", "color_theme", "status", "ats_score"]:
+        if key in payload:
+            update_fields[key] = payload[key]
+        elif "master" in payload and key in payload["master"]:
+            update_fields[key] = payload["master"][key]
+            
+    db.resumes.update_one(
+        {"id": id},
+        {
+            "$set": {
+                "resume": payload,
+                **update_fields
+            }
+        }
+    )
     return {"success": True}
 
 @router.delete("/{id}")
@@ -341,30 +329,25 @@ def duplicate_resume(id: int, student: Student = Depends(get_current_student), d
     resume = verify_ownership(id, student.id, db)
     next_id = get_next_sequence("resumes")
     
-    # Duplicate lists with new unique IDs
-    education = resume.get("education", [])
-    for edu in education:
-        edu["id"] = get_next_sequence("resume_education")
-        
-    experience = resume.get("experience", [])
-    for exp in experience:
-        exp["id"] = get_next_sequence("resume_experience")
-        
-    projects = resume.get("projects", [])
-    for proj in projects:
-        proj["id"] = get_next_sequence("resume_project")
-        
-    skills = resume.get("skills", [])
-    for skill in skills:
-        skill["id"] = get_next_sequence("resume_skill")
-        
-    certificates = resume.get("certificates", [])
-    for cert in certificates:
-        cert["id"] = get_next_sequence("resume_certificate")
-        
+    resume_data = resume.get("resume", {}).copy()
+    
+    # Map raw lists ensuring nested child item IDs exist
+    for key in ["education", "experience", "projects", "skills", "certificates", "certifications"]:
+        if key in resume_data and isinstance(resume_data[key], list):
+            new_list = []
+            for item in resume_data[key]:
+                if isinstance(item, dict):
+                    copied_item = item.copy()
+                    copied_item["id"] = get_next_sequence(f"resume_{key[:-1] if key.endswith('s') else key}")
+                    new_list.append(copied_item)
+                else:
+                    new_list.append(item)
+            resume_data[key] = new_list
+            
     new_doc = {
         "id": next_id,
         "student_id": student.id,
+        "userId": student.id,
         "name": f"Copy of {resume.name}",
         "resume_type": resume.resume_type,
         "target_role": resume.target_role,
@@ -377,11 +360,7 @@ def duplicate_resume(id: int, student: Student = Depends(get_current_student), d
         "color_theme": resume.color_theme,
         "status": "Draft",
         "ats_score": resume.ats_score,
-        "education": education,
-        "experience": experience,
-        "projects": projects,
-        "skills": skills,
-        "certificates": certificates,
+        "resume": resume_data,
         "created_at": datetime.utcnow(),
         "updated_at": datetime.utcnow()
     }
@@ -414,6 +393,7 @@ def archive_resume(id: int, student: Student = Depends(get_current_student), db:
 
 # --- SUB-SECTIONS ENDPOINTS ---
 
+
 @router.post("/{id}/education")
 def add_education(id: int, payload: EducationSchema, student: Student = Depends(get_current_student), db: Any = Depends(get_db)):
     verify_ownership(id, student.id, db)
@@ -429,148 +409,109 @@ def add_education(id: int, payload: EducationSchema, student: Student = Depends(
     )
     return {"success": True}
 
-@router.delete("/education/{edu_id}")
-def delete_education(edu_id: int, student: Student = Depends(get_current_student), db: Any = Depends(get_db)):
-    resume_doc = db.resumes.find_one({"education.id": edu_id})
-    if resume_doc:
-        verify_ownership(resume_doc["id"], student.id, db)
-        db.resumes.update_one(
-            {"_id": resume_doc["_id"]},
-            {
-                "$pull": {"education": {"id": edu_id}},
-                "$set": {"updated_at": datetime.utcnow()}
-            }
-        )
-    return {"success": True}
-
-@router.post("/{id}/experience")
-def add_experience(id: int, payload: ExperienceSchema, student: Student = Depends(get_current_student), db: Any = Depends(get_db)):
-    verify_ownership(id, student.id, db)
-    next_exp_id = get_next_sequence("resume_experience")
-    
-    new_exp = {"id": next_exp_id, **payload.model_dump()}
+# Helper function to append item to dynamic list in resume
+def dynamic_add_item(id: int, sec_key: str, payload: dict, seq_name: str, db: Any):
+    resume_doc = db.resumes.find_one({"id": id})
+    if not resume_doc:
+        return
+    resume_data = resume_doc.get("resume", {})
+    if sec_key not in resume_data or not isinstance(resume_data[sec_key], list):
+        resume_data[sec_key] = []
+        
+    if "id" not in payload:
+        payload["id"] = get_next_sequence(seq_name)
+        
+    if sec_key == "skills":
+        # Check if existing skill
+        existing_idx = next((idx for idx, s in enumerate(resume_data[sec_key]) if isinstance(s, dict) and s.get("name") == payload.get("name")), None)
+        if existing_idx is not None:
+            resume_data[sec_key][existing_idx]["level"] = payload.get("level", 3)
+        else:
+            resume_data[sec_key].append(payload)
+    else:
+        resume_data[sec_key].append(payload)
+        
     db.resumes.update_one(
         {"id": id},
         {
-            "$push": {"experience": new_exp},
-            "$set": {"updated_at": datetime.utcnow()}
+            "$set": {
+                "resume": resume_data,
+                "updated_at": datetime.utcnow()
+            }
         }
     )
+
+# Helper function to delete item from dynamic list in resume
+def dynamic_delete_item(sec_key: str, item_id: int, student_id: int, db: Any):
+    resume_doc = db.resumes.find_one({f"resume.{sec_key}.id": item_id})
+    if resume_doc:
+        verify_ownership(resume_doc["id"], student_id, db)
+        resume_data = resume_doc.get("resume", {})
+        if sec_key in resume_data and isinstance(resume_data[sec_key], list):
+            resume_data[sec_key] = [item for item in resume_data[sec_key] if isinstance(item, dict) and item.get("id") != item_id]
+            db.resumes.update_one(
+                {"_id": resume_doc["_id"]},
+                {
+                    "$set": {
+                        "resume": resume_data,
+                        "updated_at": datetime.utcnow()
+                    }
+                }
+            )
+
+@router.post("/{id}/education")
+def add_education(id: int, payload: dict, student: Student = Depends(get_current_student), db: Any = Depends(get_db)):
+    verify_ownership(id, student.id, db)
+    dynamic_add_item(id, "education", payload, "resume_education", db)
+    return {"success": True}
+
+@router.delete("/education/{edu_id}")
+def delete_education(edu_id: int, student: Student = Depends(get_current_student), db: Any = Depends(get_db)):
+    dynamic_delete_item("education", edu_id, student.id, db)
+    return {"success": True}
+
+@router.post("/{id}/experience")
+def add_experience(id: int, payload: dict, student: Student = Depends(get_current_student), db: Any = Depends(get_db)):
+    verify_ownership(id, student.id, db)
+    dynamic_add_item(id, "experience", payload, "resume_experience", db)
     return {"success": True}
 
 @router.delete("/experience/{exp_id}")
 def delete_experience(exp_id: int, student: Student = Depends(get_current_student), db: Any = Depends(get_db)):
-    resume_doc = db.resumes.find_one({"experience.id": exp_id})
-    if resume_doc:
-        verify_ownership(resume_doc["id"], student.id, db)
-        db.resumes.update_one(
-            {"_id": resume_doc["_id"]},
-            {
-                "$pull": {"experience": {"id": exp_id}},
-                "$set": {"updated_at": datetime.utcnow()}
-            }
-        )
+    dynamic_delete_item("experience", exp_id, student.id, db)
     return {"success": True}
 
 @router.post("/{id}/project")
-def add_project(id: int, payload: ProjectSchema, student: Student = Depends(get_current_student), db: Any = Depends(get_db)):
+def add_project(id: int, payload: dict, student: Student = Depends(get_current_student), db: Any = Depends(get_db)):
     verify_ownership(id, student.id, db)
-    next_proj_id = get_next_sequence("resume_project")
-    
-    new_proj = {"id": next_proj_id, **payload.model_dump()}
-    db.resumes.update_one(
-        {"id": id},
-        {
-            "$push": {"projects": new_proj},
-            "$set": {"updated_at": datetime.utcnow()}
-        }
-    )
+    dynamic_add_item(id, "projects", payload, "resume_project", db)
     return {"success": True}
 
 @router.delete("/project/{proj_id}")
 def delete_project(proj_id: int, student: Student = Depends(get_current_student), db: Any = Depends(get_db)):
-    resume_doc = db.resumes.find_one({"projects.id": proj_id})
-    if resume_doc:
-        verify_ownership(resume_doc["id"], student.id, db)
-        db.resumes.update_one(
-            {"_id": resume_doc["_id"]},
-            {
-                "$pull": {"projects": {"id": proj_id}},
-                "$set": {"updated_at": datetime.utcnow()}
-            }
-        )
+    dynamic_delete_item("projects", proj_id, student.id, db)
     return {"success": True}
 
 @router.post("/{id}/skill")
-def add_skill(id: int, payload: SkillSchema, student: Student = Depends(get_current_student), db: Any = Depends(get_db)):
-    resume = verify_ownership(id, student.id, db)
-    
-    skills = resume.get("skills", [])
-    existing_idx = next((idx for idx, s in enumerate(skills) if s.get("name") == payload.name), None)
-    
-    if existing_idx is not None:
-        db.resumes.update_one(
-            {"id": id, "skills.name": payload.name},
-            {
-                "$set": {
-                    "skills.$.level": payload.level,
-                    "updated_at": datetime.utcnow()
-                }
-            }
-        )
-    else:
-        next_skill_id = get_next_sequence("resume_skill")
-        new_skill = {"id": next_skill_id, **payload.model_dump()}
-        db.resumes.update_one(
-            {"id": id},
-            {
-                "$push": {"skills": new_skill},
-                "$set": {"updated_at": datetime.utcnow()}
-            }
-        )
+def add_skill(id: int, payload: dict, student: Student = Depends(get_current_student), db: Any = Depends(get_db)):
+    verify_ownership(id, student.id, db)
+    dynamic_add_item(id, "skills", payload, "resume_skill", db)
     return {"success": True}
 
 @router.delete("/skill/{skill_id}")
 def delete_skill(skill_id: int, student: Student = Depends(get_current_student), db: Any = Depends(get_db)):
-    resume_doc = db.resumes.find_one({"skills.id": skill_id})
-    if resume_doc:
-        verify_ownership(resume_doc["id"], student.id, db)
-        db.resumes.update_one(
-            {"_id": resume_doc["_id"]},
-            {
-                "$pull": {"skills": {"id": skill_id}},
-                "$set": {"updated_at": datetime.utcnow()}
-            }
-        )
+    dynamic_delete_item("skills", skill_id, student.id, db)
     return {"success": True}
 
 @router.post("/{id}/certificate")
-def add_certificate(id: int, payload: CertificateSchema, student: Student = Depends(get_current_student), db: Any = Depends(get_db)):
+def add_certificate(id: int, payload: dict, student: Student = Depends(get_current_student), db: Any = Depends(get_db)):
     verify_ownership(id, student.id, db)
-    next_cert_id = get_next_sequence("resume_certificate")
-    
-    new_cert = {"id": next_cert_id, **payload.model_dump()}
-    db.resumes.update_one(
-        {"id": id},
-        {
-            "$push": {"certificates": new_cert},
-            "$set": {"updated_at": datetime.utcnow()}
-        }
-    )
+    dynamic_add_item(id, "certificates", payload, "resume_certificate", db)
     return {"success": True}
 
 @router.delete("/certificate/{cert_id}")
 def delete_certificate(cert_id: int, student: Student = Depends(get_current_student), db: Any = Depends(get_db)):
-    resume_doc = db.resumes.find_one({"certificates.id": cert_id})
-    if resume_doc:
-        verify_ownership(resume_doc["id"], student.id, db)
-        db.resumes.update_one(
-            {"_id": resume_doc["_id"]},
-            {
-                "$pull": {"certificates": {"id": cert_id}},
-                "$set": {"updated_at": datetime.utcnow()}
-            }
-        )
+    dynamic_delete_item("certificates", cert_id, student.id, db)
     return {"success": True}
 
 # --- AI OPERATION ENDPOINTS ---
@@ -695,12 +636,16 @@ def ai_full_generate(id: int, student: Student = Depends(get_current_student), d
         }
     ]
     
+    resume_data = resume.get("resume", {})
+    resume_data["skills"] = skills
+    resume_data["projects"] = projs
+    if "master" in resume_data:
+        resume_data["master"]["career_objective"] = "Passionate and detail-oriented Software Development Engineer targeting roles in backend systems and cloud platforms. Skilled in building API engines and automating workflows."
+        
     db.resumes.update_one(
         {"id": id},
         {"$set": {
-            "skills": skills,
-            "projects": projs,
-            "career_objective": "Passionate and detail-oriented Software Development Engineer targeting roles in backend systems and cloud platforms. Skilled in building API engines and automating workflows.",
+            "resume": resume_data,
             "ats_score": 88,
             "updated_at": datetime.utcnow()
         }}
@@ -735,31 +680,7 @@ def get_versions(id: int, student: Student = Depends(get_current_student), db: A
 def save_version(id: int, name: str = Query(...), student: Student = Depends(get_current_student), db: Any = Depends(get_db)):
     resume = verify_ownership(id, student.id, db)
     
-    state = {
-        "master": {
-            "name": resume.name,
-            "resume_type": resume.resume_type,
-            "target_role": resume.target_role,
-            "career_objective": resume.career_objective,
-            "preferred_industry": resume.preferred_industry,
-            "language": resume.language,
-            "expected_salary": resume.expected_salary,
-            "visibility": resume.visibility,
-            "template_id": resume.template_id,
-            "color_theme": resume.color_theme,
-        },
-        "education": resume.get("education", []),
-        "experience": resume.get("experience", []),
-        "projects": resume.get("projects", []),
-        "skills": resume.get("skills", []),
-        "certificates": resume.get("certificates", []),
-    }
-    
-    # Remove metadata tags
-    for key in ["education", "experience", "projects", "skills", "certificates"]:
-        for item in state[key]:
-            item.pop('_sa_instance_state', None)
-            
+    resume_data = resume.get("resume", {})
     last_v_doc = db.resume_versions.find_one(
         {"resume_id": id},
         sort=[("version_number", -1)]
@@ -772,7 +693,7 @@ def save_version(id: int, name: str = Query(...), student: Student = Depends(get
         "resume_id": id,
         "version_number": latest_ver + 1,
         "name": name,
-        "data": json.dumps(state),
+        "data": json.dumps(resume_data),
         "ats_score": resume.ats_score,
         "created_at": datetime.utcnow()
     })
@@ -789,27 +710,12 @@ def restore_version(version_id: int, student: Student = Depends(get_current_stud
     resume = verify_ownership(ver.resume_id, student.id, db)
     
     state = json.loads(ver.data)
-    m = state["master"]
     
     db.resumes.update_one(
         {"id": resume.id},
         {"$set": {
-            "name": m["name"],
-            "resume_type": m["resume_type"],
-            "target_role": m["target_role"],
-            "career_objective": m["career_objective"],
-            "preferred_industry": m["preferred_industry"],
-            "language": m["language"],
-            "expected_salary": m["expected_salary"],
-            "visibility": m["visibility"],
-            "template_id": m["template_id"],
-            "color_theme": m["color_theme"],
+            "resume": state,
             "ats_score": ver.ats_score,
-            "education": state["education"],
-            "experience": state["experience"],
-            "projects": state["projects"],
-            "skills": state["skills"],
-            "certificates": state["certificates"],
             "updated_at": datetime.utcnow()
         }}
     )
@@ -935,22 +841,25 @@ def get_pdf_export(id: int, student: Student = Depends(get_current_student), db:
 
     story = []
     
-    name = student.student_name
+    resume_data = resume.get("resume", {})
+    p_info = resume_data.get("personal_info") or resume_data.get("master") or {}
+    
+    name = student.student_name or p_info.get("name") or "Candidate"
     contact_parts = []
     if student.email:
         contact_parts.append(student.email)
-    if resume.get("phone"):
-        contact_parts.append(resume.get("phone"))
-    if resume.get("address"):
-        contact_parts.append(resume.get("address"))
+    elif p_info.get("email"):
+        contact_parts.append(p_info.get("email"))
+        
+    if p_info.get("phone"):
+        contact_parts.append(p_info.get("phone"))
+    if p_info.get("address"):
+        contact_parts.append(p_info.get("address"))
         
     sub_parts = []
-    if resume.get("linkedin"):
-        sub_parts.append(f"LinkedIn: {resume.get('linkedin')}")
-    if resume.get("github"):
-        sub_parts.append(f"GitHub: {resume.get('github')}")
-    if resume.get("portfolio"):
-        sub_parts.append(f"Portfolio: {resume.get('portfolio')}")
+    for link_key in ["linkedin", "github", "portfolio", "website"]:
+        if p_info.get(link_key):
+            sub_parts.append(f"{link_key.capitalize()}: {p_info.get(link_key)}")
         
     story.append(Paragraph(name, title_style))
     story.append(Paragraph(" • ".join(contact_parts) + "<br/>" + " | ".join(sub_parts), subtitle_style))
@@ -962,121 +871,100 @@ def get_pdf_export(id: int, student: Student = Depends(get_current_student), db:
     ])))
     story.append(Spacer(1, 10))
     
-    summary_text = resume.get("summary") or resume.get("career_objective")
+    # Render Summary
+    summary_text = p_info.get("summary") or p_info.get("career_objective") or resume.get("career_objective")
     if summary_text:
         story.append(Paragraph("PROFESSIONAL SUMMARY", section_title))
         story.append(Paragraph(summary_text, body_style))
         story.append(Spacer(1, 8))
         
-    if education:
-        story.append(Paragraph("EDUCATION", section_title))
-        for edu in education:
-            edu_table_data = [
-                [Paragraph(f"<b>{edu.get('institution')}</b>", body_style), Paragraph(str(edu.get('passing_year')), meta_right)],
-                [Paragraph(f"{edu.get('degree')} — CGPA: {edu.get('cgpa')}% / CGPA" if edu.get('cgpa') else edu.get('degree'), body_style), Paragraph(edu.get('achievements') or '', meta_right)]
-            ]
-            t = Table(edu_table_data, colWidths=[400, 132])
-            t.setStyle(TableStyle([
-                ('VALIGN', (0,0), (-1,-1), 'TOP'),
-                ('BOTTOMPADDING', (0,0), (-1,-1), 2),
-                ('TOPPADDING', (0,0), (-1,-1), 2),
-                ('LEFTPADDING', (0,0), (-1,-1), 0),
-                ('RIGHTPADDING', (0,0), (-1,-1), 0),
-            ]))
-            story.append(t)
-        story.append(Spacer(1, 8))
+    # Render all other custom and standard sections dynamically
+    for section_name, section_value in resume_data.items():
+        if section_name in ["master", "personal_info", "id", "userId", "student_id", "name", "visibility", "template_id", "color_theme", "status", "ats_score", "created_at", "updated_at", "resume"]:
+            continue
+            
+        if not section_value:
+            continue
+            
+        formatted_title = section_name.upper().replace('_', ' ')
+        story.append(Paragraph(formatted_title, section_title))
         
-    if experience:
-        story.append(Paragraph("PROFESSIONAL EXPERIENCE", section_title))
-        for exp in experience:
-            exp_table_data = [
-                [Paragraph(f"<b>{exp.get('position')}</b> at <b>{exp.get('company')}</b>", body_style), Paragraph(exp.get('duration'), meta_right)],
-                [Paragraph(exp.get('description'), body_style), '']
-            ]
-            t = Table(exp_table_data, colWidths=[400, 132])
-            t.setStyle(TableStyle([
-                ('SPAN', (0,1), (1,1)),
-                ('VALIGN', (0,0), (-1,-1), 'TOP'),
-                ('BOTTOMPADDING', (0,0), (-1,-1), 2),
-                ('TOPPADDING', (0,0), (-1,-1), 2),
-                ('LEFTPADDING', (0,0), (-1,-1), 0),
-                ('RIGHTPADDING', (0,0), (-1,-1), 0),
-            ]))
-            story.append(t)
-        story.append(Spacer(1, 8))
-        
-    if projects:
-        story.append(Paragraph("ACADEMIC & PERSONAL PROJECTS", section_title))
-        for proj in projects:
-            proj_header = f"<b>{proj.get('name')}</b>"
-            if proj.get("tech_stack"):
-                proj_header += f" (Tech: {proj.get('tech_stack')})"
-            proj_table_data = [
-                [Paragraph(proj_header, body_style), Paragraph(proj.get('duration') or '', meta_right)],
-                [Paragraph(proj.get('description'), body_style), '']
-            ]
-            t = Table(proj_table_data, colWidths=[400, 132])
-            t.setStyle(TableStyle([
-                ('SPAN', (0,1), (1,1)),
-                ('VALIGN', (0,0), (-1,-1), 'TOP'),
-                ('BOTTOMPADDING', (0,0), (-1,-1), 2),
-                ('TOPPADDING', (0,0), (-1,-1), 2),
-                ('LEFTPADDING', (0,0), (-1,-1), 0),
-                ('RIGHTPADDING', (0,0), (-1,-1), 0),
-            ]))
-            story.append(t)
-        story.append(Spacer(1, 8))
-        
-    if skills:
-        story.append(Paragraph("TECHNICAL SKILLS", section_title))
-        skills_by_category = {}
-        for s in skills:
-            cat = s.get("category", "General")
-            skills_by_category.setdefault(cat, []).append(f"{s.get('name')} (Lvl {s.get('level')})")
-        
-        skill_lines = []
-        for cat, sks in skills_by_category.items():
-            skill_lines.append(f"<b>{cat}:</b> {', '.join(sks)}")
-        story.append(Paragraph("<br/>".join(skill_lines), body_style))
-        story.append(Spacer(1, 8))
-        
-    if certificates:
-        story.append(Paragraph("CERTIFICATIONS", section_title))
-        for cert in certificates:
-            cert_table_data = [
-                [Paragraph(f"<b>{cert.get('name')}</b> — {cert.get('organization')}", body_style), Paragraph(cert.get('issue_date') or '', meta_right)]
-            ]
-            t = Table(cert_table_data, colWidths=[400, 132])
-            t.setStyle(TableStyle([
-                ('VALIGN', (0,0), (-1,-1), 'TOP'),
-                ('BOTTOMPADDING', (0,0), (-1,-1), 2),
-                ('TOPPADDING', (0,0), (-1,-1), 2),
-                ('LEFTPADDING', (0,0), (-1,-1), 0),
-                ('RIGHTPADDING', (0,0), (-1,-1), 0),
-            ]))
-            story.append(t)
-        story.append(Spacer(1, 8))
-        
-    achievements_list = resume.get("achievements_list")
-    if achievements_list:
-        try:
-            ach_json = json.loads(achievements_list)
-            story.append(Paragraph("ACHIEVEMENTS & EXTRACURRICULARS", section_title))
-            ach_lines = []
-            if ach_json.get("hackathons"):
-                ach_lines.append(f"<b>Hackathons:</b> {ach_json['hackathons']}")
-            if ach_json.get("awards"):
-                ach_lines.append(f"<b>Awards:</b> {ach_json['awards']}")
-            if ach_json.get("soft_skills"):
-                ach_lines.append(f"<b>Soft Skills:</b> {ach_json['soft_skills']}")
-            if ach_json.get("extracurricular"):
-                ach_lines.append(f"<b>Extracurricular:</b> {ach_json['extracurricular']}")
-            story.append(Paragraph("<br/>".join(ach_lines), body_style))
-        except Exception:
-            pass
-
+        if isinstance(section_value, str):
+            story.append(Paragraph(section_value, body_style))
+            story.append(Spacer(1, 8))
+        elif isinstance(section_value, list):
+            for item in section_value:
+                if isinstance(item, str):
+                    story.append(Paragraph(item, body_style))
+                elif isinstance(item, dict):
+                    main_header_candidates = ["institution", "company", "name", "title", "position", "category", "organization"]
+                    date_candidates = ["passing_year", "duration", "date", "year", "issue_date", "time_period"]
+                    sub_candidates = ["degree", "role", "tech_stack", "level"]
+                    desc_candidates = ["description", "achievements", "details", "summary"]
+                    
+                    main_val = next((item[c] for c in main_header_candidates if c in item and item[c]), None)
+                    date_val = next((item[c] for c in date_candidates if c in item and item[c]), None)
+                    sub_val = next((item[c] for c in sub_candidates if c in item and item[c]), None)
+                    desc_val = next((item[c] for c in desc_candidates if c in item and item[c]), None)
+                    
+                    captured_keys = set(main_header_candidates + date_candidates + sub_candidates + desc_candidates + ["id"])
+                    extra_parts = []
+                    for k, v in item.items():
+                        if k not in captured_keys and v:
+                            extra_parts.append(f"<b>{k.replace('_', ' ').capitalize()}:</b> {v}")
+                            
+                    item_table_data = []
+                    
+                    if main_val or date_val:
+                        left_p = Paragraph(f"<b>{main_val}</b>" if main_val else "", body_style)
+                        right_p = Paragraph(str(date_val) if date_val else "", meta_right)
+                        item_table_data.append([left_p, right_p])
+                        
+                    second_line_left = []
+                    if sub_val:
+                        second_line_left.append(str(sub_val))
+                    if extra_parts:
+                        second_line_left.append(" | ".join(extra_parts))
+                        
+                    if second_line_left:
+                        left_content = " — ".join(second_line_left)
+                        item_table_data.append([Paragraph(left_content, body_style), ""])
+                        
+                    if desc_val:
+                        item_table_data.append([Paragraph(str(desc_val), body_style), ""])
+                        
+                    if item_table_data:
+                        t = Table(item_table_data, colWidths=[400, 132])
+                        t_styles = [
+                            ('VALIGN', (0,0), (-1,-1), 'TOP'),
+                            ('BOTTOMPADDING', (0,0), (-1,-1), 2),
+                            ('TOPPADDING', (0,0), (-1,-1), 2),
+                            ('LEFTPADDING', (0,0), (-1,-1), 0),
+                            ('RIGHTPADDING', (0,0), (-1,-1), 0),
+                        ]
+                        for r_idx in range(len(item_table_data)):
+                            if r_idx > 0 or not date_val:
+                                t_styles.append(('SPAN', (0, r_idx), (1, r_idx)))
+                        t.setStyle(TableStyle(t_styles))
+                        story.append(t)
+            story.append(Spacer(1, 8))
+            
     doc.build(story)
     buffer.seek(0)
+    
+    # Log download action
+    db.resume_downloads.insert_one({
+        "id": get_next_sequence("resume_downloads"),
+        "resume_id": id,
+        "format": "PDF",
+        "created_at": datetime.utcnow()
+    })
+    db.activity_logs.insert_one({
+        "id": get_next_sequence("activity_logs"),
+        "student_id": student.id,
+        "activity": "Resume Downloaded",
+        "created_at": datetime.utcnow()
+    })
     
     return StreamingResponse(
         buffer,
@@ -1094,14 +982,17 @@ def get_public_resume(id: int, db: Any = Depends(get_db)):
     student_doc = db.students.find_one({"id": resume.student_id})
     student = Student(student_doc) if student_doc else None
     
-    return {
+    resume_data = resume.get("resume", {})
+    
+    response = {
+        **resume_data,
         "student": {
             "student_name": student.student_name if student else "Unknown",
             "email": student.email if student else "Unknown",
             "department": student.department if student else "Unknown",
             "semester": student.semester if student else "Unknown"
         },
-        "master": {
+        "master": resume_data.get("master") or {
             "name": resume.name,
             "target_role": resume.target_role,
             "career_objective": resume.career_objective,
@@ -1114,13 +1005,15 @@ def get_public_resume(id: int, db: Any = Depends(get_db)):
             "portfolio": resume_doc.get("portfolio") or "",
             "website": resume_doc.get("website") or "",
             "summary": resume_doc.get("summary") or ""
-        },
-        "education": resume.get("education", []),
-        "experience": resume.get("experience", []),
-        "projects": resume.get("projects", []),
-        "skills": resume.get("skills", []),
-        "certificates": resume.get("certificates", []),
+        }
     }
+    
+    # Backward compatibility fallbacks
+    for k in ["education", "experience", "projects", "skills", "certificates"]:
+        if k not in response:
+            response[k] = resume.get(k) or []
+            
+    return response
 
 # --- NEW PLATFORM ENDPOINTS ---
 
@@ -1270,23 +1163,7 @@ def analyze_resume_endpoint(
     db: Any = Depends(get_db)
 ):
     resume = verify_ownership(id, student.id, db)
-    
-    resume_state = {
-        "master": {
-            "name": resume.name,
-            "resume_type": resume.resume_type,
-            "target_role": resume.target_role,
-            "career_objective": resume.career_objective,
-            "preferred_industry": resume.preferred_industry,
-            "summary": resume.get("summary") or resume.get("career_objective"),
-            "achievements_list": resume.get("achievements_list")
-        },
-        "education": resume.get("education", []),
-        "experience": resume.get("experience", []),
-        "projects": resume.get("projects", []),
-        "skills": resume.get("skills", []),
-        "certificates": resume.get("certificates", [])
-    }
+    resume_state = resume.get("resume", {})
     
     prompt = RESUME_ANALYZE_PROMPT.replace("{resume_json}", json.dumps(resume_state))
     
@@ -1387,30 +1264,7 @@ def improve_resume_endpoint(
     db: Any = Depends(get_db)
 ):
     resume = verify_ownership(id, student.id, db)
-    
-    resume_state = {
-        "personal_info": {
-            "name": student.student_name,
-            "email": student.email,
-            "phone": resume.get("phone") or "",
-            "address": resume.get("address") or "",
-            "linkedin": resume.get("linkedin") or "",
-            "github": resume.get("github") or "",
-            "portfolio": resume.get("portfolio") or "",
-            "summary": resume.get("summary") or ""
-        },
-        "education": resume.get("education", []),
-        "experience": resume.get("experience", []),
-        "projects": resume.get("projects", []),
-        "skills": resume.get("skills", []),
-        "certifications": resume.get("certificates", []),
-        "achievements": {
-            "hackathons": "SIH Winner" if "Winner" in (resume.get("achievements_list") or "") else "",
-            "awards": "",
-            "soft_skills": "",
-            "extracurricular": ""
-        }
-    }
+    resume_state = resume.get("resume", {})
     
     prompt = RESUME_IMPROVE_PROMPT.replace("{improvement_goal}", payload.improvement_goal).replace("{resume_json}", json.dumps(resume_state))
     
@@ -1444,35 +1298,23 @@ def improve_resume_endpoint(
     latest_ver = last_v_doc["version_number"] if last_v_doc else 1
     
     # Save version
-    state_to_save = {
-        "master": {
-            "name": resume.name,
-            "resume_type": resume.resume_type,
-            "target_role": resume.target_role,
-            "career_objective": improved_json.get("personal_info", {}).get("summary") or resume.career_objective,
-            "preferred_industry": resume.preferred_industry,
-            "language": resume.language,
-            "expected_salary": resume.expected_salary,
-            "visibility": resume.visibility,
-            "template_id": resume.template_id,
-            "color_theme": resume.color_theme,
-        },
-        "education": improved_json.get("education", []),
-        "experience": improved_json.get("experience", []),
-        "projects": improved_json.get("projects", []),
-        "skills": improved_json.get("skills", []),
-        "certificates": improved_json.get("certifications", [])
-    }
-    
     db.resume_versions.insert_one({
         "id": get_next_sequence("resume_versions"),
         "resume_id": id,
         "version_number": latest_ver + 1,
         "name": f"AI Optimized ({payload.improvement_goal})",
-        "data": json.dumps(state_to_save),
+        "data": json.dumps(improved_json),
         "ats_score": resume.ats_score or 72,
         "created_at": datetime.utcnow()
     })
+    
+    db.resumes.update_one(
+        {"id": id},
+        {"$set": {
+            "resume": improved_json,
+            "updated_at": datetime.utcnow()
+        }}
+    )
     
     # Log activity
     db.activity_logs.insert_one({
@@ -1495,21 +1337,7 @@ def optimize_jd_endpoint(
     db: Any = Depends(get_db)
 ):
     resume = verify_ownership(id, student.id, db)
-    
-    resume_state = {
-        "personal_info": {
-            "name": student.student_name,
-            "email": student.email,
-            "phone": resume.get("phone") or "",
-            "address": resume.get("address") or "",
-            "summary": resume.get("summary") or ""
-        },
-        "education": resume.get("education", []),
-        "experience": resume.get("experience", []),
-        "projects": resume.get("projects", []),
-        "skills": resume.get("skills", []),
-        "certifications": resume.get("certificates", [])
-    }
+    resume_state = resume.get("resume", {})
     
     prompt = JD_MATCH_PROMPT.replace("{resume_json}", json.dumps(resume_state)).replace("{job_description}", payload.job_description)
     
@@ -1574,17 +1402,11 @@ def optimize_jd_endpoint(
         "created_at": datetime.utcnow()
     })
     
-    # Update master resume's details directly with optimized content
-    m = optimized_resume.get("personal_info") or {}
+    # Update master resume directly with optimized content
     db.resumes.update_one(
         {"id": id},
         {"$set": {
-            "career_objective": m.get("summary") or resume.career_objective,
-            "education": optimized_resume.get("education") or resume.get("education", []),
-            "experience": optimized_resume.get("experience") or resume.get("experience", []),
-            "projects": optimized_resume.get("projects") or resume.get("projects", []),
-            "skills": optimized_resume.get("skills") or resume.get("skills", []),
-            "certificates": optimized_resume.get("certifications") or optimized_resume.get("certificates") or resume.get("certificates", []),
+            "resume": optimized_resume,
             "ats_score": match_data.get("overall_match_score") or resume.ats_score or 72,
             "updated_at": datetime.utcnow()
         }}
@@ -1607,70 +1429,21 @@ def save_final_resume_endpoint(
     student: Student = Depends(get_current_student),
     db: Any = Depends(get_db)
 ):
-    resume = verify_ownership(id, student.id, db)
-    
+    verify_ownership(id, student.id, db)
     master = payload.get("master", {})
-    personal_info = payload.get("personal_info", {})
     
-    achievements = payload.get("achievements")
-    achievements_str = json.dumps(achievements) if achievements else resume.get("achievements_list")
+    update_fields = {
+        "resume": payload,
+        "updated_at": datetime.utcnow()
+    }
     
-    # Map raw lists ensuring nested child item IDs exist
-    education = payload.get("education", [])
-    for edu in education:
-        if not edu.get("id"):
-            edu["id"] = get_next_sequence("resume_education")
+    for key in ["name", "resume_type", "target_role", "visibility", "template_id", "color_theme", "status", "ats_score"]:
+        if key in payload:
+            update_fields[key] = payload[key]
+        elif key in master:
+            update_fields[key] = master[key]
             
-    experience = payload.get("experience", [])
-    for exp in experience:
-        if not exp.get("id"):
-            exp["id"] = get_next_sequence("resume_experience")
-            
-    projects = payload.get("projects", [])
-    for proj in projects:
-        if not proj.get("id"):
-            proj["id"] = get_next_sequence("resume_project")
-            
-    skills = payload.get("skills", [])
-    for skill in skills:
-        if not skill.get("id"):
-            skill["id"] = get_next_sequence("resume_skill")
-            
-    certificates = payload.get("certifications", []) or payload.get("certificates", [])
-    for cert in certificates:
-        if not cert.get("id"):
-            cert["id"] = get_next_sequence("resume_certificate")
-            
-    db.resumes.update_one(
-        {"id": id},
-        {"$set": {
-            "name": master.get("name") or resume.name,
-            "resume_type": master.get("resume_type") or resume.resume_type,
-            "target_role": master.get("target_role") or resume.target_role,
-            "career_objective": master.get("career_objective") or resume.career_objective,
-            "preferred_industry": master.get("preferred_industry") or resume.preferred_industry,
-            "language": master.get("language") or resume.language,
-            "expected_salary": master.get("expected_salary") or resume.expected_salary,
-            "visibility": master.get("visibility") or resume.visibility,
-            "template_id": master.get("template_id") or resume.template_id,
-            "color_theme": master.get("color_theme") or resume.color_theme,
-            
-            "phone": personal_info.get("phone") or master.get("phone") or resume.get("phone"),
-            "address": personal_info.get("address") or master.get("address") or resume.get("address"),
-            "linkedin": personal_info.get("linkedin") or master.get("linkedin") or resume.get("linkedin"),
-            "github": personal_info.get("github") or master.get("github") or resume.get("github"),
-            "portfolio": personal_info.get("portfolio") or master.get("portfolio") or resume.get("portfolio"),
-            "summary": personal_info.get("summary") or master.get("summary") or resume.get("summary"),
-            
-            "achievements_list": achievements_str,
-            "education": education,
-            "experience": experience,
-            "projects": projects,
-            "skills": skills,
-            "certificates": certificates,
-            "updated_at": datetime.utcnow()
-        }}
-    )
+    db.resumes.update_one({"id": id}, {"$set": update_fields})
     return {"success": True}
 
 @router.get("/{id}/docx")
@@ -1840,6 +1613,30 @@ def send_chat_message(
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Chatbot service failed: {str(e)}")
 
+def dynamic_replace_text(data: Any, original: str, suggested: str) -> tuple[Any, bool]:
+    applied = False
+    if isinstance(data, str):
+        if original in data:
+            return data.replace(original, suggested), True
+        return data, False
+    elif isinstance(data, list):
+        new_list = []
+        for item in data:
+            new_item, item_applied = dynamic_replace_text(item, original, suggested)
+            new_list.append(new_item)
+            if item_applied:
+                applied = True
+        return new_list, applied
+    elif isinstance(data, dict):
+        new_dict = {}
+        for k, v in data.items():
+            new_val, val_applied = dynamic_replace_text(v, original, suggested)
+            new_dict[k] = new_val
+            if val_applied:
+                applied = True
+        return new_dict, applied
+    return data, False
+
 @router.post("/{id}/chat/apply-rewrite")
 def apply_chat_rewrite(
     id: int,
@@ -1849,63 +1646,16 @@ def apply_chat_rewrite(
 ):
     resume = verify_ownership(id, student.id, db)
     
-    # Track update success
-    applied = False
+    resume_data = resume.get("resume", {})
+    updated_resume_data, applied = dynamic_replace_text(resume_data, payload.original, payload.suggested)
     
-    # 1. Check master objectives & summary
-    summary = resume.get("summary", "")
-    objective = resume.get("career_objective", "")
-    
-    if payload.original in summary:
-        summary = summary.replace(payload.original, payload.suggested)
-        applied = True
-    if payload.original in objective:
-        objective = objective.replace(payload.original, payload.suggested)
-        applied = True
-        
-    # 2. Check education
-    education = resume.get("education", [])
-    for edu in education:
-        ach = edu.get("achievements") or ""
-        if payload.original in ach:
-            edu["achievements"] = ach.replace(payload.original, payload.suggested)
-            applied = True
-            
-    # 3. Check experience
-    experience = resume.get("experience", [])
-    for exp in experience:
-        desc = exp.get("description") or ""
-        ach = exp.get("achievements") or ""
-        if payload.original in desc:
-            exp["description"] = desc.replace(payload.original, payload.suggested)
-            applied = True
-        if payload.original in ach:
-            exp["achievements"] = ach.replace(payload.original, payload.suggested)
-            applied = True
-            
-    # 4. Check projects
-    projects = resume.get("projects", [])
-    for proj in projects:
-        desc = proj.get("description") or ""
-        ach = proj.get("achievements") or ""
-        if payload.original in desc:
-            proj["description"] = desc.replace(payload.original, payload.suggested)
-            applied = True
-        if payload.original in ach:
-            proj["achievements"] = ach.replace(payload.original, payload.suggested)
-            applied = True
-            
     if not applied:
         raise HTTPException(status_code=400, detail="The original text segment could not be matched inside the resume sections.")
         
     db.resumes.update_one(
         {"id": id},
         {"$set": {
-            "summary": summary,
-            "career_objective": objective,
-            "education": education,
-            "experience": experience,
-            "projects": projects,
+            "resume": updated_resume_data,
             "updated_at": datetime.utcnow()
         }}
     )
