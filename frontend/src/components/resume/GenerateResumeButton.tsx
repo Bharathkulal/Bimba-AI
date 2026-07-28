@@ -5,10 +5,12 @@ import { Button } from '../Button';
 
 interface GenerateResumeButtonProps {
   resumeId: number;
+  onPdfGenerated?: (pdfUrl: string) => void;
 }
 
 export const GenerateResumeButton: React.FC<GenerateResumeButtonProps> = ({
-  resumeId
+  resumeId,
+  onPdfGenerated
 }) => {
   const { 
     generating, errors, generatedFiles, 
@@ -25,6 +27,9 @@ export const GenerateResumeButton: React.FC<GenerateResumeButtonProps> = ({
     const pdfUrl = await generatePdf(resumeId);
     if (pdfUrl) {
       window.open(pdfUrl, '_blank');
+      if (onPdfGenerated) {
+        onPdfGenerated(pdfUrl);
+      }
     }
   };
 

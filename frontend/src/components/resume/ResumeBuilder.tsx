@@ -9,11 +9,13 @@ import { Sparkles, AlertTriangle, ArrowLeft } from 'lucide-react';
 interface ResumeBuilderProps {
   resumeId: number;
   onBack?: () => void;
+  onPdfGenerated?: (pdfUrl: string) => void;
 }
 
 export const ResumeBuilder: React.FC<ResumeBuilderProps> = ({
   resumeId,
-  onBack
+  onBack,
+  onPdfGenerated
 }) => {
   const { loading, errors, fetchBuilderData, clearBuilderStore } = useResumeBuilderStore();
 
@@ -100,7 +102,7 @@ export const ResumeBuilder: React.FC<ResumeBuilderProps> = ({
           </div>
 
           <div className="bg-white/70 dark:bg-[#1F2937]/75 backdrop-blur-md border border-slate-200/80 dark:border-white/10 p-5 rounded-3xl shadow-xl">
-            <GenerateResumeButton resumeId={resumeId} />
+            <GenerateResumeButton resumeId={resumeId} onPdfGenerated={onPdfGenerated} />
           </div>
 
         </div>
