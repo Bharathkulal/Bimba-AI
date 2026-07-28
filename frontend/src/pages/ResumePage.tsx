@@ -21,6 +21,7 @@ import { ResumeAnalysisStatus } from '../components/resume/ResumeAnalysisStatus'
 import { ResumeAIAnalysis } from '../components/resume/ResumeAIAnalysis';
 import { ResumeHealthDashboard } from '../components/resume/ResumeHealthDashboard';
 import { ResumeImprovement } from '../components/resume/ResumeImprovement';
+import { ResumeBuilder } from '../components/resume/ResumeBuilder';
 
 export const ResumePage: React.FC = () => {
   const navigate = useNavigate();
@@ -58,7 +59,7 @@ export const ResumePage: React.FC = () => {
   const [wizardFile, setWizardFile] = useState<File | null>(null);
   const [uploadedFile, setUploadedFile] = useState<File | null>(null);
   const [activeAnalysisResumeId, setActiveAnalysisResumeId] = useState<number | null>(null);
-  const [modalView, setModalView] = useState<'default' | 'improve'>('default');
+  const [modalView, setModalView] = useState<'default' | 'improve' | 'builder'>('default');
   const { theme } = useThemeStore();
   const isDark = theme === 'dark';
 
@@ -606,6 +607,9 @@ export const ResumePage: React.FC = () => {
         if (modalView === 'improve') {
           title = "AI Resume Optimization";
           modalSize = 'lg';
+        } else if (modalView === 'builder') {
+          title = "AI Resume Builder";
+          modalSize = 'xl';
         } else if (isAnalyzed) {
           title = "AI Resume Scorecard";
         } else if (isAiCompleted) {
@@ -628,6 +632,11 @@ export const ResumePage: React.FC = () => {
                 resumeId={activeAnalysisResumeId}
                 onChangesApplied={fetchResumeData}
               />
+            ) : modalView === 'builder' ? (
+              <ResumeBuilder 
+                resumeId={activeAnalysisResumeId}
+                onBack={() => setModalView('default')}
+              />
             ) : (
               <>
                 {isUploaded && (
@@ -646,6 +655,7 @@ export const ResumePage: React.FC = () => {
                   <ResumeHealthDashboard 
                     resumeId={activeAnalysisResumeId}
                     onImproveClick={() => setModalView('improve')}
+                    onBuilderClick={() => setModalView('builder')}
                   />
                 )}
               </>

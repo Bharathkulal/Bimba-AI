@@ -10,11 +10,13 @@ import { useUserStore } from '../../store/userStore';
 interface ResumeHealthDashboardProps {
   resumeId: number;
   onImproveClick?: () => void;
+  onBuilderClick?: () => void;
 }
 
 export const ResumeHealthDashboard: React.FC<ResumeHealthDashboardProps> = ({
   resumeId,
-  onImproveClick
+  onImproveClick,
+  onBuilderClick
 }) => {
   const { healthData, loading, error, fetchHealthData } = useResumeHealthStore();
   const user = useUserStore((state) => state.user);
@@ -318,7 +320,10 @@ export const ResumeHealthDashboard: React.FC<ResumeHealthDashboardProps> = ({
         >
           <Sparkles size={14} className="fill-current" /> Improve My Resume
         </button>
-        <button className="bg-white border border-slate-200 text-slate-800 hover:bg-slate-50 hover:border-slate-300 font-bold px-5 py-3.5 rounded-2xl flex items-center justify-center gap-2 cursor-pointer hover:scale-[1.01] active:scale-[0.99] transition-all text-xs">
+        <button 
+          onClick={onBuilderClick}
+          className="bg-white border border-slate-200 text-slate-800 hover:bg-slate-50 hover:border-slate-300 font-bold px-5 py-3.5 rounded-2xl flex items-center justify-center gap-2 cursor-pointer hover:scale-[1.01] active:scale-[0.99] transition-all text-xs"
+        >
           <FileText size={14} /> Generate ATS Resume
         </button>
         <button className="bg-white border border-slate-200 text-slate-800 hover:bg-slate-50 hover:border-slate-300 font-bold px-5 py-3.5 rounded-2xl flex items-center justify-center gap-2 cursor-pointer hover:scale-[1.01] active:scale-[0.99] transition-all text-xs">
