@@ -403,26 +403,38 @@ export const UploadResumeWizard: React.FC<UploadResumeWizardProps> = ({
   }, [currentStage]);
 
   return (
-    <div className="fixed inset-0 z-50 bg-[#0B121F]/90 backdrop-blur-xl flex items-center justify-center p-4 md:p-6 overflow-y-auto text-left">
+    <div className={`fixed inset-0 z-50 backdrop-blur-xl flex items-center justify-center p-4 md:p-6 overflow-y-auto text-left ${
+      isDark ? 'bg-[#0B121F]/90' : 'bg-slate-900/40'
+    }`}>
       <div 
-        className={`w-full max-w-4xl rounded-[28px] border border-white/10 shadow-[0_0_50px_rgba(16,185,129,0.15)] bg-[#111827] text-white overflow-hidden flex flex-col max-h-[90vh]`}
+        className={`w-full max-w-4xl rounded-[28px] border overflow-hidden flex flex-col max-h-[90vh] ${
+          isDark 
+            ? 'border-white/10 shadow-[0_0_50px_rgba(16,185,129,0.15)] bg-[#111827] text-white' 
+            : 'border-slate-100 shadow-2xl shadow-slate-200/50 bg-white text-slate-800'
+        }`}
       >
         {/* Top Header bar */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-white/10 bg-[#1F2937]/30 backdrop-blur-md">
+        <div className={`flex items-center justify-between px-6 py-4 border-b backdrop-blur-md ${
+          isDark ? 'border-white/10 bg-[#1F2937]/30' : 'border-slate-100 bg-slate-50'
+        }`}>
           <div className="flex items-center gap-3">
             <div className="w-8 h-8 rounded-lg bg-gradient-to-tr from-emerald-600 to-teal-400 text-white flex items-center justify-center font-black">
               B
             </div>
             <div>
-              <h3 className="font-extrabold text-sm tracking-tight flex items-center gap-1.5">
+              <h3 className={`font-extrabold text-sm tracking-tight flex items-center gap-1.5 ${
+                isDark ? 'text-white' : 'text-slate-900'
+              }`}>
                 AI Career Copilot <Sparkles size={13} className="text-emerald-400 animate-pulse" />
               </h3>
-              <p className="text-[10px] text-slate-400">Diagnostic Phase {currentStage} of 10</p>
+              <p className={`text-[10px] ${isDark ? 'text-slate-400' : 'text-slate-500 font-bold'}`}>Diagnostic Phase {currentStage} of 10</p>
             </div>
           </div>
           <button 
             onClick={onClose} 
-            className="p-1.5 rounded-lg hover:bg-white/10 text-slate-400 hover:text-white cursor-pointer transition-colors"
+            className={`p-1.5 rounded-lg cursor-pointer transition-colors ${
+              isDark ? 'hover:bg-white/10 text-slate-400 hover:text-white' : 'hover:bg-slate-200/50 text-slate-500 hover:text-slate-800'
+            }`}
           >
             <X size={18} />
           </button>
@@ -534,22 +546,38 @@ export const UploadResumeWizard: React.FC<UploadResumeWizardProps> = ({
                 className="flex flex-col gap-6"
               >
                 <div className="text-left flex flex-col gap-1.5">
-                  <span className="text-[10px] font-bold text-emerald-400 tracking-widest uppercase">Extraction Engine Complete</span>
-                  <h3 className="text-xl font-extrabold text-white">Here is what the AI discovered:</h3>
-                  <p className="text-xs text-slate-400">Expand any card to inspect what will be mapped onto your Bimba profile.</p>
+                  <span className="text-[10px] font-bold text-emerald-500 tracking-widest uppercase">Extraction Engine Complete</span>
+                  <h3 className={`text-xl font-black ${isDark ? 'text-white' : 'text-slate-800'}`}>Here is what the AI discovered:</h3>
+                  <p className={`text-xs ${isDark ? 'text-slate-400' : 'text-slate-500 font-medium'}`}>Expand any card to inspect what will be mapped onto your Bimba profile.</p>
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {/* Skills Card */}
-                  <div className="border border-white/10 rounded-xl bg-white/5 p-4 flex flex-col gap-2.5">
-                    <button onClick={() => toggleExpand('skills')} className="flex items-center justify-between w-full font-bold text-xs text-slate-200">
+                  <div className={`border rounded-2xl p-4 flex flex-col gap-2.5 ${
+                    isDark ? 'border-white/10 bg-white/5' : 'border-slate-200/80 bg-slate-50/50'
+                  }`}>
+                    <button 
+                      onClick={() => toggleExpand('skills')} 
+                      className={`flex items-center justify-between w-full font-bold text-xs cursor-pointer ${
+                        isDark ? 'text-slate-200' : 'text-slate-700'
+                      }`}
+                    >
                       <span>Skills & Core Technologies ({parsedData.skills?.length || 0})</span>
                       <ChevronRight size={14} className={`transform transition-transform ${expandedCards.skills ? 'rotate-90' : ''}`} />
                     </button>
                     {expandedCards.skills && (
-                      <div className="flex flex-wrap gap-1.5 pt-2 border-t border-white/5">
+                      <div className={`flex flex-wrap gap-1.5 pt-2.5 border-t ${
+                        isDark ? 'border-white/5' : 'border-slate-200/60'
+                      }`}>
                         {parsedData.skills?.map((s: any, idx: number) => (
-                          <span key={idx} className="bg-white/5 border border-white/15 px-2 py-0.5 rounded text-[10px] text-slate-300">
+                          <span 
+                            key={idx} 
+                            className={`px-2 py-0.5 rounded text-[10px] ${
+                              isDark 
+                                ? 'bg-white/5 border border-white/15 text-slate-355' 
+                                : 'bg-white border border-slate-200 text-slate-650 font-bold'
+                            }`}
+                          >
                             {s.name || s}
                           </span>
                         ))}
@@ -558,18 +586,27 @@ export const UploadResumeWizard: React.FC<UploadResumeWizardProps> = ({
                   </div>
 
                   {/* Experience Card */}
-                  <div className="border border-white/10 rounded-xl bg-white/5 p-4 flex flex-col gap-2.5">
-                    <button onClick={() => toggleExpand('experience')} className="flex items-center justify-between w-full font-bold text-xs text-slate-200">
+                  <div className={`border rounded-2xl p-4 flex flex-col gap-2.5 ${
+                    isDark ? 'border-white/10 bg-white/5' : 'border-slate-200/80 bg-slate-50/50'
+                  }`}>
+                    <button 
+                      onClick={() => toggleExpand('experience')} 
+                      className={`flex items-center justify-between w-full font-bold text-xs cursor-pointer ${
+                        isDark ? 'text-slate-200' : 'text-slate-700'
+                      }`}
+                    >
                       <span>Experience History ({parsedData.experience?.length || 0})</span>
                       <ChevronRight size={14} className={`transform transition-transform ${expandedCards.experience ? 'rotate-90' : ''}`} />
                     </button>
                     {expandedCards.experience && (
-                      <div className="flex flex-col gap-3 pt-2 border-t border-white/5 text-[11px] text-slate-400">
+                      <div className={`flex flex-col gap-3 pt-2.5 border-t text-[11px] ${
+                        isDark ? 'border-white/5 text-slate-400' : 'border-slate-200/60 text-slate-600'
+                      }`}>
                         {parsedData.experience?.map((exp: any, idx: number) => (
-                          <div key={idx} className="border-b border-white/5 pb-2 last:border-b-0">
-                            <p className="font-bold text-slate-200">{exp.role || exp.title}</p>
-                            <p className="text-[10px] text-emerald-400">{exp.company} | {exp.duration}</p>
-                            <p className="mt-1 line-clamp-2 text-slate-450">{exp.description}</p>
+                          <div key={idx} className={`border-b pb-2 last:border-b-0 ${isDark ? 'border-white/5' : 'border-slate-200/40'}`}>
+                            <p className={`font-bold ${isDark ? 'text-slate-200' : 'text-slate-800'}`}>{exp.role || exp.title}</p>
+                            <p className="text-[10px] text-emerald-500 font-extrabold">{exp.company} | {exp.duration}</p>
+                            <p className="mt-1 line-clamp-2 text-slate-450 leading-relaxed font-semibold">{exp.description}</p>
                           </div>
                         ))}
                       </div>
@@ -577,17 +614,26 @@ export const UploadResumeWizard: React.FC<UploadResumeWizardProps> = ({
                   </div>
 
                   {/* Projects Card */}
-                  <div className="border border-white/10 rounded-xl bg-white/5 p-4 flex flex-col gap-2.5">
-                    <button onClick={() => toggleExpand('projects')} className="flex items-center justify-between w-full font-bold text-xs text-slate-200">
+                  <div className={`border rounded-2xl p-4 flex flex-col gap-2.5 ${
+                    isDark ? 'border-white/10 bg-white/5' : 'border-slate-200/80 bg-slate-50/50'
+                  }`}>
+                    <button 
+                      onClick={() => toggleExpand('projects')} 
+                      className={`flex items-center justify-between w-full font-bold text-xs cursor-pointer ${
+                        isDark ? 'text-slate-200' : 'text-slate-700'
+                      }`}
+                    >
                       <span>Key Projects Highlighted ({parsedData.projects?.length || 0})</span>
                       <ChevronRight size={14} className={`transform transition-transform ${expandedCards.projects ? 'rotate-90' : ''}`} />
                     </button>
                     {expandedCards.projects && (
-                      <div className="flex flex-col gap-3 pt-2 border-t border-white/5 text-[11px] text-slate-400">
+                      <div className={`flex flex-col gap-3 pt-2.5 border-t text-[11px] ${
+                        isDark ? 'border-white/5 text-slate-400' : 'border-slate-200/60 text-slate-600'
+                      }`}>
                         {parsedData.projects?.map((proj: any, idx: number) => (
-                          <div key={idx} className="border-b border-white/5 pb-2 last:border-b-0">
-                            <p className="font-bold text-slate-200">{proj.name || proj.title}</p>
-                            <p className="mt-1 line-clamp-2 text-slate-450">{proj.description}</p>
+                          <div key={idx} className={`border-b pb-2 last:border-b-0 ${isDark ? 'border-white/5' : 'border-slate-200/40'}`}>
+                            <p className={`font-bold ${isDark ? 'text-slate-200' : 'text-slate-800'}`}>{proj.name || proj.title}</p>
+                            <p className="mt-1 line-clamp-2 text-slate-455 leading-relaxed font-semibold">{proj.description}</p>
                           </div>
                         ))}
                       </div>
@@ -595,17 +641,26 @@ export const UploadResumeWizard: React.FC<UploadResumeWizardProps> = ({
                   </div>
 
                   {/* Education Card */}
-                  <div className="border border-white/10 rounded-xl bg-white/5 p-4 flex flex-col gap-2.5">
-                    <button onClick={() => toggleExpand('education')} className="flex items-center justify-between w-full font-bold text-xs text-slate-200">
+                  <div className={`border rounded-2xl p-4 flex flex-col gap-2.5 ${
+                    isDark ? 'border-white/10 bg-white/5' : 'border-slate-200/80 bg-slate-50/50'
+                  }`}>
+                    <button 
+                      onClick={() => toggleExpand('education')} 
+                      className={`flex items-center justify-between w-full font-bold text-xs cursor-pointer ${
+                        isDark ? 'text-slate-200' : 'text-slate-700'
+                      }`}
+                    >
                       <span>Education & Credentials ({parsedData.education?.length || 0})</span>
                       <ChevronRight size={14} className={`transform transition-transform ${expandedCards.education ? 'rotate-90' : ''}`} />
                     </button>
                     {expandedCards.education && (
-                      <div className="flex flex-col gap-2 pt-2 border-t border-white/5 text-[11px] text-slate-400">
+                      <div className={`flex flex-col gap-2.5 pt-2.5 border-t text-[11px] ${
+                        isDark ? 'border-white/5 text-slate-400' : 'border-slate-200/60 text-slate-600'
+                      }`}>
                         {parsedData.education?.map((edu: any, idx: number) => (
                           <div key={idx}>
-                            <p className="font-bold text-slate-200">{edu.degree}</p>
-                            <p className="text-[10px] text-slate-400">{edu.school || edu.institution} ({edu.year})</p>
+                            <p className={`font-bold ${isDark ? 'text-slate-200' : 'text-slate-800'}`}>{edu.degree}</p>
+                            <p className={`text-[10px] ${isDark ? 'text-slate-400' : 'text-slate-500 font-bold'}`}>{edu.school || edu.institution} ({edu.year})</p>
                           </div>
                         ))}
                       </div>
@@ -614,7 +669,7 @@ export const UploadResumeWizard: React.FC<UploadResumeWizardProps> = ({
                 </div>
 
                 <div className="flex justify-end gap-3 mt-4">
-                  <Button onClick={() => setCurrentStage(3)} className="btn-glow-green">
+                  <Button onClick={() => setCurrentStage(3)} className="font-extrabold flex items-center gap-1">
                     Verify & View Report <ArrowRight size={14} />
                   </Button>
                 </div>
