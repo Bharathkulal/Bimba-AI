@@ -1787,3 +1787,139 @@ def get_analysis_record(
         },
         "suggestions": json.loads(analysis.suggestions) if analysis.suggestions else []
     }
+
+# --- CAREER COPILOT CHATBOT ENDPOINTS ---
+
+class ChatRequest(BaseModel):
+    resume_id: int
+    message: str
+    mode: Optional[str] = None
+
+class ApplyRewriteRequest(BaseModel):
+    original: str
+    suggested: str
+
+@router.get("/{id}/chat/history")
+def get_chat_history(
+    id: int,
+    student: Student = Depends(get_current_student),
+    db: Any = Depends(get_db)
+):
+    verify_ownership(id, student.id, db)
+    messages_cursor = db.chat_messages.find({"resume_id": id, "student_id": student.id}).sort("timestamp", 1)
+    messages = list(messages_cursor)
+    
+    formatted = []
+    for msg in messages:
+        formatted.append({
+            "id": msg.get("id"),
+            "sender": msg.get("sender"),
+            "text": msg.get("text"),
+            "timestamp": msg.get("timestamp").isoformat() if msg.get("timestamp") else None,
+            "mode": msg.get("mode"),
+            "actions": msg.get("actions", [])
+        })
+    return formatted
+
+@router.post("/chat")
+def send_chat_message(
+    payload: ChatRequest,
+    student: Student = Depends(get_current_student),
+    db: Any = Depends(get_db)
+):
+    from app.services.chat_service import ChatService
+    service = ChatService(db)
+    try:
+        result = service.handle_chat_message(
+            student_id=student.id,
+            resume_id=payload.resume_id,
+            message=payload.message,
+            explicit_mode=payload.mode
+        )
+        return result
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Chatbot service failed: {str(e)}")
+
+@router.post("/{id}/chat/apply-rewrite")
+def apply_chat_rewrite(
+    id: int,
+    payload: ApplyRewriteRequest,
+    student: Student = Depends(get_current_student),
+    db: Any = Depends(get_db)
+):
+    resume = verify_ownership(id, student.id, db)
+    
+    # Track update success
+    applied = False
+    
+    # 1. Check master objectives & summary
+    summary = resume.get("summary", "")
+    objective = resume.get("career_objective", "")
+    
+    if payload.original in summary:
+        summary = summary.replace(payload.original, payload.suggested)
+        applied = True
+    if payload.original in objective:
+        objective = objective.replace(payload.original, payload.suggested)
+        applied = True
+        
+    # 2. Check education
+    education = resume.get("education", [])
+    for edu in education:
+        ach = edu.get("achievements") or ""
+        if payload.original in ach:
+            edu["achievements"] = ach.replace(payload.original, payload.suggested)
+            applied = True
+            
+    # 3. Check experience
+    experience = resume.get("experience", [])
+    for exp in experience:
+        desc = exp.get("description") or ""
+        ach = exp.get("achievements") or ""
+        if payload.original in desc:
+            exp["description"] = desc.replace(payload.original, payload.suggested)
+            applied = True
+        if payload.original in ach:
+            exp["achievements"] = ach.replace(payload.original, payload.suggested)
+            applied = True
+            
+    # 4. Check projects
+    projects = resume.get("projects", [])
+    for proj in projects:
+        desc = proj.get("description") or ""
+        ach = proj.get("achievements") or ""
+        if payload.original in desc:
+            proj["description"] = desc.replace(payload.original, payload.suggested)
+            applied = True
+        if payload.original in ach:
+            proj["achievements"] = ach.replace(payload.original, payload.suggested)
+            applied = True
+            
+    if not applied:
+        raise HTTPException(status_code=400, detail="The original text segment could not be matched inside the resume sections.")
+        
+    db.resumes.update_one(
+        {"id": id},
+        {"$set": {
+            "summary": summary,
+            "career_objective": objective,
+            "education": education,
+            "experience": experience,
+            "projects": projects,
+            "updated_at": datetime.utcnow()
+        }}
+    )
+    
+    # Trigger ATS update audit
+    try:
+        db.resume_downloads.insert_one({
+            "id": get_next_sequence("resume_downloads"),
+            "resume_id": id,
+            "format": "REWRITE_UPDATE",
+            "created_at": datetime.utcnow()
+        })
+    except:
+        pass
+        
+    return {"success": True}
+

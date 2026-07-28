@@ -14,6 +14,7 @@ import { analyticsService } from '../services/analytics';
 import type { ResumeAnalyticsItem, AtsData } from '../services/analytics';
 import { TemplateShowcase } from '../components/TemplateShowcase';
 import { UploadResumeWizard } from '../components/UploadResumeWizard';
+import { CareerCopilotChat } from '../components/CareerCopilotChat';
 
 export const ResumePage: React.FC = () => {
   const navigate = useNavigate();
@@ -564,46 +565,12 @@ export const ResumePage: React.FC = () => {
 
             {/* Embedded Optimizer chatbot panel */}
             <div className="flex flex-col gap-5">
-              <Card className="p-5 h-[420px] flex flex-col justify-between">
-                <div>
-                  <h4 className="text-xs font-bold text-slate-850">AI Optimizer Chat</h4>
-                  <p className="text-[9px] text-slate-400 mt-0.5">Optimize formatting, experience summaries, and skills</p>
-                </div>
-                
-                <div className="flex-grow overflow-y-auto p-2 border border-slate-100 rounded-xl bg-slate-50/50 flex flex-col gap-2.5 my-3">
-                  {chatMessages.map((msg, idx) => (
-                    <div 
-                      key={idx} 
-                      className={`flex ${msg.sender === 'user' ? 'justify-end' : 'justify-start'}`}
-                    >
-                      <div className={`max-w-[85%] rounded-xl p-2.5 text-[10px] leading-relaxed ${
-                        msg.sender === 'user'
-                          ? '-[#111111] text-white rounded-tr-none'
-                          : 'bg-white border border-slate-150 text-slate-700 rounded-tl-none shadow-sm'
-                      }`}>
-                        {msg.text}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-
-                <div className="flex items-center gap-2 pt-2 border-t border-slate-100">
-                  <input 
-                    type="text"
-                    placeholder="Ask AI Optimizer..."
-                    value={chatInput}
-                    onChange={(e) => setChatInput(e.target.value)}
-                    onKeyDown={(e) => e.key === 'Enter' && handleSendChat()}
-                    className="flex-grow pl-3 pr-3 py-1.5 rounded-lg bg-slate-50 border border-slate-200 focus:-[#111111] focus:outline-none text-[10px] text-slate-700 font-medium"
-                  />
-                  <button 
-                    onClick={handleSendChat}
-                    className="w-7 h-7 rounded-lg -[#111111] hover:-[#111111] text-white flex items-center justify-center transition-colors cursor-pointer shrink-0"
-                  >
-                    <SendHorizontal size={10} />
-                  </button>
-                </div>
-              </Card>
+              {bestResume && (
+                <CareerCopilotChat 
+                  resumeId={bestResume.id} 
+                  onUpdateResume={fetchResumeData} 
+                />
+              )}
             </div>
 
           </div>

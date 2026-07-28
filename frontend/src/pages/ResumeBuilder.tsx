@@ -16,6 +16,7 @@ import { API_BASE_URL } from '../services/api';
 import { TEMPLATE_REGISTRY, COLOR_THEMES, FONTS } from '../resume/templatesRegistry';
 import type { LayoutType } from '../resume/templatesRegistry';
 import { ResumePreviewSheet } from '../resume/ResumePreviewSheet';
+import { CareerCopilotChat } from '../components/CareerCopilotChat';
 
 
 
@@ -130,7 +131,7 @@ export const ResumeBuilder: React.FC = () => {
 
   // MOCK DATA AND SETTINGS FOR PREVIEW
   const [zoomLevel, setZoomLevel] = useState(1);
-  const [activeStudioTab, setActiveStudioTab] = useState<'editor' | 'templates' | 'ats' | 'readiness' | 'versions' | 'export' | 'jd_optimizer' | 'ai_improve'>('editor');
+  const [activeStudioTab, setActiveStudioTab] = useState<'editor' | 'templates' | 'copilot' | 'ats' | 'readiness' | 'versions' | 'export' | 'jd_optimizer' | 'ai_improve'>('editor');
   const [templates, setTemplates] = useState<any[]>([]);
   
   // Section layout visibility
@@ -1437,6 +1438,7 @@ export const ResumeBuilder: React.FC = () => {
               {[
                 { id: 'editor', label: 'Resume Editor' },
                 { id: 'templates', label: 'Design Layouts' },
+                { id: 'copilot', label: '💬 Career Copilot' },
                 { id: 'ats', label: 'ATS Scorecard' },
                 { id: 'jd_optimizer', label: 'JD Optimizer' },
                 { id: 'ai_improve', label: 'Before vs After' },
@@ -1465,6 +1467,23 @@ export const ResumeBuilder: React.FC = () => {
             {/* LEFT TABBED CONTROLS */}
             <div className="flex flex-col gap-6 overflow-y-auto no-scrollbar pr-2 text-left">
               
+              {activeStudioTab === 'copilot' && resumeId && (
+                <div className="flex flex-col gap-4 text-left">
+                  <div className="bg-white border border-slate-200/60 rounded-3xl p-5 shadow-sm">
+                    <div className="border-b border-slate-105 pb-3 mb-5">
+                      <h3 className="font-extrabold text-sm text-slate-800 font-sans flex items-center gap-2">
+                        <Sparkles size={16} className="text-blue-600 animate-pulse" /> Career Copilot Chat
+                      </h3>
+                      <p className="text-[10px] text-slate-450 mt-1">Your context-aware Career Advisor. Ask anything or type a slash command (e.g. /interview, /tailor) to start.</p>
+                    </div>
+                    <CareerCopilotChat 
+                      resumeId={resumeId}
+                      onUpdateResume={() => reloadResumeDetails(resumeId)}
+                    />
+                  </div>
+                </div>
+              )}
+
               {activeStudioTab === 'editor' && (
                 <div className="flex flex-col gap-6">
                   {/* Personal summary summary */}
