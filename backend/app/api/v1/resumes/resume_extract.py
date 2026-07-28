@@ -101,3 +101,82 @@ async def extract_resume_data_endpoint(
             "skills": extracted_data["skills"]
         }
     }
+
+@router.post("/analyze/{resume_id}")
+def analyze_resume_endpoint(
+    resume_id: int,
+    student: Student = Depends(get_current_student),
+    db: Any = Depends(get_db)
+):
+    """
+    POST /api/resume/analyze/{resume_id}
+    Performs AI evaluation of the resume data, returning standardized scorecards.
+    """
+    from app.services.resume_ai_analyzer import analyze_resume
+    
+    # 1. Verify ownership and fetch resume_analysis record
+    analysis_record = db.resume_analysis.find_one({
+        "resume_id": resume_id,
+        "student_id": student.id
+    })
+    
+    if not analysis_record:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Resume extraction data not found. Please extract text first."
+        )
+
+    # 1.5 Caching Check: Return existing analysis if already completed
+    if "ai_analysis" in analysis_record and analysis_record.get("status") == "ai_completed":
+        ai_res = analysis_record["ai_analysis"]
+        return {
+            "success": True,
+            "message": "Resume analysis retrieved from cache",
+            "analysis": {
+                "overall_score": ai_res["overall_score"],
+                "ats_score": ai_res["ats_score"],
+                "strengths": ai_res["strengths"],
+                "weaknesses": ai_res["weaknesses"],
+                "suggestions": ai_res["improvement_suggestions"]
+            }
+        }
+
+    # 2. Call AI Analyzer service
+    try:
+        ai_res = analyze_resume(db, analysis_record.get("extracted_data", {}))
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="AI analysis service is temporarily unavailable. Please try again later."
+        )
+
+    # 3. Update resume_analysis record in MongoDB
+    db.resume_analysis.update_one(
+        {"resume_id": resume_id, "student_id": student.id},
+        {"$set": {
+            "ai_analysis": ai_res,
+            "status": "ai_completed",
+            "updated_at": datetime.now(timezone.utc).isoformat()
+        }}
+    )
+
+    # Update resumes collection status
+    db.resumes.update_one(
+        {"id": resume_id, "student_id": student.id},
+        {"$set": {
+            "status": "ai_completed",
+            "ats_score": ai_res["ats_score"]
+        }}
+    )
+
+    return {
+        "success": True,
+        "message": "Resume analysis completed",
+        "analysis": {
+            "overall_score": ai_res["overall_score"],
+            "ats_score": ai_res["ats_score"],
+            "strengths": ai_res["strengths"],
+            "weaknesses": ai_res["weaknesses"],
+            "suggestions": ai_res["improvement_suggestions"]
+        }
+    }

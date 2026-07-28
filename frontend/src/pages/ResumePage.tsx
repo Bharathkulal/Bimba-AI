@@ -18,6 +18,7 @@ import { CareerCopilotChat } from '../components/CareerCopilotChat';
 import { ResumeUpload } from '../components/resume/ResumeUpload';
 import { Modal } from '../components/Modal';
 import { ResumeAnalysisStatus } from '../components/resume/ResumeAnalysisStatus';
+import { ResumeAIAnalysis } from '../components/resume/ResumeAIAnalysis';
 
 export const ResumePage: React.FC = () => {
   const navigate = useNavigate();
@@ -590,21 +591,30 @@ export const ResumePage: React.FC = () => {
         />
       )}
 
-      {activeAnalysisResumeId !== null && (
-        <Modal 
-          isOpen={activeAnalysisResumeId !== null} 
-          onClose={() => setActiveAnalysisResumeId(null)}
-          title="AI Text Extraction & Analysis"
-        >
-          <ResumeAnalysisStatus 
-            resumeId={activeAnalysisResumeId} 
-            onAnalysisComplete={() => {
-              setActiveAnalysisResumeId(null);
-              fetchResumeData();
-            }}
-          />
-        </Modal>
-      )}
+      {activeAnalysisResumeId !== null && (() => {
+        const selectedResume = resumes.find(r => r.id === activeAnalysisResumeId);
+        const showAnalysis = selectedResume?.status === 'analyzed' || selectedResume?.status === 'ai_completed';
+        
+        return (
+          <Modal 
+            isOpen={activeAnalysisResumeId !== null} 
+            onClose={() => setActiveAnalysisResumeId(null)}
+            title={showAnalysis ? "AI Resume Scorecard" : "AI Text Extraction & Analysis"}
+          >
+            {showAnalysis ? (
+              <ResumeAIAnalysis 
+                resumeId={activeAnalysisResumeId} 
+                onAnalysisComplete={fetchResumeData}
+              />
+            ) : (
+              <ResumeAnalysisStatus 
+                resumeId={activeAnalysisResumeId} 
+                onAnalysisComplete={fetchResumeData}
+              />
+            )}
+          </Modal>
+        );
+      })()}
     </div>
   );
 };
