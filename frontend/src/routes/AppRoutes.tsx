@@ -21,7 +21,7 @@ const NotFound = lazy(() => import('../pages/NotFound').then(module => ({ defaul
 const Notifications = lazy(() => import('../pages/Notifications').then(module => ({ default: module.Notifications })));
 
 // Jobs Module Pages
-const JobsDashboard = lazy(() => import('../pages/jobs/JobsDashboard').then(module => ({ default: module.JobsDashboard })));
+const JobsDashboard = lazy(() => import('../pages/JobsPage').then(module => ({ default: module.JobsPage })));
 const JobDetails = lazy(() => import('../pages/jobs/JobDetails').then(module => ({ default: module.JobDetails })));
 const SavedJobs = lazy(() => import('../pages/jobs/SavedJobs').then(module => ({ default: module.SavedJobs })));
 const Applications = lazy(() => import('../pages/jobs/Applications').then(module => ({ default: module.Applications })));

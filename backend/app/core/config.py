@@ -15,6 +15,12 @@ class Settings(BaseSettings):
     CLOUDINARY_API_KEY: str = os.getenv("CLOUDINARY_API_KEY", "")
     CLOUDINARY_API_SECRET: str = os.getenv("CLOUDINARY_API_SECRET", "")
 
+    # Job Search API Settings
+    JSEARCH_API_KEY: str = os.getenv("JSEARCH_API_KEY", "")
+    JSEARCH_API_HOST: str = os.getenv("JSEARCH_API_HOST", "jsearch.p.rapidapi.com")
+    LINKEDIN_API_KEY: str = os.getenv("LINKEDIN_API_KEY", "")
+    LINKEDIN_API_HOST: str = os.getenv("LINKEDIN_API_HOST", "linkedin-job-search-api.p.rapidapi.com")
+
     # Security
     SECRET_KEY: str = os.getenv("SECRET_KEY", "super_secret_placement_system_key")
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 60 * 24 * 7  # 7 days

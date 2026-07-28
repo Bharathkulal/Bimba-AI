@@ -21,7 +21,6 @@ from app.schemas.jobs import (
 
 import json
 import random
-from app.services.ai_gateway import run_ai_gateway_request
 
 router = APIRouter(prefix="/jobs", tags=["Jobs Module"])
 
@@ -312,3 +311,177 @@ def get_job_recommendations(
         "extracted_keywords": payload,
         "query_used": payload.get("search_query")
     }
+
+from pydantic import BaseModel
+
+class ManualJobSearchRequest(BaseModel):
+    keyword: str
+    location: Optional[str] = "India"
+
+@router.post("/recommend/{resume_id}")
+def generate_job_recommendations_endpoint(
+    resume_id: int,
+    student: Student = Depends(get_current_student),
+    db: Any = Depends(get_db)
+):
+    """
+    POST /api/jobs/recommend/{resume_id}
+    Extracts profile skills and queries JSearch / LinkedIn, then ranks and saves in MongoDB.
+    """
+    from app.services.jobs.job_recommendation_service import get_job_recommendations_with_matching
+    
+    # 1. Verify ownership and load resume analysis
+    resume_doc = db.resumes.find_one({"id": resume_id, "student_id": student.id})
+    if not resume_doc:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Resume not found or unauthorized"
+        )
+        
+    analysis_record = db.resume_analysis.find_one({
+        "resume_id": resume_id,
+        "student_id": student.id
+    })
+    
+    if not analysis_record or analysis_record.get("status") != "ai_completed":
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="AI analysis has not been executed yet. Please run analysis first."
+        )
+
+    # 2. Extract profile details to query jobs
+    ext_data = analysis_record.get("extracted_data", {})
+    skills = ext_data.get("skills", [])
+    target_role = ext_data.get("target_role") or "Software Engineer"
+    
+    # Generate search query
+    query = target_role
+    if skills:
+        query = f"{target_role} {skills[0]}"
+
+    # 3. Call recommendation service
+    try:
+        ranked_jobs = get_job_recommendations_with_matching(
+            db=db,
+            student=student,
+            resume_analysis=analysis_record,
+            keyword=query,
+            location="India",
+            limit=10
+        )
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Job search pipeline error: {str(e)}"
+        )
+
+    # 4. Save to job_recommendations collection
+    rec_id = str(get_next_sequence("job_recommendations"))
+    rec_doc = {
+        "id": int(rec_id),
+        "student_id": student.id,
+        "resume_id": resume_id,
+        "search_query": query,
+        "jobs": ranked_jobs,
+        "created_at": datetime.utcnow().isoformat()
+    }
+    
+    # Remove older recommendations for this resume
+    db.job_recommendations.delete_many({
+        "resume_id": resume_id,
+        "student_id": student.id
+    })
+    db.job_recommendations.insert_one(rec_doc)
+
+    return {
+        "success": True,
+        "message": "AI Job recommendations generated successfully",
+        "recommendations": ranked_jobs
+    }
+
+@router.get("/recommendations/{resume_id}")
+def get_existing_recommendations_endpoint(
+    resume_id: int,
+    student: Student = Depends(get_current_student),
+    db: Any = Depends(get_db)
+):
+    """
+    GET /api/jobs/recommendations/{resume_id}
+    Retrieves stored recommendations from MongoDB.
+    """
+    rec = db.job_recommendations.find_one({
+        "resume_id": resume_id,
+        "student_id": student.id
+    })
+    
+    if not rec:
+        return {
+            "success": True,
+            "recommendations": []
+        }
+        
+    return {
+        "success": True,
+        "recommendations": rec.get("jobs", [])
+    }
+
+@router.post("/search")
+def manual_job_search_endpoint(
+    payload: ManualJobSearchRequest,
+    student: Student = Depends(get_current_student),
+    db: Any = Depends(get_db)
+):
+    """
+    POST /api/jobs/search
+    Manual search that fetches active jobs and scores them against the active resume profile.
+    """
+    from app.services.jobs.job_recommendation_service import get_job_recommendations_with_matching
+    
+    # Find student's latest completed resume analysis
+    analysis_record = db.resume_analysis.find_one({
+        "student_id": student.id,
+        "status": "ai_completed"
+    })
+    
+    if not analysis_record:
+        # Fallback to general search without AI matching scores (or mock scores)
+        # Search via LinkedIn provider
+        from app.services.jobs.linkedin_provider import LinkedInProvider
+        provider = LinkedInProvider()
+        jobs = provider.search_jobs(student, payload.keyword, payload.location, 10)
+        
+        ranked_jobs = []
+        for j in jobs:
+            ranked_jobs.append({
+                **j,
+                "match_score": 70,
+                "reason": "Resume not uploaded yet. Showing default match.",
+                "matched_skills": [],
+                "missing_skills": []
+            })
+        return {
+            "success": True,
+            "jobs": ranked_jobs
+        }
+
+    # Run search with matching
+    try:
+        ranked_jobs = get_job_recommendations_with_matching(
+            db=db,
+            student=student,
+            resume_analysis=analysis_record,
+            keyword=payload.keyword,
+            location=payload.location,
+            limit=10
+        )
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Search pipeline failure: {str(e)}"
+        )
+
+    return {
+        "success": True,
+        "jobs": ranked_jobs
+    }
+
