@@ -6,6 +6,15 @@ import os
 # Load env variables from .env
 load_dotenv(os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), ".env"))
 
+# Strict environment variable validation
+required_env_vars = ["GEMINI_API_KEY", "GROQ_API_KEY", "OPENROUTER_API_KEY", "MONGODB_URI"]
+for var in required_env_vars:
+    val = os.getenv(var, "").strip()
+    if not val:
+        raise RuntimeError(f"Missing {var} in .env file. Please check configuration.")
+    if val.startswith("mock_") or "placeholder" in val.lower():
+        print(f"WARNING: {var} appears to be configured with placeholder content: {val}")
+
 from app.core.config import settings
 from app.api.v1.monitoring.monitoring_routes import router as health_router
 from app.api.v1.auth.auth_routes import router as auth_router

@@ -20,6 +20,7 @@ from app.schemas.jobs import (
 )
 
 import json
+import random
 from app.services.ai_gateway import run_ai_gateway_request
 
 router = APIRouter(prefix="/jobs", tags=["Jobs Module"])

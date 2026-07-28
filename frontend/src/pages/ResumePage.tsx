@@ -216,9 +216,20 @@ export const ResumePage: React.FC = () => {
       
       setIsUploading(false);
       navigate(`/resume-builder?id=${newResumeId}&is_parsed=true`);
-    } catch (err) {
+    } catch (err: any) {
       console.error(err);
-      alert("Failed to parse and save resume.");
+      let errMsg = "Failed to parse and save resume.";
+      if (err.response && err.response.data) {
+        const d = err.response.data;
+        if (d.step && d.provider && d.error) {
+          errMsg = `Parsing failed at: ${d.provider} API\n\nReason: ${d.error}`;
+        } else if (d.detail) {
+          errMsg = `Upload Failed: ${d.detail}`;
+        }
+      } else if (err.message) {
+        errMsg = `Upload Failed: ${err.message}`;
+      }
+      alert(errMsg);
       setIsUploading(false);
     }
   };

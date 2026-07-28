@@ -171,6 +171,13 @@ def get_resume_detail(id: int, student: Student = Depends(get_current_student), 
             "color_theme": resume.color_theme,
             "status": resume.status,
             "ats_score": resume.ats_score,
+            "phone": resume.get("phone") or "",
+            "address": resume.get("address") or "",
+            "linkedin": resume.get("linkedin") or "",
+            "github": resume.get("github") or "",
+            "portfolio": resume.get("portfolio") or "",
+            "website": resume.get("website") or "",
+            "summary": resume.get("summary") or "",
             "updated_at": resume.updated_at.isoformat() if resume.updated_at else datetime.utcnow().isoformat()
         },
         "education": education,
@@ -228,30 +235,51 @@ def create_resume(payload: ResumeCreateRequest, student: Student = Depends(get_c
         "created_at": datetime.utcnow(),
         "updated_at": datetime.utcnow()
     }
-    db.resumes.insert_one(resume_doc)
+    print("[MongoDB] Saving resume...")
+    try:
+        db.resumes.insert_one(resume_doc)
+        print("[MongoDB] Resume saved successfully")
+    except Exception as e:
+        print(f"[MongoDB Error] Resumes insert failed: {e}")
+        from fastapi.responses import JSONResponse
+        return JSONResponse(
+            status_code=500,
+            content={
+                "success": False,
+                "step": "MongoDB Insert",
+                "provider": "MongoDB Database",
+                "error": f"Database insertion failed: {str(e)}"
+            }
+        )
 
     # Initialize empty default ATS scorecard
-    db.resume_ats.insert_one({
-        "id": get_next_sequence("resume_ats"),
-        "resume_id": next_id,
-        "overall_score": 72,
-        "formatting_score": 75,
-        "keyword_match": 68,
-        "grammar_score": 80,
-        "readability_score": 70,
-        "recruiter_score": 68,
-        "missing_keywords": "Docker, AWS, System Design",
-        "suggestions": "Integrate cloud experience bullet points. Fix grammar in profile bio.",
-        "updated_at": datetime.utcnow()
-    })
+    try:
+        db.resume_ats.insert_one({
+            "id": get_next_sequence("resume_ats"),
+            "resume_id": next_id,
+            "overall_score": 72,
+            "formatting_score": 75,
+            "keyword_match": 68,
+            "grammar_score": 80,
+            "readability_score": 70,
+            "recruiter_score": 68,
+            "missing_keywords": "Docker, AWS, System Design",
+            "suggestions": "Integrate cloud experience bullet points. Fix grammar in profile bio.",
+            "updated_at": datetime.utcnow()
+        })
+    except Exception as e:
+        print(f"[MongoDB Error] ATS scorecard insert failed: {e}")
 
     # Log action
-    db.activity_logs.insert_one({
-        "id": get_next_sequence("activity_logs"),
-        "student_id": student.id,
-        "activity": f"Resume Uploaded" if payload.visibility == "Private" and "AI Parsed" in payload.name else f"Resume Created",
-        "created_at": datetime.utcnow()
-    })
+    try:
+        db.activity_logs.insert_one({
+            "id": get_next_sequence("activity_logs"),
+            "student_id": student.id,
+            "activity": f"Resume Uploaded" if payload.visibility == "Private" and "AI Parsed" in payload.name else f"Resume Created",
+            "created_at": datetime.utcnow()
+        })
+    except Exception as e:
+        print(f"[MongoDB Error] Activity log insert failed: {e}")
 
     # Save original version state
     state = {
@@ -1078,7 +1106,14 @@ def get_public_resume(id: int, db: Any = Depends(get_db)):
             "target_role": resume.target_role,
             "career_objective": resume.career_objective,
             "template_id": resume.template_id,
-            "color_theme": resume.color_theme
+            "color_theme": resume.color_theme,
+            "phone": resume_doc.get("phone") or "",
+            "address": resume_doc.get("address") or "",
+            "linkedin": resume_doc.get("linkedin") or "",
+            "github": resume_doc.get("github") or "",
+            "portfolio": resume_doc.get("portfolio") or "",
+            "website": resume_doc.get("website") or "",
+            "summary": resume_doc.get("summary") or ""
         },
         "education": resume.get("education", []),
         "experience": resume.get("experience", []),
@@ -1196,47 +1231,37 @@ async def upload_resume_file(
     student: Student = Depends(get_current_student),
     db: Any = Depends(get_db)
 ):
-    if not file.filename.lower().endswith((".pdf", ".docx", ".txt")):
-        raise HTTPException(status_code=400, detail="Unsupported file format. Please upload PDF, DOCX or TXT.")
+    from app.services.upload_service import UploadService
+    from app.core.exceptions import PipelineException
+    from fastapi.responses import JSONResponse
     
-    content = await file.read()
-    if len(content) > 10 * 1024 * 1024:
-        raise HTTPException(status_code=400, detail="File size exceeds limit of 10MB.")
-        
-    os.makedirs("uploads/resumes", exist_ok=True)
-    file_id = str(uuid.uuid4())
-    secure_filename = f"{file_id}_{file.filename}"
-    filepath = os.path.join("uploads/resumes", secure_filename)
-    
-    with open(filepath, "wb") as f:
-        f.write(content)
-        
-    text = extract_text_from_file(content, file.filename)
-    if not text:
-        raise HTTPException(status_code=400, detail="Could not extract text from the uploaded file.")
-        
-    prompt = RESUME_PARSE_PROMPT.format(resume_text=text)
-    
-    parsed_json = None
     try:
-        raw_response = run_ai_gateway_request(db, prompt, "Resume Studio: PARSE", student.roll_number)
-        cleaned = raw_response.strip()
-        if cleaned.startswith("```json"):
-            cleaned = cleaned[7:]
-        if cleaned.endswith("```"):
-            cleaned = cleaned[:-3]
-        parsed_json = json.loads(cleaned.strip())
+        content = await file.read()
+        service = UploadService(db)
+        result = service.process_upload(content, file.filename, student.id)
+        return result
+    except PipelineException as pe:
+        return JSONResponse(
+            status_code=pe.status_code,
+            content={
+                "success": False,
+                "step": pe.step,
+                "provider": pe.provider,
+                "error": pe.message,
+                "details": pe.details
+            }
+        )
     except Exception as e:
-        print(f"[AI Parsing Error] Failed to parse: {e}. Falling back to simulated parser.")
-        try:
-            parsed_json = simulated_resume_parse(text)
-        except Exception as parse_err:
-            raise HTTPException(
-                status_code=status.HTTP_502_BAD_GATEWAY,
-                detail=f"AI Resume Parsing Service failed: {str(e)}. Fallback parser also failed: {str(parse_err)}"
-            )
-        
-    return {"parsed_data": parsed_json, "file_path": filepath}
+        return JSONResponse(
+            status_code=500,
+            content={
+                "success": False,
+                "step": "Upload Pipeline Orchestration",
+                "provider": "Core System",
+                "error": str(e),
+                "details": str(e)
+            }
+        )
 
 @router.post("/{id}/analyze")
 def analyze_resume_endpoint(
@@ -1263,7 +1288,7 @@ def analyze_resume_endpoint(
         "certificates": resume.get("certificates", [])
     }
     
-    prompt = RESUME_ANALYZE_PROMPT.format(resume_json=json.dumps(resume_state))
+    prompt = RESUME_ANALYZE_PROMPT.replace("{resume_json}", json.dumps(resume_state))
     
     try:
         raw_response = run_ai_gateway_request(db, prompt, "Resume Studio: ANALYZE", student.roll_number)
@@ -1387,7 +1412,7 @@ def improve_resume_endpoint(
         }
     }
     
-    prompt = RESUME_IMPROVE_PROMPT.format(improvement_goal=payload.improvement_goal, resume_json=json.dumps(resume_state))
+    prompt = RESUME_IMPROVE_PROMPT.replace("{improvement_goal}", payload.improvement_goal).replace("{resume_json}", json.dumps(resume_state))
     
     try:
         raw_response = run_ai_gateway_request(db, prompt, f"Resume Studio: IMPROVE", student.roll_number)
@@ -1486,7 +1511,7 @@ def optimize_jd_endpoint(
         "certifications": resume.get("certificates", [])
     }
     
-    prompt = JD_MATCH_PROMPT.format(resume_json=json.dumps(resume_state), job_description=payload.job_description)
+    prompt = JD_MATCH_PROMPT.replace("{resume_json}", json.dumps(resume_state)).replace("{job_description}", payload.job_description)
     
     match_data = None
     try:
@@ -1503,7 +1528,7 @@ def optimize_jd_endpoint(
             detail=f"AI Job Match Service failed: {str(e)}. Please check your AI API configurations."
         )
         
-    opt_prompt = ATS_OPTIMIZATION_PROMPT.format(resume_json=json.dumps(resume_state), job_description=payload.job_description)
+    opt_prompt = ATS_OPTIMIZATION_PROMPT.replace("{resume_json}", json.dumps(resume_state)).replace("{job_description}", payload.job_description)
     optimized_resume = None
     try:
         raw_opt = run_ai_gateway_request(db, opt_prompt, "Resume Studio: JD OPTIMIZE", student.roll_number)

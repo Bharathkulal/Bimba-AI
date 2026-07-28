@@ -251,14 +251,58 @@ export const UploadResumeWizard: React.FC<UploadResumeWizardProps> = ({
     }
   };
 
-  const startIngestion = () => {
-    setTickerLogs(['File ingestion initialized. Parsing...']);
-    simulateParseLogs((data) => {
-      setParsedResumeData(data);
-      const v = evaluateResumeRubric(data);
+  const startIngestion = async () => {
+    if (!file) return;
+    setTickerLogs(['[UPLOAD] File received. Detecting file type...']);
+    
+    const ext = file.name.split('.').pop()?.toLowerCase();
+    if (ext !== 'pdf' && ext !== 'docx' && ext !== 'txt') {
+      alert("Unsupported file format. Please upload PDF, DOCX or TXT.");
+      return;
+    }
+    
+    setTickerLogs(prev => [...prev, `[UPLOAD] ${ext.toUpperCase()} detected. Extracting text content...`]);
+    
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+      
+      const uploadRes = await apiClient.post('/api/resume-studio/upload', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+      });
+      
+      const parsedData = uploadRes.data.parsed_data;
+      setParsedResumeData(parsedData);
+      
+      const charCount = JSON.stringify(parsedData).length;
+      setTickerLogs(prev => [
+        ...prev, 
+        '[OCR] Text extracted successfully', 
+        `[OCR] Characters: ${charCount}`,
+        '[Gemini] Sending request...',
+        '[Gemini] Response received',
+        '[Parser] JSON validated'
+      ]);
+      
+      const v = evaluateResumeRubric(parsedData);
       setVerdict(v);
       setCurrentStage(2); // Instant verdict
-    });
+    } catch (err: any) {
+      console.error(err);
+      let errMsg = "Failed to parse and save resume.";
+      if (err.response && err.response.data) {
+        const d = err.response.data;
+        if (d.step && d.provider && d.error) {
+          errMsg = `Parsing failed at: ${d.provider} API\n\nReason: ${d.error}`;
+        } else if (d.detail) {
+          errMsg = `Upload Failed: ${d.detail}`;
+        }
+      } else if (err.message) {
+        errMsg = `Upload Failed: ${err.message}`;
+      }
+      setTickerLogs(prev => [...prev, `[ERROR] ${errMsg}`]);
+      alert(errMsg);
+    }
   };
 
   const handlePasteSubmit = () => {

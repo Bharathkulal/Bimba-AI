@@ -277,6 +277,9 @@ class LinkedInService:
                 
                 response = requests.get(url, headers=headers, params=params, timeout=10)
                 
+                if response.status_code != 200:
+                    raise ValueError(f"RapidAPI returned status {response.status_code}: {response.text}")
+                    
                 if response.status_code == 200:
                     raw_jobs = response.json()
                     if not isinstance(raw_jobs, list):
@@ -324,7 +327,8 @@ class LinkedInService:
                         "limit": limit
                     }
             except Exception as e:
-                print(f"RapidAPI failed: {e}. Falling back to mock data.")
+                print(f"RapidAPI failed: {e}")
+                raise ValueError(f"LinkedIn Job Search API failed: {str(e)}")
         
         # 2. Return clean mock results when API is not configured or fails
         student_skills = self._parse_student_skills(student)
