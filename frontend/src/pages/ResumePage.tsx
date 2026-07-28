@@ -15,6 +15,7 @@ import type { ResumeAnalyticsItem, AtsData } from '../services/analytics';
 import { TemplateShowcase } from '../components/TemplateShowcase';
 import { UploadResumeWizard } from '../components/UploadResumeWizard';
 import { CareerCopilotChat } from '../components/CareerCopilotChat';
+import { ResumeUpload } from '../components/resume/ResumeUpload';
 
 export const ResumePage: React.FC = () => {
   const navigate = useNavigate();
@@ -50,6 +51,7 @@ export const ResumePage: React.FC = () => {
   const [activeSubTab, setActiveSubTab] = useState<'resumes' | 'templates' | 'ats-scanner'>('resumes');
   const [showWizard, setShowWizard] = useState(false);
   const [wizardFile, setWizardFile] = useState<File | null>(null);
+  const [uploadedFile, setUploadedFile] = useState<File | null>(null);
   const { theme } = useThemeStore();
   const isDark = theme === 'dark';
 
@@ -202,7 +204,7 @@ export const ResumePage: React.FC = () => {
         <div className="absolute right-0 top-0 w-80 h-full bg-gradient-to-l -[#111111]/5 to-transparent blur-3xl pointer-events-none" />
         <div className="relative z-10 text-left">
           <h1 className="text-3xl font-extrabold text-slate-900 tracking-tight">
-            Resume Hub
+            My Resume
           </h1>
           <p className="text-sm text-slate-500 mt-1 font-medium">
             Build, template, parse, and optimize your resumes using advanced ATS scoring.
@@ -306,6 +308,20 @@ export const ResumePage: React.FC = () => {
       <div className="mt-2">
         {activeSubTab === 'resumes' && (
           <div className="flex flex-col gap-6">
+            <ResumeUpload 
+              onUploadSuccess={(fileObj) => {
+                setUploadedFile(fileObj);
+                fetchResumeData();
+              }}
+              onAnalyzeClick={() => {
+                if (uploadedFile) {
+                  setWizardFile(uploadedFile);
+                  setShowWizard(true);
+                } else {
+                  setShowWizard(true);
+                }
+              }}
+            />
             
             {/* Filters Row */}
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border-b border-slate-100 pb-3">
@@ -362,11 +378,61 @@ export const ResumePage: React.FC = () => {
                     if (sortBy === 'name') return a.name.localeCompare(b.name);
                     return b.id - a.id;
                   })
-                  .map((res) => (
-                    <Card 
-                      key={res.id} 
-                      className="hover:border-[#E5E7EB] flex flex-col justify-between gap-4 text-left"
-                    >
+                  .map((res) => {
+                    if (res.status === 'uploaded') {
+                      return (
+                        <Card 
+                          key={res.id} 
+                          className="hover:border-emerald-500/30 flex flex-col justify-between gap-4 text-left border-slate-200 dark:border-white/10 dark:bg-[#1F2937]/75 backdrop-blur-md shadow-sm"
+                        >
+                          <div className="flex justify-between items-start gap-4">
+                            <div className="flex items-center gap-3">
+                              <div className="w-10 h-10 bg-emerald-50 dark:bg-emerald-950/20 rounded-xl border border-emerald-100 dark:border-emerald-900/30 flex items-center justify-center text-emerald-600">
+                                <FileText size={18} />
+                              </div>
+                              <div>
+                                <h4 className="font-bold text-sm text-slate-800 dark:text-white truncate max-w-[200px]">{res.name}</h4>
+                                <p className="text-[10px] text-slate-400 mt-1 font-semibold">
+                                  Status: <span className="text-emerald-500 font-bold uppercase">{res.status}</span>
+                                </p>
+                              </div>
+                            </div>
+                            
+                            <div className="text-right shrink-0">
+                              <span className="text-[9px] text-slate-450 font-bold">Uploaded: {new Date(res.lastEdited).toLocaleDateString()}</span>
+                            </div>
+                          </div>
+
+                          <div className="flex items-center justify-between gap-5 pt-3 border-t border-slate-100 dark:border-white/5 mt-1">
+                            <span className="text-[10px] text-slate-400 font-medium">Original file stored securely</span>
+                            <div className="flex items-center gap-1.5 shrink-0">
+                              <button 
+                                onClick={() => {
+                                  // Open wizard for this resume
+                                  setWizardFile(null);
+                                  setShowWizard(true);
+                                }}
+                                className="px-3 py-1.5 bg-emerald-650 hover:bg-emerald-700 text-white font-bold text-[10px] rounded-lg transition-colors cursor-pointer"
+                              >
+                                Analyze Resume
+                              </button>
+                              <button 
+                                onClick={() => deleteResume(res.id)}
+                                className="w-7.5 h-7.5 rounded-lg bg-rose-50 dark:bg-rose-950/20 border border-rose-100 dark:border-rose-900/30 flex items-center justify-center text-rose-650 dark:text-rose-450 hover:bg-rose-600 hover:text-white transition-colors cursor-pointer"
+                                title="Delete"
+                              >
+                                <Trash2 size={12} />
+                              </button>
+                            </div>
+                          </div>
+                        </Card>
+                      );
+                    }
+                    return (
+                      <Card 
+                        key={res.id} 
+                        className="hover:border-[#E5E7EB] flex flex-col justify-between gap-4 text-left"
+                      >
                       <div className="flex justify-between items-start gap-4">
                         <div className="flex items-center gap-3">
                           <div className="w-10 h-10 bg-slate-50 rounded-xl border border-slate-100 flex items-center justify-center -[#111111]">
@@ -429,7 +495,8 @@ export const ResumePage: React.FC = () => {
                         </div>
                       </div>
                     </Card>
-                  ))
+                  );
+                })
               )}
             </div>
           </div>

@@ -40,38 +40,38 @@ async def upload_resume_file(
     POST /api/files/upload-resume
     Uploads original resume. Stores inside: bimba-ai/uploaded-resumes/
     """
+    from datetime import datetime, timezone
     try:
         content = await file.read()
         filename = file.filename or "resume.pdf"
         
-        # Upload
+        # Upload to Cloudinary
         result = upload_file(content, filename, folder="uploaded-resumes")
         
-        # Save metadata to MongoDB
-        cloudinary_metadata = {
-            "public_id": result["public_id"],
-            "url": result["url"],
-            "resource_type": result["resource_type"],
-            "uploaded_at": result["uploaded_at"],
-            "folder": "uploaded-resumes"
-        }
-        
-        # Find or create a resume master record in MongoDB
-        # Check if student already has a resume or create new metadata link
+        # Save exact metadata format to MongoDB
+        file_ext = filename.split(".")[-1].lower() if "." in filename else "pdf"
         db.resumes.insert_one({
             "student_id": student.id,
-            "filename": filename,
-            "resume": {
-                "cloudinary": cloudinary_metadata
-            }
+            "roll_number": student.roll_number,
+            "name": f"Uploaded - {filename}",
+            "original_filename": filename,
+            "cloudinary_url": result["url"],
+            "public_id": result["public_id"],
+            "file_type": file_ext,
+            "file_size": result["size"],
+            "status": "uploaded",
+            "created_at": datetime.now(timezone.utc).isoformat(),
+            "updated_at": datetime.now(timezone.utc).isoformat()
         })
         
         return {
             "success": True,
-            "url": result["url"],
-            "public_id": result["public_id"],
-            "filename": filename,
-            "size": result["size"]
+            "message": "Resume uploaded successfully",
+            "file": {
+                "url": result["url"],
+                "public_id": result["public_id"],
+                "filename": filename
+            }
         }
         
     except ValueError as ve:
