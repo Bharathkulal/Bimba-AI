@@ -46,6 +46,10 @@ apiClient.interceptors.response.use(
   (error) => {
     // Handle specific errors like 401 Unauthorized
     if (error.response && error.response.status === 401) {
+      // Do not redirect on login endpoints so the form can handle the 401 error
+      if (error.config && error.config.url && error.config.url.includes('/login')) {
+        return Promise.reject(error);
+      }
       const isAdminRequest = error.config.url?.includes('/admin') || window.location.pathname.startsWith('/admin');
       if (isAdminRequest) {
         localStorage.removeItem('admin_token');
