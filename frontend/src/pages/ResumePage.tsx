@@ -16,6 +16,8 @@ import { TemplateShowcase } from '../components/TemplateShowcase';
 import { UploadResumeWizard } from '../components/UploadResumeWizard';
 import { CareerCopilotChat } from '../components/CareerCopilotChat';
 import { ResumeUpload } from '../components/resume/ResumeUpload';
+import { Modal } from '../components/Modal';
+import { ResumeAnalysisStatus } from '../components/resume/ResumeAnalysisStatus';
 
 export const ResumePage: React.FC = () => {
   const navigate = useNavigate();
@@ -52,6 +54,7 @@ export const ResumePage: React.FC = () => {
   const [showWizard, setShowWizard] = useState(false);
   const [wizardFile, setWizardFile] = useState<File | null>(null);
   const [uploadedFile, setUploadedFile] = useState<File | null>(null);
+  const [activeAnalysisResumeId, setActiveAnalysisResumeId] = useState<number | null>(null);
   const { theme } = useThemeStore();
   const isDark = theme === 'dark';
 
@@ -408,9 +411,7 @@ export const ResumePage: React.FC = () => {
                             <div className="flex items-center gap-1.5 shrink-0">
                               <button 
                                 onClick={() => {
-                                  // Open wizard for this resume
-                                  setWizardFile(null);
-                                  setShowWizard(true);
+                                  setActiveAnalysisResumeId(res.id);
                                 }}
                                 className="px-3 py-1.5 bg-emerald-650 hover:bg-emerald-700 text-white font-bold text-[10px] rounded-lg transition-colors cursor-pointer"
                               >
@@ -587,6 +588,22 @@ export const ResumePage: React.FC = () => {
           }}
           isDark={isDark}
         />
+      )}
+
+      {activeAnalysisResumeId !== null && (
+        <Modal 
+          isOpen={activeAnalysisResumeId !== null} 
+          onClose={() => setActiveAnalysisResumeId(null)}
+          title="AI Text Extraction & Analysis"
+        >
+          <ResumeAnalysisStatus 
+            resumeId={activeAnalysisResumeId} 
+            onAnalysisComplete={() => {
+              setActiveAnalysisResumeId(null);
+              fetchResumeData();
+            }}
+          />
+        </Modal>
       )}
     </div>
   );
