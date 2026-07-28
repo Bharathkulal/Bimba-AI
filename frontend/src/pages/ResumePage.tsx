@@ -20,6 +20,7 @@ import { Modal } from '../components/Modal';
 import { ResumeAnalysisStatus } from '../components/resume/ResumeAnalysisStatus';
 import { ResumeAIAnalysis } from '../components/resume/ResumeAIAnalysis';
 import { ResumeHealthDashboard } from '../components/resume/ResumeHealthDashboard';
+import { ResumeImprovement } from '../components/resume/ResumeImprovement';
 
 export const ResumePage: React.FC = () => {
   const navigate = useNavigate();
@@ -57,6 +58,7 @@ export const ResumePage: React.FC = () => {
   const [wizardFile, setWizardFile] = useState<File | null>(null);
   const [uploadedFile, setUploadedFile] = useState<File | null>(null);
   const [activeAnalysisResumeId, setActiveAnalysisResumeId] = useState<number | null>(null);
+  const [modalView, setModalView] = useState<'default' | 'improve'>('default');
   const { theme } = useThemeStore();
   const isDark = theme === 'dark';
 
@@ -601,7 +603,10 @@ export const ResumePage: React.FC = () => {
         let title = "AI Text Extraction & Analysis";
         let modalSize: 'md' | 'lg' | 'xl' = 'md';
         
-        if (isAnalyzed) {
+        if (modalView === 'improve') {
+          title = "AI Resume Optimization";
+          modalSize = 'lg';
+        } else if (isAnalyzed) {
           title = "AI Resume Scorecard";
         } else if (isAiCompleted) {
           title = "Resume Health Dashboard";
@@ -611,26 +616,39 @@ export const ResumePage: React.FC = () => {
         return (
           <Modal 
             isOpen={activeAnalysisResumeId !== null} 
-            onClose={() => setActiveAnalysisResumeId(null)}
+            onClose={() => {
+              setActiveAnalysisResumeId(null);
+              setModalView('default');
+            }}
             title={title}
             size={modalSize}
           >
-            {isUploaded && (
-              <ResumeAnalysisStatus 
-                resumeId={activeAnalysisResumeId} 
-                onAnalysisComplete={fetchResumeData}
-              />
-            )}
-            {isAnalyzed && (
-              <ResumeAIAnalysis 
-                resumeId={activeAnalysisResumeId} 
-                onAnalysisComplete={fetchResumeData}
-              />
-            )}
-            {isAiCompleted && (
-              <ResumeHealthDashboard 
+            {modalView === 'improve' ? (
+              <ResumeImprovement 
                 resumeId={activeAnalysisResumeId}
+                onChangesApplied={fetchResumeData}
               />
+            ) : (
+              <>
+                {isUploaded && (
+                  <ResumeAnalysisStatus 
+                    resumeId={activeAnalysisResumeId} 
+                    onAnalysisComplete={fetchResumeData}
+                  />
+                )}
+                {isAnalyzed && (
+                  <ResumeAIAnalysis 
+                    resumeId={activeAnalysisResumeId} 
+                    onAnalysisComplete={fetchResumeData}
+                  />
+                )}
+                {isAiCompleted && (
+                  <ResumeHealthDashboard 
+                    resumeId={activeAnalysisResumeId}
+                    onImproveClick={() => setModalView('improve')}
+                  />
+                )}
+              </>
             )}
           </Modal>
         );

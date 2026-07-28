@@ -9,10 +9,12 @@ import { useUserStore } from '../../store/userStore';
 
 interface ResumeHealthDashboardProps {
   resumeId: number;
+  onImproveClick?: () => void;
 }
 
 export const ResumeHealthDashboard: React.FC<ResumeHealthDashboardProps> = ({
-  resumeId
+  resumeId,
+  onImproveClick
 }) => {
   const { healthData, loading, error, fetchHealthData } = useResumeHealthStore();
   const user = useUserStore((state) => state.user);
@@ -218,7 +220,7 @@ export const ResumeHealthDashboard: React.FC<ResumeHealthDashboardProps> = ({
           animate={{ opacity: 1, scale: 1 }}
           className="bg-amber-500/5 border border-amber-500/10 rounded-3xl p-6 flex flex-col gap-4 shadow-sm"
         >
-          <h4 className="text-xs font-bold text-amber-600 dark:text-amber-450 flex items-center gap-1.5 uppercase tracking-wider">
+          <h4 className="text-xs font-bold text-amber-600 dark:text-amber-455 flex items-center gap-1.5 uppercase tracking-wider">
             <AlertTriangle size={15} /> Improve These Areas
           </h4>
           <div className="flex flex-col gap-3">
@@ -265,12 +267,12 @@ export const ResumeHealthDashboard: React.FC<ResumeHealthDashboardProps> = ({
               <div className="flex flex-wrap gap-1.5">
                 {healthData.missing_skills.length > 0 ? (
                   healthData.missing_skills.map((skill, idx) => (
-                    <span key={idx} className="bg-emerald-500/10 text-emerald-600 dark:text-emerald-450 border border-emerald-500/10 font-bold px-2 py-0.5 rounded text-[10px]">
+                    <span key={idx} className="bg-emerald-500/10 text-emerald-600 dark:text-emerald-455 border border-emerald-500/10 font-bold px-2 py-0.5 rounded text-[10px]">
                       {skill}
                     </span>
                   ))
                 ) : (
-                  <span className="text-[10px] text-slate-450 font-bold">No critical skill gaps identified</span>
+                  <span className="text-[10px] text-slate-455 font-bold">No critical skill gaps identified</span>
                 )}
               </div>
             </div>
@@ -310,7 +312,10 @@ export const ResumeHealthDashboard: React.FC<ResumeHealthDashboardProps> = ({
         transition={{ delay: 0.3 }}
         className="grid grid-cols-1 sm:grid-cols-3 gap-4 border-t border-slate-200/80 dark:border-white/10 pt-6 mt-2"
       >
-        <button className="bg-gradient-to-r from-emerald-600 to-emerald-500 hover:from-emerald-700 hover:to-emerald-600 text-white font-bold px-5 py-3.5 rounded-2xl flex items-center justify-center gap-2 cursor-pointer shadow-lg shadow-emerald-500/10 hover:shadow-emerald-500/20 hover:scale-[1.01] active:scale-[0.99] transition-all text-xs">
+        <button 
+          onClick={onImproveClick}
+          className="bg-gradient-to-r from-emerald-600 to-emerald-500 hover:from-emerald-700 hover:to-emerald-600 text-white font-bold px-5 py-3.5 rounded-2xl flex items-center justify-center gap-2 cursor-pointer shadow-lg shadow-emerald-500/10 hover:shadow-emerald-500/20 hover:scale-[1.01] active:scale-[0.99] transition-all text-xs"
+        >
           <Sparkles size={14} className="fill-current" /> Improve My Resume
         </button>
         <button className="bg-white border border-slate-200 text-slate-800 hover:bg-slate-50 hover:border-slate-300 font-bold px-5 py-3.5 rounded-2xl flex items-center justify-center gap-2 cursor-pointer hover:scale-[1.01] active:scale-[0.99] transition-all text-xs">

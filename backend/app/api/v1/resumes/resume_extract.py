@@ -241,3 +241,71 @@ def get_resume_health_endpoint(
             "improvement_suggestions": ai_analysis.get("improvement_suggestions", [])
         }
     }
+
+@router.post("/improve/{resume_id}")
+def improve_resume_endpoint(
+    resume_id: int,
+    student: Student = Depends(get_current_student),
+    db: Any = Depends(get_db)
+):
+    """
+    POST /api/resume/improve/{resume_id}
+    Generates AI suggestions to rewrite and optimize weak sections of the resume.
+    """
+    from app.services.resume_improvement_service import generate_resume_improvements
+    
+    # 1. Verify ownership and fetch resume_analysis record
+    analysis_record = db.resume_analysis.find_one({
+        "resume_id": resume_id,
+        "student_id": student.id
+    })
+    
+    if not analysis_record:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Resume extraction data not found. Please extract text first."
+        )
+
+    ai_analysis = analysis_record.get("ai_analysis")
+    if not ai_analysis or analysis_record.get("status") != "ai_completed":
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="AI analysis has not been executed yet. Please run AI analysis first."
+        )
+
+    # 2. Caching Check: Return existing improvements if already calculated
+    existing_improvements = analysis_record.get("ai_improvements")
+    if existing_improvements:
+        return {
+            "success": True,
+            "message": "Resume improvements retrieved from cache",
+            "improvements": existing_improvements
+        }
+
+    # 3. Call Resume Improvement service
+    try:
+        improvements = generate_resume_improvements(
+            db, 
+            analysis_record.get("extracted_data", {}),
+            ai_analysis
+        )
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="AI service is temporarily unavailable. Please try again later."
+        )
+
+    # 4. Save to MongoDB
+    db.resume_analysis.update_one(
+        {"resume_id": resume_id, "student_id": student.id},
+        {"$set": {
+            "ai_improvements": improvements,
+            "updated_at": datetime.now(timezone.utc).isoformat()
+        }}
+    )
+
+    return {
+        "success": True,
+        "message": "Resume improvements generated",
+        "improvements": improvements
+    }
