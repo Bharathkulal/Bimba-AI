@@ -1,4 +1,5 @@
-from fastapi import APIRouter, Depends, HTTPException, status, Any
+from fastapi import APIRouter, Depends, HTTPException, status
+from typing import Any
 from datetime import datetime, timezone
 from app.database.session import get_db
 from app.api.analytics import get_current_student
@@ -178,5 +179,65 @@ def analyze_resume_endpoint(
             "strengths": ai_res["strengths"],
             "weaknesses": ai_res["weaknesses"],
             "suggestions": ai_res["improvement_suggestions"]
+        }
+    }
+
+@router.get("/health/{resume_id}")
+def get_resume_health_endpoint(
+    resume_id: int,
+    student: Student = Depends(get_current_student),
+    db: Any = Depends(get_db)
+):
+    """
+    GET /api/resume/health/{resume_id}
+    Retrieves full resume intelligence, strengths, weaknesses, and ratings.
+    """
+    # 1. Verify resume belongs to student and retrieve analysis
+    analysis_record = db.resume_analysis.find_one({
+        "resume_id": resume_id,
+        "student_id": student.id
+    })
+    
+    if not analysis_record:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Resume extraction data not found. Please extract text first."
+        )
+
+    ai_analysis = analysis_record.get("ai_analysis")
+    if not ai_analysis or analysis_record.get("status") != "ai_completed":
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="AI analysis has not been executed yet. Please run AI analysis first."
+        )
+
+    # 2. Determine Text Rating based on Overall Score
+    score = ai_analysis.get("overall_score", 70)
+    if score >= 90:
+        rating = "Excellent"
+    elif score >= 75:
+        rating = "Good"
+    elif score >= 50:
+        rating = "Needs Improvement"
+    else:
+        rating = "Poor"
+
+    # 3. Compile output
+    return {
+        "success": True,
+        "resume_health": {
+            "overall_score": score,
+            "ats_score": ai_analysis.get("ats_score", 65),
+            "rating": rating,
+            "section_scores": ai_analysis.get("section_scores", {
+                "summary": 70,
+                "skills": 70,
+                "experience": 70,
+                "projects": 70
+            }),
+            "strengths": ai_analysis.get("strengths", []),
+            "weaknesses": ai_analysis.get("weaknesses", []),
+            "missing_skills": ai_analysis.get("missing_skills", []),
+            "improvement_suggestions": ai_analysis.get("improvement_suggestions", [])
         }
     }

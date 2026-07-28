@@ -19,6 +19,7 @@ import { ResumeUpload } from '../components/resume/ResumeUpload';
 import { Modal } from '../components/Modal';
 import { ResumeAnalysisStatus } from '../components/resume/ResumeAnalysisStatus';
 import { ResumeAIAnalysis } from '../components/resume/ResumeAIAnalysis';
+import { ResumeHealthDashboard } from '../components/resume/ResumeHealthDashboard';
 
 export const ResumePage: React.FC = () => {
   const navigate = useNavigate();
@@ -593,23 +594,42 @@ export const ResumePage: React.FC = () => {
 
       {activeAnalysisResumeId !== null && (() => {
         const selectedResume = resumes.find(r => r.id === activeAnalysisResumeId);
-        const showAnalysis = selectedResume?.status === 'analyzed' || selectedResume?.status === 'ai_completed';
+        const isUploaded = selectedResume?.status === 'uploaded';
+        const isAnalyzed = selectedResume?.status === 'analyzed';
+        const isAiCompleted = selectedResume?.status === 'ai_completed';
+        
+        let title = "AI Text Extraction & Analysis";
+        let modalSize: 'md' | 'lg' | 'xl' = 'md';
+        
+        if (isAnalyzed) {
+          title = "AI Resume Scorecard";
+        } else if (isAiCompleted) {
+          title = "Resume Health Dashboard";
+          modalSize = 'xl';
+        }
         
         return (
           <Modal 
             isOpen={activeAnalysisResumeId !== null} 
             onClose={() => setActiveAnalysisResumeId(null)}
-            title={showAnalysis ? "AI Resume Scorecard" : "AI Text Extraction & Analysis"}
+            title={title}
+            size={modalSize}
           >
-            {showAnalysis ? (
+            {isUploaded && (
+              <ResumeAnalysisStatus 
+                resumeId={activeAnalysisResumeId} 
+                onAnalysisComplete={fetchResumeData}
+              />
+            )}
+            {isAnalyzed && (
               <ResumeAIAnalysis 
                 resumeId={activeAnalysisResumeId} 
                 onAnalysisComplete={fetchResumeData}
               />
-            ) : (
-              <ResumeAnalysisStatus 
-                resumeId={activeAnalysisResumeId} 
-                onAnalysisComplete={fetchResumeData}
+            )}
+            {isAiCompleted && (
+              <ResumeHealthDashboard 
+                resumeId={activeAnalysisResumeId}
               />
             )}
           </Modal>

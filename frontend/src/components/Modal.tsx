@@ -7,6 +7,7 @@ interface ModalProps {
   onClose: () => void;
   title: string;
   children: React.ReactNode;
+  size?: 'md' | 'lg' | 'xl';
 }
 
 export const Modal: React.FC<ModalProps> = ({
@@ -14,7 +15,14 @@ export const Modal: React.FC<ModalProps> = ({
   onClose,
   title,
   children,
+  size = 'md',
 }) => {
+  const sizeClasses = {
+    md: 'max-w-lg',
+    lg: 'max-w-3xl',
+    xl: 'max-w-5xl',
+  };
+
   return (
     <AnimatePresence>
       {isOpen && (
@@ -34,7 +42,7 @@ export const Modal: React.FC<ModalProps> = ({
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.95, y: 20 }}
             transition={{ type: 'spring', duration: 0.4 }}
-            className={`relative w-full max-w-lg rounded-[20px] shadow-xl overflow-hidden z-10 border flex flex-col ${
+            className={`relative w-full ${sizeClasses[size]} rounded-[20px] shadow-xl overflow-hidden z-10 border flex flex-col ${
               typeof window !== 'undefined' && window.location.pathname.startsWith('/admin')
                 ? 'bg-[#102117] border-white/5 text-white'
                 : 'bg-white border-slate-100 text-slate-900'
