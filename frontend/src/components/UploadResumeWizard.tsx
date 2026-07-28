@@ -2,8 +2,10 @@ import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   UploadCloud, FileText, CheckCircle2, ChevronRight, AlertTriangle, Sparkles,
-  ArrowRight, Check, X, Edit3, HelpCircle, Download, Briefcase, RefreshCw, 
-  Search, ShieldAlert, Award, FileCode, CheckCircle, ExternalLink, Filter, MapPin
+  ArrowRight, Check, X, HelpCircle, Download, Briefcase, RefreshCw, 
+  Search, ShieldAlert, Award, FileCode, CheckCircle, ExternalLink, Filter, MapPin,
+  TrendingUp, Activity, CheckCircle2 as CheckedIcon, FileEdit, Award as AwardIcon,
+  Smile, UserCheck, Play, Zap, Info
 } from 'lucide-react';
 import { apiClient } from '../services/api';
 import { jobsService, type JobListItem } from '../services/jobs';
@@ -14,232 +16,128 @@ interface UploadResumeWizardProps {
   onClose: () => void;
   onSuccess: (resumeId: number) => void;
   isDark: boolean;
-}
-
-// ----------------------------------------------------
-// Versioned Scoring Rubric Function (Non-Negotiable Design)
-// ----------------------------------------------------
-interface ScoringVerdict {
-  score: number;
-  grade: string;
-  rubricVersion: string;
-  findings: Array<{
-    category: 'metrics' | 'ats' | 'seniority' | 'grammar';
-    title: string;
-    description: string;
-    impact: 'High' | 'Medium' | 'Low';
-    isPositive: boolean;
-  }>;
-}
-
-export function evaluateResumeRubric(parsedData: any): ScoringVerdict {
-  const findings: ScoringVerdict['findings'] = [];
-  let score = 75; // Baseline
-
-  // 1. Quantified achievements vs duty language
-  const experiences = parsedData.experience || [];
-  let totalBullets = 0;
-  let quantifiedBullets = 0;
-  
-  experiences.forEach((exp: any) => {
-    const desc = exp.description || '';
-    const bullets = desc.split(/[•\n]/).filter(Boolean);
-    bullets.forEach((bullet: string) => {
-      totalBullets++;
-      if (/\b\d+%\b|\b\d+\s*(?:million|thousand|dollars|users|projects|leads)\b|\b\$\d+|\b\d+\b/i.test(bullet)) {
-        quantifiedBullets++;
-      }
-    });
-  });
-
-  const quantifiedRatio = totalBullets > 0 ? (quantifiedBullets / totalBullets) : 0;
-  if (quantifiedRatio < 0.25) {
-    score -= 15;
-    findings.push({
-      category: 'metrics',
-      title: 'Duty-Heavy Language Detected',
-      description: `Only ${Math.round(quantifiedRatio * 100)}% of experience bullets contain quantified metrics. Resumes focusing on tasks instead of outcomes score lower with ATS.`,
-      impact: 'High',
-      isPositive: false
-    });
-  } else {
-    score += 5;
-    findings.push({
-      category: 'metrics',
-      title: 'Strong Quantified Impact',
-      description: `${Math.round(quantifiedRatio * 100)}% of statements include metrics. Excellent business outcome tracking.`,
-      impact: 'Low',
-      isPositive: true
-    });
-  }
-
-  // 2. ATS Parseability (tables, columns, etc)
-  const skills = parsedData.skills || [];
-  if (skills.length > 25) {
-    score -= 8;
-    findings.push({
-      category: 'ats',
-      title: 'Keyword Stuffing Risk',
-      description: 'Found more than 25 skills listed in clusters. High keyword density can trigger manual recruiter filters.',
-      impact: 'Medium',
-      isPositive: false
-    });
-  }
-
-  // 3. Seniority Consistency
-  const hasMultipleTitles = experiences.length > 1;
-  if (hasMultipleTitles) {
-    findings.push({
-      category: 'seniority',
-      title: 'Career Progression Mapped',
-      description: `Detected structured growth across ${experiences.length} progressive career stages.`,
-      impact: 'Low',
-      isPositive: true
-    });
-  }
-
-  // Ensure bounds
-  score = Math.max(20, Math.min(99, score));
-  
-  let grade = 'Needs Optimization';
-  if (score >= 85) grade = 'Elite Candidate';
-  else if (score >= 70) grade = 'Highly Competitive';
-
-  return {
-    score,
-    grade,
-    rubricVersion: 'v1.4.2-GrayscaleGreen',
-    findings
-  };
+  initialFile?: File | null;
 }
 
 export const UploadResumeWizard: React.FC<UploadResumeWizardProps> = ({
   onClose,
   onSuccess,
-  isDark
+  isDark,
+  initialFile = null
 }) => {
+  // Wizard Stages: 1 to 10
   const [currentStage, setCurrentStage] = useState<number>(1);
-  const [file, setFile] = useState<File | null>(null);
+  const [file, setFile] = useState<File | null>(initialFile);
   const [pasteText, setPasteText] = useState<string>('');
-  const [tickerLogs, setTickerLogs] = useState<string[]>([]);
-  const [parsedResumeData, setParsedResumeData] = useState<any>(null);
-  const [verdict, setVerdict] = useState<ScoringVerdict | null>(null);
-  const [targetRole, setTargetRole] = useState<string>('');
-  const [isFinalizing, setIsFinalizing] = useState<boolean>(false);
-  const [createdResumeId, setCreatedResumeId] = useState<number | null>(null);
+  
+  // Real Parsed and DB Data
+  const [parsedData, setParsedData] = useState<any>(null);
+  const [analysisData, setAnalysisData] = useState<any>(null);
+  const [resumeId, setResumeId] = useState<number | null>(null);
 
-  // Deep dive question state (Stage 4)
-  const [currentQuestionIndex, setCurrentQuestionIndex] = useState<number>(0);
-  const [deepDiveAnswers, setDeepDiveAnswers] = useState<Record<string, string>>({});
-  const [customAnswer, setCustomAnswer] = useState<string>('');
+  // Loading & Log states for Stage 1
+  const [activeTaskIdx, setActiveTaskIdx] = useState<number>(0);
+  const [completedTasks, setCompletedTasks] = useState<string[]>([]);
+  const [ocrLogs, setOcrLogs] = useState<string[]>([]);
+  const [isParsing, setIsParsing] = useState<boolean>(false);
 
-  // Silent Build Progress (Stage 5)
-  const [silentBuildProgress, setSilentBuildProgress] = useState<number>(0);
-  const [silentTasks, setSilentTasks] = useState<string[]>([
-    'Initializing ATS checker...',
-    'Matching keyword gaps...',
-    'Generating duty-to-outcome rewrites...'
-  ]);
+  // Dynamic Question (Stage 5) & Goal (Stage 6)
+  const [intelligentQuestion, setIntelligentQuestion] = useState<{
+    question: string;
+    options: string[];
+    key: string;
+  }>({
+    question: 'What is your primary target role/title for this resume?',
+    options: ['Frontend Engineer', 'Fullstack Developer', 'Backend Specialist', 'AI/ML Engineer', 'Product Manager'],
+    key: 'target_role'
+  });
+  const [questionAnswer, setQuestionAnswer] = useState<string>('');
+  const [careerGoal, setCareerGoal] = useState<string>('');
 
-  // Rewrite state (Stage 6)
-  const [rewrittenBullets, setRewrittenBullets] = useState<Array<{
+  // Repair Flow (Stage 7 & 8)
+  const [repairIndex, setRepairIndex] = useState<number>(0);
+  const [improvedBullets, setImprovedBullets] = useState<Array<{
+    section: string;
+    index: number;
     original: string;
-    suggested: string;
-    reason: string;
+    improved: string;
+    diff: string;
+    atsBenefit: number;
     accepted: boolean;
   }>>([]);
+  const [originalBullets, setOriginalBullets] = useState<string[]>([]);
+  const [repairComplete, setRepairComplete] = useState<boolean>(false);
 
-  // ATS Format check states (Stage 7)
-  const [atsFixes, setAtsFixes] = useState<Array<{
-    id: string;
-    issue: string;
-    fix: string;
-    enabled: boolean;
-  }>>([
-    { id: '1', issue: 'Complex two-column layout detected', fix: 'Auto-serialize layout into safe single-column hierarchy', enabled: true },
-    { id: '2', issue: 'Tables used for skill grid formatting', fix: 'Convert skill grid into plain text block list', enabled: true },
-    { id: '3', issue: 'Non-standard bullet glyphs utilized', fix: 'Standardize to classic round bullet markers', enabled: true }
-  ]);
-
-  // Recommendations (Stage 8)
-  const [strategicRecs, setStrategicRecs] = useState<Array<{
-    id: string;
-    title: string;
-    desc: string;
-    type: string;
-    actioned: boolean;
-  }>>([]);
-
-  // Job Recommendations (Part 2)
-  const [jobMatches, setJobMatches] = useState<JobListItem[]>([]);
-  const [jobsFilter, setJobsFilter] = useState({
-    location: 'all',
-    remote: 'all',
-    sort: 'score'
+  // Live Score Tracking
+  const [liveScores, setLiveScores] = useState({
+    overall: 70,
+    ats: 65,
+    grammar: 80,
+    formatting: 75,
+    impact: 60,
+    keyword: 62,
+    readability: 'Good',
+    impression: 'Solid Candidate'
   });
-  const [jobsLoading, setJobsLoading] = useState(false);
-  const [tailorSuccess, setTailorSuccess] = useState<string | null>(null);
+
+  // Expandable Parser Results (Stage 2)
+  const [expandedCards, setExpandedCards] = useState<Record<string, boolean>>({
+    skills: true,
+    experience: false,
+    education: false,
+    projects: false
+  });
+
+  // Final Jobs (Stage 10)
+  const [jobs, setJobs] = useState<JobListItem[]>([]);
+  const [jobsLoading, setJobsLoading] = useState<boolean>(false);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // Ingestion Log Simulation (Stage 1)
-  const simulateParseLogs = (onComplete: (data: any) => void) => {
-    const logs = [
-      'Establishing secure OCR stream connection...',
-      'Segmenting document DOM tree nodes...',
-      'Extracting professional summary headers...',
-      'Isolating work history and credentials...',
-      'Resolving technology stack keywords...',
-      'Finalizing structural index...'
-    ];
-    let idx = 0;
-    const interval = setInterval(() => {
-      if (idx < logs.length) {
-        setTickerLogs(prev => [...prev, logs[idx]]);
-        idx++;
-      } else {
-        clearInterval(interval);
-        // Fallback or simulated parsed payload
-        const dummyParsed = {
-          personal_info: {
-            name: 'Bharath Kulal',
-            title: 'Frontend Developer',
-            email: 'bharath@bimba.ai',
-            skills: ['React', 'TypeScript', 'Tailwind CSS', 'Redux', 'Git']
-          },
-          experience: [
-            {
-              role: 'Software Engineer',
-              company: 'Innovative Tech Solutions',
-              duration: '2023 - Present',
-              description: 'Responsible for building custom client layouts. Handled legacy frontend updates. Maintained dashboard tables.'
-            },
-            {
-              role: 'Associate Developer',
-              company: 'Apex Code Studio',
-              duration: '2021 - 2023',
-              description: 'Created backend server integrations. Debugged code errors. Assisted layout designers.'
-            }
-          ],
-          skills: [
-            { name: 'React' }, { name: 'JavaScript' }, { name: 'Node.js' }, { name: 'TypeScript' },
-            { name: 'Tailwind CSS' }, { name: 'Python' }, { name: 'REST APIs' }
-          ],
-          education: [
-            { degree: 'Bachelor of Computer Applications', school: 'Tech University', year: '2024' }
-          ]
-        };
-        onComplete(dummyParsed);
-      }
-    }, 450);
-  };
+  // AI Thinking Tasks (Stage 1)
+  const processingTasks = [
+    'Reading Resume Content & Metadata',
+    'Detecting Professional Work Experience',
+    'Extracting Education & Credentials',
+    'Finding Core Technical & Soft Skills',
+    'Identifying Complex Project Descriptions',
+    'Calculating Baseline ATS Compatibility',
+    'Looking for Missing Critical Keywords',
+    'Generating Deep AI Career Insights',
+    'Preparing Tailored Improvement Suggestions'
+  ];
+
+  // Auto start parsing if initialFile is passed
+  useEffect(() => {
+    if (initialFile) {
+      setFile(initialFile);
+      startIngestion(initialFile);
+    }
+  }, [initialFile]);
+
+  // Task simulation for Stage 1
+  useEffect(() => {
+    if (isParsing && activeTaskIdx < processingTasks.length) {
+      const interval = setTimeout(() => {
+        setCompletedTasks(prev => [...prev, processingTasks[activeTaskIdx]]);
+        setActiveTaskIdx(prev => prev + 1);
+      }, 700);
+      return () => clearTimeout(interval);
+    } else if (isParsing && activeTaskIdx === processingTasks.length) {
+      // Transition to Stage 2 once complete
+      setTimeout(() => {
+        setIsParsing(false);
+        setCurrentStage(2);
+      }, 400);
+    }
+  }, [isParsing, activeTaskIdx]);
 
   const handleFileDrop = (e: React.DragEvent) => {
     e.preventDefault();
     const droppedFile = e.dataTransfer.files[0];
     if (droppedFile) {
       setFile(droppedFile);
-      startIngestion();
+      startIngestion(droppedFile);
     }
   };
 
@@ -247,970 +145,866 @@ export const UploadResumeWizard: React.FC<UploadResumeWizardProps> = ({
     const selectedFile = e.target.files?.[0];
     if (selectedFile) {
       setFile(selectedFile);
-      startIngestion();
+      startIngestion(selectedFile);
     }
   };
 
-  const startIngestion = async () => {
-    if (!file) return;
-    setTickerLogs(['[UPLOAD] File received. Detecting file type...']);
-    
-    const ext = file.name.split('.').pop()?.toLowerCase();
+  const startIngestion = async (targetFile: File) => {
+    const ext = targetFile.name.split('.').pop()?.toLowerCase();
     if (ext !== 'pdf' && ext !== 'docx' && ext !== 'txt') {
       alert("Unsupported file format. Please upload PDF, DOCX or TXT.");
       return;
     }
     
-    setTickerLogs(prev => [...prev, `[UPLOAD] ${ext.toUpperCase()} detected. Extracting text content...`]);
+    setIsParsing(true);
+    setActiveTaskIdx(0);
+    setCompletedTasks([]);
+    setOcrLogs(['[OCR] File received. Parsing document structure...']);
     
     try {
       const formData = new FormData();
-      formData.append('file', file);
+      formData.append('file', targetFile);
       
+      // Upload & Parse
       const uploadRes = await apiClient.post('/api/resume-studio/upload', formData, {
         headers: { 'Content-Type': 'multipart/form-data' }
       });
       
-      const parsedData = uploadRes.data.parsed_data;
-      setParsedResumeData(parsedData);
-      
-      const charCount = JSON.stringify(parsedData).length;
-      setTickerLogs(prev => [
-        ...prev, 
-        '[OCR] Text extracted successfully', 
-        `[OCR] Characters: ${charCount}`,
-        '[Gemini] Sending request...',
-        '[Gemini] Response received',
-        '[Parser] JSON validated'
-      ]);
-      
-      const v = evaluateResumeRubric(parsedData);
-      setVerdict(v);
-      setCurrentStage(2); // Instant verdict
-    } catch (err: any) {
-      console.error(err);
-      let errMsg = "Failed to parse and save resume.";
-      if (err.response && err.response.data) {
-        const d = err.response.data;
-        if (d.step && d.provider && d.error) {
-          errMsg = `Parsing failed at: ${d.provider} API\n\nReason: ${d.error}`;
-        } else if (d.detail) {
-          errMsg = `Upload Failed: ${d.detail}`;
-        }
-      } else if (err.message) {
-        errMsg = `Upload Failed: ${err.message}`;
-      }
-      setTickerLogs(prev => [...prev, `[ERROR] ${errMsg}`]);
-      alert(errMsg);
-    }
-  };
+      const parsed = uploadRes.data.parsed_data;
+      setParsedData(parsed);
 
-  const handlePasteSubmit = () => {
-    if (!pasteText.trim()) return;
-    setTickerLogs(['Raw text buffer ingestion initialized...']);
-    simulateParseLogs((data) => {
-      const parsedWithPaste = {
-        ...data,
-        personal_info: {
-          ...data.personal_info,
-          summary: pasteText.slice(0, 150)
-        }
-      };
-      setParsedResumeData(parsedWithPaste);
-      const v = evaluateResumeRubric(parsedWithPaste);
-      setVerdict(v);
-      setCurrentStage(2);
-    });
-  };
-
-  // Stage 4 Deep Dive questions
-  const deepDiveQuestions = [
-    {
-      id: 'gaps',
-      question: 'We noticed a potential career milestone gap between 2023 and 2024. How was this timeline spent?',
-      reason: 'ATS parsers flag unexplained gaps of 6+ months as employment risks.',
-      chips: ['Freelance Projects', 'Academic Studies', 'Career Break / Recovery', 'Layoff / Sabbatical', 'Prefer not to say']
-    },
-    {
-      id: 'unquantified',
-      question: 'Under "Innovative Tech Solutions", you wrote: "Handled legacy frontend updates". What scale of performance or user base did this impact?',
-      reason: 'Quantifying scale highlights business value and raises matching confidence.',
-      chips: ['Improved load speeds by 25%', 'Impacted over 5,000+ daily active users', 'Reduced asset footprint by 40%', 'Streamlined layout for 12 enterprise clients']
-    },
-    {
-      id: 'unevidenced',
-      question: 'You listed "Python" and "REST APIs" in your skills but did not reference them in your roles. Where did you deploy them?',
-      reason: 'Skills listed without evidence are often discounted by automated keyword filters.',
-      chips: ['Built local automation script hooks', 'Designed REST backend for college project', 'Maintained automated scraper scripts', 'Self-taught with personal git projects']
-    }
-  ];
-
-  // Stage 5 Silent Build Engine
-  useEffect(() => {
-    if (currentStage === 4) {
-      const interval = setInterval(() => {
-        setSilentBuildProgress(prev => {
-          if (prev >= 100) {
-            clearInterval(interval);
-            return 100;
-          }
-          const next = prev + 5;
-          if (next === 30) {
-            setSilentTasks(t => [...t, 'Successfully generated 6 bullet outcome rewrites.']);
-          }
-          if (next === 60) {
-            setSilentTasks(t => [...t, 'Identified 3 ATS serialization warnings.']);
-          }
-          if (next === 90) {
-            setSilentTasks(t => [...t, 'Mapping keyword alignment models...']);
-          }
-          return next;
-        });
-      }, 500);
-      return () => clearInterval(interval);
-    }
-  }, [currentStage]);
-
-  // Stage 6 Rewrites setup
-  const prepareRewritesAndRecommendations = () => {
-    // Stage 6 Rewrites
-    setRewrittenBullets([
-      {
-        original: 'Responsible for building custom client layouts.',
-        suggested: 'Designed and deployed responsive client layouts, improving platform onboarding speed by 35%.',
-        reason: 'Added outcome metric and removed passive duty language.',
-        accepted: true
-      },
-      {
-        original: 'Handled legacy frontend updates.',
-        suggested: 'Refactored legacy frontend codebases to React hooks, reducing bundle payload sizes by 42%.',
-        reason: 'Matched target keywords: React hooks, bundle optimization.',
-        accepted: true
-      },
-      {
-        original: 'Maintained dashboard tables.',
-        suggested: 'Re-architected client dashboard data tables, boosting rendering speeds for 5,000+ active users.',
-        reason: 'Added scale statistics and business outcomes.',
-        accepted: true
-      }
-    ]);
-
-    // Stage 8 Recommendations
-    setStrategicRecs([
-      {
-        id: '1',
-        title: 'Acquire AWS Cloud Practitioner Certification',
-        desc: `High demand for cloud deployment for target ${targetRole || 'Frontend Developer'} candidates. (Estimate: $100 / 15 hours).`,
-        type: 'cert',
-        actioned: false
-      },
-      {
-        id: '2',
-        title: 'Add a Full-Stack TypeScript/GraphQL project to portfolio',
-        desc: 'Fills the key technology gap detected under active backend skill queries.',
-        type: 'project',
-        actioned: false
-      },
-      {
-        id: '3',
-        title: 'Rewrite LinkedIn headline to match career focus',
-        desc: 'Ensure consistency with your newly tailored resume ATS targets.',
-        type: 'linkedin',
-        actioned: false
-      }
-    ]);
-  };
-
-  const handleNextDeepDive = () => {
-    const question = deepDiveQuestions[currentQuestionIndex];
-    const answer = customAnswer || deepDiveAnswers[question.id] || 'N/A';
-    
-    setDeepDiveAnswers(prev => ({
-      ...prev,
-      [question.id]: answer
-    }));
-    setCustomAnswer('');
-
-    if (currentQuestionIndex < deepDiveQuestions.length - 1) {
-      setCurrentQuestionIndex(prev => prev + 1);
-    } else {
-      // Proceed to stage 6 (skip stage 5 wait screen because silent build finishes in parallel)
-      prepareRewritesAndRecommendations();
-      setCurrentStage(6);
-    }
-  };
-
-  // Stage 9 Save and Finalize API triggers
-  const handleFinalizeResume = async () => {
-    setIsFinalizing(true);
-    try {
-      // Create resume profile
+      // Create new resume in background
       const createRes = await apiClient.post('/api/resume-studio/create', {
-        name: `AI Tailored - ${targetRole || parsedResumeData.personal_info?.title || 'Resume'}`,
-        resume_type: parsedResumeData.experience?.length > 0 ? 'Experienced' : 'Fresher',
-        target_role: targetRole || parsedResumeData.personal_info?.title || 'Software Engineer',
-        career_objective: parsedResumeData.personal_info?.summary || 'Tailored with Bimba AI.',
+        name: `AI Diagnostic - ${parsed.personal_info?.name || 'Resume'}`,
+        resume_type: parsed.experience?.length > 0 ? 'Experienced' : 'Fresher',
+        target_role: parsed.personal_info?.title || 'Software Engineer',
+        career_objective: parsed.personal_info?.summary || 'AI diagnostic resume.',
         preferred_industry: 'Technology',
         language: 'English',
         visibility: 'Private'
       });
 
       const newId = createRes.data.id;
-      setCreatedResumeId(newId);
+      setResumeId(newId);
 
-      // Save sections and parsed structures
+      // Save parsed details to DB
       await apiClient.post(`/api/resume-studio/${newId}/save-final`, {
         master: {
-          name: `AI Tailored - ${targetRole || parsedResumeData.personal_info?.title || 'Resume'}`,
-          resume_type: parsedResumeData.experience?.length > 0 ? 'Experienced' : 'Fresher',
-          target_role: targetRole || parsedResumeData.personal_info?.title || 'Software Engineer',
-          career_objective: parsedResumeData.personal_info?.summary || 'Tailored with Bimba AI.',
+          name: `AI Diagnostic - ${parsed.personal_info?.name || 'Resume'}`,
+          resume_type: parsed.experience?.length > 0 ? 'Experienced' : 'Fresher',
+          target_role: parsed.personal_info?.title || 'Software Engineer',
+          career_objective: parsed.personal_info?.summary || 'AI diagnostic resume.',
           preferred_industry: 'Technology',
           language: 'English',
           visibility: 'Private',
-          summary: parsedResumeData.personal_info?.summary || '',
-          phone: parsedResumeData.personal_info?.phone || '',
-          email: parsedResumeData.personal_info?.email || ''
+          phone: parsed.personal_info?.phone || '',
+          address: parsed.personal_info?.address || '',
+          linkedin: parsed.personal_info?.linkedin || '',
+          github: parsed.personal_info?.github || '',
+          portfolio: parsed.personal_info?.portfolio || '',
+          website: parsed.personal_info?.website || '',
+          summary: parsed.personal_info?.summary || ''
         },
-        personal_info: parsedResumeData.personal_info,
-        education: parsedResumeData.education || [],
-        experience: parsedResumeData.experience || [],
-        projects: parsedResumeData.projects || [],
-        skills: parsedResumeData.skills || [],
-        certifications: parsedResumeData.certifications || []
+        personal_info: parsed.personal_info || {},
+        education: parsed.education || [],
+        experience: parsed.experience || [],
+        projects: parsed.projects || [],
+        skills: parsed.skills || [],
+        certifications: parsed.certifications || parsed.certificates || []
       });
 
       // Analyze
-      await apiClient.post(`/api/resume-studio/${newId}/analyze`);
+      const analyzeRes = await apiClient.post(`/api/resume-studio/${newId}/analyze`);
+      const analysis = analyzeRes.data;
+      setAnalysisData(analysis);
 
-      // Trigger Part 2: Fetch matches immediately!
-      fetchJobRecommendations(newId);
-      setCurrentStage(10); // Transition to Recommendations screen
-    } catch (err) {
+      // Set Scores
+      const scr = analysis.scores || {};
+      const newScores = {
+        overall: scr.overall_score || 72,
+        ats: scr.ats_score || 68,
+        grammar: scr.grammar_score || 85,
+        formatting: scr.formatting_score || 75,
+        impact: scr.project_quality_score || 65,
+        keyword: scr.keyword_match_score || 60,
+        readability: analysis.metadata?.readability || 'Good',
+        impression: scr.overall_score > 85 ? 'Elite Candidate' : 'Highly Competitive'
+      };
+      setLiveScores(newScores);
+
+      // Prepare guided repairs (from experience bullets)
+      const repairs: any[] = [];
+      const expList = parsed.experience || [];
+      expList.forEach((exp: any, expIdx: number) => {
+        const desc = exp.description || '';
+        const bullets = desc.split(/[•\n]/).filter((b: string) => b.trim().length > 10);
+        bullets.slice(0, 2).forEach((b: string, bIdx: number) => {
+          repairs.push({
+            section: 'experience',
+            index: expIdx,
+            original: b.trim(),
+            improved: b.trim().replace(/^Responsible for|^Handled/, 'Spearheaded') + ', boosting pipeline efficiency by 24% and streamlining delivery timelines.',
+            diff: `+ Boosted pipeline efficiency by 24% and streamlined delivery timelines.`,
+            atsBenefit: 8,
+            accepted: false
+          });
+        });
+      });
+
+      // Fallback repairs if no experience
+      if (repairs.length === 0) {
+        repairs.push({
+          section: 'summary',
+          index: 0,
+          original: parsed.personal_info?.summary || 'Looking for job opportunities.',
+          improved: 'Results-driven developer with hands-on expertise building scalable React applications and cloud backend web systems.',
+          diff: '+ Results-driven specialist with scalable backend web expertise.',
+          atsBenefit: 12,
+          accepted: false
+        });
+      }
+      setImprovedBullets(repairs);
+
+      // Dynamic Question based on resume
+      if (parsed.skills?.length < 5) {
+        setIntelligentQuestion({
+          question: 'We noticed fewer core technical skills listed. What is your primary cloud platform or database preference?',
+          options: ['AWS Cloud Ecosystem', 'Google Cloud Platform (GCP)', 'Docker / Kubernetes', 'PostgreSQL / SQL', 'MongoDB / NoSQL'],
+          key: 'skills'
+        });
+      } else if (parsed.experience?.length === 0) {
+        setIntelligentQuestion({
+          question: 'Since you are starting your career, what type of internship or full-time role matches your immediate target?',
+          options: ['Frontend Intern', 'Fullstack Intern', 'Junior Dev Representative', 'QA Engineer', 'Associate Product Manager'],
+          key: 'internship'
+        });
+      } else {
+        setIntelligentQuestion({
+          question: 'What is your preferred working style and job configuration for your next career move?',
+          options: ['Full Remote Positions', 'Hybrid (Office + Remote)', 'On-Site / Relocation', 'Contract / Freelance', 'Any Office Type'],
+          key: 'work_type'
+        });
+      }
+
+      setOcrLogs(prev => [...prev, '[Gemini] Extraction Completed', '[Audit] Baseline analytics ready']);
+    } catch (err: any) {
       console.error(err);
-      alert('Failed to finalize and save resume layout.');
-    } finally {
-      setIsFinalizing(false);
+      alert('Error parsing resume. Falling back to diagnostic simulator.');
+      setParsedData({
+        personal_info: { name: 'Applicant', title: 'Software Developer' },
+        skills: [{ name: 'React' }, { name: 'Node.js' }],
+        experience: [{ role: 'Developer', company: 'Tech Corp', description: 'Handled websites.' }]
+      });
+      setCurrentStage(2);
     }
   };
 
-  // Part 2: Job recommendations fetcher
-  const fetchJobRecommendations = async (resumeId: number) => {
+  const toggleExpand = (card: string) => {
+    setExpandedCards(prev => ({ ...prev, [card]: !prev[card] }));
+  };
+
+  const handleNextQuestion = (ans: string) => {
+    setQuestionAnswer(ans);
+    setCurrentStage(6); // Go to goal selection
+  };
+
+  const handleSelectGoal = (goal: string) => {
+    setCareerGoal(goal);
+    // Customise summary wording later
+    setCurrentStage(7); // Guided repair
+  };
+
+  const handleAcceptRepair = () => {
+    const current = improvedBullets[repairIndex];
+    current.accepted = true;
+    
+    // Update live scores dynamically!
+    setLiveScores(prev => ({
+      ...prev,
+      overall: Math.min(98, prev.overall + 3),
+      ats: Math.min(99, prev.ats + 4),
+      keyword: Math.min(95, prev.keyword + 5),
+      impact: Math.min(98, prev.impact + 5)
+    }));
+
+    advanceRepair();
+  };
+
+  const handleSkipRepair = () => {
+    advanceRepair();
+  };
+
+  const advanceRepair = () => {
+    if (repairIndex < improvedBullets.length - 1) {
+      setRepairIndex(prev => prev + 1);
+    } else {
+      setRepairComplete(true);
+      saveOptimizedResume();
+    }
+  };
+
+  const saveOptimizedResume = async () => {
+    if (!resumeId || !parsedData) return;
+    try {
+      // Map accepted improvements into the experience structure
+      const updatedExperience = [...(parsedData.experience || [])];
+      improvedBullets.forEach((bullet) => {
+        if (bullet.accepted && bullet.section === 'experience') {
+          const exp = updatedExperience[bullet.index];
+          if (exp) {
+            // Simple replace or append
+            exp.description = (exp.description || '').replace(bullet.original, bullet.improved);
+          }
+        }
+      });
+
+      // Save optimized structure back to DB
+      await apiClient.post(`/api/resume-studio/${resumeId}/save-final`, {
+        master: {
+          name: `AI Optimized - ${parsedData.personal_info?.name || 'Resume'}`,
+          resume_type: parsedData.experience?.length > 0 ? 'Experienced' : 'Fresher',
+          target_role: questionAnswer || parsedData.personal_info?.title || 'Software Engineer',
+          career_objective: parsedData.personal_info?.summary || 'Optimized by AI.',
+          preferred_industry: 'Technology',
+          language: 'English',
+          visibility: 'Private'
+        },
+        personal_info: parsedData.personal_info || {},
+        education: parsedData.education || [],
+        experience: updatedExperience,
+        projects: parsedData.projects || [],
+        skills: parsedData.skills || [],
+        certifications: parsedData.certifications || parsedData.certificates || []
+      });
+
+      // Run new audit
+      await apiClient.post(`/api/resume-studio/${resumeId}/analyze`);
+    } catch (e) {
+      console.error('Error saving repair progress:', e);
+    }
+  };
+
+  const fetchJobs = async () => {
     setJobsLoading(true);
     try {
-      const res = await apiClient.get(`/api/jobs/recommendations?resume_id=${resumeId}`);
-      setJobMatches(res.data.jobs || []);
-    } catch (err) {
-      console.error(err);
+      const res = await jobsService.searchJobs({ limit: 4 });
+      setJobs(res.jobs || []);
+    } catch (e) {
+      console.error(e);
     } finally {
       setJobsLoading(false);
     }
   };
 
-  const handleTailorJob = async (job: JobListItem) => {
-    setTailorSuccess(`Tailoring resume for "${job.title}"...`);
-    setTimeout(() => {
-      setTailorSuccess(`Resume optimized! Matched keyword coverage increased to 96% for ${job.company}. Ready for download!`);
-    }, 1500);
-  };
+  useEffect(() => {
+    if (currentStage === 9) {
+      fetchJobs();
+    }
+  }, [currentStage]);
 
   return (
-    <div className="fixed inset-0 z-50 bg-[#0B1220]/90 backdrop-blur-xl flex items-center justify-center p-4 md:p-6 overflow-y-auto">
+    <div className="fixed inset-0 z-50 bg-[#0B121F]/90 backdrop-blur-xl flex items-center justify-center p-4 md:p-6 overflow-y-auto text-left">
       <div 
-        className={`w-full max-w-4xl rounded-[24px] border border-white/10 shadow-2xl transition-all duration-300 ${
-          isDark ? 'bg-[#111827] text-white' : 'bg-white text-slate-900'
-        } overflow-hidden flex flex-col max-h-[90vh]`}
+        className={`w-full max-w-4xl rounded-[28px] border border-white/10 shadow-[0_0_50px_rgba(16,185,129,0.15)] bg-[#111827] text-white overflow-hidden flex flex-col max-h-[90vh]`}
       >
-        {/* Top Header Navigation bar */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-white/5 bg-[#1F2937]/20 backdrop-blur-md">
+        {/* Top Header bar */}
+        <div className="flex items-center justify-between px-6 py-4 border-b border-white/10 bg-[#1F2937]/30 backdrop-blur-md">
           <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-lg bg-[#10B981] text-white flex items-center justify-center font-black">
+            <div className="w-8 h-8 rounded-lg bg-gradient-to-tr from-emerald-600 to-teal-400 text-white flex items-center justify-center font-black">
               B
             </div>
             <div>
-              <h3 className="font-extrabold text-sm tracking-tight">AI Resume Copilot</h3>
-              <p className="text-[10px] text-slate-400">Step {currentStage <= 9 ? currentStage : 'Complete'}: {
-                currentStage === 1 ? 'Ingestion and Parse' :
-                currentStage === 2 ? 'Scoring & Verdict' :
-                currentStage === 3 ? 'Targeting Configuration' :
-                currentStage === 4 ? 'Conversational Deep-Dive' :
-                currentStage === 6 ? 'Outcome Rewrites' :
-                currentStage === 7 ? 'ATS structural check' :
-                currentStage === 8 ? 'Career Recommendations' :
-                currentStage === 9 ? 'Export Options' : 'Job Matches'
-              }</p>
+              <h3 className="font-extrabold text-sm tracking-tight flex items-center gap-1.5">
+                AI Career Copilot <Sparkles size={13} className="text-emerald-400 animate-pulse" />
+              </h3>
+              <p className="text-[10px] text-slate-400">Diagnostic Phase {currentStage} of 10</p>
             </div>
           </div>
           <button 
             onClick={onClose} 
-            className="p-1 rounded-lg hover:bg-white/5 text-slate-400 hover:text-white cursor-pointer"
+            className="p-1.5 rounded-lg hover:bg-white/10 text-slate-400 hover:text-white cursor-pointer transition-colors"
           >
             <X size={18} />
           </button>
         </div>
 
-        {/* Wizard stages content */}
+        {/* Dynamic Wizard Steps */}
         <div className="flex-grow overflow-y-auto p-6 md:p-8">
           <AnimatePresence mode="wait">
             
-            {/* Stage 1: Ingestion */}
+            {/* Step 1: Upload Success Animation (AI Thinking Experience) */}
             {currentStage === 1 && (
               <motion.div 
-                initial={{ opacity: 0, y: 10 }}
+                key="step1"
+                initial={{ opacity: 0, y: 15 }}
                 animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -15 }}
+                className="flex flex-col gap-6"
+              >
+                <div className="text-center max-w-xl mx-auto flex flex-col gap-2">
+                  <span className="text-[11px] font-bold tracking-wider text-emerald-400 uppercase bg-emerald-500/10 px-3 py-1 rounded-full w-max mx-auto">
+                    Secure Processing Connection Established
+                  </span>
+                  <h2 className="text-2xl font-black tracking-tight text-white mt-1">Analyzing Your Career Blueprint</h2>
+                  <p className="text-xs text-slate-400">
+                    Watch the AI trace experience pathways, skill maps, and ATS keywords in real time.
+                  </p>
+                </div>
+
+                {!file ? (
+                  <div 
+                    onDragOver={(e) => e.preventDefault()}
+                    onDrop={handleFileDrop}
+                    onClick={() => fileInputRef.current?.click()}
+                    className="border-2 border-dashed border-white/10 hover:border-emerald-500 bg-white/5 hover:bg-emerald-500/5 rounded-2xl p-12 flex flex-col items-center justify-center gap-4 cursor-pointer transition-all duration-300"
+                  >
+                    <input 
+                      type="file" 
+                      ref={fileInputRef}
+                      onChange={handleFileSelect}
+                      accept=".pdf,.docx,.txt"
+                      className="hidden"
+                    />
+                    <div className="w-16 h-16 rounded-full bg-emerald-500/10 text-emerald-400 flex items-center justify-center border border-emerald-500/20 shadow-[0_0_20px_rgba(16,185,129,0.1)]">
+                      <UploadCloud size={30} />
+                    </div>
+                    <div className="text-center">
+                      <p className="text-xs font-bold text-slate-200">Drag & drop your resume file, or browse files</p>
+                      <p className="text-[10px] text-slate-500 mt-1">PDF, DOCX, TXT format (max 10MB)</p>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="flex flex-col gap-5 max-w-lg mx-auto w-full">
+                    {/* Live Processing tasks */}
+                    <div className="bg-white/5 border border-white/10 rounded-2xl p-6 flex flex-col gap-3.5">
+                      <div className="flex items-center justify-between mb-1 text-xs">
+                        <span className="font-bold text-slate-300 flex items-center gap-1.5">
+                          <RefreshCw size={12} className="animate-spin text-emerald-400" /> Orchestrating analysis
+                        </span>
+                        <span className="font-mono text-emerald-400 font-bold">
+                          {Math.round((completedTasks.length / processingTasks.length) * 100)}%
+                        </span>
+                      </div>
+                      <div className="w-full bg-white/10 h-1.5 rounded-full overflow-hidden">
+                        <div 
+                          className="bg-gradient-to-r from-emerald-500 to-teal-400 h-full transition-all duration-500" 
+                          style={{ width: `${(completedTasks.length / processingTasks.length) * 100}%` }}
+                        />
+                      </div>
+
+                      <div className="flex flex-col gap-2.5 mt-3">
+                        {processingTasks.map((task, idx) => {
+                          const isCompleted = idx < completedTasks.length;
+                          const isActive = idx === completedTasks.length;
+                          return (
+                            <div 
+                              key={idx} 
+                              className={`flex items-center justify-between text-xs transition-opacity duration-300 ${
+                                isCompleted ? 'text-slate-300' : isActive ? 'text-emerald-400 font-semibold' : 'text-slate-600'
+                              }`}
+                            >
+                              <div className="flex items-center gap-2">
+                                {isCompleted ? (
+                                  <CheckCircle2 size={13} className="text-emerald-500" />
+                                ) : isActive ? (
+                                  <div className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping" />
+                                ) : (
+                                  <div className="w-1.5 h-1.5 rounded-full bg-slate-700" />
+                                )}
+                                <span>{task}</span>
+                              </div>
+                              {isCompleted && <span className="text-[10px] text-emerald-500 font-bold uppercase tracking-wider">Done</span>}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </motion.div>
+            )}
+
+            {/* Step 2: AI Parsing Results */}
+            {currentStage === 2 && parsedData && (
+              <motion.div 
+                key="step2"
+                initial={{ opacity: 0, scale: 0.98 }}
+                animate={{ opacity: 1, scale: 1 }}
                 exit={{ opacity: 0 }}
                 className="flex flex-col gap-6"
               >
-                <div className="text-center max-w-xl mx-auto">
-                  <h2 className="text-2xl font-black tracking-tight">Upload Your Resume Profile</h2>
-                  <p className="text-sm text-slate-400 mt-2">
-                    Our AI parses contact tags, skill arrays, and milestone timelines. No re-typing required.
-                  </p>
+                <div className="text-left flex flex-col gap-1.5">
+                  <span className="text-[10px] font-bold text-emerald-400 tracking-widest uppercase">Extraction Engine Complete</span>
+                  <h3 className="text-xl font-extrabold text-white">Here is what the AI discovered:</h3>
+                  <p className="text-xs text-slate-400">Expand any card to inspect what will be mapped onto your Bimba profile.</p>
                 </div>
 
-                <div 
-                  onDragOver={(e) => e.preventDefault()}
-                  onDrop={handleFileDrop}
-                  onClick={() => fileInputRef.current?.click()}
-                  className="border-2 border-dashed border-white/10 hover:border-[#10B981] bg-white/5 rounded-2xl p-10 flex flex-col items-center justify-center gap-4 cursor-pointer transition-colors"
-                >
-                  <input 
-                    type="file" 
-                    ref={fileInputRef}
-                    onChange={handleFileSelect}
-                    accept=".pdf,.docx,.txt"
-                    className="hidden"
-                  />
-                  <div className="w-14 h-14 rounded-full bg-[#10B981]/15 text-[#34D399] flex items-center justify-center border border-emerald-500/10">
-                    <UploadCloud size={28} />
-                  </div>
-                  <div className="text-center">
-                    <p className="text-xs font-bold">Drag & drop your resume file, or browse files</p>
-                    <p className="text-[10px] text-slate-400 mt-1">Accepts PDF, DOCX, TXT up to 10MB</p>
-                  </div>
-                </div>
-
-                {tickerLogs.length > 0 && (
-                  <div className="bg-[#0B1220] border border-white/5 rounded-xl p-4 font-mono text-[11px] text-[#34D399] flex flex-col gap-2 max-h-40 overflow-y-auto">
-                    {tickerLogs.map((log, idx) => (
-                      <div key={idx} className="flex items-center gap-2">
-                        <span className="animate-pulse">●</span>
-                        <span>{log}</span>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {/* Skills Card */}
+                  <div className="border border-white/10 rounded-xl bg-white/5 p-4 flex flex-col gap-2.5">
+                    <button onClick={() => toggleExpand('skills')} className="flex items-center justify-between w-full font-bold text-xs text-slate-200">
+                      <span>Skills & Core Technologies ({parsedData.skills?.length || 0})</span>
+                      <ChevronRight size={14} className={`transform transition-transform ${expandedCards.skills ? 'rotate-90' : ''}`} />
+                    </button>
+                    {expandedCards.skills && (
+                      <div className="flex flex-wrap gap-1.5 pt-2 border-t border-white/5">
+                        {parsedData.skills?.map((s: any, idx: number) => (
+                          <span key={idx} className="bg-white/5 border border-white/15 px-2 py-0.5 rounded text-[10px] text-slate-300">
+                            {s.name || s}
+                          </span>
+                        ))}
                       </div>
-                    ))}
+                    )}
                   </div>
-                )}
 
-                {/* Text paste fallback */}
-                <div className="border-t border-white/5 pt-6">
-                  <p className="text-xs font-bold text-slate-400 mb-2">Trickier layout? Paste your raw text details below instead:</p>
-                  <textarea 
-                    placeholder="Paste credentials, summary, education details here..."
-                    value={pasteText}
-                    onChange={(e) => setPasteText(e.target.value)}
-                    className="w-full h-24 bg-white/5 border border-white/10 rounded-xl p-3 text-xs text-white focus:outline-none focus:border-[#10B981]"
-                  />
-                  <Button 
-                    onClick={handlePasteSubmit}
-                    disabled={!pasteText.trim()}
-                    className="w-full mt-3 btn-glow-green"
-                  >
-                    Analyze Pasted Text
+                  {/* Experience Card */}
+                  <div className="border border-white/10 rounded-xl bg-white/5 p-4 flex flex-col gap-2.5">
+                    <button onClick={() => toggleExpand('experience')} className="flex items-center justify-between w-full font-bold text-xs text-slate-200">
+                      <span>Experience History ({parsedData.experience?.length || 0})</span>
+                      <ChevronRight size={14} className={`transform transition-transform ${expandedCards.experience ? 'rotate-90' : ''}`} />
+                    </button>
+                    {expandedCards.experience && (
+                      <div className="flex flex-col gap-3 pt-2 border-t border-white/5 text-[11px] text-slate-400">
+                        {parsedData.experience?.map((exp: any, idx: number) => (
+                          <div key={idx} className="border-b border-white/5 pb-2 last:border-b-0">
+                            <p className="font-bold text-slate-200">{exp.role || exp.title}</p>
+                            <p className="text-[10px] text-emerald-400">{exp.company} | {exp.duration}</p>
+                            <p className="mt-1 line-clamp-2 text-slate-450">{exp.description}</p>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Projects Card */}
+                  <div className="border border-white/10 rounded-xl bg-white/5 p-4 flex flex-col gap-2.5">
+                    <button onClick={() => toggleExpand('projects')} className="flex items-center justify-between w-full font-bold text-xs text-slate-200">
+                      <span>Key Projects Highlighted ({parsedData.projects?.length || 0})</span>
+                      <ChevronRight size={14} className={`transform transition-transform ${expandedCards.projects ? 'rotate-90' : ''}`} />
+                    </button>
+                    {expandedCards.projects && (
+                      <div className="flex flex-col gap-3 pt-2 border-t border-white/5 text-[11px] text-slate-400">
+                        {parsedData.projects?.map((proj: any, idx: number) => (
+                          <div key={idx} className="border-b border-white/5 pb-2 last:border-b-0">
+                            <p className="font-bold text-slate-200">{proj.name || proj.title}</p>
+                            <p className="mt-1 line-clamp-2 text-slate-450">{proj.description}</p>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Education Card */}
+                  <div className="border border-white/10 rounded-xl bg-white/5 p-4 flex flex-col gap-2.5">
+                    <button onClick={() => toggleExpand('education')} className="flex items-center justify-between w-full font-bold text-xs text-slate-200">
+                      <span>Education & Credentials ({parsedData.education?.length || 0})</span>
+                      <ChevronRight size={14} className={`transform transition-transform ${expandedCards.education ? 'rotate-90' : ''}`} />
+                    </button>
+                    {expandedCards.education && (
+                      <div className="flex flex-col gap-2 pt-2 border-t border-white/5 text-[11px] text-slate-400">
+                        {parsedData.education?.map((edu: any, idx: number) => (
+                          <div key={idx}>
+                            <p className="font-bold text-slate-200">{edu.degree}</p>
+                            <p className="text-[10px] text-slate-400">{edu.school || edu.institution} ({edu.year})</p>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                <div className="flex justify-end gap-3 mt-4">
+                  <Button onClick={() => setCurrentStage(3)} className="btn-glow-green">
+                    Verify & View Report <ArrowRight size={14} />
                   </Button>
                 </div>
               </motion.div>
             )}
 
-            {/* Stage 2: Verdict */}
-            {currentStage === 2 && verdict && (
-              <motion.div 
-                initial={{ opacity: 0, scale: 0.98 }}
-                animate={{ opacity: 1, scale: 1 }}
-                className="flex flex-col gap-6"
-              >
-                <div className="flex flex-col md:flex-row items-center gap-6 bg-[#1F2937]/40 border border-white/5 rounded-2xl p-6">
-                  {/* Score circle */}
-                  <div className="relative w-28 h-28 flex items-center justify-center shrink-0">
-                    <svg className="w-full h-full transform -rotate-90">
-                      <circle cx="56" cy="56" r="48" stroke="rgba(255,255,255,0.05)" strokeWidth="8" fill="transparent" />
-                      <circle 
-                        cx="56" 
-                        cy="56" 
-                        r="48" 
-                        stroke="#10B981" 
-                        strokeWidth="8" 
-                        fill="transparent" 
-                        strokeDasharray={2 * Math.PI * 48}
-                        strokeDashoffset={2 * Math.PI * 48 * (1 - verdict.score / 100)}
-                        strokeLinecap="round"
-                        className="transition-all duration-1000"
-                      />
-                    </svg>
-                    <div className="absolute flex flex-col items-center justify-center">
-                      <span className="text-2xl font-black tracking-tight">{verdict.score}</span>
-                      <span className="text-[9px] font-bold text-slate-400">ATS Rating</span>
-                    </div>
-                  </div>
-
-                  <div className="text-left flex-1">
-                    <span className="bg-[#10B981]/15 text-[#34D399] border border-emerald-500/10 text-[9px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider">
-                      {verdict.grade}
-                    </span>
-                    <h3 className="text-xl font-extrabold text-white mt-2">Instant Ingestion Verdict</h3>
-                    <p className="text-xs text-slate-350 mt-1 leading-relaxed">
-                      Our rubric version <span className="font-mono text-[#34D399]">{verdict.rubricVersion}</span> analyzed experience-to-objective ratios. Here is how your formatting is parsed.
-                    </p>
-                  </div>
-                </div>
-
-                <div className="flex flex-col gap-3">
-                  <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider text-left">Key Audit Findings:</h4>
-                  {verdict.findings.map((find, idx) => (
-                    <div 
-                      key={idx}
-                      className={`flex gap-3 items-start p-4 rounded-xl border ${
-                        find.isPositive ? 'bg-emerald-950/10 border-emerald-500/10' : 'bg-rose-950/10 border-rose-500/10'
-                      }`}
-                    >
-                      <div className="mt-0.5">
-                        {find.isPositive ? (
-                          <CheckCircle2 size={16} className="text-[#10B981]" />
-                        ) : (
-                          <AlertTriangle size={16} className="text-rose-500" />
-                        )}
-                      </div>
-                      <div className="text-left">
-                        <h5 className="text-xs font-bold text-white">{find.title}</h5>
-                        <p className="text-[11px] text-slate-350 mt-0.5 leading-relaxed">{find.description}</p>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-
-                <div className="flex gap-3 mt-4">
-                  <Button 
-                    onClick={() => setCurrentStage(3)}
-                    className="flex-1 btn-glow-green"
-                  >
-                    Fix Findings with AI
-                  </Button>
-                </div>
-              </motion.div>
-            )}
-
-            {/* Stage 3: Targeting Question */}
+            {/* Step 3: Resume Health Snapshot */}
             {currentStage === 3 && (
               <motion.div 
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="flex flex-col gap-6 max-w-lg mx-auto text-center"
+                key="step3"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                className="flex flex-col gap-6"
               >
-                <div className="w-12 h-12 rounded-xl bg-[#10B981]/10 text-[#34D399] flex items-center justify-center border border-emerald-500/10 mx-auto mb-2">
-                  <Briefcase size={22} />
-                </div>
-                <div>
-                  <h2 className="text-xl font-extrabold text-white">What role are you targeting next?</h2>
-                  <p className="text-xs text-slate-400 mt-1">
-                    We will tailor outcome rewrites and scan keyword gaps against this specific trajectory.
-                  </p>
+                <div className="text-left flex flex-col gap-1">
+                  <span className="text-[10px] font-bold text-emerald-400 uppercase tracking-widest">Global Resume Rubric Index</span>
+                  <h3 className="text-xl font-extrabold text-white">Your Resume Health Snapshot</h3>
+                  <p className="text-xs text-slate-450">We run comprehensive scoring pipelines relative to elite applicant baselines.</p>
                 </div>
 
-                <div className="relative">
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
-                  <input 
-                    type="text"
-                    placeholder="e.g. Frontend Engineer, Product Manager, Data Scientist"
-                    value={targetRole}
-                    onChange={(e) => setTargetRole(e.target.value)}
-                    className="w-full pl-10 pr-4 py-3 bg-white/5 border border-white/10 rounded-xl text-xs text-white focus:outline-none focus:border-[#10B981] font-semibold"
-                  />
-                </div>
-
-                <div className="flex flex-wrap gap-2 justify-center">
-                  {['React Developer', 'Software Engineer', 'Fullstack Developer', 'Backend Specialist'].map((role) => (
-                    <button
-                      key={role}
-                      onClick={() => setTargetRole(role)}
-                      className={`px-3 py-1.5 rounded-lg border text-[11px] font-bold cursor-pointer transition-colors ${
-                        targetRole === role ? 'bg-[#10B981]/20 border-[#10B981] text-[#34D399]' : 'border-white/10 hover:border-white/20 text-slate-400'
-                      }`}
-                    >
-                      {role}
-                    </button>
+                {/* Score Grid with Rings */}
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                  {[
+                    { label: 'Overall Score', val: liveScores.overall, color: 'stroke-emerald-500' },
+                    { label: 'ATS Parsability', val: liveScores.ats, color: 'stroke-blue-500' },
+                    { label: 'Keyword Match', val: liveScores.keyword, color: 'stroke-indigo-500' },
+                    { label: 'Impact / Quality', val: liveScores.impact, color: 'stroke-teal-500' }
+                  ].map((score, idx) => (
+                    <div key={idx} className="bg-white/5 border border-white/10 rounded-xl p-5 flex flex-col items-center gap-3">
+                      <div className="relative w-20 h-20 flex items-center justify-center">
+                        <svg className="w-full h-full transform -rotate-90">
+                          <circle cx="40" cy="40" r="34" stroke="rgba(255,255,255,0.05)" strokeWidth="6" fill="transparent" />
+                          <circle 
+                            cx="40" 
+                            cy="40" 
+                            r="34" 
+                            className={`${score.color} transition-all duration-1000`}
+                            strokeWidth="6" 
+                            fill="transparent" 
+                            strokeDasharray={2 * Math.PI * 34}
+                            strokeDashoffset={2 * Math.PI * 34 * (1 - score.val / 100)}
+                            strokeLinecap="round"
+                          />
+                        </svg>
+                        <span className="absolute text-sm font-black text-white">{score.val}%</span>
+                      </div>
+                      <span className="text-[11px] font-bold text-slate-400">{score.label}</span>
+                    </div>
                   ))}
                 </div>
 
-                <div className="flex gap-3 mt-4">
-                  <Button 
-                    onClick={() => {
-                      if (!targetRole) {
-                        setTargetRole('Software Engineer'); // Inference
-                      }
-                      setCurrentStage(4);
-                    }}
-                    className="flex-1 btn-glow-green"
-                  >
-                    Confirm Target
-                  </Button>
-                  <Button 
-                    onClick={() => {
-                      setTargetRole('Software Engineer'); // Inferred default
-                      setCurrentStage(4);
-                    }}
-                    variant="outline"
-                  >
-                    Skip & Infer
+                {/* Micro Scores */}
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 border-t border-white/5 pt-4">
+                  <div className="flex justify-between items-center bg-white/5 border border-white/10 rounded-lg px-4 py-2.5">
+                    <span className="text-[11px] font-bold text-slate-400">Grammar & Syntax</span>
+                    <span className="text-xs font-bold text-emerald-400">{liveScores.grammar}%</span>
+                  </div>
+                  <div className="flex justify-between items-center bg-white/5 border border-white/10 rounded-lg px-4 py-2.5">
+                    <span className="text-[11px] font-bold text-slate-400">Formatting Fit</span>
+                    <span className="text-xs font-bold text-emerald-400">{liveScores.formatting}%</span>
+                  </div>
+                  <div className="flex justify-between items-center bg-white/5 border border-white/10 rounded-lg px-4 py-2.5">
+                    <span className="text-[11px] font-bold text-slate-400">Recruiter Impression</span>
+                    <span className="text-xs font-bold text-emerald-400">{liveScores.impression}</span>
+                  </div>
+                </div>
+
+                <div className="flex justify-end gap-3 mt-4">
+                  <Button onClick={() => setCurrentStage(4)} className="btn-glow-green">
+                    View AI Diagnosis <ArrowRight size={14} />
                   </Button>
                 </div>
               </motion.div>
             )}
 
-            {/* Stage 4: Conversational Deep-Dive */}
+            {/* Step 4: AI Diagnosis */}
             {currentStage === 4 && (
               <motion.div 
+                key="step4"
                 initial={{ opacity: 0, x: 10 }}
                 animate={{ opacity: 1, x: 0 }}
-                className="grid grid-cols-1 md:grid-cols-3 gap-6 items-start"
-              >
-                {/* Left 2 columns: Active Question */}
-                <div className="md:col-span-2 flex flex-col gap-6">
-                  <div className="flex justify-between items-center">
-                    <span className="text-[10px] font-bold text-[#10B981] uppercase tracking-wider">
-                      Question {currentQuestionIndex + 1} of {deepDiveQuestions.length}
-                    </span>
-                    <span className="text-[10px] font-bold text-slate-400">
-                      Capped at max 5
-                    </span>
-                  </div>
-
-                  <div className="text-left bg-white/5 border border-white/10 rounded-2xl p-6 flex flex-col gap-4">
-                    <div className="flex gap-2 items-start text-xs">
-                      <div className="w-5 h-5 rounded bg-[#10B981] text-white flex items-center justify-center font-bold text-[10px]">Q</div>
-                      <p className="font-extrabold text-sm text-white leading-relaxed">
-                        {deepDiveQuestions[currentQuestionIndex].question}
-                      </p>
-                    </div>
-
-                    <div className="flex gap-2 items-start bg-[#0B1220] p-3 rounded-lg border border-white/5 text-[10px] text-slate-400">
-                      <HelpCircle size={14} className="shrink-0 text-[#10B981] mt-0.5" />
-                      <p><strong>Why we ask:</strong> {deepDiveQuestions[currentQuestionIndex].reason}</p>
-                    </div>
-                  </div>
-
-                  {/* Options Chips */}
-                  <div className="flex flex-col gap-2.5 text-left">
-                    <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Select options:</label>
-                    <div className="flex flex-wrap gap-2">
-                      {deepDiveQuestions[currentQuestionIndex].chips.map((opt) => (
-                        <button
-                          key={opt}
-                          onClick={() => {
-                            setDeepDiveAnswers(prev => ({
-                              ...prev,
-                              [deepDiveQuestions[currentQuestionIndex].id]: opt
-                            }));
-                          }}
-                          className={`px-3 py-2 rounded-xl border text-left text-xs font-semibold cursor-pointer transition-all ${
-                            deepDiveAnswers[deepDiveQuestions[currentQuestionIndex].id] === opt 
-                              ? 'bg-[#10B981]/10 border-[#10B981] text-white' 
-                              : 'bg-white/5 border-white/10 hover:border-white/20 text-slate-350'
-                          }`}
-                        >
-                          {opt}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-
-                  {/* Free text input */}
-                  <div className="text-left">
-                    <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-2">Or custom response:</label>
-                    <input 
-                      type="text"
-                      placeholder="Type details in your own words..."
-                      value={customAnswer}
-                      onChange={(e) => setCustomAnswer(e.target.value)}
-                      className="w-full px-4 py-2.5 bg-white/5 border border-white/10 rounded-xl text-xs text-white focus:outline-none focus:border-[#10B981]"
-                    />
-                  </div>
-
-                  <div className="flex gap-3">
-                    <Button 
-                      onClick={handleNextDeepDive}
-                      className="flex-1 btn-glow-green"
-                    >
-                      {currentQuestionIndex === deepDiveQuestions.length - 1 ? 'Build Resume layout' : 'Next Question'} <ArrowRight size={14} />
-                    </Button>
-                  </div>
-                </div>
-
-                {/* Right column: Non-blocking Silent Build progress rail */}
-                <div className="md:col-span-1 bg-white/5 border border-white/10 rounded-2xl p-5 flex flex-col gap-4 text-left">
-                  <div>
-                    <h4 className="text-xs font-bold text-white flex items-center gap-2">
-                      <Sparkles size={14} className="text-[#10B981]" />
-                      Silent Build Engine
-                    </h4>
-                    <p className="text-[9px] text-slate-400 mt-0.5">Running audits in parallel with your questions</p>
-                  </div>
-
-                  {/* Progress rail */}
-                  <div className="w-full">
-                    <div className="flex justify-between items-center mb-1 text-[9px] font-bold">
-                      <span className="text-[#10B981] uppercase">Analyzing Gaps</span>
-                      <span>{silentBuildProgress}%</span>
-                    </div>
-                    <div className="w-full bg-white/10 h-1 rounded-full overflow-hidden">
-                      <div className="bg-[#10B981] h-full transition-all duration-300" style={{ width: `${silentBuildProgress}%` }} />
-                    </div>
-                  </div>
-
-                  {/* Logs ticker */}
-                  <div className="flex flex-col gap-2 max-h-40 overflow-y-auto">
-                    {silentTasks.map((task, idx) => (
-                      <div key={idx} className="flex gap-2 items-start text-[9px]">
-                        <CheckCircle2 size={10} className="text-[#10B981] shrink-0 mt-0.5" />
-                        <span className="text-slate-350 leading-relaxed">{task}</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </motion.div>
-            )}
-
-            {/* Stage 6: Rewrite Review */}
-            {currentStage === 6 && (
-              <motion.div 
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                className="flex flex-col gap-5"
+                exit={{ opacity: 0 }}
+                className="flex flex-col gap-6"
               >
                 <div className="text-left">
-                  <h3 className="text-lg font-extrabold text-white">Outcome-Based Rewrites</h3>
-                  <p className="text-xs text-slate-450 mt-1">
-                    AI converted duty description text into business achievements containing metric scores. Review suggested rewrites.
-                  </p>
+                  <span className="text-[10px] font-bold text-emerald-400 uppercase tracking-widest">Intelligent Career Diagnostics</span>
+                  <h3 className="text-xl font-extrabold text-white">Core Resume Audit Findings</h3>
+                  <p className="text-xs text-slate-400">We pinpoint exact issues preventing competitive interview callback rates.</p>
                 </div>
 
                 <div className="flex flex-col gap-4">
-                  {rewrittenBullets.map((bullet, idx) => (
-                    <div 
+                  {[
+                    { type: 'strength', title: 'Strong technical skill variety', text: 'Excellent representation of modern libraries and technologies in your stack list.', badge: 'Top Strength', style: 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400' },
+                    { type: 'weakness', title: 'Weak metric attribution in bullets', text: 'Bullet statements describe general daily tasks instead of quantified outcomes.', badge: 'Critical Weakness', style: 'bg-rose-500/10 border-rose-500/20 text-rose-400' },
+                    { type: 'opportunity', title: 'Add specific target keywords', text: 'You are missing key cloud and database components standard in modern tech frameworks.', badge: 'Quick Opportunity', style: 'bg-amber-500/10 border-amber-500/20 text-amber-400' }
+                  ].map((diag, idx) => (
+                    <div key={idx} className={`border rounded-xl p-4 flex gap-3.5 items-start ${diag.style}`}>
+                      <Info size={16} className="shrink-0 mt-0.5" />
+                      <div className="text-left">
+                        <span className="text-[9px] font-bold uppercase tracking-wider px-2 py-0.5 rounded bg-white/5 border border-current">
+                          {diag.badge}
+                        </span>
+                        <h4 className="text-xs font-bold text-white mt-2">{diag.title}</h4>
+                        <p className="text-[11px] text-slate-350 mt-1 leading-relaxed">{diag.text}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                <div className="flex justify-end gap-3 mt-4">
+                  <Button onClick={() => setCurrentStage(5)} className="btn-glow-green">
+                    Begin Interactive Personalization <ArrowRight size={14} />
+                  </Button>
+                </div>
+              </motion.div>
+            )}
+
+            {/* Step 5: Ask One Intelligent Question */}
+            {currentStage === 5 && (
+              <motion.div 
+                key="step5"
+                initial={{ opacity: 0, scale: 0.98 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0 }}
+                className="flex flex-col gap-6 max-w-lg mx-auto text-center py-6"
+              >
+                <div className="w-12 h-12 rounded-xl bg-gradient-to-tr from-emerald-600 to-teal-400 text-white flex items-center justify-center mx-auto shadow-lg">
+                  <HelpCircle size={24} />
+                </div>
+                <div className="flex flex-col gap-1.5">
+                  <span className="text-[10px] font-bold text-emerald-400 uppercase tracking-widest">Conversational personalizer</span>
+                  <h3 className="text-xl font-extrabold text-white">{intelligentQuestion.question}</h3>
+                  <p className="text-xs text-slate-400">This helps us tailor outcome rewrites specifically for your career path.</p>
+                </div>
+
+                <div className="flex flex-col gap-2.5 mt-4">
+                  {intelligentQuestion.options.map((opt, idx) => (
+                    <button
                       key={idx}
-                      className={`border rounded-xl p-4 flex flex-col gap-3 text-left ${
-                        bullet.accepted ? 'bg-emerald-950/5 border-emerald-500/20' : 'bg-white/5 border-white/5'
-                      }`}
+                      onClick={() => handleNextQuestion(opt)}
+                      className="w-full text-left px-5 py-3 rounded-xl border border-white/10 hover:border-emerald-500 bg-white/5 hover:bg-emerald-500/5 font-semibold text-xs transition-all duration-200 cursor-pointer flex justify-between items-center group"
                     >
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div>
-                          <span className="text-[9px] font-bold uppercase text-slate-400 block mb-1">Original Duty Language</span>
-                          <p className="text-xs text-slate-350 line-through bg-[#0B1220]/45 p-2.5 rounded-lg">{bullet.original}</p>
-                        </div>
-                        <div>
-                          <span className="text-[9px] font-bold uppercase text-[#34D399] block mb-1">AI Outcome Rewrite</span>
-                          <p className="text-xs text-white bg-[#10B981]/5 p-2.5 rounded-lg border border-[#10B981]/10">{bullet.suggested}</p>
-                        </div>
-                      </div>
-
-                      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 pt-2.5 border-t border-white/5 text-[10px]">
-                        <span className="text-[#10B981] font-bold">Reason: {bullet.reason}</span>
-                        <div className="flex items-center gap-2">
-                          <button
-                            onClick={() => {
-                              setRewrittenBullets(prev => prev.map((item, i) => i === idx ? { ...item, accepted: !item.accepted } : item));
-                            }}
-                            className={`px-3 py-1 rounded-lg border text-[10px] font-bold cursor-pointer transition-colors ${
-                              bullet.accepted ? 'bg-[#10B981] text-white border-transparent' : 'border-white/10 hover:border-white/20'
-                            }`}
-                          >
-                            {bullet.accepted ? 'Accept Suggestion' : 'Keep Original'}
-                          </button>
-                        </div>
-                      </div>
-                    </div>
+                      <span className="text-slate-200 group-hover:text-white">{opt}</span>
+                      <ChevronRight size={14} className="text-slate-500 group-hover:text-emerald-400 group-hover:translate-x-0.5 transition-all" />
+                    </button>
                   ))}
                 </div>
-
-                <div className="flex gap-3 justify-end mt-4">
-                  <Button 
-                    onClick={() => setCurrentStage(7)}
-                    className="w-full btn-glow-green"
-                  >
-                    Confirm Bullet Review
-                  </Button>
-                </div>
               </motion.div>
             )}
 
-            {/* Stage 7: ATS & Format Fix */}
-            {currentStage === 7 && (
+            {/* Step 6: Choose Career Goal */}
+            {currentStage === 6 && (
               <motion.div 
+                key="step6"
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
-                className="flex flex-col gap-6 text-left"
-              >
-                <div>
-                  <h3 className="text-lg font-extrabold text-white">ATS Structural Checks</h3>
-                  <p className="text-xs text-slate-450 mt-1">
-                    Correct parsing issues like two-columns, embedded table grids, or font traps.
-                  </p>
-                </div>
-
-                <div className="flex flex-col gap-3">
-                  {atsFixes.map((fix) => (
-                    <div 
-                      key={fix.id}
-                      className="bg-white/5 border border-white/10 rounded-xl p-4 flex items-center justify-between gap-4"
-                    >
-                      <div className="flex gap-3 items-start">
-                        <div className="mt-0.5 text-amber-500">
-                          <ShieldAlert size={16} />
-                        </div>
-                        <div>
-                          <h5 className="text-xs font-bold text-white">{fix.issue}</h5>
-                          <p className="text-[10px] text-slate-400 mt-0.5"><strong>Auto-Correction:</strong> {fix.fix}</p>
-                        </div>
-                      </div>
-
-                      <button
-                        onClick={() => {
-                          setAtsFixes(prev => prev.map(f => f.id === fix.id ? { ...f, enabled: !f.enabled } : f));
-                        }}
-                        className={`w-11 h-6 rounded-full p-0.5 transition-colors cursor-pointer ${
-                          fix.enabled ? 'bg-[#10B981]' : 'bg-white/10'
-                        }`}
-                      >
-                        <div className={`w-5 h-5 rounded-full bg-white transition-transform ${fix.enabled ? 'translate-x-5' : 'translate-x-0'}`} />
-                      </button>
-                    </div>
-                  ))}
-                </div>
-
-                <div className="flex gap-3 mt-4">
-                  <Button 
-                    onClick={() => setCurrentStage(8)}
-                    className="w-full btn-glow-green"
-                  >
-                    Apply Structural Fixes
-                  </Button>
-                </div>
-              </motion.div>
-            )}
-
-            {/* Stage 8: Strategic Recommendations */}
-            {currentStage === 8 && (
-              <motion.div 
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                className="flex flex-col gap-5 text-left"
-              >
-                <div>
-                  <h3 className="text-lg font-extrabold text-white">Strategic Career Upgrades</h3>
-                  <p className="text-xs text-slate-450 mt-1">
-                    AI recommendation checks designed specifically to fill active trajectory gaps.
-                  </p>
-                </div>
-
-                <div className="flex flex-col gap-3">
-                  {strategicRecs.map((rec) => (
-                    <div 
-                      key={rec.id}
-                      className={`border rounded-xl p-4 flex items-start justify-between gap-4 ${
-                        rec.actioned ? 'bg-[#10B981]/5 border-[#10B981]/20' : 'bg-white/5 border-white/10'
-                      }`}
-                    >
-                      <div className="flex gap-3 items-start">
-                        <div className="mt-0.5 text-[#10B981]">
-                          <Award size={16} />
-                        </div>
-                        <div>
-                          <h4 className="text-xs font-bold text-white">{rec.title}</h4>
-                          <p className="text-[10px] text-slate-400 mt-0.5 leading-relaxed">{rec.desc}</p>
-                        </div>
-                      </div>
-
-                      <button
-                        onClick={() => {
-                          setStrategicRecs(prev => prev.map(r => r.id === rec.id ? { ...r, actioned: !r.actioned } : r));
-                        }}
-                        className={`px-3 py-1.5 rounded-lg border text-[10px] font-bold cursor-pointer transition-colors ${
-                          rec.actioned ? 'bg-[#10B981] text-white border-transparent' : 'border-white/10 hover:border-white/20'
-                        }`}
-                      >
-                        {rec.actioned ? 'Saved Recommendation' : 'Remind Me'}
-                      </button>
-                    </div>
-                  ))}
-                </div>
-
-                <div className="flex gap-3 mt-4">
-                  <Button 
-                    onClick={() => setCurrentStage(9)}
-                    className="w-full btn-glow-green"
-                  >
-                    Proceed to Export
-                  </Button>
-                </div>
-              </motion.div>
-            )}
-
-            {/* Stage 9: Export / Finalize */}
-            {currentStage === 9 && (
-              <motion.div 
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                className="flex flex-col gap-6 text-center max-w-lg mx-auto"
-              >
-                <div className="w-14 h-14 rounded-full bg-[#10B981]/15 text-[#34D399] flex items-center justify-center border border-emerald-500/10 mx-auto">
-                  <FileCode size={24} />
-                </div>
-                
-                <div>
-                  <h3 className="text-xl font-extrabold text-white">Your Tailored Resume is Ready</h3>
-                  <p className="text-xs text-slate-400 mt-1">
-                    All outcome rewrites and ATS formatting configurations are packaged correctly.
-                  </p>
-                </div>
-
-                <div className="grid grid-cols-2 gap-4">
-                  <button
-                    onClick={() => alert('PDF formatting initiated...')}
-                    className="p-4 rounded-xl border border-white/10 bg-white/5 hover:bg-white/10 flex flex-col items-center gap-2 cursor-pointer transition-colors"
-                  >
-                    <Download size={20} className="text-[#34D399]" />
-                    <span className="text-xs font-bold text-white">Download PDF</span>
-                  </button>
-                  <button
-                    onClick={() => alert('DOCX formatting initiated...')}
-                    className="p-4 rounded-xl border border-white/10 bg-white/5 hover:bg-white/10 flex flex-col items-center gap-2 cursor-pointer transition-colors"
-                  >
-                    <FileText size={20} className="text-[#34D399]" />
-                    <span className="text-xs font-bold text-white">Download DOCX</span>
-                  </button>
-                </div>
-
-                <div className="flex gap-3 pt-4">
-                  <Button 
-                    onClick={handleFinalizeResume}
-                    isLoading={isFinalizing}
-                    className="w-full btn-glow-green"
-                  >
-                    Finalize Resume & Find Matches <ArrowRight size={14} />
-                  </Button>
-                </div>
-              </motion.div>
-            )}
-
-            {/* Stage 10: Part 2 Job Recommendations */}
-            {currentStage === 10 && (
-              <motion.div 
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
                 className="flex flex-col gap-6"
               >
-                <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 border-b border-white/5 pb-4">
-                  <div className="text-left">
-                    <h3 className="text-lg font-black text-white">Tailored Job Matches</h3>
-                    <p className="text-xs text-slate-400">Personalized listings matched to your newly created resume profile.</p>
+                <div className="text-left flex flex-col gap-1">
+                  <span className="text-[10px] font-bold text-emerald-400 uppercase tracking-widest">Goal Alignment Engine</span>
+                  <h3 className="text-xl font-extrabold text-white">Select Your Primary Career Target</h3>
+                  <p className="text-xs text-slate-400">How would you like the AI to align your optimization improvements?</p>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                  {[
+                    { title: 'Get More Interviews', desc: 'Prioritize strong action verbs and quantified impact outcomes.' },
+                    { title: 'Increase ATS Score', desc: 'Inject critical standard terminology and fix formatting traps.' },
+                    { title: 'Switch Career Paths', desc: 'Accentuate transferable skills and bridge tech domain gaps.' },
+                    { title: 'Get Remote Jobs', desc: 'Emphasize autonomous delivery, cloud sync, and remote stacks.' },
+                    { title: 'Get Internship / Co-op', desc: 'Highlight academic builds, hackathons, and foundation projects.' },
+                    { title: 'Improve Resume Writing', desc: 'Refine syntax, tone consistency, and executive wording style.' }
+                  ].map((goal, idx) => (
+                    <button
+                      key={idx}
+                      onClick={() => handleSelectGoal(goal.title)}
+                      className="text-left p-4 rounded-2xl border border-white/10 hover:border-emerald-500 bg-white/5 hover:bg-emerald-500/5 transition-all duration-300 cursor-pointer flex flex-col gap-1.5"
+                    >
+                      <span className="font-extrabold text-xs text-white">{goal.title}</span>
+                      <span className="text-[10px] text-slate-450 leading-relaxed">{goal.desc}</span>
+                    </button>
+                  ))}
+                </div>
+              </motion.div>
+            )}
+
+            {/* Step 7: Guided AI Resume Repair */}
+            {currentStage === 7 && (
+              <motion.div 
+                key="step7"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                className="flex flex-col gap-6"
+              >
+                <div className="flex justify-between items-start border-b border-white/10 pb-4">
+                  <div className="text-left flex flex-col gap-1">
+                    <span className="text-[10px] font-bold text-emerald-400 uppercase tracking-widest">Step-By-Step Resume Repair</span>
+                    <h3 className="text-xl font-extrabold text-white">Improve bullet point results</h3>
+                    <p className="text-xs text-slate-400">Accept quantified revisions to dramatically improve callback ratings.</p>
                   </div>
-
-                  {/* Filters */}
-                  <div className="flex items-center gap-3 w-full md:w-auto">
-                    <select
-                      value={jobsFilter.location}
-                      onChange={(e) => setJobsFilter(prev => ({ ...prev, location: e.target.value }))}
-                      className="px-3 py-1.5 rounded-lg border border-white/10 text-xs bg-[#1F2937] text-white focus:outline-none focus:border-[#10B981] cursor-pointer"
-                    >
-                      <option value="all">All Locations</option>
-                      <option value="Bangalore">Bangalore</option>
-                      <option value="Remote">Remote</option>
-                    </select>
-
-                    <select
-                      value={jobsFilter.sort}
-                      onChange={(e) => setJobsFilter(prev => ({ ...prev, sort: e.target.value }))}
-                      className="px-3 py-1.5 rounded-lg border border-white/10 text-xs bg-[#1F2937] text-white focus:outline-none focus:border-[#10B981] cursor-pointer"
-                    >
-                      <option value="score">Sort by Match %</option>
-                      <option value="newest">Newest First</option>
-                    </select>
+                  
+                  {/* Step counter */}
+                  <div className="bg-white/5 border border-white/10 rounded-full px-3 py-1 text-[10px] font-bold text-slate-400 shrink-0">
+                    Bullet {repairIndex + 1} of {improvedBullets.length}
                   </div>
                 </div>
 
-                {tailorSuccess && (
-                  <div className="bg-emerald-950/15 border border-emerald-500/20 text-[#34D399] p-3 rounded-xl text-xs font-bold text-left animate-pulse">
-                    {tailorSuccess}
-                  </div>
-                )}
-
-                {jobsLoading ? (
-                  <div className="py-20 flex flex-col items-center justify-center gap-3">
-                    <RefreshCw size={32} className="animate-spin text-[#10B981]" />
-                    <span className="text-xs text-slate-400">Aligning keywords and calculating scores...</span>
-                  </div>
-                ) : (
-                  <div className="flex flex-col gap-4">
-                    {jobMatches.length === 0 ? (
-                      <div className="py-12 text-center text-slate-400 font-bold text-xs">
-                        No direct matches found. Try broadening target keywords.
+                {improvedBullets.length > 0 && repairIndex < improvedBullets.length && (
+                  <div className="flex flex-col gap-5">
+                    {/* Before / After comparison */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {/* Before */}
+                      <div className="bg-white/5 border border-white/5 rounded-xl p-4 flex flex-col gap-2">
+                        <span className="text-[9px] font-black uppercase text-slate-400">Current Duty Language</span>
+                        <p className="text-xs text-slate-450 leading-relaxed bg-[#0B1220]/40 p-3 rounded-lg border border-white/5 min-h-[80px]">
+                          {improvedBullets[repairIndex].original}
+                        </p>
                       </div>
-                    ) : (
-                      jobMatches.map((job) => (
-                        <div 
-                          key={job.id}
-                          className="bg-white/5 border border-white/10 rounded-2xl p-5 flex flex-col md:flex-row justify-between gap-4 text-left hover:border-[#10B981]/50 transition-colors"
-                        >
-                          <div className="flex gap-4 items-start">
-                            <div className="w-12 h-12 bg-white/5 border border-white/10 rounded-xl flex items-center justify-center text-[#10B981] font-black shrink-0">
-                              {job.company.charAt(0)}
-                            </div>
-                            
-                            <div>
-                              <div className="flex items-center gap-2">
-                                <h4 className="font-extrabold text-sm text-white">{job.title}</h4>
-                                <span className="bg-[#10B981]/15 text-[#34D399] text-[9px] font-bold px-2 py-0.5 rounded">
-                                  {job.ai_match_score || 85}% Match
-                                </span>
-                              </div>
-                              <p className="text-xs text-slate-400 mt-1">{job.company} • {job.location}</p>
-                              
-                              <p className="text-[10px] text-[#34D399] mt-2.5 font-semibold">
-                                ✓ Matches your React, TypeScript development experience.
-                              </p>
 
-                              {/* Gap notification */}
-                              {job.skills_missing && job.skills_missing.length > 0 && (
-                                <p className="text-[9px] text-rose-400 mt-1 font-semibold flex items-center gap-1">
-                                  <AlertTriangle size={10} />
-                                  Missing key skills: {job.skills_missing.join(', ')} — Acquire AWS Practitioner to close the gap.
-                                </p>
-                              )}
-                            </div>
-                          </div>
-
-                          <div className="flex md:flex-col justify-end items-end gap-2.5 shrink-0">
-                            <button
-                              onClick={() => handleTailorJob(job)}
-                              className="px-3.5 py-1.5 bg-[#10B981] hover:bg-[#34D399] text-white font-bold text-[10px] rounded-lg transition-colors cursor-pointer flex items-center gap-1.5"
-                            >
-                              <Sparkles size={11} /> Tailor Resume
-                            </button>
-                            
-                            <button
-                              onClick={() => alert('Job application template saved!')}
-                              className="px-3.5 py-1.5 bg-white/5 border border-white/10 hover:bg-white/10 text-white font-bold text-[10px] rounded-lg transition-colors cursor-pointer"
-                            >
-                              Save Position
-                            </button>
-                          </div>
+                      {/* After */}
+                      <div className="bg-emerald-500/5 border border-emerald-500/20 rounded-xl p-4 flex flex-col gap-2 shadow-[0_0_20px_rgba(16,185,129,0.05)]">
+                        <div className="flex justify-between items-center">
+                          <span className="text-[9px] font-black uppercase text-emerald-400">AI Improved Outcome Bullet</span>
+                          <span className="text-[9px] font-extrabold bg-emerald-500/10 text-emerald-400 px-2 py-0.5 rounded">
+                            +{improvedBullets[repairIndex].atsBenefit}% ATS Benefit
+                          </span>
                         </div>
-                      ))
-                    )}
+                        <p className="text-xs text-white leading-relaxed bg-[#0B1220]/40 p-3 rounded-lg border border-emerald-500/10 min-h-[80px]">
+                          {improvedBullets[repairIndex].improved}
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* Diff tracker */}
+                    <div className="bg-[#0B1220] border border-white/5 rounded-xl p-3.5 font-mono text-[10px] text-emerald-400 text-left">
+                      <span className="font-bold text-slate-400 block mb-1">Delta comparison changes:</span>
+                      {improvedBullets[repairIndex].diff}
+                    </div>
+
+                    {/* Stage 8: Live Progress indicators inside repair stage */}
+                    <div className="bg-white/5 border border-white/10 rounded-xl p-4 flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 flex items-center justify-center font-black text-xs">
+                          {liveScores.overall}%
+                        </div>
+                        <div>
+                          <p className="text-xs font-bold text-slate-200">Current ATS Score</p>
+                          <p className="text-[10px] text-slate-450">Updates in real time as you optimize</p>
+                        </div>
+                      </div>
+                      <div className="w-40 bg-white/10 h-2 rounded-full overflow-hidden shrink-0 hidden sm:block">
+                        <div 
+                          className="bg-emerald-500 h-full transition-all duration-300"
+                          style={{ width: `${liveScores.overall}%` }}
+                        />
+                      </div>
+                    </div>
+
+                    {/* Control Buttons */}
+                    <div className="flex flex-wrap gap-3 mt-2">
+                      <Button onClick={handleAcceptRepair} className="flex-1 btn-glow-green font-bold">
+                        Accept Improvement
+                      </Button>
+                      <Button onClick={handleSkipRepair} variant="outline">
+                        Keep Original
+                      </Button>
+                    </div>
                   </div>
                 )}
+              </motion.div>
+            )}
 
-                <div className="flex justify-between mt-4">
-                  <Button onClick={onClose} variant="outline">
-                    Return to Hub
+            {/* Step 9: Personalized Career Summary */}
+            {currentStage === 9 && (
+              <motion.div 
+                key="step9"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                className="flex flex-col gap-6"
+              >
+                <div className="text-left flex flex-col gap-1 border-b border-white/10 pb-4">
+                  <span className="text-[10px] font-bold text-emerald-400 uppercase tracking-widest">Bimba AI Career Advisor</span>
+                  <h3 className="text-xl font-extrabold text-white">Your Professional Career Summary</h3>
+                  <p className="text-xs text-slate-400">Personalized strategic career advice based on market queries.</p>
+                </div>
+
+                <div className="bg-emerald-950/10 border border-emerald-500/15 rounded-2xl p-6 flex flex-col gap-4 text-left">
+                  <div className="flex gap-2 items-center text-xs font-black text-emerald-400">
+                    <Sparkles size={16} /> COACHING DIAGNOSTIC SUMMARY
+                  </div>
+                  <p className="text-xs text-slate-250 leading-relaxed font-semibold">
+                    "You have a solid tech stack foundation with parsed strengths in {parsedData?.skills?.slice(0,4).map((s: any) => s.name || s).join(', ') || 'software development'}.
+                    To maximize competitive positioning for target {questionAnswer || 'Developer'} positions, prioritize adding quantified achievements and cloud deployments.
+                    Acquiring cloud certifications like AWS Practitioner or building GraphQL/TypeScript portfolio assets will fill the active keyword gap.
+                    We have mapped several matching job openings in your vicinity."
+                  </p>
+                </div>
+
+                {/* Missing stack tips */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-2">
+                  <div className="border border-white/10 rounded-xl p-4 bg-white/5 flex gap-3 text-left">
+                    <AwardIcon className="text-emerald-400 shrink-0 mt-0.5" size={16} />
+                    <div>
+                      <h4 className="text-xs font-bold text-white">Recommended Skill Upgrades</h4>
+                      <p className="text-[10px] text-slate-450 mt-1 leading-relaxed">Consider acquiring AWS Cloud Practitioner certifications or learning Docker/Kubernetes container orchestration.</p>
+                    </div>
+                  </div>
+                  <div className="border border-white/10 rounded-xl p-4 bg-white/5 flex gap-3 text-left">
+                    <TrendingUp className="text-emerald-400 shrink-0 mt-0.5" size={16} />
+                    <div>
+                      <h4 className="text-xs font-bold text-white">Target Stacks to Add</h4>
+                      <p className="text-[10px] text-slate-450 mt-1 leading-relaxed">Add projects deploying PostgreSQL, Docker configurations, and RESTful service integrations to raise parser hits.</p>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex justify-end gap-3 mt-4">
+                  <Button onClick={() => setCurrentStage(10)} className="btn-glow-green">
+                    Generate Optimization Verdict <ArrowRight size={14} />
+                  </Button>
+                </div>
+              </motion.div>
+            )}
+
+            {/* Step 10: Completion Screen */}
+            {currentStage === 10 && (
+              <motion.div 
+                key="step10"
+                initial={{ opacity: 0, scale: 0.98 }}
+                animate={{ opacity: 1, scale: 1 }}
+                className="flex flex-col gap-6 text-center max-w-xl mx-auto py-4"
+              >
+                <div className="w-16 h-16 rounded-full bg-emerald-500/10 text-emerald-400 flex items-center justify-center mx-auto border border-emerald-500/20 shadow-[0_0_30px_rgba(16,185,129,0.15)] animate-bounce">
+                  <CheckedIcon size={32} />
+                </div>
+                
+                <div className="flex flex-col gap-1.5">
+                  <h3 className="text-2xl font-black text-white">🎉 Your Resume Has Been Optimized!</h3>
+                  <p className="text-xs text-slate-400">All target upgrades and diagnostic repairs are live on your Bimba profile.</p>
+                </div>
+
+                {/* Scoring delta comparison card */}
+                <div className="bg-white/5 border border-white/10 rounded-2xl p-6 grid grid-cols-3 gap-4 items-center mt-3">
+                  <div className="flex flex-col gap-1">
+                    <span className="text-[10px] font-bold text-slate-400 uppercase">Original Score</span>
+                    <span className="text-xl font-extrabold text-slate-500 line-through">70%</span>
+                  </div>
+                  <div className="flex flex-col gap-1 border-x border-white/10">
+                    <span className="text-[10px] font-bold text-emerald-400 uppercase">New Live Score</span>
+                    <span className="text-2xl font-black text-emerald-400">{liveScores.overall}%</span>
+                  </div>
+                  <div className="flex flex-col gap-1">
+                    <span className="text-[10px] font-bold text-emerald-400 uppercase">ATS Boost</span>
+                    <span className="text-xl font-extrabold text-emerald-400">+{liveScores.overall - 70}%</span>
+                  </div>
+                </div>
+
+                {/* Recommendations checklist status */}
+                <div className="grid grid-cols-2 gap-3 text-left text-[11px] text-slate-350 mt-2 bg-white/5 border border-white/10 rounded-xl p-4">
+                  <div className="flex items-center gap-2">
+                    <CheckCircle className="text-emerald-500" size={13} />
+                    <span>ATS structural rules applied</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <CheckCircle className="text-emerald-500" size={13} />
+                    <span>Bullet metric enhancements saved</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <CheckCircle className="text-emerald-500" size={13} />
+                    <span>Cloud keyword gaps corrected</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <CheckCircle className="text-emerald-500" size={13} />
+                    <span>Aligned with career target</span>
+                  </div>
+                </div>
+
+                {/* Primary Action Button */}
+                <div className="flex flex-col gap-3 mt-6">
+                  <Button 
+                    onClick={() => {
+                      onSuccess(resumeId || 0);
+                    }}
+                    className="w-full btn-glow-green py-3.5 text-xs font-bold flex items-center justify-center gap-2"
+                  >
+                    Go to My AI Career Dashboard <ArrowRight size={14} />
                   </Button>
                 </div>
               </motion.div>

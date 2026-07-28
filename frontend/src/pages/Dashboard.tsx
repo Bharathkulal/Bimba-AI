@@ -14,6 +14,7 @@ import { analyticsService } from '../services/analytics';
 import { jobsService } from '../services/jobs';
 import type { JobListItem, JobApplication } from '../services/jobs';
 import type { DashboardData, AtsData, ActivityTimelineItem, ResumeAnalyticsItem } from '../services/analytics';
+import { UploadResumeWizard } from '../components/UploadResumeWizard';
 
 const formatTimeAgo = (dateString?: string) => {
   if (!dateString) return 'Just now';
@@ -122,6 +123,8 @@ export const Dashboard: React.FC = () => {
   // Uploader & Actions
   const [isUploading, setIsUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState('');
+  const [showWizard, setShowWizard] = useState(false);
+  const [wizardFile, setWizardFile] = useState<File | null>(null);
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -137,82 +140,8 @@ export const Dashboard: React.FC = () => {
       return;
     }
 
-    try {
-      setIsUploading(true);
-      setUploadProgress('Uploading file to secure server...');
-
-      const formData = new FormData();
-      formData.append('file', file);
-
-      const { apiClient } = await import('../services/api');
-      const uploadRes = await apiClient.post('/api/resume-studio/upload', formData, {
-        headers: { 'Content-Type': 'multipart/form-data' }
-      });
-
-      const parsedData = uploadRes.data.parsed_data;
-      setUploadProgress('Extracting and parsing sections with Gemini AI...');
-
-      const createRes = await apiClient.post('/api/resume-studio/create', {
-        name: `AI Parsed - ${parsedData.personal_info?.name || 'Resume'}`,
-        resume_type: parsedData.experience?.length > 0 ? 'Experienced' : 'Fresher',
-        target_role: parsedData.personal_info?.title || parsedData.projects?.[0]?.role || 'Software Engineer',
-        career_objective: parsedData.personal_info?.summary || 'ATS friendly resume.',
-        preferred_industry: 'Technology',
-        language: 'English',
-        visibility: 'Private'
-      });
-
-      const newResumeId = createRes.data.id;
-      setUploadProgress('Analyzing resume structure & creating details...');
-
-      await apiClient.post(`/api/resume-studio/${newResumeId}/save-final`, {
-        master: {
-          name: `AI Parsed - ${parsedData.personal_info?.name || 'Resume'}`,
-          resume_type: parsedData.experience?.length > 0 ? 'Experienced' : 'Fresher',
-          target_role: parsedData.personal_info?.title || parsedData.projects?.[0]?.role || 'Software Engineer',
-          career_objective: parsedData.personal_info?.summary || 'ATS friendly resume.',
-          preferred_industry: 'Technology',
-          language: 'English',
-          visibility: 'Private',
-          phone: parsedData.personal_info?.phone || '',
-          address: parsedData.personal_info?.address || '',
-          linkedin: parsedData.personal_info?.linkedin || '',
-          github: parsedData.personal_info?.github || '',
-          portfolio: parsedData.personal_info?.portfolio || '',
-          website: parsedData.personal_info?.website || '',
-          summary: parsedData.personal_info?.summary || '',
-          achievements_list: JSON.stringify(parsedData.achievements || {})
-        },
-        personal_info: parsedData.personal_info,
-        education: parsedData.education || [],
-        experience: parsedData.experience || [],
-        projects: parsedData.projects || [],
-        skills: parsedData.skills || [],
-        certifications: parsedData.certifications || parsedData.certificates || [],
-        achievements: parsedData.achievements || {}
-      });
-
-      setUploadProgress('Conducting AI Resume Intelligence Audit...');
-      await apiClient.post(`/api/resume-studio/${newResumeId}/analyze`);
-
-      setIsUploading(false);
-      navigate(`/resume-builder?id=${newResumeId}&is_parsed=true`);
-    } catch (err: any) {
-      console.error(err);
-      let errMsg = "Failed to parse and save resume.";
-      if (err.response && err.response.data) {
-        const d = err.response.data;
-        if (d.step && d.provider && d.error) {
-          errMsg = `Parsing failed at: ${d.provider} API\n\nReason: ${d.error}`;
-        } else if (d.detail) {
-          errMsg = `Upload Failed: ${d.detail}`;
-        }
-      } else if (err.message) {
-        errMsg = `Upload Failed: ${err.message}`;
-      }
-      alert(errMsg);
-      setIsUploading(false);
-    }
+    setWizardFile(file);
+    setShowWizard(true);
   };
 
   const handleCoachAction = (action: string) => {
@@ -728,6 +657,22 @@ export const Dashboard: React.FC = () => {
           </div>
         </div>
       </section>
+      {showWizard && (
+        <UploadResumeWizard 
+          initialFile={wizardFile}
+          onClose={() => {
+            setShowWizard(false);
+            setWizardFile(null);
+            fetchDashboardOverview();
+          }}
+          onSuccess={() => {
+            setShowWizard(false);
+            setWizardFile(null);
+            fetchDashboardOverview();
+          }}
+          isDark={isDark}
+        />
+      )}
     </div>
   );
 };
