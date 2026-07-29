@@ -59,7 +59,7 @@ def upload_file(file_content: bytes, filename: str, folder: str) -> Dict[str, An
 
     # Determine resource type (raw for documents, image for images)
     ext = filename.split(".")[-1].lower() if "." in filename else ""
-    resource_type = "image" if ext in {"png", "jpg", "jpeg", "webp"} else "raw"
+    resource_type = "image" if ext in {"png", "jpg", "jpeg", "webp", "pdf"} else "raw"
 
     # Cloudinary folder path
     cloudinary_folder = f"bimba-ai/{folder.strip('/')}"

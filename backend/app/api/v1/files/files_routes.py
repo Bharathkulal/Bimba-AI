@@ -50,7 +50,10 @@ async def upload_resume_file(
         
         # Save exact metadata format to MongoDB
         file_ext = filename.split(".")[-1].lower() if "." in filename else "pdf"
+        from app.core.mongodb import get_next_sequence
+        next_id = get_next_sequence("resumes")
         db.resumes.insert_one({
+            "id": next_id,
             "student_id": student.id,
             "roll_number": student.roll_number,
             "name": f"Uploaded - {filename}",

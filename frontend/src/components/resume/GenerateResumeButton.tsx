@@ -23,10 +23,28 @@ export const GenerateResumeButton: React.FC<GenerateResumeButtonProps> = ({
     }
   }, [resumeId, fetchPreviousVersions]);
 
+  const downloadFile = async (url: string, filename: string) => {
+    try {
+      const response = await fetch(url);
+      const blob = await response.blob();
+      const blobUrl = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = blobUrl;
+      link.download = filename;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(blobUrl);
+    } catch (error) {
+      console.error("Download failed, opening in new tab:", error);
+      window.open(url, '_blank');
+    }
+  };
+
   const handleDownload = async () => {
     const pdfUrl = await generatePdf(resumeId);
     if (pdfUrl) {
-      window.open(pdfUrl, '_blank');
+      await downloadFile(pdfUrl, `Resume_${resumeId}.pdf`);
       if (onPdfGenerated) {
         onPdfGenerated(pdfUrl);
       }
@@ -63,7 +81,7 @@ export const GenerateResumeButton: React.FC<GenerateResumeButtonProps> = ({
         {generatedFiles.length > 0 && (
           <div className="flex flex-col gap-3 mt-2 bg-slate-50/50 dark:bg-white/5 p-4 border border-slate-200/50 dark:border-white/5 rounded-2xl">
             <h5 className="text-[10px] font-black uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
-              <History size={12} /> Version History
+               <History size={12} /> Version History
             </h5>
             
             <div className="flex flex-col gap-2 max-h-[140px] overflow-y-auto pr-1">
@@ -81,15 +99,13 @@ export const GenerateResumeButton: React.FC<GenerateResumeButtonProps> = ({
                     </p>
                   </div>
                   
-                  <a
-                    href={ver.pdf_url}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="p-1.5 rounded-lg bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-600 dark:text-emerald-450 transition-colors"
+                  <button
+                    onClick={() => downloadFile(ver.pdf_url, `Resume_${resumeId}_V${ver.version}.pdf`)}
+                    className="p-1.5 rounded-lg bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-600 dark:text-emerald-450 transition-colors cursor-pointer flex items-center justify-center border border-transparent"
                     title="Download"
                   >
                     <Download size={11} />
-                  </a>
+                  </button>
                 </div>
               ))}
             </div>

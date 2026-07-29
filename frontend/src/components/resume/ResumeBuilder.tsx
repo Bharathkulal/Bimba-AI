@@ -81,30 +81,28 @@ export const ResumeBuilder: React.FC<ResumeBuilderProps> = ({
         )}
       </div>
 
-      {/* Main 3 Column Grid */}
+      {/* Main Column Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
         
-        {/* Left Column: Editor Inputs (5 cols) */}
-        <div className="lg:col-span-4 bg-white/70 dark:bg-[#1F2937]/75 backdrop-blur-md border border-slate-200/80 dark:border-white/10 p-5 rounded-3xl shadow-xl">
-          <ResumeEditor />
-        </div>
-
-        {/* Center Column: Live Preview (5 cols) */}
-        <div className="lg:col-span-5 bg-white/70 dark:bg-[#1F2937]/75 backdrop-blur-md border border-slate-200/80 dark:border-white/10 p-5 rounded-3xl shadow-xl">
-          <ResumePreview />
-        </div>
-
-        {/* Right Column: Templates + Controls (3 cols) */}
-        <div className="lg:col-span-3 flex flex-col gap-6">
+        {/* Left Column: Editor Inputs & Template Selector & Action Button (lg:col-span-7) */}
+        <div className="lg:col-span-7 flex flex-col gap-6">
+          <div className="bg-white/70 dark:bg-[#1F2937]/75 backdrop-blur-md border border-slate-200/80 dark:border-white/10 p-5 rounded-3xl shadow-xl">
+            <ResumeEditor />
+          </div>
           
-          <div className="bg-white/70 dark:bg-[#1F2937]/75 backdrop-blur-md border border-slate-200/80 dark:border-white/10 p-5 rounded-3xl shadow-xl">
-            <TemplateSelector />
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="bg-white/70 dark:bg-[#1F2937]/75 backdrop-blur-md border border-slate-200/80 dark:border-white/10 p-5 rounded-3xl shadow-xl">
+              <TemplateSelector />
+            </div>
+            <div className="bg-white/70 dark:bg-[#1F2937]/75 backdrop-blur-md border border-slate-200/80 dark:border-white/10 p-5 rounded-3xl shadow-xl">
+              <GenerateResumeButton resumeId={resumeId} onPdfGenerated={onPdfGenerated} />
+            </div>
           </div>
+        </div>
 
-          <div className="bg-white/70 dark:bg-[#1F2937]/75 backdrop-blur-md border border-slate-200/80 dark:border-white/10 p-5 rounded-3xl shadow-xl">
-            <GenerateResumeButton resumeId={resumeId} onPdfGenerated={onPdfGenerated} />
-          </div>
-
+        {/* Right Column: Live Preview (lg:col-span-5) */}
+        <div className="lg:col-span-5 bg-white/70 dark:bg-[#1F2937]/75 backdrop-blur-md border border-slate-200/80 dark:border-white/10 p-5 rounded-3xl shadow-xl min-h-[500px]">
+          <ResumePreview />
         </div>
 
       </div>

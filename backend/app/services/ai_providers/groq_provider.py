@@ -16,7 +16,7 @@ def call_groq(prompt: str) -> Dict[str, Any]:
         logger.error("Groq API key is not configured.")
         return {"success": False, "error": "Groq API key missing."}
         
-    url = "https://api.groq.com/openapi/v1/chat/completions"
+    url = "https://api.groq.com/openai/v1/chat/completions"
     
     headers = {
         "Content-Type": "application/json",
