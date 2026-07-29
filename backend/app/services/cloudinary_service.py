@@ -65,9 +65,10 @@ def upload_file(file_content: bytes, filename: str, folder: str) -> Dict[str, An
     cloudinary_folder = f"bimba-ai/{folder.strip('/')}"
 
     try:
-        # Perform upload
+        # Perform upload wrapping bytes in BytesIO to prevent binary corruption
+        import io
         upload_result = cloudinary.uploader.upload(
-            file_content,
+            io.BytesIO(file_content),
             folder=cloudinary_folder,
             resource_type=resource_type,
             filename=filename
