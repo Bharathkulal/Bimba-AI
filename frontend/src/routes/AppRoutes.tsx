@@ -47,6 +47,8 @@ const SecurityModule = lazy(() => import('../pages/admin/SecurityModule').then(m
 const LogsModule = lazy(() => import('../pages/admin/LogsModule').then(module => ({ default: module.LogsModule })));
 const SettingsModule = lazy(() => import('../pages/admin/SettingsModule').then(module => ({ default: module.SettingsModule })));
 const AiGatewayModule = lazy(() => import('../pages/admin/AiGatewayModule').then(module => ({ default: module.AiGatewayModule })));
+const JobsModule = lazy(() => import('../pages/admin/JobsModule').then(module => ({ default: module.JobsModule })));
+const CompaniesModule = lazy(() => import('../pages/admin/CompaniesModule').then(module => ({ default: module.CompaniesModule })));
 
 // Route Guards
 const ProtectedRoute: React.FC = () => {
@@ -155,7 +157,7 @@ export const AppRoutes: React.FC = () => {
           
           <Route element={<AdminProtectedRoute />}>
             <Route element={<AdminLayout />}>
-              <Route path="/admin/dashboard" element={<AdminDashboardOverview />} />
+               <Route path="/admin/dashboard" element={<AdminDashboardOverview />} />
               <Route path="/admin/users" element={<UsersModule />} />
               <Route path="/admin/students" element={<StudentsModule />} />
               <Route path="/admin/resumes" element={<ResumeModule />} />
@@ -175,6 +177,8 @@ export const AppRoutes: React.FC = () => {
               <Route path="/admin/security" element={<SecurityModule />} />
               <Route path="/admin/logs" element={<LogsModule />} />
               <Route path="/admin/settings" element={<SettingsModule />} />
+              <Route path="/admin/jobs" element={<JobsModule />} />
+              <Route path="/admin/companies" element={<CompaniesModule />} />
             </Route>
           </Route>
 

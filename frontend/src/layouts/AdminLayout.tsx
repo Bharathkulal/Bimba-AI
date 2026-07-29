@@ -3,7 +3,8 @@ import { Outlet, useNavigate, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Home, Users, FileText, Cpu, GraduationCap, Megaphone, 
-  Settings, LogOut, ChevronDown, Search, RefreshCw, Bell, ChevronRight
+  Settings, LogOut, ChevronDown, Search, RefreshCw, Bell, ChevronRight,
+  Briefcase, Building2, BarChart3
 } from 'lucide-react';
 import { adminService } from '../services/admin';
 import { AdminCommandPalette } from '../components/AdminCommandPalette';
@@ -76,36 +77,18 @@ export const AdminLayout: React.FC = () => {
     }, 1200);
   };
 
-  // 7 Core Sidebar modules ONLY
+  // Core Admin Sidebar modules
   const menuGroups = [
     { label: 'Dashboard', path: '/admin/dashboard', icon: Home },
-    { label: 'Students', path: '/admin/students', icon: Users },
-    {
-      label: 'Resume Center',
-      icon: FileText,
-      subItems: [
-        { label: 'All Resumes', path: '/admin/resumes' }
-      ]
-    },
-    {
-      label: 'Academic',
-      icon: GraduationCap,
-      subItems: [
-        { label: 'Departments', path: '/admin/departments' },
-        { label: 'Subjects', path: '/admin/subjects' }
-      ]
-    },
+    { label: 'Users', path: '/admin/users', icon: Users },
+    { label: 'Resumes', path: '/admin/resumes', icon: FileText },
+    { label: 'Jobs', path: '/admin/jobs', icon: Briefcase },
+    { label: 'Companies', path: '/admin/companies', icon: Building2 },
     { label: 'AI Center', path: '/admin/ai', icon: Cpu },
     { label: 'Communication', path: '/admin/announcements', icon: Megaphone },
-    { label: 'Settings', path: '/admin/settings', icon: Settings }
+    { label: 'Analytics', path: '/admin/analytics', icon: BarChart3 },
+    { label: 'System Settings', path: '/admin/settings', icon: Settings }
   ];
-
-  const toggleGroup = (groupLabel: string) => {
-    setExpandedGroups(prev => ({
-      ...prev,
-      [groupLabel]: !prev[groupLabel]
-    }));
-  };
 
   const handleLogout = () => {
     adminService.logout();
@@ -130,7 +113,7 @@ export const AdminLayout: React.FC = () => {
         onClose={() => setIsPaletteOpen(false)}
       />
 
-      {/* Collapsible Vercel-style Left Sidebar */}
+      {/* Collapsible Left Sidebar */}
       <aside 
         className={`hidden md:flex flex-col justify-between items-stretch py-6 px-4 bg-sidebar border-r border-border h-screen fixed left-0 top-0 z-40 transition-all duration-300 ${
           isCollapsed ? 'w-20' : 'w-[260px]'
@@ -139,7 +122,7 @@ export const AdminLayout: React.FC = () => {
         <div className="flex flex-col gap-6 overflow-hidden">
           {/* Logo */}
           <div className="flex items-center gap-3 px-2 overflow-hidden">
-            <div className="w-8.5 h-8.5 rounded-xl bg-gradient-to-tr from-[#111111] to-[#333333] flex items-center justify-center text-white font-black text-lg shadow-lg shrink-0">
+            <div className="w-8.5 h-8.5 rounded-xl bg-gradient-to-tr from-emerald-600 to-emerald-400 flex items-center justify-center text-white font-black text-lg shadow-lg shrink-0">
               B
             </div>
             {!isCollapsed && (
@@ -153,12 +136,7 @@ export const AdminLayout: React.FC = () => {
           <nav className="flex flex-col gap-1 overflow-y-auto no-scrollbar max-h-[calc(100vh-160px)] pr-1">
             {menuGroups.map((group) => {
               const Icon = group.icon;
-              const hasSubItems = !!group.subItems;
-              const isExpanded = !!expandedGroups[group.label];
-              
-              const isActive = group.path 
-                ? location.pathname === group.path
-                : group.subItems?.some(sub => location.pathname === sub.path);
+              const isActive = location.pathname === group.path;
 
               return (
                 <div key={group.label} className="flex flex-col gap-0.5 w-full">
@@ -167,21 +145,17 @@ export const AdminLayout: React.FC = () => {
                       if (isCollapsed) {
                         setIsCollapsed(false);
                       }
-                      if (hasSubItems) {
-                        toggleGroup(group.label);
-                      } else if (group.path) {
-                        navigate(group.path);
-                      }
+                      navigate(group.path);
                     }}
                     className={`flex items-center justify-between w-full px-3 py-2.5 rounded-xl transition-all duration-200 relative group cursor-pointer ${
                       isActive 
-                        ? 'bg-[#111111]/10 text-[#111111] font-bold' 
-                        : 'text-slate-400 hover:text-slate-900 hover:bg-slate-100 font-bold'
+                        ? 'bg-emerald-500/10 text-emerald-600 font-bold border-l-4 border-emerald-500 pl-2' 
+                        : 'text-slate-400 hover:text-slate-950 hover:bg-slate-50 font-bold'
                     }`}
                   >
                     <div className="flex items-center">
                       <div className="flex items-center shrink-0 justify-center w-5 h-5 mr-3">
-                        <Icon size={16} className={isActive ? 'text-[#111111]' : 'text-slate-400'} />
+                        <Icon size={16} className={isActive ? 'text-emerald-500' : 'text-slate-400'} />
                       </div>
                       {!isCollapsed && (
                         <span className="text-xs font-bold tracking-wide whitespace-nowrap">
@@ -189,36 +163,7 @@ export const AdminLayout: React.FC = () => {
                         </span>
                       )}
                     </div>
-
-                    {!isCollapsed && hasSubItems && (
-                      <ChevronDown 
-                        size={12} 
-                        className={`transition-transform duration-200 ${isExpanded ? 'rotate-180' : ''} text-slate-500`} 
-                      />
-                    )}
                   </button>
-
-                  {/* Render Nested Submenus */}
-                  {hasSubItems && isExpanded && !isCollapsed && (
-                    <div className="pl-6 mt-1 flex flex-col gap-0.5 border-l border-white/5 ml-5">
-                      {group.subItems?.map((sub) => {
-                        const isSubActive = location.pathname === sub.path;
-                        return (
-                          <button
-                            key={sub.label}
-                            onClick={() => navigate(sub.path)}
-                            className={`w-full text-left py-2 px-3 rounded-lg text-[11px] font-semibold transition-all cursor-pointer ${
-                              isSubActive 
-                                ? 'text-[#111111] bg-[#111111]/5 font-extrabold' 
-                                : 'text-slate-400 hover:text-slate-900 hover:bg-slate-100'
-                            }`}
-                          >
-                            {sub.label}
-                          </button>
-                        );
-                      })}
-                    </div>
-                  )}
                 </div>
               );
             })}
