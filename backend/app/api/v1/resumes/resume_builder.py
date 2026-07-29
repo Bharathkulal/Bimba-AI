@@ -143,10 +143,14 @@ async def generate_resume_pdf_endpoint(
         "created_at": datetime.now(timezone.utc).isoformat()
     })
 
+    import base64
+    pdf_base64 = base64.b64encode(pdf_bytes).decode('utf-8')
+
     return {
         "success": True,
         "message": "Resume PDF generated successfully",
         "pdf_url": upload_res["url"],
+        "pdf_base64": pdf_base64,
         "version": current_version
     }
 
@@ -175,9 +179,55 @@ def get_previously_generated_resumes(
     result = []
     for r in records:
         result.append({
+            "id": r.get("id"),
             "template": r.get("template", "ats_classic"),
             "pdf_url": r.get("pdf_url"),
             "version": r.get("version", 1),
             "created_at": r.get("created_at")
         })
     return result
+
+@router.get("/download-pdf/{version_id}")
+def download_pdf_version(
+    version_id: int,
+    student: Student = Depends(get_current_student),
+    db: Any = Depends(get_db)
+):
+    """
+    GET /api/resume/download-pdf/{version_id}
+    Retrieves and streams the PDF document as a local attachment download, avoiding browser CORS block.
+    """
+    from fastapi.responses import StreamingResponse
+    import io
+    import requests
+    
+    record = db.generated_resumes.find_one({"id": version_id, "student_id": student.id})
+    if not record:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="PDF version not found"
+        )
+        
+    pdf_url = record.get("pdf_url")
+    if not pdf_url:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="PDF URL missing from version record"
+        )
+        
+    try:
+        res = requests.get(pdf_url)
+        res.raise_for_status()
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_502_BAD_GATEWAY,
+            detail=f"Failed to fetch document from cloud storage: {str(e)}"
+        )
+        
+    return StreamingResponse(
+        io.BytesIO(res.content),
+        media_type="application/pdf",
+        headers={
+            "Content-Disposition": f"attachment; filename=Resume_V{record.get('version', 1)}.pdf"
+        }
+    )

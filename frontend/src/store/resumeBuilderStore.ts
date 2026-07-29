@@ -37,6 +37,7 @@ export interface ResumeBuilderData {
 }
 
 export interface GeneratedVersion {
+  id?: number;
   template: string;
   pdf_url: string;
   version: number;
@@ -55,7 +56,7 @@ interface ResumeBuilderState {
   fetchBuilderData: (resumeId: number) => Promise<void>;
   updateResumeData: (updater: (prev: ResumeBuilderData) => ResumeBuilderData) => void;
   setSelectedTemplate: (template: string) => void;
-  generatePdf: (resumeId: number) => Promise<string | null>;
+  generatePdf: (resumeId: number) => Promise<{ pdf_url: string; pdf_base64?: string } | null>;
   fetchPreviousVersions: (resumeId: number) => Promise<void>;
   clearBuilderStore: () => void;
 }
@@ -112,7 +113,10 @@ export const useResumeBuilderStore = create<ResumeBuilderState>((set, get) => ({
         set({ generating: false });
         // Refresh previous versions history list
         await get().fetchPreviousVersions(resumeId);
-        return response.data.pdf_url;
+        return {
+          pdf_url: response.data.pdf_url,
+          pdf_base64: response.data.pdf_base64
+        };
       } else {
         set({ errors: response.data.message || 'Failed to generate PDF', generating: false });
         return null;

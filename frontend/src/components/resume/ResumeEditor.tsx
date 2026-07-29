@@ -2,9 +2,13 @@ import React, { useState } from 'react';
 import { useResumeBuilderStore } from '../../store/resumeBuilderStore';
 import { Sparkles, RefreshCw, Plus, Trash2, ArrowUpRight, Check } from 'lucide-react';
 
-export const ResumeEditor: React.FC = () => {
+interface ResumeEditorProps {
+  activeSection: 'info' | 'summary' | 'skills' | 'experience' | 'projects' | 'education';
+  setActiveSection: (sec: 'info' | 'summary' | 'skills' | 'experience' | 'projects' | 'education') => void;
+}
+
+export const ResumeEditor: React.FC<ResumeEditorProps> = ({ activeSection, setActiveSection }) => {
   const { resumeData, aiImprovements, updateResumeData } = useResumeBuilderStore();
-  const [activeSection, setActiveSection] = useState<'info' | 'summary' | 'skills' | 'experience' | 'projects' | 'education'>('info');
 
   if (!resumeData) return null;
 
@@ -144,29 +148,7 @@ export const ResumeEditor: React.FC = () => {
 
   return (
     <div className="flex flex-col gap-4 text-left">
-      {/* Sections Tab Header */}
-      <div className="flex gap-1.5 overflow-x-auto pb-1.5 border-b border-slate-200 dark:border-white/10 flex-wrap">
-        {[
-          { id: 'info', label: 'Contact' },
-          { id: 'summary', label: 'Summary' },
-          { id: 'skills', label: 'Skills' },
-          { id: 'experience', label: 'Experience' },
-          { id: 'projects', label: 'Projects' },
-          { id: 'education', label: 'Education' },
-        ].map((tab) => (
-          <button
-            key={tab.id}
-            onClick={() => setActiveSection(tab.id as any)}
-            className={`px-2.5 py-1.5 rounded-xl font-bold text-xs cursor-pointer transition-all ${
-              activeSection === tab.id
-                ? 'bg-slate-200 dark:bg-white/10 text-slate-800 dark:text-white'
-                : 'text-slate-500 hover:text-slate-800 dark:hover:text-slate-350'
-            }`}
-          >
-            {tab.label}
-          </button>
-        ))}
-      </div>
+      {/* Editor Panels */}
 
       {/* Editor Panels */}
       <div className="min-h-[360px] bg-slate-50/50 dark:bg-white/5 border border-slate-200/50 dark:border-white/5 p-4 rounded-2xl">

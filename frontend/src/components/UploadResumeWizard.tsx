@@ -445,59 +445,67 @@ export const UploadResumeWizard: React.FC<UploadResumeWizardProps> = ({
   }, [currentStage]);
 
   return (
-    <div className={`fixed inset-0 z-50 backdrop-blur-xl flex items-center justify-center p-4 md:p-6 overflow-y-auto text-left ${
-      isDark ? 'bg-[#0B121F]/90' : 'bg-slate-900/40'
-    }`}>
+    <div className={currentStage === 7
+      ? `fixed inset-0 z-50 flex flex-col text-left bg-slate-50 dark:bg-[#080E1A]`
+      : `fixed inset-0 z-50 backdrop-blur-xl flex items-center justify-center p-4 md:p-6 overflow-y-auto text-left ${
+          isDark ? 'bg-[#0B121F]/90' : 'bg-slate-900/40'
+        }`
+    }>
       <div 
-        className={`w-full max-w-4xl rounded-[28px] border overflow-hidden flex flex-col max-h-[90vh] ${
-          isDark 
-            ? 'border-white/10 shadow-[0_0_50px_rgba(16,185,129,0.15)] bg-[#111827] text-white' 
-            : 'border-slate-100 shadow-2xl shadow-slate-200/50 bg-white text-slate-800'
-        }`}
+        className={currentStage === 7
+          ? `w-full h-full flex flex-col bg-slate-50 dark:bg-[#080E1A]`
+          : `w-full max-w-4xl rounded-[28px] border overflow-hidden flex flex-col max-h-[90vh] ${
+              isDark 
+                ? 'border-white/10 shadow-[0_0_50px_rgba(16,185,129,0.15)] bg-[#111827] text-white' 
+                : 'border-slate-100 shadow-2xl shadow-slate-200/50 bg-white text-slate-800'
+            }`
+        }
       >
         {/* Top Header bar */}
-        <div className={`flex items-center justify-between px-6 py-4 border-b backdrop-blur-md ${
-          isDark ? 'border-white/10 bg-[#1F2937]/30' : 'border-slate-100 bg-slate-50'
-        }`}>
-          <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-lg bg-gradient-to-tr from-emerald-600 to-teal-400 text-white flex items-center justify-center font-black">
-              B
+        {currentStage !== 7 && (
+          <div className={`flex items-center justify-between px-6 py-4 border-b backdrop-blur-md ${
+            isDark ? 'border-white/10 bg-[#1F2937]/30' : 'border-slate-100 bg-slate-50'
+          }`}>
+            <div className="flex items-center gap-3">
+              <div className="w-8 h-8 rounded-lg bg-gradient-to-tr from-emerald-600 to-teal-400 text-white flex items-center justify-center font-black">
+                B
+              </div>
+              <div>
+                <h3 className={`font-extrabold text-sm tracking-tight flex items-center gap-1.5 ${
+                  isDark ? 'text-white' : 'text-slate-900'
+                }`}>
+                  AI Career Copilot <Sparkles size={13} className="text-emerald-400 animate-pulse" />
+                </h3>
+                <p className={`text-[10px] ${isDark ? 'text-slate-400' : 'text-slate-500 font-bold'}`}>Diagnostic Phase {currentStage} of 10</p>
+              </div>
             </div>
-            <div>
-              <h3 className={`font-extrabold text-sm tracking-tight flex items-center gap-1.5 ${
-                isDark ? 'text-white' : 'text-slate-900'
-              }`}>
-                AI Career Copilot <Sparkles size={13} className="text-emerald-400 animate-pulse" />
-              </h3>
-              <p className={`text-[10px] ${isDark ? 'text-slate-400' : 'text-slate-500 font-bold'}`}>Diagnostic Phase {currentStage} of 10</p>
-            </div>
-          </div>
-          <div className="flex items-center gap-3">
-            {resumeId && (
-              <button
-                onClick={() => onSuccess(resumeId)}
-                className={`text-[10px] font-black uppercase px-3 py-1.5 rounded-lg cursor-pointer transition-all border ${
-                  isDark
-                    ? 'border-emerald-500/35 bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20'
-                    : 'border-emerald-500 text-white bg-emerald-600 hover:bg-emerald-700 shadow-md shadow-emerald-200/40'
+            <div className="flex items-center gap-3">
+              {resumeId && (
+                <button
+                  onClick={() => onSuccess(resumeId)}
+                  className={`text-[10px] font-black uppercase px-3 py-1.5 rounded-lg cursor-pointer transition-all border ${
+                    isDark
+                      ? 'border-emerald-500/35 bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20'
+                      : 'border-emerald-500 text-white bg-emerald-600 hover:bg-emerald-700 shadow-md shadow-emerald-200/40'
+                  }`}
+                >
+                  Save & Finish
+                </button>
+              )}
+              <button 
+                onClick={onClose} 
+                className={`p-1.5 rounded-lg cursor-pointer transition-colors ${
+                  isDark ? 'hover:bg-white/10 text-slate-400 hover:text-white' : 'hover:bg-slate-200/50 text-slate-500 hover:text-slate-800'
                 }`}
               >
-                Save & Finish
+                <X size={18} />
               </button>
-            )}
-            <button 
-              onClick={onClose} 
-              className={`p-1.5 rounded-lg cursor-pointer transition-colors ${
-                isDark ? 'hover:bg-white/10 text-slate-400 hover:text-white' : 'hover:bg-slate-200/50 text-slate-500 hover:text-slate-800'
-              }`}
-            >
-              <X size={18} />
-            </button>
+            </div>
           </div>
-        </div>
+        )}
 
         {/* Dynamic Wizard Steps */}
-        <div className="flex-grow overflow-y-auto p-6 md:p-8">
+        <div className={`flex-grow ${currentStage === 7 ? 'overflow-hidden p-0' : 'overflow-y-auto p-6 md:p-8'}`}>
           <AnimatePresence mode="wait">
             
             {/* Step 1: Upload Success Animation (AI Thinking Experience) */}

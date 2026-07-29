@@ -42,11 +42,11 @@ export const GenerateResumeButton: React.FC<GenerateResumeButtonProps> = ({
   };
 
   const handleDownload = async () => {
-    const pdfUrl = await generatePdf(resumeId);
-    if (pdfUrl) {
-      await downloadFile(pdfUrl, `Resume_${resumeId}.pdf`);
+    const res = await generatePdf(resumeId);
+    if (res) {
+      await downloadFile(res.pdf_url, `Resume_${resumeId}.pdf`);
       if (onPdfGenerated) {
-        onPdfGenerated(pdfUrl);
+        onPdfGenerated(res.pdf_url);
       }
     }
   };
