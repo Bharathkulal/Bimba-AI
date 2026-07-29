@@ -51,9 +51,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
         <div className="flex flex-col gap-8">
           {/* Logo Section */}
           <div className="flex items-center px-2 overflow-hidden shrink-0">
-            <div className={`w-10 h-10 rounded-xl flex items-center justify-center font-black text-2xl shrink-0 transition-colors duration-300 ${
-              isDark ? 'bg-[#FFFFFF] text-[#111827]' : 'bg-[#111111] text-[#FFFFFF]'
-            }`}>
+            <div className="w-10 h-10 rounded-xl flex items-center justify-center font-black text-xl shrink-0 bg-gradient-to-tr from-emerald-600 to-teal-500 text-white shadow-md shadow-emerald-500/20">
               B
             </div>
             <motion.span 
@@ -80,12 +78,12 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 ? location.pathname === '/dashboard' 
                 : location.pathname.startsWith(item.path);
 
-              let activeClass = 'bg-[#111111] text-[#FFFFFF] font-semibold shadow-sm';
-              let inactiveClass = 'text-[#4B5563] hover:text-[#111111] hover:bg-[#F3F4F6] font-medium';
+              let activeClass = 'bg-emerald-600 text-white font-semibold shadow-sm rounded-2xl';
+              let inactiveClass = 'text-slate-600 hover:text-emerald-600 hover:bg-emerald-50/50 font-medium rounded-2xl';
 
               if (isDark) {
-                activeClass = 'bg-[#FFFFFF] text-[#111827] font-semibold shadow-sm rounded-2xl';
-                inactiveClass = 'text-[#D1D5DB] hover:text-white hover:bg-white/10 font-medium rounded-2xl';
+                activeClass = 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 font-semibold rounded-2xl';
+                inactiveClass = 'text-slate-400 hover:text-emerald-400 hover:bg-white/5 font-medium rounded-2xl';
               }
 
               return (

@@ -209,7 +209,7 @@ export const ResumePage: React.FC = () => {
       
       {/* Header Banner */}
       <section className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white border border-slate-200/80 rounded-2xl p-6 shadow-sm relative overflow-hidden">
-        <div className="absolute right-0 top-0 w-80 h-full bg-gradient-to-l -[#111111]/5 to-transparent blur-3xl pointer-events-none" />
+        <div className="absolute right-0 top-0 w-80 h-full bg-gradient-to-l from-emerald-500/5 to-transparent blur-3xl pointer-events-none" />
         <div className="relative z-10 text-left">
           <h1 className="text-3xl font-extrabold text-slate-900 tracking-tight">
             My Resume
@@ -301,7 +301,7 @@ export const ResumePage: React.FC = () => {
               onClick={() => setActiveSubTab(tab.id as any)}
               className={`flex items-center gap-2 px-5 py-3 border-b-2 font-bold text-xs cursor-pointer transition-colors ${
                 isActive 
-                  ? '-[#111111] -[#111111]' 
+                  ? 'border-emerald-500 text-emerald-600 dark:text-emerald-400' 
                   : 'border-transparent text-slate-500 hover:text-slate-850'
               }`}
             >
@@ -340,7 +340,7 @@ export const ResumePage: React.FC = () => {
                   placeholder="Filter resumes by name..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full pl-9 pr-4 py-2 bg-white border border-slate-200 rounded-xl text-xs text-slate-700 focus:outline-none focus:-[#111111] focus:ring-1 focus:-[#111111] font-medium"
+                  className="w-full pl-9 pr-4 py-2 bg-white border border-slate-200 rounded-xl text-xs text-slate-700 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 font-medium"
                 />
               </div>
               
@@ -348,7 +348,7 @@ export const ResumePage: React.FC = () => {
                 <select
                   value={sortBy}
                   onChange={(e: any) => setSortBy(e.target.value)}
-                  className="px-3 py-1.5 rounded-lg border border-slate-200 text-xs bg-white text-slate-700 focus:outline-none focus:-[#111111] cursor-pointer font-semibold"
+                  className="px-3 py-1.5 rounded-lg border border-slate-200 text-xs bg-white text-slate-700 focus:outline-none focus:border-emerald-500 cursor-pointer font-semibold"
                 >
                   <option value="updated_at">Last Updated</option>
                   <option value="ats_score">ATS Score</option>
@@ -358,7 +358,7 @@ export const ResumePage: React.FC = () => {
                 <select
                   value={filterBy}
                   onChange={(e) => setFilterBy(e.target.value)}
-                  className="px-3 py-1.5 rounded-lg border border-slate-200 text-xs bg-white text-slate-700 focus:outline-none focus:-[#111111] cursor-pointer font-semibold"
+                  className="px-3 py-1.5 rounded-lg border border-slate-200 text-xs bg-white text-slate-700 focus:outline-none focus:border-emerald-500 cursor-pointer font-semibold"
                 >
                   <option value="all">All Statuses</option>
                   <option value="draft">Draft</option>
@@ -441,7 +441,7 @@ export const ResumePage: React.FC = () => {
                       >
                       <div className="flex justify-between items-start gap-4">
                         <div className="flex items-center gap-3">
-                          <div className="w-10 h-10 bg-slate-50 rounded-xl border border-slate-100 flex items-center justify-center -[#111111]">
+                          <div className="w-10 h-10 bg-slate-50 rounded-xl border border-slate-100 flex items-center justify-center text-emerald-500">
                             <FileText size={18} />
                           </div>
                           <div>
@@ -451,7 +451,7 @@ export const ResumePage: React.FC = () => {
                         </div>
                         
                         <div className="flex flex-col items-end gap-1 shrink-0">
-                          <span className="bg-[#F8F8F8] border border-[#E5E7EB] -[#111111] text-[10px] font-bold px-2 py-0.5 rounded">
+                          <span className="bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 text-[10px] font-bold px-2 py-0.5 rounded">
                             ATS {res.atsScore}%
                           </span>
                           <span className="text-[9px] text-slate-400 font-bold">Health: {res.completion}%</span>
@@ -461,14 +461,14 @@ export const ResumePage: React.FC = () => {
                       <div className="flex items-center justify-between gap-5 pt-3 border-t border-slate-100 mt-1">
                         <div className="flex items-center gap-1.5 flex-grow">
                           <div className="w-full bg-slate-100 rounded-full h-1.5 overflow-hidden">
-                            <div className="-[#111111] h-full rounded-full transition-all duration-500" style={{ width: `${res.completion}%` }} />
+                            <div className="bg-emerald-500 h-full rounded-full transition-all duration-500" style={{ width: `${res.completion}%` }} />
                           </div>
                         </div>
 
                         <div className="flex items-center gap-1.5 shrink-0">
                           <button 
                             onClick={() => navigate(`/resume-builder?id=${res.id}`)}
-                            className="w-7.5 h-7.5 rounded-lg bg-white border border-slate-200 flex items-center justify-center text-slate-500 hover:-[#111111] hover:border-[#E5E7EB] transition-colors cursor-pointer"
+                            className="w-7.5 h-7.5 rounded-lg bg-white border border-slate-200 flex items-center justify-center text-slate-500 hover:text-emerald-500 hover:border-emerald-500 transition-colors cursor-pointer"
                             title="Edit"
                           >
                             <Edit3 size={12} />
@@ -479,14 +479,14 @@ export const ResumePage: React.FC = () => {
                               const token = localStorage.getItem('auth_token');
                               window.open(`${API_BASE_URL}/api/resume-studio/${res.id}/pdf${token ? `?token=${token}` : ''}`, '_blank');
                             }}
-                            className="w-7.5 h-7.5 rounded-lg bg-white border border-slate-200 flex items-center justify-center text-slate-500 hover:-[#111111] hover:border-[#E5E7EB] transition-colors cursor-pointer"
+                            className="w-7.5 h-7.5 rounded-lg bg-white border border-slate-200 flex items-center justify-center text-slate-500 hover:text-emerald-500 hover:border-emerald-500 transition-colors cursor-pointer"
                             title="Download PDF"
                           >
                             <Download size={12} />
                           </button>
                           <button 
                             onClick={() => duplicateResume(res.id)}
-                            className="w-7.5 h-7.5 rounded-lg bg-white border border-slate-200 flex items-center justify-center text-slate-500 hover:-[#111111] hover:border-[#E5E7EB] transition-colors cursor-pointer"
+                            className="w-7.5 h-7.5 rounded-lg bg-white border border-slate-200 flex items-center justify-center text-slate-500 hover:text-emerald-500 hover:border-emerald-500 transition-colors cursor-pointer"
                             title="Duplicate"
                           >
                             <Copy size={12} />
@@ -552,7 +552,7 @@ export const ResumePage: React.FC = () => {
                         <div className="flex justify-end pt-2 border-t border-slate-100">
                           <button 
                             onClick={() => handleFixSuggestion(sug.title)}
-                            className="px-3.5 py-1.5 -[#111111] hover:-[#111111] text-white font-bold text-[9px] rounded-lg transition-colors shadow-sm cursor-pointer"
+                            className="px-3.5 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-[9px] rounded-lg transition-colors shadow-sm cursor-pointer"
                           >
                             One-Click Fix
                           </button>

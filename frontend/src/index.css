@@ -34,12 +34,12 @@
   --border: #E5E7EB;
   --text-primary: #111827;
   --text-secondary: #6B7280;
-  --accent: #111827;
-  --accent-hover: #000000;
-  --accent-light: #F3F4F6;
-  --accent-green: #111827;
+  --accent: #10B981;
+  --accent-hover: #059669;
+  --accent-light: rgba(16, 185, 129, 0.08);
+  --accent-green: #10B981;
   
-  --success: #111111;
+  --success: #10B981;
   --warning: #F59E0B;
   --danger: #EF4444;
   --input-bg: #FFFFFF;
@@ -60,12 +60,12 @@
   --border: rgba(255, 255, 255, 0.08);
   --text-primary: #FFFFFF;
   --text-secondary: #D1D5DB;
-  --accent: #FFFFFF;
-  --accent-hover: #E5E7EB;
-  --accent-light: rgba(255, 255, 255, 0.08);
-  --accent-green: #FFFFFF;
+  --accent: #34D399;
+  --accent-hover: #10B981;
+  --accent-light: rgba(52, 211, 153, 0.08);
+  --accent-green: #34D399;
   
-  --success: #111111;
+  --success: #34D399;
   --warning: #F59E0B;
   --danger: #EF4444;
   --input-bg: #1F2937;
@@ -146,7 +146,6 @@ body, aside, header, nav, main, table, th, td, button, input, select, textarea, 
 }
 
 .dark .bg-slate-900\/5,
-.dark .bg-[#F8F8F8]\/60,
 .dark .bg-slate-100\/70,
 .dark .bg-slate-100\/40 {
   background-color: var(--bg-secondary) !important;
@@ -180,10 +179,6 @@ body, aside, header, nav, main, table, th, td, button, input, select, textarea, 
 }
 
 .dark .text-emerald-505,
-.dark .-[#111111],
-.dark .-[#111111],
-.dark .-[#111111],
-.dark .-[#111111],
 .dark .text-primary {
   color: var(--accent) !important;
 }
@@ -203,9 +198,8 @@ body, aside, header, nav, main, table, th, td, button, input, select, textarea, 
   border-color: var(--border) !important;
 }
 
-.dark .border-[#E5E7EB],
-.dark .border-[#E5E7EB],
-.dark .border-[#E5E7EB] {
+.dark .border-\[\#E5E7EB\],
+.dark .border-\[\#E5E7EB\]\/50 {
   border-color: var(--border) !important;
 }
 
@@ -230,31 +224,23 @@ body, aside, header, nav, main, table, th, td, button, input, select, textarea, 
 }
 
 /* Primary buttons overrides */
-.dark .-[#111111],
-.dark .-[#111111],
 .dark .bg-primary {
   background-color: var(--accent) !important;
   color: #FFFFFF !important;
 }
 
-.dark .-[#111111]:hover,
-.dark .-[#111111]:hover,
 .dark .bg-primary:hover {
   background-color: #E5E7EB !important;
   color: #111827 !important;
 }
 
 /* Secondary / Outline buttons overrides */
-.dark .-[#111111],
-.dark .-[#111111],
 .dark .border-primary {
   border-color: var(--accent) !important;
   color: var(--accent) !important;
   background-color: transparent !important;
 }
 
-.dark .-[#111111]:hover,
-.dark .-[#111111]:hover,
 .dark .border-primary:hover {
   background-color: var(--card-hover-bg) !important;
 }
@@ -351,10 +337,7 @@ input:-webkit-autofill:active {
 }
 
 /* Badges */
-.dark .bg-[#F8F8F8],
-.dark .bg-[#F8F8F8],
 .dark .bg-emerald-155,
-.dark .bg-[#F8F8F8]\/10,
 .dark .bg-emerald-55\/10 {
   background-color: rgba(255, 255, 255, 0.06) !important;
   color: var(--text-primary) !important;
@@ -511,7 +494,6 @@ html:not(.dark) main button.text-white,
 html:not(.dark) main button .text-white,
 html:not(.dark) main a.text-white,
 html:not(.dark) main a .text-white,
-html:not(.dark) main .-[#111111] .text-white,
 html:not(.dark) main [class*="bg-emerald"] .text-white {
   color: #FFFFFF !important;
 }
@@ -590,19 +572,35 @@ html:not(.dark) main tr.bg-slate-50\/80 {
   animation: progressFill 1s ease-out;
 }
 
-/* Dark mode scrollbar */
-.dark ::-webkit-scrollbar {
-  width: 6px;
+/* Custom Scrollbar Styling */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
 }
-.dark ::-webkit-scrollbar-track {
-  background: rgba(255, 255, 255, 0.02);
+::-webkit-scrollbar-track {
+  background: transparent;
 }
-.dark ::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.08);
-  border-radius: 3px;
+::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.15);
+  border-radius: 4px;
 }
-.dark ::-webkit-scrollbar-thumb:hover {
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(0, 0, 0, 0.3);
+}
+
+/* Dark mode scrollbar overrides */
+.dark ::-webkit-scrollbar-track,
+.dark::-webkit-scrollbar-track {
+  background: transparent;
+}
+.dark ::-webkit-scrollbar-thumb,
+.dark::-webkit-scrollbar-thumb {
   background: rgba(255, 255, 255, 0.15);
+  border-radius: 4px;
+}
+.dark ::-webkit-scrollbar-thumb:hover,
+.dark::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.25);
 }
 
 /* Premium Animated Button */
@@ -633,13 +631,13 @@ html:not(.dark) main tr.bg-slate-50\/80 {
   transform: translate(-50%, -50%);
   width: 100%;
   height: 100%;
-  background-color: #111111;
+  background-color: var(--accent);
   border-radius: var(--border_radius);
   box-shadow: 
     inset 0 0.5px rgba(255, 255, 255, 0.2), 
-    inset 0 -1px 2px 0 rgba(0, 0, 0, 0.5),
-    0px 4px 10px -4px rgba(0, 0, 0, calc(1 - var(--active, 0))),
-    0 0 0 calc(var(--active, 0) * 2px) rgba(255, 255, 255, 0.15);
+    inset 0 -1px 2px 0 rgba(0, 0, 0, 0.3),
+    0px 4px 10px -4px rgba(16, 185, 129, calc(0.4 - var(--active, 0) * 0.2)),
+    0 0 0 calc(var(--active, 0) * 2px) rgba(16, 185, 129, 0.2);
   transition: all var(--transition);
   z-index: 0;
 }
@@ -652,10 +650,10 @@ html:not(.dark) main tr.bg-slate-50\/80 {
   transform: translate(-50%, -50%);
   width: 100%;
   height: 100%;
-  background-color: #1F1F1F;
-  background-image: radial-gradient(at 51% 89%, rgba(255,255,255,0.05) 0px, transparent 50%),
-    radial-gradient(at 100% 100%, rgba(255,255,255,0.02) 0px, transparent 50%),
-    radial-gradient(at 22% 91%, rgba(255,255,255,0.03) 0px, transparent 50%);
+  background-color: var(--accent-hover);
+  background-image: radial-gradient(at 51% 89%, rgba(255,255,255,0.08) 0px, transparent 50%),
+    radial-gradient(at 100% 100%, rgba(255,255,255,0.04) 0px, transparent 50%),
+    radial-gradient(at 22% 91%, rgba(255,255,255,0.05) 0px, transparent 50%);
   background-position: top;
   opacity: var(--active, 0);
   border-radius: var(--border_radius);
@@ -672,7 +670,7 @@ html:not(.dark) main tr.bg-slate-50\/80 {
 }
 
 .premium-btn:active:not(:disabled)::after {
-  background-color: #000000;
+  background-color: var(--accent-hover);
 }
 
 .premium-btn:disabled {

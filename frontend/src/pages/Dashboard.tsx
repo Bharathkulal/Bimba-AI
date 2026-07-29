@@ -157,19 +157,20 @@ export const Dashboard: React.FC = () => {
   };
 
   return (
-    <div className={`flex flex-col gap-6 text-left w-full max-w-[1440px] mx-auto px-4 py-6 transition-all duration-300 ease-in-out relative ${isDark ? 'bg-transparent' : 'bg-[#F8F8F8]'}`}>
+    <div className={`flex flex-col gap-6 text-left w-full max-w-[1440px] mx-auto px-4 py-6 transition-all duration-300 ease-in-out relative ${isDark ? 'bg-transparent' : 'bg-[#FAFAFA]'}`}>
       {/* Subtle radial green glow in corners — dark mode only */}
       {isDark && (
         <>
-          <div className="fixed top-0 left-0 w-[600px] h-[600px] rounded-full pointer-events-none" style={{ background: 'radial-gradient(circle, rgba(255,255,255,0.03) 0%, transparent 70%)' }} />
-          <div className="fixed bottom-0 right-0 w-[500px] h-[500px] rounded-full pointer-events-none" style={{ background: 'radial-gradient(circle, rgba(255,255,255,0.02) 0%, transparent 70%)' }} />
+          <div className="fixed top-0 left-0 w-[600px] h-[600px] rounded-full pointer-events-none" style={{ background: 'radial-gradient(circle, rgba(16,185,129,0.03) 0%, transparent 70%)' }} />
+          <div className="fixed bottom-0 right-0 w-[500px] h-[500px] rounded-full pointer-events-none" style={{ background: 'radial-gradient(circle, rgba(16,185,129,0.02) 0%, transparent 70%)' }} />
         </>
       )}
+
       {/* Uploader Progress Backdrop Overlay */}
       {isUploading && (
-        <div className="fixed inset-0 bg-[#111111]/30 dark:bg-black/60 backdrop-blur-md z-50 flex items-center justify-center p-6 transition-all duration-300">
-          <div className="bg-[#FFFFFF] dark:bg-[#1F2937] border border-[#E5E7EB] dark:border-white/10 p-6 rounded-3xl max-w-md w-full shadow-lg flex flex-col items-center gap-4 text-center animate-scale transition-colors duration-300">
-            <div className="w-12 h-12 border-4 border-[#111111] dark:border-[#FFFFFF] border-t-transparent rounded-full animate-spin" />
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-md z-50 flex items-center justify-center p-6 transition-all duration-300">
+          <div className="bg-[#FFFFFF] dark:bg-[#1F2937] border border-[#E5E7EB] dark:border-white/10 p-6 rounded-3xl max-w-md w-full shadow-xl flex flex-col items-center gap-4 text-center animate-scale">
+            <div className="w-12 h-12 border-4 border-emerald-500 border-t-transparent rounded-full animate-spin" />
             <div className="leading-normal">
               <h3 className="font-extrabold text-slate-900 dark:text-[#FFFFFF] text-sm">Parsing with Gemini AI</h3>
               <p className="text-[11px] text-[#9CA3AF] dark:text-[#9CA3AF] font-bold mt-1 uppercase tracking-wider">{uploadProgress}</p>
@@ -187,24 +188,163 @@ export const Dashboard: React.FC = () => {
         onChange={handleFileUpload}
       />
 
-      {/* SECTION 1: WELCOME HERO */}
-      <section
-        style={isDark ? { background: 'linear-gradient(135deg, rgba(255,255,255,0.06), rgba(255,255,255,0.02), rgba(255,255,255,0.01))', boxShadow: '0 10px 40px rgba(0,0,0,0.35)' } : {}}
-        className={`border rounded-[20px] p-8 flex flex-col md:flex-row items-center justify-between gap-6 relative overflow-hidden transition-all duration-300 ${isDark
-          ? 'border-white/[0.08] backdrop-blur-[18px]'
-          : 'bg-[#FFFFFF] border-[#E5E7EB] shadow-sm hover:shadow-md'
-          }`}
-      >
-        <div className="flex-1 text-left relative z-10">
-          <span className={`text-xs font-bold uppercase tracking-wider px-2.5 py-1 rounded-full mb-3 inline-block transition-colors duration-300 ${isDark ? 'text-[#FFFFFF] bg-white/10 border border-white/10' : 'text-slate-900 bg-[#F3F4F6]'
-            }`}>Welcome Back</span>
-          <h1 className={`text-3xl md:text-[36px] font-bold leading-tight transition-colors duration-300 ${isDark ? 'text-white' : 'text-slate-900'}`}>
-            Good Morning, {displayName}
+      {/* HEADER SECTION */}
+      <header className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+        <div>
+          <h1 className="text-3xl font-extrabold tracking-tight text-slate-900 dark:text-white flex items-center gap-2">
+            Good morning, {displayName} 👋
           </h1>
-          <p className={`text-sm md:text-base mt-2 max-w-xl transition-colors duration-300 ${isDark ? 'text-[#D1D5DB]' : 'text-[#4B5563]'}`}>
-            Welcome back to Bimba AI. Continue building your professional career, parsing your profiles with AI and matching key local roles.
+          <p className="text-sm text-slate-500 dark:text-slate-400 mt-1 font-medium">
+            Here's your career progress.
           </p>
-          <div className="flex flex-wrap gap-3 mt-6">
+        </div>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => document.getElementById('dashboard-resume-upload-input')?.click()}
+            className="flex items-center gap-2 px-4 py-2 text-xs font-bold bg-emerald-500 hover:bg-emerald-600 text-white rounded-xl shadow-md shadow-emerald-500/10 transition-all cursor-pointer"
+          >
+            <UploadCloud size={14} /> Upload Resume
+          </button>
+        </div>
+      </header>
+
+      {/* TOP STATISTICS GRID */}
+      <section className="grid grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
+        {/* ATS Score */}
+        <div className="bg-white dark:bg-[#1F2937] border border-slate-100 dark:border-white/5 p-5 md:p-6 rounded-[20px] shadow-sm hover:shadow-md transition-all duration-300">
+          <div className="flex justify-between items-start">
+            <span className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">ATS Score</span>
+            <div className="p-2 rounded-xl bg-emerald-500/10 text-emerald-500 dark:text-emerald-400">
+              <Award size={18} />
+            </div>
+          </div>
+          <div className="mt-4">
+            <span className="text-2xl md:text-3xl font-extrabold text-slate-900 dark:text-white">{atsScore}/100</span>
+            <span className="text-[10px] md:text-xs text-emerald-500 font-bold block mt-1">Ready for Applications</span>
+          </div>
+        </div>
+
+        {/* Profile Completion */}
+        <div className="bg-white dark:bg-[#1F2937] border border-slate-100 dark:border-white/5 p-5 md:p-6 rounded-[20px] shadow-sm hover:shadow-md transition-all duration-300">
+          <div className="flex justify-between items-start">
+            <span className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Profile Completion</span>
+            <div className="p-2 rounded-xl bg-blue-500/10 text-blue-500 dark:text-blue-400">
+              <User size={18} />
+            </div>
+          </div>
+          <div className="mt-4">
+            <span className="text-2xl md:text-3xl font-extrabold text-slate-900 dark:text-white">{profileCompletion}%</span>
+            <span className="text-[10px] md:text-xs text-slate-400 dark:text-slate-400 font-medium block mt-1">Keep details updated</span>
+          </div>
+        </div>
+
+        {/* Applications */}
+        <div className="bg-white dark:bg-[#1F2937] border border-slate-100 dark:border-white/5 p-5 md:p-6 rounded-[20px] shadow-sm hover:shadow-md transition-all duration-300">
+          <div className="flex justify-between items-start">
+            <span className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Applications</span>
+            <div className="p-2 rounded-xl bg-purple-500/10 text-purple-500 dark:text-purple-400">
+              <Briefcase size={18} />
+            </div>
+          </div>
+          <div className="mt-4">
+            <span className="text-2xl md:text-3xl font-extrabold text-slate-900 dark:text-white">{applications.length}</span>
+            <span className="text-[10px] md:text-xs text-slate-400 dark:text-slate-400 font-medium block mt-1">Active Tracker</span>
+          </div>
+        </div>
+
+        {/* Job Matches */}
+        <div className="bg-white dark:bg-[#1F2937] border border-slate-100 dark:border-white/5 p-5 md:p-6 rounded-[20px] shadow-sm hover:shadow-md transition-all duration-300">
+          <div className="flex justify-between items-start">
+            <span className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Job Matches</span>
+            <div className="p-2 rounded-xl bg-amber-500/10 text-amber-500 dark:text-amber-400">
+              <Zap size={18} />
+            </div>
+          </div>
+          <div className="mt-4">
+            <span className="text-2xl md:text-3xl font-extrabold text-slate-900 dark:text-white">{latestJobs.length || 8}</span>
+            <span className="text-[10px] md:text-xs text-emerald-500 font-bold block mt-1">Matched with your skills</span>
+          </div>
+        </div>
+      </section>
+
+      {/* TWO COLUMN GRID: CAREER READINESS vs QUICK ACTIONS */}
+      <section className="grid grid-cols-1 lg:grid-cols-5 gap-6">
+        {/* LEFT: Career Readiness (3 cols) */}
+        <div className="lg:col-span-3 bg-white dark:bg-[#1F2937] border border-slate-100 dark:border-white/5 p-6 rounded-[20px] shadow-sm hover:shadow-md transition-all">
+          <div className="flex justify-between items-center mb-5">
+            <h2 className="text-base font-extrabold text-slate-900 dark:text-white">Career Readiness</h2>
+            <span className="text-sm font-extrabold text-emerald-500 bg-emerald-500/10 px-3 py-1 rounded-lg">
+              Overall: {Math.round(((atsScore || 75) + profileCompletion + (user?.skills ? 85 : 45) + (applications.length > 0 ? 80 : 60)) / 4)}%
+            </span>
+          </div>
+
+          <div className="flex flex-col gap-4">
+            {/* Resume Meter */}
+            <div>
+              <div className="flex justify-between items-center mb-1 text-xs font-semibold">
+                <span className="text-slate-600 dark:text-slate-350">Resume Score</span>
+                <span className="text-slate-900 dark:text-white">{atsScore || 75}%</span>
+              </div>
+              <div className="w-full bg-slate-100 dark:bg-white/5 h-2 rounded-full overflow-hidden">
+                <div className="bg-emerald-500 h-full rounded-full transition-all duration-500" style={{ width: `${atsScore || 75}%` }} />
+              </div>
+            </div>
+
+            {/* Profile Meter */}
+            <div>
+              <div className="flex justify-between items-center mb-1 text-xs font-semibold">
+                <span className="text-slate-600 dark:text-slate-350">Profile Completion</span>
+                <span className="text-slate-900 dark:text-white">{profileCompletion}%</span>
+              </div>
+              <div className="w-full bg-slate-100 dark:bg-white/5 h-2 rounded-full overflow-hidden">
+                <div className="bg-emerald-500 h-full rounded-full transition-all duration-500" style={{ width: `${profileCompletion}%` }} />
+              </div>
+            </div>
+
+            {/* Skills Meter */}
+            <div>
+              <div className="flex justify-between items-center mb-1 text-xs font-semibold">
+                <span className="text-slate-600 dark:text-slate-350">Skills Match Readiness</span>
+                <span className="text-slate-900 dark:text-white">{user?.skills ? 85 : 45}%</span>
+              </div>
+              <div className="w-full bg-slate-100 dark:bg-white/5 h-2 rounded-full overflow-hidden">
+                <div className="bg-emerald-500 h-full rounded-full transition-all duration-500" style={{ width: `${user?.skills ? 85 : 45}%` }} />
+              </div>
+            </div>
+
+            {/* Job Search Meter */}
+            <div>
+              <div className="flex justify-between items-center mb-1 text-xs font-semibold">
+                <span className="text-slate-600 dark:text-slate-350">Job Search Activity</span>
+                <span className="text-slate-900 dark:text-white">{applications.length > 0 ? 80 : 60}%</span>
+              </div>
+              <div className="w-full bg-slate-100 dark:bg-white/5 h-2 rounded-full overflow-hidden">
+                <div className="bg-emerald-500 h-full rounded-full transition-all duration-500" style={{ width: `${applications.length > 0 ? 80 : 60}%` }} />
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* RIGHT: Quick Actions (2 cols) */}
+        <div className="lg:col-span-2 bg-white dark:bg-[#1F2937] border border-slate-100 dark:border-white/5 p-6 rounded-[20px] shadow-sm hover:shadow-md transition-all">
+          <h2 className="text-base font-extrabold text-slate-900 dark:text-white mb-4">Quick Actions</h2>
+          <div className="grid grid-cols-2 gap-3">
+            <button
+              onClick={() => document.getElementById('dashboard-resume-upload-input')?.click()}
+              className="flex flex-col items-center justify-center text-center p-4 border border-slate-100 dark:border-white/5 rounded-2xl hover:border-emerald-500 hover:bg-emerald-50/5 dark:hover:bg-emerald-500/5 transition-all group cursor-pointer"
+            >
+              <UploadCloud size={24} className="text-slate-400 group-hover:text-emerald-500 transition-colors" />
+              <span className="text-xs font-bold text-slate-700 dark:text-slate-300 mt-2">Upload Resume</span>
+            </button>
+
+            <button
+              onClick={() => navigate('/resume-builder')}
+              className="flex flex-col items-center justify-center text-center p-4 border border-slate-100 dark:border-white/5 rounded-2xl hover:border-emerald-500 hover:bg-emerald-50/5 dark:hover:bg-emerald-500/5 transition-all group cursor-pointer"
+            >
+              <Plus size={24} className="text-slate-400 group-hover:text-emerald-500 transition-colors" />
+              <span className="text-xs font-bold text-slate-700 dark:text-slate-300 mt-2">Create Resume</span>
+            </button>
+
             <button
               onClick={() => {
                 if (bestResume) {
@@ -213,348 +353,82 @@ export const Dashboard: React.FC = () => {
                   navigate('/resume');
                 }
               }}
-              className={`font-bold py-2.5 px-5 rounded-[14px] flex items-center gap-2 cursor-pointer shadow-sm transition-all duration-250 btn-glow-green ${isDark
-                ? 'bg-[#FFFFFF] hover:bg-[#E5E7EB] text-[#111827] shadow-white/5'
-                : 'bg-[#111111] hover:bg-[#000000] text-[#FFFFFF]'
-                }`}
+              className="flex flex-col items-center justify-center text-center p-4 border border-slate-100 dark:border-white/5 rounded-2xl hover:border-emerald-500 hover:bg-emerald-50/5 dark:hover:bg-emerald-500/5 transition-all group cursor-pointer"
             >
-              Continue Resume <ArrowRight size={16} />
+              <Sparkles size={24} className="text-slate-400 group-hover:text-emerald-500 transition-colors" />
+              <span className="text-xs font-bold text-slate-700 dark:text-slate-300 mt-2">Optimize Resume</span>
             </button>
+
             <button
               onClick={() => navigate('/jobs')}
-              className={`font-semibold py-2.5 px-5 rounded-[14px] cursor-pointer transition-all duration-250 ${isDark
-                ? 'bg-transparent border border-white/10 hover:bg-white/5 text-[#D1D5DB]'
-                : 'bg-[#FFFFFF] border border-[#E5E7EB] text-slate-900 hover:bg-[#F3F4F6]'
-                }`}
+              className="flex flex-col items-center justify-center text-center p-4 border border-slate-100 dark:border-white/5 rounded-2xl hover:border-emerald-500 hover:bg-emerald-50/5 dark:hover:bg-emerald-500/5 transition-all group cursor-pointer"
             >
-              Find Jobs
+              <Briefcase size={24} className="text-slate-400 group-hover:text-emerald-500 transition-colors" />
+              <span className="text-xs font-bold text-slate-700 dark:text-slate-300 mt-2">Find Jobs</span>
             </button>
           </div>
         </div>
-        <div className={`hidden lg:flex items-center justify-center shrink-0 w-48 h-48 rounded-2xl relative transition-all duration-300 ${isDark ? 'bg-white/5 border border-white/10 shadow-[0_0_30px_rgba(255,255,255,0.03)]' : 'bg-gradient-to-tr from-slate-50 to-slate-100/50 border border-slate-100'
-          }`}>
-          {/* Floating Document/Resume Illustration */}
-          <div className="flex flex-col gap-2 w-32 bg-white dark:bg-[#111827] border border-slate-200 dark:border-white/10 p-4 rounded-xl shadow-lg transform rotate-6 hover:rotate-0 transition-transform duration-300">
-            <div className="flex items-center gap-1.5 mb-1">
-              <div className={`w-2.5 h-2.5 rounded-full ${isDark ? 'bg-[#FFFFFF]' : 'bg-[#111111]'}`} />
-              <div className="w-12 h-1.5 bg-slate-200 dark:bg-white/10 rounded" />
-            </div>
-            <div className="w-full h-1 bg-slate-100 dark:bg-white/5 rounded" />
-            <div className="w-full h-1 bg-slate-100 dark:bg-white/5 rounded" />
-            <div className="w-5/6 h-1 bg-slate-100 dark:bg-white/5 rounded" />
-            <div className={`w-full h-1.5 rounded mt-1 ${isDark ? 'bg-white/15' : 'bg-[#111111]/10'}`} />
-          </div>
-        </div>
       </section>
 
-      {/* SECTION 2: STATISTICS */}
-      <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-        {/* Card 1: Resume Score */}
-        <div className={`border rounded-[20px] p-6 flex items-center justify-between hover:-translate-y-1 transition-all duration-300 ${isDark ? 'bg-[rgba(31,41,55,0.75)] backdrop-blur-[18px] border-white/[0.08] shadow-[0_10px_40px_rgba(0,0,0,0.35)] hover:border-white/[0.15]' : 'bg-[#FFFFFF] border-[#E5E7EB] shadow-sm hover:shadow-md'
-          }`}>
-          <div className="text-left">
-            <span className={`text-xs font-bold uppercase tracking-wider block transition-colors duration-300 ${isDark ? 'text-[#9CA3AF]' : 'text-[#9CA3AF]'}`}>ATS Resume Score</span>
-            <span className={`text-[28px] font-bold mt-1 block transition-colors duration-300 ${isDark ? 'text-white' : 'text-slate-900'}`}>{atsScore}%</span>
-            <span className={`text-xs font-medium mt-1 block flex items-center gap-0.5 transition-colors duration-300 ${isDark ? 'text-[#D1D5DB]' : 'text-slate-900'}`}>
-              <span className="font-bold">↑ 2.4%</span> vs last week
-            </span>
-          </div>
-          <div className={`w-14 h-14 rounded-full flex items-center justify-center shrink-0 border transition-all duration-300 ${isDark ? 'bg-white/10 text-[#FFFFFF] border-white/10' : 'bg-[#F3F4F6] text-slate-900 border-[#E5E7EB]'
-            }`}>
-            <Award size={22} />
-          </div>
-        </div>
-
-        {/* Card 2: Profile Completion */}
-        <div className={`border rounded-[20px] p-6 flex items-center justify-between hover:-translate-y-1 transition-all duration-300 ${isDark ? 'bg-[rgba(31,41,55,0.75)] backdrop-blur-[18px] border-white/[0.08] shadow-[0_10px_40px_rgba(0,0,0,0.35)] hover:border-white/[0.15]' : 'bg-[#FFFFFF] border-[#E5E7EB] shadow-sm hover:shadow-md'
-          }`}>
-          <div className="text-left">
-            <span className="text-xs font-bold text-[#9CA3AF] uppercase tracking-wider block">Profile Completion</span>
-            <span className={`text-[28px] font-bold mt-1 block transition-colors duration-300 ${isDark ? 'text-white' : 'text-slate-900'}`}>{profileCompletion}%</span>
-            <span className={`text-xs font-medium mt-1 block transition-colors duration-300 ${isDark ? 'text-[#D1D5DB]' : 'text-[#6B7280]'}`}>Keep details up to date</span>
-          </div>
-          <div className={`w-14 h-14 rounded-full flex items-center justify-center shrink-0 border transition-all duration-300 ${isDark ? 'bg-white/10 text-[#FFFFFF] border-white/10' : 'bg-[#F3F4F6] text-slate-900 border-[#E5E7EB]'
-            }`}>
-            <User size={22} />
-          </div>
-        </div>
-
-        {/* Card 3: Jobs Matched */}
-        <div className={`border rounded-[20px] p-6 flex items-center justify-between hover:-translate-y-1 transition-all duration-300 ${isDark ? 'bg-[rgba(31,41,55,0.75)] backdrop-blur-[18px] border-white/[0.08] shadow-[0_10px_40px_rgba(0,0,0,0.35)] hover:border-white/[0.15]' : 'bg-[#FFFFFF] border-[#E5E7EB] shadow-sm hover:shadow-md'
-          }`}>
-          <div className="text-left">
-            <span className="text-xs font-bold text-[#9CA3AF] uppercase tracking-wider block">Jobs Matched</span>
-            <span className={`text-[28px] font-bold mt-1 block transition-colors duration-300 ${isDark ? 'text-white' : 'text-slate-900'}`}>{latestJobs.length || 3}</span>
-            <span className={`text-xs font-medium mt-1 block flex items-center gap-0.5 transition-colors duration-300 ${isDark ? 'text-[#D1D5DB]' : 'text-slate-900'}`}>
-              <span className="font-bold">New</span> recommendations ready
-            </span>
-          </div>
-          <div className={`w-14 h-14 rounded-full flex items-center justify-center shrink-0 border transition-all duration-300 ${isDark ? 'bg-white/10 text-[#FFFFFF] border-white/10' : 'bg-[#F3F4F6] text-slate-900 border-[#E5E7EB]'
-            }`}>
-            <Zap size={22} />
-          </div>
-        </div>
-
-        {/* Card 4: Applications */}
-        <div className={`border rounded-[20px] p-6 flex items-center justify-between hover:-translate-y-1 transition-all duration-300 ${isDark ? 'bg-[rgba(31,41,55,0.75)] backdrop-blur-[18px] border-white/[0.08] shadow-[0_10px_40px_rgba(0,0,0,0.35)] hover:border-white/[0.15]' : 'bg-[#FFFFFF] border-[#E5E7EB] shadow-sm hover:shadow-md'
-          }`}>
-          <div className="text-left">
-            <span className="text-xs font-bold text-[#9CA3AF] uppercase tracking-wider block">Applications Submitted</span>
-            <span className={`text-[28px] font-bold mt-1 block transition-colors duration-300 ${isDark ? 'text-white' : 'text-slate-900'}`}>{applications.length}</span>
-            <span className={`text-xs font-medium mt-1 block transition-colors duration-300 ${isDark ? 'text-[#D1D5DB]' : 'text-[#6B7280]'}`}>Active application tracker</span>
-          </div>
-          <div className={`w-14 h-14 rounded-full flex items-center justify-center shrink-0 border transition-all duration-300 ${isDark ? 'bg-white/10 text-[#FFFFFF] border-white/10' : 'bg-[#F3F4F6] text-slate-900 border-[#E5E7EB]'
-            }`}>
-            <Briefcase size={22} />
-          </div>
-        </div>
-      </section>
-
-      {/* SECTION 3: MAIN CONTENT */}
-      <section className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
-        {/* Left Side: Resume Card (65%) */}
-        <div className="lg:col-span-2">
-          <div className={`border rounded-[20px] p-6 transition-all duration-300 ${isDark ? 'bg-[rgba(31,41,55,0.75)] backdrop-blur-[18px] border-white/[0.08] shadow-[0_10px_40px_rgba(0,0,0,0.35)] hover:border-white/[0.15]' : 'bg-[#FFFFFF] border-[#E5E7EB] shadow-sm hover:shadow-md'
-            }`}>
-            <div className="flex justify-between items-center mb-6">
-              <h2 className={`text-lg font-bold transition-colors duration-300 ${isDark ? 'text-white' : 'text-slate-900'}`}>Active Resume Profile</h2>
-              <span className={`text-xs font-bold px-2.5 py-1 rounded-full border transition-colors duration-300 ${isDark ? 'text-[#FFFFFF] bg-white/10 border-white/10' : 'text-slate-900 bg-[#FFFFFF] border-[#111111]'
-                }`}>Live & Ready</span>
-            </div>
-
-            {bestResume ? (
-              <div className="flex flex-col gap-6">
-                {/* Resume Layout Preview container instead of empty container */}
-                <div className={`flex flex-col md:flex-row gap-4 p-5 rounded-2xl border transition-colors duration-300 ${isDark ? 'bg-[#111827] border-white/5' : 'bg-[#F8F8F8] border-[#E5E7EB]'
-                  }`}>
-                  {/* Left Column: Visual Miniature Preview of a Resume Layout */}
-                  <div className="w-full md:w-32 bg-white dark:bg-[#1F2937] border border-slate-200 dark:border-white/10 rounded-lg p-3 shrink-0 flex flex-col gap-2">
-                    <div className={`w-10 h-1.5 rounded ${isDark ? 'bg-[#FFFFFF]' : 'bg-[#111111]'}`} />
-                    <div className="w-full h-1 bg-slate-200 dark:bg-white/10 rounded" />
-                    <div className="w-5/6 h-1 bg-slate-200 dark:bg-white/10 rounded" />
-                    <hr className="border-slate-100 dark:border-white/5 my-1" />
-                    <div className="w-full h-2 bg-slate-100 dark:bg-white/5 rounded" />
-                    <div className="w-full h-2 bg-slate-100 dark:bg-white/5 rounded" />
-                  </div>
-
-                  {/* Right Column: Actual Metadata */}
-                  <div className="flex-1 flex flex-col justify-between">
-                    <div>
-                      <h3 className={`font-bold text-base transition-colors duration-300 ${isDark ? 'text-white' : 'text-slate-900'}`}>{bestResume.name}</h3>
-                      <p className={`text-xs font-semibold mt-1 transition-colors duration-300 ${isDark ? 'text-[#D1D5DB]' : 'text-[#6B7280]'}`}>
-                        Updated {formatTimeAgo((bestResume as any).created_at || (bestResume as any).updated_at || (bestResume as any).timestamp)}
-                      </p>
-                    </div>
-                    <div className="flex items-center gap-3 mt-3">
-                      <span className={`text-sm font-bold bg-white border px-3 py-1.5 rounded-lg shadow-sm transition-all duration-300 ${isDark ? 'bg-[#1F2937] border-white/10 text-white' : 'bg-white border-[#E5E7EB] text-slate-900'
-                        }`}>
-                        ATS Score: {bestResume.atsScore || 75}%
-                      </span>
-                      <span className={`text-sm font-bold border px-3 py-1.5 rounded-lg transition-colors duration-300 ${isDark ? 'bg-white/10 border-white/10 text-[#FFFFFF]' : 'bg-[#F3F4F6] border-[#E5E7EB] text-slate-900'
-                        }`}>
-                        Completeness: {bestResume.completion || 80}%
-                      </span>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="w-full">
-                  <div className="flex justify-between items-center mb-2">
-                    <span className="text-xs font-bold text-[#9CA3AF] uppercase tracking-wider">Completeness Score</span>
-                    <span className={`text-xs font-extrabold transition-colors duration-300 ${isDark ? 'text-white' : 'text-slate-900'}`}>{bestResume.completion || 80}%</span>
-                  </div>
-                  <div className="w-full bg-[#E5E7EB] dark:bg-white/10 h-2.5 rounded-full overflow-hidden">
-                    <div
-                      className={`h-full rounded-full transition-all duration-550 ${isDark ? 'bg-[#FFFFFF]' : 'bg-[#111111]'}`}
-                      style={{ width: `${bestResume.completion || 80}%` }}
-                    />
-                  </div>
-                </div>
-
-                <div className="flex flex-wrap gap-3 pt-2">
-                  <button
-                    onClick={() => navigate(`/resume-builder?id=${bestResume.id}`)}
-                    className={`font-bold py-2 px-4 rounded-[14px] flex items-center gap-1.5 cursor-pointer text-sm transition-all duration-200 btn-glow-green ${isDark
-                      ? 'bg-[#FFFFFF] hover:bg-[#E5E7EB] text-[#111827] shadow-sm'
-                      : 'bg-[#111111] hover:bg-[#000000] text-[#FFFFFF]'
-                      }`}
-                  >
-                    <FileEdit size={14} /> Continue Editing
-                  </button>
-                  <button
-                    onClick={() => navigate(`/resume-builder?id=${bestResume.id}`)}
-                    className={`font-semibold py-2 px-4 rounded-[14px] cursor-pointer text-sm flex items-center gap-1.5 transition-all duration-200 ${isDark
-                      ? 'bg-[#1F2937] hover:bg-[#111827] text-white border border-white/10'
-                      : 'bg-[#FFFFFF] border border-[#E5E7EB] text-slate-900 hover:bg-[#F3F4F6]'
-                      }`}
-                  >
-                    <Eye size={14} /> Preview
-                  </button>
-                  <button
-                    onClick={() => navigate(`/resume-builder?id=${bestResume.id}`)}
-                    className={`font-semibold py-2 px-4 rounded-[14px] cursor-pointer text-sm flex items-center gap-1.5 transition-all duration-200 ${isDark
-                      ? 'bg-[#1F2937] hover:bg-[#111827] text-white border border-white/10'
-                      : 'bg-[#FFFFFF] border border-[#E5E7EB] text-slate-900 hover:bg-[#F3F4F6]'
-                      }`}
-                  >
-                    <Download size={14} /> Download PDF
-                  </button>
-                </div>
-              </div>
-            ) : (
-              <div className={`flex flex-col items-center justify-center py-10 border border-dashed rounded-2xl transition-colors duration-300 ${isDark ? 'bg-[#111827] border-white/10' : 'bg-[#F8F8F8] border-[#E5E7EB]'
-                }`}>
-                <FileText className="text-[#6B7280] mb-3" size={32} />
-                <p className={`text-sm font-bold transition-colors duration-300 ${isDark ? 'text-white' : 'text-slate-900'}`}>No resumes created yet</p>
-                <p className="text-xs text-[#6B7280] mt-1 max-w-xs text-center">Upload an existing resume or build a new one using our premium builder.</p>
-                <button
-                  onClick={() => navigate('/resume')}
-                  className={`font-bold py-2 px-4 rounded-[14px] mt-4 cursor-pointer text-xs transition-all duration-200 ${isDark ? 'bg-[#FFFFFF] hover:bg-[#E5E7EB] text-[#111827]' : 'bg-[#111111] hover:bg-[#000000] text-[#FFFFFF]'
-                    }`}
-                >
-                  Create Your First Resume
-                </button>
-              </div>
-            )}
-          </div>
-        </div>
-
-        {/* Right Side: AI Career Coach (35%) */}
-        <div className="lg:col-span-1">
-          <div className={`border rounded-[20px] p-6 transition-all duration-300 ${isDark ? 'bg-[rgba(31,41,55,0.75)] backdrop-blur-[18px] border-white/[0.08] shadow-[0_10px_40px_rgba(0,0,0,0.35)] hover:border-white/[0.15]' : 'bg-[#FFFFFF] border-[#E5E7EB] shadow-sm hover:shadow-md'
-            }`}>
-            <div className="flex items-center gap-2 mb-4">
-              <div className={`w-8 h-8 rounded-lg flex items-center justify-center border shrink-0 transition-colors duration-300 ${isDark ? 'bg-white/10 text-[#FFFFFF] border-white/10' : 'bg-[#F3F4F6] text-slate-900 border-[#E5E7EB]'
-                }`}>
-                <Sparkles size={16} />
-              </div>
-              <h2 className={`text-lg font-bold transition-colors duration-300 ${isDark ? 'text-white' : 'text-slate-900'}`}>AI Career Coach</h2>
-            </div>
-
-            {/* ChatGPT Dialogue layout design */}
-            <div className="flex flex-col gap-3 mb-5 border-b border-slate-100 dark:border-white/5 pb-4">
-              <div className="flex gap-2.5 items-start text-xs">
-                <div
-                  className="w-6 h-6 rounded-full bg-[#111111] flex items-center justify-center text-[10px] shrink-0 font-extrabold"
-                  style={{ color: '#FFFFFF' }}
-                >
-                  AI
-                </div>
-
-                <div className="bg-slate-50 dark:bg-[#111827] p-2.5 rounded-2xl rounded-tl-none border border-slate-100 dark:border-white/5">
-                  <p className={`leading-normal transition-colors duration-300 ${isDark ? 'text-white' : 'text-slate-900'}`}>
-                    Hello! How can I optimize your career applications and resume keyword coverage today?
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            <div className="flex flex-col gap-2.5">
-              <button
-                onClick={() => handleCoachAction('improve')}
-                className={`w-full text-left p-3.5 border rounded-xl cursor-pointer transition-all flex items-center justify-between text-xs font-bold ${isDark
-                  ? 'border-white/10 hover:border-white/30 hover:bg-white/5 text-white'
-                  : 'border-[#E5E7EB] hover:border-[#111111] hover:bg-[#F3F4F6]/5 text-slate-900'
-                  }`}
-              >
-                <span>Improve Resume Quality</span>
-                <ArrowUpRight size={14} className="text-[#6B7280]" />
-              </button>
-              <button
-                onClick={() => handleCoachAction('ats')}
-                className={`w-full text-left p-3.5 border rounded-xl cursor-pointer transition-all flex items-center justify-between text-xs font-bold ${isDark
-                  ? 'border-white/10 hover:border-white/30 hover:bg-white/5 text-white'
-                  : 'border-[#E5E7EB] hover:border-[#111111] hover:bg-[#F3F4F6]/5 text-slate-900'
-                  }`}
-              >
-                <span>ATS Optimization Check</span>
-                <ArrowUpRight size={14} className="text-[#6B7280]" />
-              </button>
-              <button
-                onClick={() => handleCoachAction('jobs')}
-                className={`w-full text-left p-3.5 border rounded-xl cursor-pointer transition-all flex items-center justify-between text-xs font-bold ${isDark
-                  ? 'border-white/10 hover:border-white/30 hover:bg-white/5 text-white'
-                  : 'border-[#E5E7EB] hover:border-[#111111] hover:bg-[#F3F4F6]/5 text-slate-900'
-                  }`}
-              >
-                <span>Find Matched Job Listings</span>
-                <ArrowUpRight size={14} className="text-[#6B7280]" />
-              </button>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* SECTION 4: Recommended Jobs */}
-      <section className={`border rounded-[20px] p-6 transition-all duration-300 ${isDark ? 'bg-[rgba(31,41,55,0.75)] backdrop-blur-[18px] border-white/[0.08] shadow-[0_10px_40px_rgba(0,0,0,0.35)] hover:border-white/[0.15]' : 'bg-[#FFFFFF] border-[#E5E7EB] shadow-sm hover:shadow-md'
-        }`}>
-        <div className={`flex justify-between items-center mb-6 border-b pb-2 transition-colors duration-300 ${isDark ? 'border-white/10' : 'border-[#F1F5F9]'
-          }`}>
-          <h2 className={`text-lg font-bold transition-colors duration-300 ${isDark ? 'text-white' : 'text-slate-900'}`}>Recommended Local Placements</h2>
+      {/* RECOMMENDED JOBS SECTION */}
+      <section className="bg-white dark:bg-[#1F2937] border border-slate-100 dark:border-white/5 p-6 rounded-[20px] shadow-sm hover:shadow-md transition-all">
+        <div className="flex justify-between items-center mb-5 border-b border-slate-100 dark:border-white/5 pb-3">
+          <h2 className="text-base font-extrabold text-slate-900 dark:text-white">Recommended Jobs</h2>
           <button
             onClick={() => navigate('/jobs')}
-            className={`text-xs font-bold hover:underline flex items-center gap-0.5 cursor-pointer bg-transparent border-0 transition-colors duration-300 ${isDark ? 'text-[#FFFFFF]' : 'text-slate-900'
-              }`}
+            className="text-xs font-bold text-emerald-500 hover:text-emerald-600 hover:underline flex items-center gap-1 cursor-pointer bg-transparent border-none"
           >
-            Explore All Listings <ArrowRight size={12} />
+            View All Jobs <ChevronRight size={14} />
           </button>
         </div>
 
-        <div className="flex flex-col gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {latestJobs.length === 0 ? (
-            <div className={`text-center py-10 border border-dashed rounded-2xl text-xs font-semibold transition-colors duration-300 ${isDark ? 'bg-[#111827] border-white/10 text-[#9CA3AF]' : 'bg-[#F8F8F8] border-[#E5E7EB] text-[#9CA3AF]'
-              }`}>
-              No job recommendations matched. Update your skills or resume to unlock personalized listings.
+            <div className="col-span-full text-center py-8 text-slate-400 text-xs font-medium">
+              No recommended jobs found. Update your profile to get matches.
             </div>
           ) : (
             latestJobs.slice(0, 3).map((job) => (
               <div
                 key={job.id}
-                className={`flex flex-col md:flex-row items-start md:items-center justify-between p-4 border rounded-2xl transition-all duration-300 gap-4 ${isDark ? 'border-white/5 hover:border-white/20' : 'border-[#E5E7EB] hover:border-[#111111]'
-                  }`}
+                className="border border-slate-100 dark:border-white/5 p-4 rounded-2xl hover:border-emerald-500/30 hover:bg-emerald-50/5 dark:hover:bg-emerald-500/5 transition-all flex flex-col justify-between gap-4"
               >
-                <div className="flex items-center gap-4 text-left">
+                <div className="flex gap-3 text-left">
                   {job.logo ? (
                     <img
                       src={job.logo}
                       alt={job.company}
-                      className={`w-12 h-12 rounded-xl object-cover border shrink-0 transition-colors duration-300 ${isDark ? 'border-white/10' : 'border-[#E5E7EB]'
-                        }`}
+                      className="w-10 h-10 rounded-lg object-cover shrink-0 border border-slate-100 dark:border-white/10"
                       onError={(e) => {
                         (e.target as HTMLImageElement).src = 'https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?w=100&auto=format&fit=crop&q=60';
                       }}
                     />
                   ) : (
-                    <div className={`w-12 h-12 rounded-xl border flex items-center justify-center shrink-0 transition-colors duration-300 ${isDark ? 'bg-[#111827] border-white/10 text-[#FFFFFF]' : 'bg-[#F3F4F6] border-[#E5E7EB] text-slate-900'
-                      }`}>
-                      <Building size={20} />
+                    <div className="w-10 h-10 rounded-lg border border-slate-100 dark:border-white/10 flex items-center justify-center shrink-0 bg-slate-50 dark:bg-[#111827] text-slate-500">
+                      <Building size={16} />
                     </div>
                   )}
-                  <div>
-                    <h3 className={`font-bold text-sm transition-colors duration-300 ${isDark ? 'text-white' : 'text-slate-900'}`}>{job.title}</h3>
-                    <p className={`text-xs font-semibold mt-0.5 transition-colors duration-300 ${isDark ? 'text-[#D1D5DB]' : 'text-[#6B7280]'}`}>{job.company} • {job.location}</p>
+                  <div className="overflow-hidden">
+                    <h3 className="font-bold text-sm text-slate-900 dark:text-white truncate">{job.title}</h3>
+                    <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5 truncate">{job.company}</p>
+                    <p className="text-[10px] text-slate-400 dark:text-slate-500 mt-0.5 truncate">{job.location}</p>
                   </div>
                 </div>
 
-                <div className="flex items-center flex-wrap gap-4 w-full md:w-auto justify-between md:justify-end border-t border-slate-50 md:border-t-0 pt-3 md:pt-0 dark:border-white/5">
-                  <div className="flex items-center gap-3">
-                    <span className={`text-xs font-bold border px-2.5 py-1 rounded-lg transition-colors duration-300 ${isDark ? 'bg-[#111827] border-white/10 text-[#D1D5DB]' : 'bg-[#F8F8F8] border-[#E5E7EB] text-[#6B7280]'
-                      }`}>
-                      {job.salary || 'Competitive'}
-                    </span>
-                    <span className={`text-xs font-bold border px-2.5 py-1 rounded-lg transition-colors duration-300 ${isDark ? 'bg-transparent border-white/20 text-[#FFFFFF]' : 'bg-white border-[#111111] text-slate-900'
-                      }`}>
+                <div className="flex items-center justify-between border-t border-slate-50 dark:border-white/5 pt-3">
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-[10px] font-bold bg-emerald-500/10 text-emerald-500 px-2 py-0.5 rounded">
                       {job.ai_match_score || 80}% Match
+                    </span>
+                    <span className="text-[10px] font-bold bg-slate-100 dark:bg-white/5 text-slate-500 px-2 py-0.5 rounded truncate max-w-[80px]">
+                      {job.salary || 'Full-time'}
                     </span>
                   </div>
                   <button
                     onClick={() => navigate(`/jobs/${job.id}`)}
-                    className={`font-bold py-2 px-4 rounded-[14px] text-xs cursor-pointer transition-all duration-200 btn-glow-green ${isDark
-                      ? 'bg-[#FFFFFF] hover:bg-[#E5E7EB] text-[#111827] shadow-sm'
-                      : 'bg-[#111111] hover:bg-[#000000] text-[#FFFFFF]'
-                      }`}
+                    className="text-xs font-bold text-emerald-500 hover:text-emerald-600 cursor-pointer"
                   >
-                    View Details
+                    View Job
                   </button>
                 </div>
               </div>
@@ -563,100 +437,79 @@ export const Dashboard: React.FC = () => {
         </div>
       </section>
 
-      {/* SECTION 5: BOTTOM TIMELINE & ACTIONS */}
-      <section className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* LEFT: Recent Activity */}
-        <div className={`border rounded-[20px] p-6 transition-all duration-300 ${isDark ? 'bg-[rgba(31,41,55,0.75)] backdrop-blur-[18px] border-white/[0.08] shadow-[0_10px_40px_rgba(0,0,0,0.35)] hover:border-white/[0.15]' : 'bg-[#FFFFFF] border-[#E5E7EB] shadow-sm hover:shadow-md'
-          }`}>
-          <h3 className={`text-base font-bold mb-4 border-b pb-2 transition-colors duration-300 ${isDark ? 'border-white/10 text-white' : 'border-[#F1F5F9] text-slate-900'
-            }`}>
-            Timeline Actions
-          </h3>
+      {/* RECENT RESUME SECTION */}
+      <section className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Left: Recent Resume (2 cols) */}
+        <div className="lg:col-span-2 bg-white dark:bg-[#1F2937] border border-slate-100 dark:border-white/5 p-6 rounded-[20px] shadow-sm hover:shadow-md transition-all">
+          <h2 className="text-base font-extrabold text-slate-900 dark:text-white mb-4">Recent Resume</h2>
+          {bestResume ? (
+            <div className="flex flex-col sm:flex-row gap-5 p-4 rounded-xl border border-slate-100 dark:border-white/5 bg-slate-50/50 dark:bg-white/[0.01]">
+              <div className="w-full sm:w-28 bg-white dark:bg-[#1F2937] border border-slate-200 dark:border-white/10 rounded-lg p-3 shrink-0 flex flex-col gap-1.5 shadow-sm">
+                <div className="w-8 h-1 bg-emerald-500 rounded" />
+                <div className="w-full h-1 bg-slate-100 dark:bg-white/5 rounded" />
+                <div className="w-5/6 h-1 bg-slate-100 dark:bg-white/5 rounded" />
+                <hr className="border-slate-100 dark:border-white/5 my-1" />
+                <div className="w-full h-1 bg-slate-100 dark:bg-white/5 rounded" />
+                <div className="w-full h-1 bg-slate-100 dark:bg-white/5 rounded" />
+              </div>
+              <div className="flex-1 flex flex-col justify-between">
+                <div>
+                  <h3 className="font-bold text-sm text-slate-900 dark:text-white">{bestResume.name}</h3>
+                  <p className="text-[10px] text-slate-400 mt-1">
+                    Updated {formatTimeAgo((bestResume as any).created_at || (bestResume as any).updated_at || (bestResume as any).timestamp)}
+                  </p>
+                </div>
+                <div className="flex items-center gap-3 mt-3">
+                  <span className="text-xs font-bold text-slate-900 dark:text-white bg-white dark:bg-[#1F2937] border border-slate-100 dark:border-white/5 px-2.5 py-1 rounded-lg">
+                    ATS Score: <span className="text-emerald-500 font-extrabold">{bestResume.atsScore || 75}%</span>
+                  </span>
+                </div>
+                <div className="flex gap-2 mt-4">
+                  <button
+                    onClick={() => navigate(`/resume-builder?id=${bestResume.id}`)}
+                    className="px-3 py-1.5 text-xs font-bold bg-emerald-500 text-white rounded-lg hover:bg-emerald-600 transition-all cursor-pointer"
+                  >
+                    Edit
+                  </button>
+                  <button
+                    onClick={() => navigate(`/resume-builder?id=${bestResume.id}`)}
+                    className="px-3 py-1.5 text-xs font-semibold bg-slate-100 hover:bg-slate-200 dark:bg-white/5 dark:hover:bg-white/10 text-slate-700 dark:text-white rounded-lg transition-all cursor-pointer"
+                  >
+                    Optimize
+                  </button>
+                </div>
+              </div>
+            </div>
+          ) : (
+            <div className="text-center py-8 text-slate-400 text-xs font-medium border border-dashed rounded-xl">
+              No resumes found. Click Create Resume to start.
+            </div>
+          )}
+        </div>
+
+        {/* Right: Recent Activity Timeline (1 col) */}
+        <div className="bg-white dark:bg-[#1F2937] border border-slate-100 dark:border-white/5 p-6 rounded-[20px] shadow-sm hover:shadow-md transition-all">
+          <h2 className="text-base font-extrabold text-slate-900 dark:text-white mb-4">Recent Activity</h2>
           <div className="flex flex-col gap-4">
             {activities.length === 0 ? (
-              <div className="text-center py-8 text-[#6B7280] text-xs font-semibold">
-                No recent workspace timeline actions found.
+              <div className="text-center py-6 text-slate-400 text-xs font-medium">
+                No recent activity recorded.
               </div>
             ) : (
-              activities.slice(0, 4).map((act, index) => (
-                <div key={index} className="flex gap-3 text-left items-start text-xs">
-                  <div className={`w-2 h-2 rounded-full mt-1.5 shrink-0 transition-colors duration-300 ${isDark ? 'bg-[#FFFFFF]' : 'bg-[#111111]'}`} />
+              activities.slice(0, 3).map((act, idx) => (
+                <div key={idx} className="flex gap-3 text-left items-start">
+                  <div className="w-2 h-2 rounded-full mt-1.5 shrink-0 bg-emerald-500" />
                   <div>
-                    <p className={`font-bold leading-tight transition-colors duration-300 ${isDark ? 'text-white' : 'text-slate-900'}`}>{act.activity}</p>
-                    <p className={`text-[10px] mt-0.5 transition-colors duration-300 ${isDark ? 'text-[#9CA3AF]' : 'text-[#6B7280]'}`}>{formatTimeAgo(act.timestamp)}</p>
+                    <p className="text-xs font-bold text-slate-800 dark:text-slate-200 leading-tight">{act.activity}</p>
+                    <p className="text-[10px] text-slate-400 dark:text-slate-500 mt-0.5">{formatTimeAgo(act.timestamp)}</p>
                   </div>
                 </div>
               ))
             )}
           </div>
         </div>
-
-        {/* RIGHT: Quick Action Buttons */}
-        <div className={`border rounded-[20px] p-6 transition-all duration-300 ${isDark ? 'bg-[rgba(31,41,55,0.75)] backdrop-blur-[18px] border-white/[0.08] shadow-[0_10px_40px_rgba(0,0,0,0.35)] hover:border-white/[0.15]' : 'bg-[#FFFFFF] border-[#E5E7EB] shadow-sm hover:shadow-md'
-          }`}>
-          <h3 className={`text-base font-bold mb-4 border-b pb-2 transition-colors duration-300 ${isDark ? 'border-white/10 text-white' : 'border-[#F1F5F9] text-slate-900'
-            }`}>
-            Workspace Hub
-          </h3>
-          <div className="grid grid-cols-2 gap-4">
-            <button
-              onClick={() => document.getElementById('dashboard-resume-upload-input')?.click()}
-              className={`flex flex-col items-center justify-center gap-2 p-5 rounded-2xl border cursor-pointer transition-all duration-300 ${isDark
-                ? 'border-white/10 hover:border-white/20 hover:bg-[#111827]'
-                : 'border-[#E5E7EB] hover:border-[#111111] hover:bg-[#F3F4F6]'
-                }`}
-            >
-              <div className={`w-10 h-10 rounded-xl flex items-center justify-center border transition-colors duration-300 ${isDark ? 'bg-white/10 text-[#FFFFFF] border-white/10' : 'bg-[#F3F4F6] text-slate-900 border-[#E5E7EB]'
-                }`}>
-                <UploadCloud size={20} />
-              </div>
-              <span className={`text-xs font-bold transition-colors duration-300 ${isDark ? 'text-white' : 'text-slate-900'}`}>Upload Resume</span>
-            </button>
-
-            <button
-              onClick={() => navigate('/resume-builder')}
-              className={`flex flex-col items-center justify-center gap-2 p-5 rounded-2xl border cursor-pointer transition-all duration-300 ${isDark
-                ? 'border-white/10 hover:border-white/20 hover:bg-[#111827]'
-                : 'border-[#E5E7EB] hover:border-[#111111] hover:bg-[#F3F4F6]'
-                }`}
-            >
-              <div className={`w-10 h-10 rounded-xl flex items-center justify-center border transition-colors duration-300 ${isDark ? 'bg-white/10 text-[#FFFFFF] border-white/10' : 'bg-[#F3F4F6] text-slate-900 border-[#E5E7EB]'
-                }`}>
-                <Sparkles size={20} />
-              </div>
-              <span className={`text-xs font-bold transition-colors duration-300 ${isDark ? 'text-white' : 'text-slate-900'}`}>Create Resume</span>
-            </button>
-
-            <button
-              onClick={() => navigate('/jobs')}
-              className={`flex flex-col items-center justify-center gap-2 p-5 rounded-2xl border cursor-pointer transition-all duration-300 ${isDark
-                ? 'border-white/10 hover:border-white/20 hover:bg-[#111827]'
-                : 'border-[#E5E7EB] hover:border-[#111111] hover:bg-[#F3F4F6]'
-                }`}
-            >
-              <div className={`w-10 h-10 rounded-xl flex items-center justify-center border transition-colors duration-300 ${isDark ? 'bg-white/10 text-[#FFFFFF] border-white/10' : 'bg-[#F3F4F6] text-slate-900 border-[#E5E7EB]'
-                }`}>
-                <Compass size={20} />
-              </div>
-              <span className={`text-xs font-bold transition-colors duration-300 ${isDark ? 'text-white' : 'text-slate-900'}`}>Explore Jobs</span>
-            </button>
-
-            <button
-              onClick={() => navigate('/profile')}
-              className={`flex flex-col items-center justify-center gap-2 p-5 rounded-2xl border cursor-pointer transition-all duration-300 ${isDark
-                ? 'border-white/10 hover:border-white/20 hover:bg-[#111827]'
-                : 'border-[#E5E7EB] hover:border-[#111111] hover:bg-[#F3F4F6]'
-                }`}
-            >
-              <div className={`w-10 h-10 rounded-xl flex items-center justify-center border transition-colors duration-300 ${isDark ? 'bg-white/10 text-[#FFFFFF] border-white/10' : 'bg-[#F3F4F6] text-slate-900 border-[#E5E7EB]'
-                }`}>
-                <User size={20} />
-              </div>
-              <span className={`text-xs font-bold transition-colors duration-300 ${isDark ? 'text-white' : 'text-slate-900'}`}>Edit Profile</span>
-            </button>
-          </div>
-        </div>
       </section>
+
       {showWizard && (
         <UploadResumeWizard 
           initialFile={wizardFile}
