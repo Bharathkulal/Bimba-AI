@@ -35,6 +35,10 @@ from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from reportlab.lib import colors
 from reportlab.lib.pagesizes import letter
 
+def run_ai_gateway_request(db: Any, prompt: str, task_type: str, roll_number: str = None) -> str:
+    from app.services.ai_gateway import generate_ai_response
+    return generate_ai_response(db, prompt, task_type)
+
 router = APIRouter(prefix="/resume-studio", tags=["AI Resume Studio"])
 
 # --- SCHEMAS ---
