@@ -8,7 +8,6 @@ import {
 } from 'lucide-react';
 import { adminService } from '../services/admin';
 import { AdminCommandPalette } from '../components/AdminCommandPalette';
-import { ThemeToggle } from '../components/ThemeToggle';
 
 export const AdminLayout: React.FC = () => {
   const navigate = useNavigate();
@@ -235,10 +234,6 @@ export const AdminLayout: React.FC = () => {
               <Bell size={13} />
               <span className="absolute top-1 right-1 w-1.5 h-1.5 rounded-full bg-[#111111]" />
             </button>
-
-            <div className="w-[1px] h-4 bg-border" />
-
-            <ThemeToggle />
 
             <div className="w-[1px] h-4 bg-border" />
 

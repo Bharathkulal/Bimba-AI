@@ -3,7 +3,6 @@ import { useNavigate } from 'react-router-dom';
 import { Bell, Search, User, Settings, LogOut, Menu } from 'lucide-react';
 import { useUserStore } from '../store/userStore';
 import { useThemeStore } from '../store/themeStore';
-import { ThemeToggle } from './ThemeToggle';
 import { apiClient } from '../services/api';
 
 interface DashboardNavbarProps {
@@ -73,11 +72,6 @@ export const DashboardNavbar: React.FC<DashboardNavbarProps> = ({ onToggleMobile
             <span className="absolute top-2.5 right-2.5 w-2 h-2 rounded-full bg-[#111111] dark:bg-[#FFFFFF] shadow-sm" />
           )}
         </button>
-        
-        <div className={`w-[1px] h-5 transition-colors duration-300 ${isDark ? 'bg-white/10' : 'bg-slate-200'}`} />
-        
-        {/* Theme Toggle */}
-        <ThemeToggle />
         
         <div className={`w-[1px] h-5 transition-colors duration-300 ${isDark ? 'bg-white/10' : 'bg-slate-200'}`} />
 

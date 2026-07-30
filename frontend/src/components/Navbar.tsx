@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { Link, NavLink, useNavigate } from 'react-router-dom';
 import { Menu, X } from 'lucide-react';
 import { Button } from './Button';
-import { ThemeToggle } from './ThemeToggle';
 
 
 export const Navbar: React.FC = () => {
@@ -74,7 +73,6 @@ export const Navbar: React.FC = () => {
 
         {/* Desktop Call to Actions */}
         <div className="hidden md:flex items-center gap-3">
-          <ThemeToggle />
           <NavLink to="/login">
             <Button variant="primary" size="sm">
               Log In
@@ -84,7 +82,6 @@ export const Navbar: React.FC = () => {
 
         {/* Mobile Menu & Theme Button */}
         <div className="flex items-center gap-3.5 md:hidden">
-          <ThemeToggle />
           <button
             onClick={() => setIsOpen(!isOpen)}
             className="p-1 text-slate-600 hover:text-slate-900 transition-smooth cursor-pointer"

@@ -27,7 +27,7 @@ type ChangePasswordSchema = z.infer<typeof changePasswordSchema>;
 
 export const Settings: React.FC = () => {
   const logout = useStore((state) => state.logout);
-  const [activeCategory, setActiveCategory] = useState<'theme' | 'notifications' | 'security' | 'api' | 'danger'>('theme');
+  const [activeCategory, setActiveCategory] = useState<'notifications' | 'security' | 'api' | 'danger'>('notifications');
   const [isLoading, setIsLoading] = useState(false);
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
 
@@ -73,7 +73,6 @@ export const Settings: React.FC = () => {
   };
 
   const categories = [
-    { id: 'theme', label: 'Theme & Styling', icon: Sun, desc: 'Manage color preferences' },
     { id: 'notifications', label: 'Notifications', icon: Bell, desc: 'Alert and email updates' },
     { id: 'security', label: 'Password & Security', icon: Shield, desc: 'Change password and protect credentials' },
     { id: 'api', label: 'API Configuration', icon: Key, desc: 'Setup RapidAPI integrations' },
@@ -138,37 +137,7 @@ export const Settings: React.FC = () => {
         {/* Right Side: Active Settings Panel */}
         <div className="lg:col-span-8">
           <Card className="p-6 h-full flex flex-col justify-between gap-6 hover:border-slate-200">
-            
-            {/* Category Theme Panel */}
-            {activeCategory === 'theme' && (
-              <div className="flex flex-col gap-5 text-left">
-                <div className="border-b border-slate-100 pb-3">
-                  <h3 className="text-sm font-extrabold text-slate-800 uppercase tracking-wider">Theme Preference</h3>
-                  <p className="text-[10px] text-slate-400 mt-1 font-semibold">Select how Bimba AI is displayed on your screen.</p>
-                </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                  <button className="flex flex-col items-center gap-3 p-5 rounded-2xl border-2 border-emerald-500 bg-emerald-55/5 cursor-pointer">
-                    <Sun className="text-emerald-500" size={24} />
-                    <span className="text-xs font-bold text-slate-855">Light Mode</span>
-                  </button>
-                  <button 
-                    onClick={() => showToast("Dark Mode theme is handled globally. Switching is disabled.", "error")}
-                    className="flex flex-col items-center gap-3 p-5 rounded-2xl border border-slate-200 hover:border-slate-350 bg-white cursor-pointer"
-                  >
-                    <Moon className="text-slate-400" size={24} />
-                    <span className="text-xs font-bold text-slate-700">Dark Mode</span>
-                  </button>
-                  <button 
-                    onClick={() => showToast("System theme configuration is handled globally.", "error")}
-                    className="flex flex-col items-center gap-3 p-5 rounded-2xl border border-slate-200 hover:border-slate-350 bg-white cursor-pointer"
-                  >
-                    <Laptop className="text-slate-400" size={24} />
-                    <span className="text-xs font-bold text-slate-700">System Mode</span>
-                  </button>
-                </div>
-              </div>
-            )}
 
             {/* Category Notifications Panel */}
             {activeCategory === 'notifications' && (
