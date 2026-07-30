@@ -1,153 +1,89 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useResumeBuilderStore } from '../../store/resumeBuilderStore';
+import { TemplateRegistry } from './templates';
+import { FileText, Download, Sparkles, RefreshCw } from 'lucide-react';
 
 export const ResumePreview: React.FC = () => {
-  const { resumeData, selectedTemplate } = useResumeBuilderStore();
+  const { resumeData, selectedTemplate, generatePdf, generating } = useResumeBuilderStore();
+  const [fontFamily, setFontFamily] = useState('Inter');
+  const [fontSize, setFontSize] = useState('11pt');
 
   if (!resumeData) return null;
 
-  // Define styling themes matching selected templates
-  const themeStyles = {
-    ats_classic: {
-      container: 'font-mono text-slate-900 bg-white p-6 rounded-xl border border-slate-200 shadow-sm max-h-[70vh] overflow-y-auto',
-      title: 'text-lg font-bold text-center border-b border-slate-300 pb-1 uppercase tracking-wider',
-      contacts: 'text-[9px] text-center text-slate-500 mt-1 uppercase tracking-tight',
-      h1: 'text-[11px] font-black border-b border-slate-200 pb-0.5 mt-4 mb-2 uppercase tracking-wide text-slate-800',
-      body: 'text-[10px] text-slate-700 leading-normal mb-1.5',
-      bullet: 'text-[10px] text-slate-700 ml-4 list-disc leading-relaxed',
-      headerRow: 'flex justify-between items-baseline text-[10px] font-bold text-slate-800'
-    },
-    modern_dev: {
-      container: 'font-sans text-slate-900 bg-white p-6 rounded-xl border border-slate-200 shadow-sm max-h-[70vh] overflow-y-auto',
-      title: 'text-xl font-black text-emerald-800 tracking-tight',
-      contacts: 'text-[9.5px] text-emerald-600 mt-1.5 font-semibold',
-      h1: 'text-[11.5px] font-bold border-l-3 border-emerald-500 pl-2 pb-0.5 mt-5 mb-2.5 uppercase tracking-wide text-emerald-800 bg-emerald-500/5 py-0.5',
-      body: 'text-[10px] text-slate-650 leading-relaxed mb-2',
-      bullet: 'text-[10px] text-slate-650 ml-4 list-disc leading-relaxed',
-      headerRow: 'flex justify-between items-baseline text-[10px] font-bold text-emerald-850'
-    },
-    minimal_pro: {
-      container: 'font-sans text-slate-900 bg-white p-6 rounded-xl border border-slate-200 shadow-sm max-h-[70vh] overflow-y-auto',
-      title: 'text-xl font-bold text-blue-900 tracking-wide',
-      contacts: 'text-[9.5px] text-slate-500 mt-1 font-medium border-b border-slate-100 pb-2',
-      h1: 'text-[11.5px] font-bold mt-5 mb-2 uppercase tracking-wide text-blue-900 border-b border-blue-900/10 pb-0.5',
-      body: 'text-[10px] text-slate-700 leading-relaxed mb-2',
-      bullet: 'text-[10px] text-slate-700 ml-4 list-disc leading-relaxed',
-      headerRow: 'flex justify-between items-baseline text-[10px] font-semibold text-slate-800'
-    },
-    creative_portfolio: {
-      container: 'font-sans text-slate-900 bg-white p-6 rounded-xl border border-slate-200 shadow-sm max-h-[70vh] overflow-y-auto',
-      title: 'text-xl font-black text-violet-800 tracking-tight bg-gradient-to-r from-violet-600 to-pink-500 bg-clip-text text-transparent',
-      contacts: 'text-[9.5px] text-pink-500 mt-1.5 font-semibold',
-      h1: 'text-[11.5px] font-bold mt-5 mb-2.5 uppercase tracking-wider text-violet-700 border-b-2 border-pink-200 pb-0.5',
-      body: 'text-[10px] text-slate-650 leading-relaxed mb-2',
-      bullet: 'text-[10px] text-slate-650 ml-4 list-disc leading-relaxed',
-      headerRow: 'flex justify-between items-baseline text-[10px] font-bold text-violet-850'
+  // Fallback to harvard if template not found
+  const TemplateComponent = TemplateRegistry[selectedTemplate] || TemplateRegistry.harvard;
+
+  const handleDownload = async () => {
+    // Extract resumeId from query parameters or window path if available
+    const pathParts = window.location.pathname.split('/');
+    const resumeId = parseInt(pathParts[pathParts.length - 1], 10);
+    if (!isNaN(resumeId)) {
+      const res = await generatePdf(resumeId);
+      if (res && res.pdf_url) {
+        window.open(res.pdf_url, '_blank');
+      }
     }
   };
 
-  const style = themeStyles[selectedTemplate as keyof typeof themeStyles] || themeStyles.ats_classic;
-
-  const personalInfo = resumeData.personal_info;
-  const contactParts = [personalInfo.email, personalInfo.phone, personalInfo.location];
-  const contactStr = contactParts.filter(Boolean).join('  •  ');
-
   return (
-    <div className="w-full flex flex-col gap-3">
-      <div className="border-b border-slate-200 dark:border-white/10 pb-2.5 text-left">
-        <h4 className="text-xs font-black uppercase tracking-wider text-slate-500 dark:text-slate-400">
-          Live Template Preview
-        </h4>
+    <div className="w-full flex flex-col gap-4 text-left">
+      {/* Action Controls Header */}
+      <div className="border-b border-slate-200 pb-3 flex items-center justify-between">
+        <div>
+          <h4 className="text-xs font-black uppercase tracking-wider text-slate-500">
+            Live Preview
+          </h4>
+          <span className="text-[10px] text-slate-400 font-bold">Synchronized in real-time</span>
+        </div>
+
+        <div className="flex items-center gap-2">
+          {/* Typography selector */}
+          <select 
+            value={fontFamily}
+            onChange={(e) => setFontFamily(e.target.value)}
+            className="px-2.5 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-[10px] font-black focus:outline-none"
+          >
+            <option value="Inter">Inter (Default)</option>
+            <option value="Calibri">Calibri</option>
+            <option value="Arial">Arial</option>
+            <option value="Helvetica">Helvetica</option>
+            <option value="Roboto">Roboto</option>
+            <option value="Times New Roman">Times New Roman</option>
+          </select>
+
+          <select 
+            value={fontSize}
+            onChange={(e) => setFontSize(e.target.value)}
+            className="px-2.5 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-[10px] font-black focus:outline-none"
+          >
+            <option value="10pt">10 pt</option>
+            <option value="11pt">11 pt (Recommended)</option>
+            <option value="12pt">12 pt</option>
+          </select>
+
+          <button
+            onClick={handleDownload}
+            disabled={generating}
+            className="px-3.5 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-[10px] rounded-lg shadow-sm hover:shadow transition-all duration-205 flex items-center gap-1.5 disabled:opacity-50 cursor-pointer"
+          >
+            {generating ? <RefreshCw size={11} className="animate-spin" /> : <Download size={11} />}
+            {generating ? 'Exporting...' : 'PDF Export'}
+          </button>
+        </div>
       </div>
 
-      <div className="bg-slate-100 dark:bg-white/5 p-4 rounded-2xl border border-slate-200/50 dark:border-white/5">
-        <div className={style.container}>
-          {/* Header */}
-          <div className="text-left">
-            <h2 className={style.title}>{personalInfo.name || 'Your Name'}</h2>
-            <div className={style.contacts}>{contactStr || 'Contact Information'}</div>
-          </div>
-
-          {/* Summary */}
-          {resumeData.summary && (
-            <div className="text-left">
-              <h3 className={style.h1}>Professional Summary</h3>
-              <p className={style.body}>{resumeData.summary}</p>
-            </div>
-          )}
-
-          {/* Skills */}
-          {resumeData.skills.length > 0 && (
-            <div className="text-left">
-              <h3 className={style.h1}>Technical Skills</h3>
-              <p className={style.body}>{resumeData.skills.join(', ')}</p>
-            </div>
-          )}
-
-          {/* Experience */}
-          {resumeData.experience.length > 0 && (
-            <div className="text-left">
-              <h3 className={style.h1}>Professional Experience</h3>
-              <div className="flex flex-col gap-3">
-                {resumeData.experience.map((exp, idx) => (
-                  <div key={idx} className="flex flex-col gap-1">
-                    <div className={style.headerRow}>
-                      <span>{exp.position} at {exp.company}</span>
-                      <span className="font-normal text-[9px] text-slate-400">{exp.duration}</span>
-                    </div>
-                    {exp.description ? (
-                      exp.description.includes('•') ? (
-                        <ul className="list-disc pl-4 flex flex-col gap-0.5">
-                          {exp.description.split('•').map(s => s.trim()).filter(Boolean).map((bullet, i) => (
-                            <li key={i} className={style.bullet}>{bullet}</li>
-                          ))}
-                        </ul>
-                      ) : (
-                        <p className={style.body}>{exp.description}</p>
-                      )
-                    ) : null}
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* Projects */}
-          {resumeData.projects.length > 0 && (
-            <div className="text-left">
-              <h3 className={style.h1}>Projects</h3>
-              <div className="flex flex-col gap-3">
-                {resumeData.projects.map((proj, idx) => (
-                  <div key={idx} className="flex flex-col gap-1">
-                    <div className={style.headerRow}>
-                      <span>{proj.title}</span>
-                      <span className="font-normal text-[9.5px] text-slate-450">({proj.technologies})</span>
-                    </div>
-                    <p className={style.body}>{proj.description}</p>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* Education */}
-          {resumeData.education.length > 0 && (
-            <div className="text-left">
-              <h3 className={style.h1}>Education</h3>
-              <div className="flex flex-col gap-2">
-                {resumeData.education.map((edu, idx) => (
-                  <div key={idx} className={style.headerRow}>
-                    <span>{edu.degree} — {edu.institution}</span>
-                    <span className="font-normal text-[9.5px] text-slate-450">{edu.year}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-
+      {/* Frame view */}
+      <div className="bg-slate-100 p-4.5 rounded-[22px] border border-slate-200/60 shadow-inner max-h-[72vh] overflow-y-auto min-h-[500px]">
+        <div className="bg-white rounded-xl shadow-lg border border-slate-200/40 overflow-hidden transform origin-top transition-transform duration-300">
+          <TemplateComponent 
+            data={resumeData} 
+            fontFamily={fontFamily} 
+            fontSize={fontSize} 
+          />
         </div>
       </div>
     </div>
   );
 };
+
 export default ResumePreview;
