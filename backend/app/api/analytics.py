@@ -353,7 +353,7 @@ def get_resumes_analytics(student: Student = Depends(get_current_student), db: A
             "sections": sections,
             "versionsCount": versions_count,
             "status": r.get("status"),
-            "lastEdited": r.get("updated_at").isoformat() if r.get("updated_at") else datetime.utcnow().isoformat()
+            "lastEdited": r.get("updated_at") if isinstance(r.get("updated_at"), str) else (r.get("updated_at").isoformat() if r.get("updated_at") else datetime.utcnow().isoformat())
         })
         
     return result

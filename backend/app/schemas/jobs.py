@@ -95,6 +95,13 @@ class JobApplicationResponse(BaseModel):
     status: str
     application_date: datetime
     notes: Optional[str] = None
+    job_url: Optional[str] = None
+    application_method: Optional[str] = None
+    application_source: Optional[str] = None
+    salary_offered: Optional[str] = None
+    recruiter_name: Optional[str] = None
+    recruiter_email: Optional[str] = None
+    timeline: Optional[List[Dict[str, Any]]] = None
 
     class Config:
         from_attributes = True

@@ -485,3 +485,237 @@ def manual_job_search_endpoint(
         "jobs": ranked_jobs
     }
 
+
+class CreateApplicationRequest(BaseModel):
+    company: str
+    title: str
+    job_url: Optional[str] = None
+    location: Optional[str] = "Remote"
+    salary_offered: Optional[str] = "Competitive"
+    application_method: Optional[str] = "External Website"
+    application_source: Optional[str] = "LinkedIn"
+    status: Optional[str] = "Applied"
+    notes: Optional[str] = ""
+    recruiter_name: Optional[str] = ""
+    recruiter_email: Optional[str] = ""
+
+class UpdateStatusRequest(BaseModel):
+    status: str
+    notes: Optional[str] = ""
+    reason: Optional[str] = ""
+
+class PredictStatusRequest(BaseModel):
+    text: str
+
+class FollowUpRequest(BaseModel):
+    method: str
+    notes: Optional[str] = ""
+
+@router.get("/applications/analytics")
+def get_applications_analytics(
+    student: Student = Depends(get_current_student),
+    db: Any = Depends(get_db)
+):
+    apps = list(db.job_applications.find({"user_id": student.id}))
+    total = len(apps)
+    
+    # Status categorizations
+    waiting = len([a for a in apps if a.get("status") in ["Applied", "Application Received", "Under Review", "Shortlisted"]])
+    interviews = len([a for a in apps if "Interview" in str(a.get("status"))])
+    offers = len([a for a in apps if a.get("status") in ["Offer Extended", "Offer Accepted"]])
+    rejected = len([a for a in apps if a.get("status") in ["Rejected"]])
+    
+    # Weekly/Monthly counts (Mock metrics aggregated from records for charts)
+    by_status = {}
+    by_company = {}
+    by_role = {}
+    
+    for a in apps:
+        stat = a.get("status", "Applied")
+        comp = a.get("company", "Unknown")
+        role = a.get("title", "Software Engineer")
+        
+        by_status[stat] = by_status.get(stat, 0) + 1
+        by_company[comp] = by_company.get(comp, 0) + 1
+        by_role[role] = by_role.get(role, 0) + 1
+        
+    return {
+        "total_applications": total,
+        "waiting_for_response": waiting,
+        "interviews_scheduled": interviews,
+        "offers_received": offers,
+        "rejected_count": rejected,
+        "by_status": by_status,
+        "by_company": by_company,
+        "by_role": by_role
+    }
+
+@router.post("/applications")
+def create_manual_application(
+    payload: CreateApplicationRequest,
+    student: Student = Depends(get_current_student),
+    db: Any = Depends(get_db)
+):
+    next_id = get_next_sequence("job_applications")
+    now_date = datetime.utcnow().strftime("%Y-%m-%d")
+    now_time = datetime.utcnow().strftime("%H:%M:%S")
+    
+    app_doc = {
+        "id": next_id,
+        "job_id": f"manual_{next_id}",
+        "user_id": student.id,
+        "company": payload.company,
+        "company_logo": "https://images.unsplash.com/photo-1549923746-c502d488b3ea?w=100&auto=format&fit=crop&q=60",
+        "title": payload.title,
+        "job_url": payload.job_url or "https://linkedin.com",
+        "location": payload.location or "Remote",
+        "salary_offered": payload.salary_offered or "Competitive",
+        "application_method": payload.application_method or "External Website",
+        "application_source": payload.application_source or "LinkedIn",
+        "status": payload.status or "Applied",
+        "previous_status": "",
+        "notes": payload.notes or "",
+        "recruiter_name": payload.recruiter_name or "",
+        "recruiter_email": payload.recruiter_email or "",
+        "application_date": datetime.utcnow(),
+        "timeline": [
+            {
+                "date": now_date,
+                "time": now_time,
+                "status": payload.status or "Applied",
+                "notes": "Application tracking created manually",
+                "source": "User"
+            }
+        ],
+        "created_at": datetime.utcnow().isoformat(),
+        "updated_at": datetime.utcnow().isoformat()
+    }
+    
+    db.job_applications.insert_one(app_doc)
+    return {"success": True, "application": JobApplication(app_doc)}
+
+@router.patch("/applications/{id}/status")
+def update_application_status_custom(
+    id: int,
+    payload: UpdateStatusRequest,
+    student: Student = Depends(get_current_student),
+    db: Any = Depends(get_db)
+):
+    app_rec = db.job_applications.find_one({"id": id, "user_id": student.id})
+    if not app_rec:
+        raise HTTPException(status_code=404, detail="Application not found")
+        
+    old_status = app_rec.get("status", "Applied")
+    new_status = payload.status
+    now_date = datetime.utcnow().strftime("%Y-%m-%d")
+    now_time = datetime.utcnow().strftime("%H:%M:%S")
+    
+    timeline_event = {
+        "date": now_date,
+        "time": now_time,
+        "status": new_status,
+        "notes": payload.notes or f"Status updated from {old_status} to {new_status}",
+        "source": "User"
+    }
+    
+    db.job_applications.update_one(
+        {"id": id},
+        {
+            "$set": {
+                "status": new_status,
+                "previous_status": old_status,
+                "updated_at": datetime.utcnow().isoformat()
+            },
+            "$push": {
+                "timeline": timeline_event
+            }
+        }
+    )
+    
+    return {"success": True, "new_status": new_status}
+
+@router.post("/applications/{id}/status-suggest")
+def suggest_status_by_text(
+    id: int,
+    payload: PredictStatusRequest,
+    student: Student = Depends(get_current_student),
+    db: Any = Depends(get_db)
+):
+    prompt = f"""Evaluate this job communication update: "{payload.text}"
+Identify which of the following statuses is the single best fit:
+Saved, Preparing, Ready To Apply, Applied, Application Received, Recruiter Viewed, Under Review, Shortlisted, Assessment Assigned, Assessment Completed, Technical Interview, Manager Interview, HR Interview, Final Interview, Reference Check, Offer Extended, Offer Accepted, Offer Declined, Rejected, Withdrawn, Expired, Archived.
+
+Return ONLY the name of the status as a raw string. No explanation, no markdown format."""
+    
+    try:
+        predicted = generate_ai_response(db, prompt, task_type="status_prediction")
+        status_val = predicted.strip()
+        return {"suggested_status": status_val}
+    except Exception as e:
+        return {"suggested_status": "Under Review"}
+
+@router.get("/applications/{id}/guidance")
+def get_status_guidance(
+    id: int,
+    student: Student = Depends(get_current_student),
+    db: Any = Depends(get_db)
+):
+    app_rec = db.job_applications.find_one({"id": id, "user_id": student.id})
+    if not app_rec:
+        raise HTTPException(status_code=404, detail="Application not found")
+        
+    status_val = app_rec.get("status", "Applied")
+    comp = app_rec.get("company", "Company")
+    role = app_rec.get("title", "Role")
+    
+    prompt = f"""The candidate's job application status for "{role}" at "{comp}" is currently "{status_val}".
+Generate detailed, contextual guidance and recommended preparation actions.
+Provide:
+1. Likely next steps/waiting time.
+2. Recommended preparation (practice questions, coding topics, or negotiation checklists depending on the stage).
+3. 3-4 specific bullet points with tips.
+
+Keep the tone encouraging, technical, and precise. Format nicely in markdown."""
+    
+    try:
+        guidance = generate_ai_response(db, prompt, task_type="guidance")
+        return {"guidance": guidance}
+    except Exception:
+        return {"guidance": "Complete mock preparation. Stay tuned for recruiter response."}
+
+@router.post("/applications/{id}/follow-up")
+def record_follow_up(
+    id: int,
+    payload: FollowUpRequest,
+    student: Student = Depends(get_current_student),
+    db: Any = Depends(get_db)
+):
+    app_rec = db.job_applications.find_one({"id": id, "user_id": student.id})
+    if not app_rec:
+        raise HTTPException(status_code=404, detail="Application not found")
+        
+    now_date = datetime.utcnow().strftime("%Y-%m-%d")
+    now_time = datetime.utcnow().strftime("%H:%M:%S")
+    
+    timeline_event = {
+        "date": now_date,
+        "time": now_time,
+        "status": app_rec.get("status"),
+        "notes": f"Follow-up sent via {payload.method}. Notes: {payload.notes}",
+        "source": "User"
+    }
+    
+    db.job_applications.update_one(
+        {"id": id},
+        {
+            "$push": {
+                "timeline": timeline_event
+            },
+            "$set": {
+                "updated_at": datetime.utcnow().isoformat()
+            }
+        }
+    )
+    return {"success": True}
+
+
