@@ -25,15 +25,8 @@ class UploadService:
         
         filepath = ""
         try:
-            # Write physical backup copy
-            import uuid
-            os.makedirs("uploads/resumes", exist_ok=True)
-            file_id = str(uuid.uuid4())
-            secure_filename = f"{file_id}_{filename}"
-            filepath = os.path.join("uploads/resumes", secure_filename)
-            
-            with open(filepath, "wb") as f:
-                f.write(file_content)
+            # Do not save physical local backup anymore, keep it in Cloudinary only.
+            filepath = ""
                 
             # 2. Extract Text via OCRService
             extracted_text = self.ocr_service.extract_text(file_content, filename)
@@ -48,14 +41,34 @@ class UploadService:
             parsed_data = self.parser.parse_and_validate(raw_response)
             
             # 5. Database Save Operations
-            resume_id = self.repository.save_parsed_resume(student_id, parsed_data, filepath)
+            cloudinary_url = None
+            public_id = None
+            try:
+                from app.services.cloudinary_service import upload_file, is_configured
+                if is_configured:
+                    log_stage("UPLOAD", "INFO", f"Uploading {filename} to Cloudinary...")
+                    c_res = upload_file(file_content, filename, folder="uploaded-resumes")
+                    cloudinary_url = c_res.get("url")
+                    public_id = c_res.get("public_id")
+                    log_stage("UPLOAD", "INFO", f"Cloudinary upload success! URL: {cloudinary_url}")
+            except Exception as cle:
+                log_error("UPLOAD", "Cloudinary upload failed, falling back to local file copy", cle)
+
+            resume_id = self.repository.save_parsed_resume(
+                student_id=student_id,
+                parsed_data=parsed_data,
+                filepath=filepath,
+                cloudinary_url=cloudinary_url,
+                public_id=public_id
+            )
             
             log_stage("UPLOAD", "COMPLETED", f"Orchestration completed successfully for {filename}")
             return {
                 "success": True,
                 "resume_id": resume_id,
                 "parsed_data": parsed_data,
-                "file_path": filepath
+                "file_path": filepath,
+                "cloudinary_url": cloudinary_url
             }
             
         except PipelineException as pe:

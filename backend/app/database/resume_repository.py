@@ -9,7 +9,7 @@ class ResumeRepository:
     def __init__(self, db: Any):
         self.db = db
 
-    def save_parsed_resume(self, student_id: int, parsed_data: Dict[str, Any], filepath: str) -> int:
+    def save_parsed_resume(self, student_id: int, parsed_data: Dict[str, Any], filepath: str, cloudinary_url: str = None, public_id: str = None) -> int:
         log_stage("DATABASE", "START", "Initiating saving of parsed resume doc to database")
         
         # 1. Validate DB Connection health
@@ -85,7 +85,14 @@ class ResumeRepository:
             
             "created_at": datetime.now(timezone.utc),
             "updated_at": datetime.now(timezone.utc),
-            "file_path": filepath
+            "file_path": filepath,
+            "cloudinary_url": cloudinary_url,
+            "resume": {
+                "cloudinary": {
+                    "url": cloudinary_url,
+                    "public_id": public_id
+                }
+            } if cloudinary_url else {}
         }
         
         # 3. Perform Mongo Insert with detailed validations
