@@ -7,11 +7,14 @@ from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from reportlab.lib.enums import TA_CENTER, TA_LEFT, TA_RIGHT, TA_JUSTIFY
 from typing import Dict, Any
 
-def clean_unicode(text: str) -> str:
+def clean_unicode(text: Any) -> str:
   """
   ReportLab standard fonts (Helvetica, Times, Courier) only support WinAnsiEncoding.
   Replace common unicode symbols with standard ASCII equivalents.
   """
+  if text is None:
+    return ""
+  text = str(text)
   if not text:
     return ""
   text = text.replace("\u2013", "-").replace("\u2014", "-") # Em/en dash
@@ -135,19 +138,28 @@ def build_pdf_story(resume_data: Dict[str, Any], template: str = "harvard") -> b
     spaceAfter=3
   )
 
-  story = []
-
   # 1. Personal Header Info
   p_info = resume_data.get("personal_info", {})
   name = clean_unicode(p_info.get("name", "Candidate Name"))
   email = clean_unicode(p_info.get("email", ""))
   phone = clean_unicode(p_info.get("phone", ""))
   location = clean_unicode(p_info.get("location", ""))
+  student = resume_data.get("student")
   
-  contact_parts = [email, phone, location]
+  # Clean AI/Parsed prefixes from name to show the actual candidate name
+  clean_name = name.replace("AI Parsed - ", "").replace("AI Diagnostic - ", "").replace("AI Optimized - ", "").strip()
+  if not clean_name or clean_name.lower() == "resume":
+    clean_name = getattr(student, "student_name", None) or "Candidate Name"
+  
+  email_val = email or getattr(student, "personal_email", "") or "student@bimba.ai"
+  phone_val = phone or getattr(student, "phone", "") or "9876543210"
+  loc_val = location or getattr(student, "address", "") or "Mangalore, India"
+  
+  contact_parts = [email_val, phone_val, loc_val]
   contact_str = "  |  ".join([part for part in contact_parts if part])
   
-  story.append(Paragraph(name, title_style))
+  story = []
+  story.append(Paragraph(clean_name, title_style))
   story.append(Paragraph(contact_str, subtitle_style))
 
   # Divider border line underneath header
@@ -168,13 +180,36 @@ def build_pdf_story(resume_data: Dict[str, Any], template: str = "harvard") -> b
     story.append(Paragraph(summary_text, body_style))
     story.append(Spacer(1, 4))
 
-  # 3. Skills
-  skills = resume_data.get("skills", [])
-  if skills:
-    story.append(Paragraph("TECHNICAL SKILLS", h1_style))
-    skills_str = ", ".join([clean_unicode(s) for s in skills]) if isinstance(skills, list) else clean_unicode(skills)
-    story.append(Paragraph(skills_str, body_style))
-    story.append(Spacer(1, 4))
+  # 3. Education
+  education = resume_data.get("education", [])
+  if education:
+    story.append(Paragraph("EDUCATION", h1_style))
+    for edu in education:
+      degree = clean_unicode(edu.get("degree", "Degree"))
+      school = clean_unicode(edu.get("institution", "University"))
+      year = clean_unicode(edu.get("year") or edu.get("passing_year") or "")
+      cgpa = clean_unicode(edu.get("cgpa") or edu.get("percentage") or "")
+      achievements = clean_unicode(edu.get("achievements") or "")
+      
+      edu_left = f"<b>{school}</b><br/>{degree}"
+      if cgpa:
+        edu_left += f" — CGPA: {cgpa}"
+      if achievements:
+        edu_left += f" | {achievements}"
+        
+      edu_table = Table(
+        [[Paragraph(edu_left, body_style), Paragraph(str(year), ParagraphStyle('RightText', parent=body_style, alignment=TA_RIGHT))]],
+        colWidths=[420, 112]
+      )
+      edu_table.setStyle(TableStyle([
+        ('VALIGN', (0,0), (-1,-1), 'TOP'),
+        ('BOTTOMPADDING', (0,0), (-1,-1), 0),
+        ('TOPPADDING', (0,0), (-1,-1), 0),
+        ('LEFTPADDING', (0,0), (-1,-1), 0),
+        ('RIGHTPADDING', (0,0), (-1,-1), 0),
+      ]))
+      story.append(KeepTogether([edu_table]))
+      story.append(Spacer(1, 4))
 
   # 4. Work Experience
   experience = resume_data.get("experience", [])
@@ -203,7 +238,7 @@ def build_pdf_story(resume_data: Dict[str, Any], template: str = "harvard") -> b
       
       desc = exp.get("description", "")
       if desc:
-        bullets = [b.strip() for b in re.split(r'[\*\u2022•]', desc) if b.strip()]
+        bullets = [b.strip() for b in re.split(r'[\*\u2022•\n]', desc) if b.strip()]
         if len(bullets) > 1:
           for bullet in bullets:
             exp_block.append(Paragraph(f"• {clean_unicode(bullet)}", bullet_style))
@@ -221,39 +256,68 @@ def build_pdf_story(resume_data: Dict[str, Any], template: str = "harvard") -> b
       title = clean_unicode(proj.get("title", "Project Title"))
       tech = clean_unicode(proj.get("technologies", ""))
       desc = clean_unicode(proj.get("description", ""))
+      duration = clean_unicode(proj.get("duration") or "")
       
       proj_header = f"<b>{title}</b>" + (f" ({tech})" if tech else "")
       
-      proj_block = [
-        Paragraph(proj_header, body_style),
-        Paragraph(desc, body_style) if desc else Spacer(1, 1)
-      ]
-      story.append(KeepTogether(proj_block))
-      story.append(Spacer(1, 4))
-
-  # 6. Education
-  education = resume_data.get("education", [])
-  if education:
-    story.append(Paragraph("EDUCATION", h1_style))
-    for edu in education:
-      degree = clean_unicode(edu.get("degree", "Degree"))
-      school = clean_unicode(edu.get("institution", "University"))
-      year = clean_unicode(edu.get("year", ""))
-      
-      edu_str = f"<b>{degree}</b> — {school}"
-      
-      edu_table = Table(
-        [[Paragraph(edu_str, body_style), Paragraph(year, ParagraphStyle('RightText', parent=body_style, alignment=TA_RIGHT))]],
+      proj_table = Table(
+        [[Paragraph(proj_header, body_style), Paragraph(duration, ParagraphStyle('RightText', parent=body_style, alignment=TA_RIGHT))]],
         colWidths=[420, 112]
       )
-      edu_table.setStyle(TableStyle([
+      proj_table.setStyle(TableStyle([
         ('VALIGN', (0,0), (-1,-1), 'TOP'),
         ('BOTTOMPADDING', (0,0), (-1,-1), 0),
         ('TOPPADDING', (0,0), (-1,-1), 0),
         ('LEFTPADDING', (0,0), (-1,-1), 0),
         ('RIGHTPADDING', (0,0), (-1,-1), 0),
       ]))
-      story.append(KeepTogether([edu_table]))
+      
+      proj_block = [
+        proj_table,
+        Paragraph(desc, body_style) if desc else Spacer(1, 1)
+      ]
+      story.append(KeepTogether(proj_block))
+      story.append(Spacer(1, 4))
+
+  # 6. Skills
+  skills = resume_data.get("skills", [])
+  if skills:
+    story.append(Paragraph("TECHNICAL SKILLS", h1_style))
+    if isinstance(skills, list) and skills and isinstance(skills[0], dict):
+      # Group by category
+      groups = {}
+      for s in skills:
+        cat = s.get("category") or "General"
+        name = s.get("name") or ""
+        lvl = s.get("level")
+        skill_str = name + (f" (Lvl {lvl})" if lvl else "")
+        if cat not in groups:
+          groups[cat] = []
+        groups[cat].append(skill_str)
+      
+      for cat, items in groups.items():
+        cat_str = f"<b>{clean_unicode(cat)}:</b> {clean_unicode(', '.join(items))}"
+        story.append(Paragraph(cat_str, body_style))
+    else:
+      skills_str = ", ".join([clean_unicode(s) for s in skills]) if isinstance(skills, list) else clean_unicode(skills)
+      story.append(Paragraph(skills_str, body_style))
+    story.append(Spacer(1, 4))
+
+  # 7. Achievements & Extracurriculars
+  import json
+  achievements_raw = resume_data.get("achievements") or resume_data.get("achievements_list") or {}
+  if isinstance(achievements_raw, str) and achievements_raw:
+    try:
+      achievements_raw = json.loads(achievements_raw)
+    except:
+      achievements_raw = {}
+      
+  if achievements_raw and isinstance(achievements_raw, dict):
+    ach_items = {k.replace("_", " ").capitalize(): v for k, v in achievements_raw.items() if v}
+    if ach_items:
+      story.append(Paragraph("ACHIEVEMENTS & EXTRACURRICULARS", h1_style))
+      for k, v in ach_items.items():
+        story.append(Paragraph(f"<b>{k}:</b> {clean_unicode(v)}", body_style))
       story.append(Spacer(1, 4))
 
   doc.build(story)
