@@ -1,13 +1,16 @@
 import os
 import random
 import requests
+import json
 from typing import List, Dict, Any, Optional
 from app.models.student import Student
+from app.services.ai_providers.gemini_provider import call_gemini
 
 class LinkedInService:
     def __init__(self):
         self.api_key = os.getenv("RAPIDAPI_KEY")
         self.api_host = os.getenv("RAPIDAPI_HOST", "linkedin-data-api.p.rapidapi.com")
+        self.job_cache = {}
         
         # Static high-quality mock jobs data for fallback and offline development
         self.mock_jobs = [
@@ -330,14 +333,154 @@ class LinkedInService:
                 print(f"RapidAPI failed: {e}")
                 raise ValueError(f"LinkedIn Job Search API failed: {str(e)}")
         
-        # 2. Return clean mock results when API is not configured or fails
+    def _generate_jobs_with_gemini(self, student: Optional[Student], keyword: Optional[str] = None, location: Optional[str] = None, limit: int = 10) -> List[Dict[str, Any]]:
         student_skills = self._parse_student_skills(student)
+        skills_str = ", ".join(student_skills) if student_skills else "React, Python, SQL, Git"
+        kw = keyword or (student.skills.split(",")[0] if student and student.skills else "Software Engineer")
+        loc = location or "India"
+        
+        prompt = f"""You are an advanced AI job matching system. Generate a JSON list containing exactly {limit} realistic job openings for a candidate with these skills: {skills_str}.
+The jobs should match keyword: "{kw}" and location: "{loc}".
+
+Each job object in the list MUST have the following structure exactly:
+{{
+  "id": "ai_generated_job_{random.randint(100, 999)}",
+  "title": "Job Title (e.g. Frontend Engineer, Python Developer)",
+  "company": "Real well-known company (e.g. Google, Vercel, Microsoft, Stripe, Accenture, TCS, Infosys, Swiggy, Netflix, Airbnb)",
+  "location": "City, Country or Remote",
+  "logo": "https://images.unsplash.com/photo-1549923746-c502d488b3ea?w=100&auto=format&fit=crop&q=60",
+  "banner": "https://images.unsplash.com/photo-1557683316-973673baf926?w=800&auto=format&fit=crop&q=60",
+  "salary": "Realistic salary (e.g. ₹8,00,000 - ₹12,00,000 or $120,000 - $150,000)",
+  "employment_type": "Full-time",
+  "remote": true,
+  "posted_date": "1 day ago",
+  "experience": "Entry-level",
+  "description": "Realistic description detailing responsibilities and technologies used.",
+  "requirements": ["Skill1", "Skill2"],
+  "responsibilities": ["Responsibility1", "Responsibility2"],
+  "benefits": ["Medical insurance", "Flexible hours"],
+  "company_info": {{
+    "industry": "Software / Technology",
+    "size": "100-500 employees",
+    "website": "company.com"
+  }}
+}}
+
+Return ONLY the valid JSON list, no markdown code block formatting (do not include ```json or ```).
+"""
+        try:
+            res = call_gemini(prompt)
+            if res.get("success"):
+                content = res["content"].strip()
+                if content.startswith("```json"):
+                    content = content[7:]
+                if content.endswith("```"):
+                    content = content[:-3]
+                parsed = json.loads(content.strip())
+                if isinstance(parsed, list):
+                    # Cache these jobs for detail lookups
+                    for j in parsed:
+                        if "id" in j:
+                            self.job_cache[str(j["id"])] = j
+                    return parsed
+        except Exception as e:
+            print(f"Failed to generate jobs with Gemini: {e}")
+        
+        return self.mock_jobs[:limit]
+
+    def search_jobs(
+        self,
+        student: Optional[Student],
+        keyword: Optional[str] = None,
+        location: Optional[str] = None,
+        page: int = 1,
+        experience: Optional[str] = None,
+        remote: Optional[bool] = None,
+        employment_type: Optional[str] = None,
+        salary: Optional[str] = None,
+        limit: int = 10
+    ) -> Dict[str, Any]:
+        
+        # 1. Try invoking real API if configured
+        if self.api_key and self.api_key.strip():
+            try:
+                url = f"https://{self.api_host}/active-jb"
+                headers = {
+                    "X-RapidAPI-Key": self.api_key,
+                    "X-RapidAPI-Host": self.api_host
+                }
+                params = {
+                    "title": keyword or "Software Engineer",
+                    "location": location or "United States",
+                    "time_frame": "6m",
+                    "limit": str(limit),
+                    "offset": str((page - 1) * limit)
+                }
+                
+                response = requests.get(url, headers=headers, params=params, timeout=10)
+                
+                if response.status_code != 200:
+                    raise ValueError(f"RapidAPI returned status {response.status_code}: {response.text}")
+                    
+                if response.status_code == 200:
+                    raw_jobs = response.json()
+                    if not isinstance(raw_jobs, list):
+                        raw_jobs = raw_jobs.get("data", []) if isinstance(raw_jobs, dict) else []
+                    
+                    jobs_list = []
+                    student_skills = self._parse_student_skills(student)
+                    
+                    for index, rj in enumerate(raw_jobs):
+                        reqs = rj.get("ai_key_skills", ["React", "Python", "SQL", "Git"])
+                        ai_match = self._calculate_ai_match(student_skills, reqs)
+                        
+                        locs = rj.get("locations_derived", [])
+                        loc_str = locs[0] if locs else "Remote"
+                        
+                        date_posted = rj.get("date_posted", "")
+                        posted_str = date_posted[:10] if date_posted else "Recently"
+                        
+                        emp_type = rj.get("ai_employment_type", [])
+                        emp_str = emp_type[0].replace("_", "-").title() if emp_type else "Full-time"
+                        is_remote = rj.get("ai_work_arrangement") == "Remote"
+                        
+                        jobs_list.append({
+                            "id": str(rj.get("id") or f"api_job_{index}"),
+                            "title": rj.get("title", "Software Developer"),
+                            "company": rj.get("organization", "Tech Company"),
+                            "location": loc_str,
+                            "logo": rj.get("organization_logo"),
+                            "salary": rj.get("ai_salary_value") or "Competitive",
+                            "employment_type": emp_str,
+                            "remote": is_remote,
+                            "posted_date": posted_str,
+                            "ai_match_score": ai_match["score"],
+                            "skills_matched": ai_match["matched"],
+                            "skills_missing": ai_match["missing"],
+                            "apply_url": rj.get("url", "https://linkedin.com")
+                        })
+                        
+                    total = len(jobs_list)
+                    return {
+                        "jobs": jobs_list,
+                        "total": total,
+                        "page": page,
+                        "pages": (total + limit - 1) // limit if total > 0 else 0,
+                        "limit": limit
+                    }
+            except Exception as e:
+                print(f"RapidAPI failed: {e}")
+                raise ValueError(f"LinkedIn Job Search API failed: {str(e)}")
+        
+        # 2. Return Gemini-generated job results when API is not configured or fails
+        student_skills = self._parse_student_skills(student)
+        gemini_jobs = self._generate_jobs_with_gemini(student, keyword, location, limit)
         jobs_list = []
-        for index, mj in enumerate(self.mock_jobs):
+        for index, mj in enumerate(gemini_jobs):
             # Calculate match criteria locally
             ai_match = self._calculate_ai_match(student_skills, mj.get("requirements", []))
             jobs_list.append({
-                "id": mj.get("id"),
+                "id": str(mj.get("id")),
                 "title": mj.get("title"),
                 "company": mj.get("company"),
                 "location": mj.get("location"),
@@ -352,11 +495,6 @@ class LinkedInService:
                 "apply_url": "https://linkedin.com"
             })
         
-        # Simple sorting and filtering to match target keyword
-        if keyword:
-            kw_low = keyword.lower()
-            jobs_list = [j for j in jobs_list if kw_low in j["title"].lower() or kw_low in j["company"].lower() or any(kw_low in s.lower() for s in j["skills_matched"])]
-            
         total = len(jobs_list)
         return {
             "jobs": jobs_list[:limit],
@@ -434,8 +572,8 @@ class LinkedInService:
             except Exception as e:
                 print(f"RapidAPI details failed: {e}. Falling back to mock details.")
                 
-        # Fallback to local mock details if API is not active or returns error
-        match_mj = next((m for m in self.mock_jobs if m.get("id") == job_id), None)
+        # Fallback to local cached / mock details if API is not active or returns error
+        match_mj = self.job_cache.get(str(job_id)) or next((m for m in self.mock_jobs if str(m.get("id")) == str(job_id)), None)
         if match_mj:
             student_skills = self._parse_student_skills(student)
             ai_match = self._calculate_ai_match(student_skills, match_mj.get("requirements", []))

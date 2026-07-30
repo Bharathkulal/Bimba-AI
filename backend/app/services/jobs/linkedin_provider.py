@@ -1,9 +1,11 @@
 import requests
 import logging
+import json
 from typing import List, Dict, Any
 from app.services.jobs.job_provider_interface import JobProviderInterface
 from app.models.student import Student
 from app.core.config import settings
+from app.services.ai_providers.gemini_provider import call_gemini
 
 logger = logging.getLogger("linkedin_provider")
 
@@ -60,18 +62,50 @@ class LinkedInProvider(JobProviderInterface):
 
     def _get_mock_jobs(self, keyword: str, location: str, limit: int) -> List[Dict[str, Any]]:
         """
-        Static high-quality mock jobs for local development safety.
+        Generates actual realistic jobs dynamically using Gemini instead of static placeholders.
         """
-        logger.info("Serving mock jobs for LinkedIn provider")
+        import random
+        logger.info("Generating realistic jobs via Gemini for LinkedIn provider")
+        prompt = f"""You are a professional recruiting database. Generate a JSON list containing exactly {limit} realistic job openings.
+The jobs should match keyword: "{keyword}" and location: "{location}".
+
+Each job object in the list MUST have the following structure exactly:
+{{
+  "id": "ai_generated_job_li_{random.randint(100, 999)}",
+  "title": "Job Title (e.g. Frontend Engineer, Python Developer)",
+  "company": "Real well-known company (e.g. Google, Vercel, Microsoft, Stripe, Accenture, TCS, Infosys, Swiggy, Netflix, Airbnb)",
+  "location": "City, Country or Remote",
+  "description": "Realistic job description detailing responsibilities and technologies used.",
+  "url": "https://linkedin.com/jobs",
+  "source": "linkedin_ai"
+}}
+
+Return ONLY the valid JSON list, no markdown code block formatting (do not include ```json or ```).
+"""
+        try:
+            res = call_gemini(prompt)
+            if res.get("success"):
+                content = res["content"].strip()
+                if content.startswith("```json"):
+                    content = content[7:]
+                if content.endswith("```"):
+                    content = content[:-3]
+                parsed = json.loads(content.strip())
+                if isinstance(parsed, list):
+                    return parsed
+        except Exception as e:
+            logger.error(f"Failed to generate dynamic jobs: {e}")
+
+        # Basic fallback list if LLM fails
         return [
             {
-                "id": f"li_mock_{i}",
+                "id": f"li_fallback_{i}",
                 "title": f"Senior {keyword}" if i == 0 else f"{keyword} Engineer",
                 "company": ["Google", "Microsoft", "Atlassian", "Swiggy", "PhonePe"][i % 5],
                 "location": location,
-                "description": f"Exciting job role for a developer. We need expertise in building responsive applications. Join our engineering team to design, build, and deploy web services.",
+                "description": f"Exciting job role for a developer at leading companies. We need expertise in building responsive applications. Join our engineering team to design, build, and deploy web services.",
                 "url": "https://linkedin.com/jobs",
-                "source": "linkedin_mock"
+                "source": "linkedin_fallback"
             } for i in range(limit)
         ]
 
