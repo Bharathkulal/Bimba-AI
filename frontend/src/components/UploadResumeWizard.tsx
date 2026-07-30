@@ -281,13 +281,34 @@ export const UploadResumeWizard: React.FC<UploadResumeWizardProps> = ({
         const desc = exp.description || '';
         const bullets = desc.split(/[•\n]/).filter((b: string) => b.trim().length > 10);
         bullets.slice(0, 2).forEach((b: string, bIdx: number) => {
+          const originalText = b.trim();
+          const verbReplacements = {
+            'handled': 'Spearheaded',
+            'responsible for': 'Executed',
+            'helped': 'Collaborated to engineer',
+            'worked on': 'Developed and optimized',
+            'managed': 'Directed and scaled'
+          };
+          let improved = originalText;
+          let diff = '';
+          for (const [weak, strong] of Object.entries(verbReplacements)) {
+            if (originalText.toLowerCase().startsWith(weak)) {
+              improved = originalText.replace(new RegExp(`^${weak}`, 'i'), strong);
+              diff = `+ Upgraded weak verb "${weak}" to strong action verb "${strong}"`;
+              break;
+            }
+          }
+          if (improved === originalText) {
+            improved = 'Optimized execution of: ' + originalText;
+            diff = '+ Standardized descriptive structure to active voice';
+          }
           repairs.push({
             section: 'experience',
             index: expIdx,
-            original: b.trim(),
-            improved: b.trim().replace(/^Responsible for|^Handled/, 'Spearheaded') + ', boosting pipeline efficiency by 24% and streamlining delivery timelines.',
-            diff: `+ Boosted pipeline efficiency by 24% and streamlined delivery timelines.`,
-            atsBenefit: 8,
+            original: originalText,
+            improved: improved,
+            diff: diff,
+            atsBenefit: 6,
             accepted: false
           });
         });
@@ -298,10 +319,10 @@ export const UploadResumeWizard: React.FC<UploadResumeWizardProps> = ({
         repairs.push({
           section: 'summary',
           index: 0,
-          original: parsed.personal_info?.summary || 'Looking for job opportunities.',
-          improved: 'Results-driven developer with hands-on expertise building scalable React applications and cloud backend web systems.',
-          diff: '+ Results-driven specialist with scalable backend web expertise.',
-          atsBenefit: 12,
+          original: parsed.personal_info?.summary || 'Entry-level candidate profile.',
+          improved: 'Ats-optimized profile description highlighting core academic credentials and technical execution frameworks.',
+          diff: '+ Re-structured objective summary to align with standard ATS keyword indexing formats.',
+          atsBenefit: 5,
           accepted: false
         });
       }
@@ -331,13 +352,10 @@ export const UploadResumeWizard: React.FC<UploadResumeWizardProps> = ({
       setOcrLogs(prev => [...prev, '[OCR] Extraction Completed', '[Audit] Candidate profile ready']);
     } catch (err: any) {
       console.error(err);
-      alert('Error parsing resume. Falling back to diagnostic simulator.');
-      setParsedData({
-        personal_info: { name: 'Applicant', title: 'Software Developer' },
-        skills: [{ name: 'React' }, { name: 'Node.js' }],
-        experience: [{ role: 'Developer', company: 'Tech Corp', description: 'Handled websites.' }]
-      });
-      setCurrentStage(2);
+      setIsParsing(false);
+      setFile(null);
+      alert('Unable to parse resume. Please check your file content or try uploading another document.');
+      setCurrentStage(1);
     }
   };
 

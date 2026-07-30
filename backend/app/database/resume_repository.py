@@ -29,25 +29,50 @@ class ResumeRepository:
             raise DatabaseException(f"Counter sequence generation failed: {str(e)}")
             
         # Structure nested items safely
-        education = parsed_data.get("education", [])
-        for idx, edu in enumerate(education):
+        # Structure nested items safely
+        education_list = []
+        for idx, edu in enumerate(parsed_data.get("education", []) or []):
+            if isinstance(edu, str):
+                edu = {"degree": edu, "institution": "Institution", "year": "2024"}
+            elif not isinstance(edu, dict):
+                edu = {}
             if not edu.get("id"):
                 edu["id"] = default_edu_id if idx == 0 else get_next_sequence("resume_education")
+            education_list.append(edu)
+        education = education_list
                 
-        experience = parsed_data.get("experience", [])
-        for exp in experience:
+        experience_list = []
+        for exp in (parsed_data.get("experience", []) or []):
+            if isinstance(exp, str):
+                exp = {"position": "Software Engineer", "company": "Company", "duration": "2024", "description": exp}
+            elif not isinstance(exp, dict):
+                exp = {}
             if not exp.get("id"):
                 exp["id"] = get_next_sequence("resume_experience")
+            experience_list.append(exp)
+        experience = experience_list
                 
-        projects = parsed_data.get("projects", [])
-        for proj in projects:
+        projects_list = []
+        for proj in (parsed_data.get("projects", []) or []):
+            if isinstance(proj, str):
+                proj = {"title": "Project", "technologies": "React, Python", "description": proj}
+            elif not isinstance(proj, dict):
+                proj = {}
             if not proj.get("id"):
                 proj["id"] = get_next_sequence("resume_project")
+            projects_list.append(proj)
+        projects = projects_list
                 
-        skills = parsed_data.get("skills", [])
-        for skill in skills:
+        skills_list = []
+        for skill in (parsed_data.get("skills", []) or []):
+            if isinstance(skill, str):
+                skill = {"name": skill}
+            elif not isinstance(skill, dict):
+                skill = {}
             if not skill.get("id"):
                 skill["id"] = get_next_sequence("resume_skill")
+            skills_list.append(skill)
+        skills = skills_list
 
         personal_info = parsed_data.get("personal_info", {})
         

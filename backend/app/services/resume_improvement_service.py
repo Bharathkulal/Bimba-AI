@@ -100,27 +100,30 @@ def generate_resume_improvements(db: Any, extracted_data: Dict[str, Any], ai_ana
         
     except Exception as e:
         logger.error(f"Failed to parse AI improvements response as JSON: {cleaned}. Error: {str(e)}")
-        # Default fallback structure
+        # Dynamic fallback structure reusing original user text instead of hardcoded mock profiles
+        original_summary = extracted_data.get("summary", "")
+        if isinstance(original_summary, list) and original_summary:
+            original_summary = original_summary[0]
         return {
             "summary": {
-                "original": extracted_data.get("summary", [""])[0] if isinstance(extracted_data.get("summary"), list) and extracted_data.get("summary") else "",
-                "improved": "BCA student with hands-on experience building full-stack applications using React, FastAPI, MongoDB, and AI technologies.",
-                "reason": "Wording upgraded to prioritize modern tech stack highlights."
+                "original": original_summary,
+                "improved": original_summary,
+                "reason": "AI improvement model compilation failed."
             },
             "projects": [
                 {
-                    "original": extracted_data.get("projects", [""])[0] if extracted_data.get("projects") else "Project",
-                    "improved": "Developed a responsive React web application with reusable component hierarchies and REST APIs, optimizing client-side performance.",
-                    "reason": "Enhanced wording with specific action verbs and development focus."
-                }
+                    "original": p.get("description", "") if isinstance(p, dict) else str(p),
+                    "improved": p.get("description", "") if isinstance(p, dict) else str(p),
+                    "reason": "AI improvement model compilation failed."
+                } for p in extracted_data.get("projects", [])
             ],
             "experience": [
                 {
-                    "original": extracted_data.get("experience", [""])[0] if extracted_data.get("experience") else "Experience",
-                    "improved": "Developed reusable React components and improved overall application usability through optimized UI design.",
-                    "reason": "Structured wording to clearly communicate tech contributions."
-                }
+                    "original": exp.get("description", "") if isinstance(exp, dict) else str(exp),
+                    "improved": exp.get("description", "") if isinstance(exp, dict) else str(exp),
+                    "reason": "AI improvement model compilation failed."
+                } for exp in extracted_data.get("experience", [])
             ],
-            "skill_recommendations": ["Incorporate Docker and AWS deployment skills into the projects description"],
-            "ats_keywords": ["React", "FastAPI", "MongoDB", "REST APIs", "ATS Optimisation"]
+            "skill_recommendations": [],
+            "ats_keywords": []
         }

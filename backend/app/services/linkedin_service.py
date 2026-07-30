@@ -330,8 +330,7 @@ class LinkedInService:
                         "limit": limit
                     }
             except Exception as e:
-                print(f"RapidAPI failed: {e}")
-                raise ValueError(f"LinkedIn Job Search API failed: {str(e)}")
+                print(f"RapidAPI failed: {e}. Falling back to dynamic jobs generation.")
         
     def _generate_jobs_with_gemini(self, student: Optional[Student], keyword: Optional[str] = None, location: Optional[str] = None, limit: int = 10) -> List[Dict[str, Any]]:
         student_skills = self._parse_student_skills(student)
@@ -469,8 +468,7 @@ Return ONLY the valid JSON list, no markdown code block formatting (do not inclu
                         "limit": limit
                     }
             except Exception as e:
-                print(f"RapidAPI failed: {e}")
-                raise ValueError(f"LinkedIn Job Search API failed: {str(e)}")
+                print(f"RapidAPI failed: {e}. Falling back to dynamic jobs generation.")
         
         # 2. Return Gemini-generated job results when API is not configured or fails
         student_skills = self._parse_student_skills(student)

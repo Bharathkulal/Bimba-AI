@@ -233,26 +233,29 @@ def init_db():
             print("Seeded AI system settings.")
 
         # 6. Seed Default Students
-        if db.students.count_documents({}) == 0:
+        db.students.update_one(
+            {"roll_number": "BCA24001"},
+            {"$set": {
+                "id": 1,
+                "student_name": "John Doe",
+                "full_name": "John Doe",
+                "email": "student@bimba.ai",
+                "dob": "15-08-2005",
+                "phone": "9876543210",
+                "department": "BCA",
+                "semester": 3,
+                "status": "Active",
+                "password_hash": get_password_hash("15-08-2005"),
+                "is_active": True,
+                "account_activated": True,
+                "otp_verified": True,
+                "created_at": datetime.now(timezone.utc),
+                "updated_at": datetime.now(timezone.utc)
+            }},
+            upsert=True
+        )
+        if db.students.count_documents({}) <= 1:
             db.students.insert_many([
-                {
-                    "id": 1,
-                    "roll_number": "BCA24001",
-                    "student_name": "John Doe",
-                    "full_name": "John Doe",
-                    "email": "student@bimba.ai",
-                    "dob": "15-08-2005",
-                    "phone": "9876543210",
-                    "department": "BCA",
-                    "semester": 3,
-                    "status": "Active",
-                    "password_hash": get_password_hash("15-08-2005"),
-                    "is_active": True,
-                    "account_activated": True,
-                    "otp_verified": True,
-                    "created_at": datetime.now(timezone.utc),
-                    "updated_at": datetime.now(timezone.utc)
-                },
                 {
                     "id": 2,
                     "roll_number": "BCA24002",
