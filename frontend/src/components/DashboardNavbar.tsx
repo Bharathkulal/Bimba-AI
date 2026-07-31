@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Bell, User, Settings, LogOut, Menu, Sparkles } from 'lucide-react';
+import { Bell, User, Settings, LogOut, Menu } from 'lucide-react';
 import { useUserStore } from '../store/userStore';
 import { useThemeStore } from '../store/themeStore';
 import { apiClient } from '../services/api';
@@ -17,6 +17,7 @@ export const DashboardNavbar: React.FC<DashboardNavbarProps> = ({ onToggleSideba
   const isDark = theme === 'dark';
   const [notificationCount, setNotificationCount] = useState(0);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
 
   const getDisplayName = () => {
     if (!user) return 'Student';
@@ -41,6 +42,25 @@ export const DashboardNavbar: React.FC<DashboardNavbarProps> = ({ onToggleSideba
     }
   }, [user]);
 
+  // Robust Outside Click Handler to close Profile Dropdown when user clicks anywhere outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent | TouchEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setIsDropdownOpen(false);
+      }
+    };
+
+    if (isDropdownOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+      document.addEventListener('touchstart', handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('touchstart', handleClickOutside);
+    };
+  }, [isDropdownOpen]);
+
   return (
     <header className={`h-16 w-full flex items-center justify-between px-4 md:px-8 sticky top-0 z-30 shadow-sm border-b transition-colors duration-300 ${
       isDark 
@@ -49,10 +69,10 @@ export const DashboardNavbar: React.FC<DashboardNavbarProps> = ({ onToggleSideba
     }`}>
       {/* Left Section: 3-line Hamburger Menu Toggle + Brand Logo */}
       <div className="flex items-center gap-3">
-        {/* 3-line Hamburger Menu Toggle Button */}
+        {/* 3-line Hamburger Menu Toggle Button (Desktop/Tablet Only) */}
         <button
           onClick={onToggleSidebar}
-          className={`p-2.5 rounded-xl transition-all duration-200 cursor-pointer flex items-center justify-center border ${
+          className={`hidden md:flex p-2.5 rounded-xl transition-all duration-200 cursor-pointer items-center justify-center border ${
             isDark 
               ? 'bg-white/5 border-white/10 text-slate-200 hover:text-white hover:bg-white/10 hover:border-white/20' 
               : 'bg-slate-50 border-slate-200 text-slate-700 hover:text-emerald-600 hover:bg-emerald-50 hover:border-emerald-200'
@@ -102,10 +122,10 @@ export const DashboardNavbar: React.FC<DashboardNavbarProps> = ({ onToggleSideba
         
         <div className={`w-[1px] h-5 transition-colors duration-300 ${isDark ? 'bg-white/10' : 'bg-slate-200'}`} />
 
-        {/* User Account Profile with Dropdown */}
-        <div className="relative">
+        {/* User Account Profile with Dropdown (wrapped with dropdownRef) */}
+        <div className="relative" ref={dropdownRef}>
           <button 
-            onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+            onClick={() => setIsDropdownOpen((prev) => !prev)}
             className="flex items-center gap-2.5 pl-1 cursor-pointer focus:outline-none group"
           >
             <div className="w-9 h-9 rounded-xl bg-emerald-600 text-white font-black flex items-center justify-center text-sm shadow-md shadow-emerald-600/20 group-hover:scale-105 transition-transform">
@@ -121,57 +141,51 @@ export const DashboardNavbar: React.FC<DashboardNavbarProps> = ({ onToggleSideba
 
           {/* Profile Dropdown Card */}
           {isDropdownOpen && (
-            <>
-              <div 
-                onClick={() => setIsDropdownOpen(false)}
-                className="fixed inset-0 z-40"
-              />
-              <div className={`absolute right-0 mt-3 w-56 rounded-2xl shadow-2xl py-2 z-50 border transition-all duration-300 ${
-                isDark 
-                  ? 'bg-[#0F172A] border-white/10 text-white' 
-                  : 'bg-white border-slate-200 text-slate-800'
-              }`}>
-                <div className="px-4 py-3 border-b border-slate-100 dark:border-white/5">
-                  <p className="text-xs font-extrabold">{displayName}</p>
-                  <p className="text-[11px] text-slate-400 truncate">{user?.personal_email}</p>
-                </div>
-                <button
-                  onClick={() => {
-                    navigate('/profile');
-                    setIsDropdownOpen(false);
-                  }}
-                  className={`w-full text-left px-4 py-2.5 text-xs flex items-center gap-2.5 font-semibold cursor-pointer transition-colors duration-200 ${
-                    isDark ? 'hover:bg-white/5' : 'hover:bg-slate-50'
-                  }`}
-                >
-                  <User size={15} className="text-emerald-500" />
-                  My Profile
-                </button>
-                <button
-                  onClick={() => {
-                    navigate('/settings');
-                    setIsDropdownOpen(false);
-                  }}
-                  className={`w-full text-left px-4 py-2.5 text-xs flex items-center gap-2.5 font-semibold cursor-pointer transition-colors duration-200 ${
-                    isDark ? 'hover:bg-white/5' : 'hover:bg-slate-50'
-                  }`}
-                >
-                  <Settings size={15} className="text-emerald-500" />
-                  Account Settings
-                </button>
-                <div className="border-t border-slate-100 dark:border-white/5 my-1" />
-                <button
-                  onClick={() => {
-                    logout();
-                    setIsDropdownOpen(false);
-                  }}
-                  className="w-full text-left px-4 py-2.5 text-xs text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/20 flex items-center gap-2.5 font-bold cursor-pointer"
-                >
-                  <LogOut size={15} />
-                  Log Out
-                </button>
+            <div className={`absolute right-0 mt-3 w-56 rounded-2xl shadow-2xl py-2 z-50 border transition-all duration-300 ${
+              isDark 
+                ? 'bg-[#0F172A] border-white/10 text-white' 
+                : 'bg-white border-slate-200 text-slate-800'
+            }`}>
+              <div className="px-4 py-3 border-b border-slate-100 dark:border-white/5">
+                <p className="text-xs font-extrabold">{displayName}</p>
+                <p className="text-[11px] text-slate-400 truncate">{user?.personal_email}</p>
               </div>
-            </>
+              <button
+                onClick={() => {
+                  navigate('/profile');
+                  setIsDropdownOpen(false);
+                }}
+                className={`w-full text-left px-4 py-2.5 text-xs flex items-center gap-2.5 font-semibold cursor-pointer transition-colors duration-200 ${
+                  isDark ? 'hover:bg-white/5' : 'hover:bg-slate-50'
+                }`}
+              >
+                <User size={15} className="text-emerald-500" />
+                My Profile
+              </button>
+              <button
+                onClick={() => {
+                  navigate('/settings');
+                  setIsDropdownOpen(false);
+                }}
+                className={`w-full text-left px-4 py-2.5 text-xs flex items-center gap-2.5 font-semibold cursor-pointer transition-colors duration-200 ${
+                  isDark ? 'hover:bg-white/5' : 'hover:bg-slate-50'
+                }`}
+              >
+                <Settings size={15} className="text-emerald-500" />
+                Account Settings
+              </button>
+              <div className="border-t border-slate-100 dark:border-white/5 my-1" />
+              <button
+                onClick={() => {
+                  logout();
+                  setIsDropdownOpen(false);
+                }}
+                className="w-full text-left px-4 py-2.5 text-xs text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/20 flex items-center gap-2.5 font-bold cursor-pointer"
+              >
+                <LogOut size={15} />
+                Log Out
+              </button>
+            </div>
           )}
         </div>
       </div>
