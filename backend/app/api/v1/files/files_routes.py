@@ -30,63 +30,7 @@ def get_cloudinary_health():
             "reason": "Cloudinary credentials missing or SDK initialization failed."
         }
 
-@router.post("/upload-resume")
-async def upload_resume_file(
-    file: UploadFile = File(...),
-    student: Student = Depends(get_current_student),
-    db: Any = Depends(get_db)
-):
-    """
-    POST /api/files/upload-resume
-    Uploads original resume. Stores inside: bimba-ai/uploaded-resumes/
-    """
-    from datetime import datetime, timezone
-    try:
-        content = await file.read()
-        filename = file.filename or "resume.pdf"
-        
-        # Upload to Cloudinary
-        result = upload_file(content, filename, folder="uploaded-resumes")
-        
-        # Save exact metadata format to MongoDB
-        file_ext = filename.split(".")[-1].lower() if "." in filename else "pdf"
-        from app.core.mongodb import get_next_sequence
-        next_id = get_next_sequence("resumes")
-        db.resumes.insert_one({
-            "id": next_id,
-            "student_id": student.id,
-            "roll_number": student.roll_number,
-            "name": f"Uploaded - {filename}",
-            "original_filename": filename,
-            "cloudinary_url": result["url"],
-            "public_id": result["public_id"],
-            "file_type": file_ext,
-            "file_size": result["size"],
-            "status": "uploaded",
-            "created_at": datetime.now(timezone.utc).isoformat(),
-            "updated_at": datetime.now(timezone.utc).isoformat()
-        })
-        
-        return {
-            "success": True,
-            "message": "Resume uploaded successfully",
-            "file": {
-                "url": result["url"],
-                "public_id": result["public_id"],
-                "filename": filename
-            }
-        }
-        
-    except ValueError as ve:
-        err_msg = str(ve)
-        if "Unsupported File Type" in err_msg:
-            raise HTTPException(status_code=415, detail="Unsupported File Type")
-        elif "File Too Large" in err_msg:
-            raise HTTPException(status_code=413, detail="File Too Large")
-        else:
-            raise HTTPException(status_code=400, detail=err_msg)
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Cloudinary Upload Failed: {str(e)}")
+
 
 @router.post("/upload-profile-image")
 async def upload_profile_image(

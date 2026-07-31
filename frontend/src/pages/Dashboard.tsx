@@ -338,7 +338,19 @@ export const Dashboard: React.FC = () => {
             </button>
 
             <button
-              onClick={() => navigate('/resume-builder')}
+              onClick={async () => {
+                try {
+                  const res = await apiClient.post('/api/resume-studio/create', { name: "New Resume" });
+                  if (res.data && res.data.id) {
+                    navigate(`/resume-builder?id=${res.data.id}`);
+                  } else {
+                    alert("Failed to initialize new resume draft.");
+                  }
+                } catch (err) {
+                  console.error(err);
+                  alert("Error creating new resume draft.");
+                }
+              }}
               className="flex flex-col items-center justify-center text-center p-4 border border-slate-100 dark:border-white/5 rounded-2xl hover:border-emerald-500 hover:bg-emerald-50/5 dark:hover:bg-emerald-500/5 transition-all group cursor-pointer"
             >
               <Plus size={24} className="text-slate-400 group-hover:text-emerald-500 transition-colors" />

@@ -975,6 +975,125 @@ def get_pdf_export(id: int, student: Student = Depends(get_current_student), db:
         headers={"Content-Disposition": f"attachment; filename=bimba_resume_{id}.pdf"}
     )
 
+@router.get("/{id}/download/pdf")
+def get_pdf_download(id: int, student: Student = Depends(get_current_student), db: Any = Depends(get_db)):
+    return get_pdf_export(id, student, db)
+
+@router.get("/{id}/download/docx")
+def get_docx_download(id: int, student: Student = Depends(get_current_student), db: Any = Depends(get_db)):
+    from docx import Document
+    resume = verify_ownership(id, student.id, db)
+    
+    doc = Document()
+    doc.add_heading(resume.get("name") or "Resume", 0)
+    
+    p_info = resume.get("personal_info", {})
+    doc.add_paragraph(f"Email: {p_info.get('email', '')} | Phone: {p_info.get('phone', '')}")
+    doc.add_paragraph(f"LinkedIn: {p_info.get('linkedin', '')} | GitHub: {p_info.get('github', '')}")
+    
+    doc.add_heading('Professional Summary', level=1)
+    doc.add_paragraph(resume.get("summary") or resume.get("career_objective") or "")
+    
+    doc.add_heading('Experience', level=1)
+    for exp in resume.get("experience", []):
+        doc.add_paragraph(f"{exp.get('role', '')} at {exp.get('company', '')} ({exp.get('duration', '')})")
+        doc.add_paragraph(exp.get('description', ''))
+        
+    doc.add_heading('Education', level=1)
+    for edu in resume.get("education", []):
+        doc.add_paragraph(f"{edu.get('degree', '')} - {edu.get('institution', '')} ({edu.get('year', '')})")
+        
+    doc.add_heading('Projects', level=1)
+    for proj in resume.get("projects", []):
+        doc.add_paragraph(f"{proj.get('title', '')}")
+        doc.add_paragraph(proj.get('description', ''))
+        
+    doc.add_heading('Skills', level=1)
+    doc.add_paragraph(", ".join(resume.get("skills", [])))
+
+    buffer = io.BytesIO()
+    doc.save(buffer)
+    buffer.seek(0)
+    
+    db.resume_downloads.insert_one({
+        "id": get_next_sequence("resume_downloads"),
+        "resume_id": id,
+        "format": "DOCX",
+        "created_at": datetime.utcnow()
+    })
+    
+    return StreamingResponse(
+        buffer,
+        media_type="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+        headers={"Content-Disposition": f"attachment; filename=bimba_resume_{id}.docx"}
+    )
+
+@router.get("/{id}/download/txt")
+def get_txt_download(id: int, student: Student = Depends(get_current_student), db: Any = Depends(get_db)):
+    resume = verify_ownership(id, student.id, db)
+    
+    lines = []
+    lines.append(resume.get("name", "Resume").upper())
+    lines.append("=" * len(resume.get("name", "Resume")))
+    lines.append("")
+    
+    p_info = resume.get("personal_info", {})
+    lines.append(f"Email: {p_info.get('email', '')}")
+    lines.append(f"Phone: {p_info.get('phone', '')}")
+    lines.append(f"LinkedIn: {p_info.get('linkedin', '')}")
+    lines.append(f"GitHub: {p_info.get('github', '')}")
+    lines.append("")
+    
+    lines.append("SUMMARY")
+    lines.append("-------")
+    lines.append(resume.get("summary") or resume.get("career_objective") or "")
+    lines.append("")
+    
+    lines.append("EXPERIENCE")
+    lines.append("----------")
+    for exp in resume.get("experience", []):
+        lines.append(f"* {exp.get('role', '')} at {exp.get('company', '')} ({exp.get('duration', '')})")
+        lines.append(f"  {exp.get('description', '')}")
+    lines.append("")
+    
+    lines.append("EDUCATION")
+    lines.append("---------")
+    for edu in resume.get("education", []):
+        lines.append(f"* {edu.get('degree', '')} - {edu.get('institution', '')} ({edu.get('year', '')})")
+    lines.append("")
+    
+    content = "\n".join(lines)
+    buffer = io.BytesIO(content.encode('utf-8'))
+    
+    db.resume_downloads.insert_one({
+        "id": get_next_sequence("resume_downloads"),
+        "resume_id": id,
+        "format": "TXT",
+        "created_at": datetime.utcnow()
+    })
+    
+    return StreamingResponse(
+        buffer,
+        media_type="text/plain",
+        headers={"Content-Disposition": f"attachment; filename=bimba_resume_{id}.txt"}
+    )
+
+@router.post("/{id}/save-version")
+def save_resume_version(id: int, payload: dict, student: Student = Depends(get_current_student), db: Any = Depends(get_db)):
+    resume = verify_ownership(id, student.id, db)
+    version_num = db.resume_versions.count_documents({"resume_id": id}) + 1
+    version_doc = {
+        "id": get_next_sequence("resume_versions"),
+        "resume_id": id,
+        "version_number": version_num,
+        "name": payload.get("version_name") or f"Version {version_num}",
+        "resume_data": resume.get("resume", {}),
+        "ats_score": resume.get("ats_score", 72),
+        "created_at": datetime.utcnow()
+    }
+    db.resume_versions.insert_one(version_doc)
+    return {"success": True, "version_number": version_num}
+
 @router.get("/public/{id}")
 def get_public_resume(id: int, db: Any = Depends(get_db)):
     resume_doc = db.resumes.find_one({"id": id})

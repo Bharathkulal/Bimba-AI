@@ -15,7 +15,6 @@ import type { ResumeAnalyticsItem, AtsData } from '../services/analytics';
 import { TemplateShowcase } from '../components/TemplateShowcase';
 import { UploadResumeWizard } from '../components/UploadResumeWizard';
 import { CareerCopilotChat } from '../components/CareerCopilotChat';
-import { ResumeUpload } from '../components/resume/ResumeUpload';
 import { Modal } from '../components/Modal';
 import { ResumeAnalysisStatus } from '../components/resume/ResumeAnalysisStatus';
 import { ResumeAIAnalysis } from '../components/resume/ResumeAIAnalysis';
@@ -229,7 +228,19 @@ export const ResumePage: React.FC = () => {
             Upload PDF/DOCX/TXT
           </Button>
           <Button 
-            onClick={() => navigate('/resume-builder')}
+            onClick={async () => {
+              try {
+                const res = await apiClient.post('/api/resume-studio/create', { name: "New Resume" });
+                if (res.data && res.data.id) {
+                  navigate(`/resume-builder?id=${res.data.id}`);
+                } else {
+                  alert("Failed to initialize new resume draft.");
+                }
+              } catch (err) {
+                console.error(err);
+                alert("Error creating new resume draft.");
+              }
+            }}
             variant="primary" 
             size="sm"
             className="flex items-center gap-1.5"
@@ -316,20 +327,23 @@ export const ResumePage: React.FC = () => {
       <div className="mt-2">
         {activeSubTab === 'resumes' && (
           <div className="flex flex-col gap-6">
-            <ResumeUpload 
-              onUploadSuccess={(fileObj) => {
-                setUploadedFile(fileObj);
-                fetchResumeData();
+            <div 
+              onClick={() => {
+                setWizardFile(null);
+                setShowWizard(true);
               }}
-              onAnalyzeClick={() => {
-                if (uploadedFile) {
-                  setWizardFile(uploadedFile);
-                  setShowWizard(true);
-                } else {
-                  setShowWizard(true);
-                }
-              }}
-            />
+              className="w-full bg-slate-50 dark:bg-white/5 border border-dashed border-slate-200 dark:border-white/10 rounded-2xl p-8 cursor-pointer flex flex-col items-center justify-center gap-3 transition-all hover:bg-slate-100/50 dark:hover:bg-white/10 text-center"
+            >
+              <div className="w-12 h-12 rounded-full bg-emerald-500/10 text-emerald-500 flex items-center justify-center border border-emerald-500/20 shadow-md">
+                <UploadCloud size={24} />
+              </div>
+              <div className="text-sm font-bold text-slate-800 dark:text-slate-250">
+                Launch Unified Career Pipeline & Resume Analyzer
+              </div>
+              <p className="text-xs text-slate-500">
+                Upload your resume (PDF, DOCX, TXT) and complete the 8-stage interactive analysis, rewrite, template generation, and job matcher.
+              </p>
+            </div>
             
             {/* Filters Row */}
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border-b border-slate-100 pb-3">
