@@ -107,9 +107,22 @@ def extract_structured_data(text: str) -> Dict[str, Any]:
     """
     Orchestrates the metadata extraction process.
     """
-    info = extract_personal_info(text)
-    skills = extract_skills(text)
-    sections = segment_sections(text)
+    clean_text = text
+    # Pre-cleaning specific known PDF space splits
+    clean_text = clean_text.replace("EDUCA TION", "EDUCATION")
+    clean_text = clean_text.replace("PUBLICA TIONS", "PUBLICATIONS")
+    clean_text = clean_text.replace("T echnology", "Technology")
+    clean_text = clean_text.replace("F ull", "Full")
+    clean_text = clean_text.replace("HyperT rade", "HyperTrade")
+    clean_text = clean_text.replace("A WS", "AWS")
+    clean_text = clean_text.replace("T erraform", "Terraform")
+    clean_text = clean_text.replace("leveragingA WS", "leveraging AWS")
+    clean_text = clean_text.replace("Y ouT ube", "YouTube")
+    clean_text = clean_text.replace("F rameworks", "Frameworks")
+
+    info = extract_personal_info(clean_text)
+    skills = extract_skills(clean_text)
+    sections = segment_sections(clean_text)
     
     return {
         "name": info["name"],

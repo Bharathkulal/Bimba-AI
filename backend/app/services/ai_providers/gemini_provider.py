@@ -6,22 +6,19 @@ from app.core.config import settings
 
 logger = logging.getLogger("gemini_provider")
 
-def call_gemini(prompt: str) -> Dict[str, Any]:
+def call_gemini(prompt: str, api_key: str = None, timeout: int = 12) -> Dict[str, Any]:
     """
     Calls the Gemini API directly using REST endpoints.
     """
-    api_key = settings.CLOUDINARY_API_KEY # Wait, let's verify if Settings has GEMINI_API_KEY.
-    # We should read settings.GEMINI_API_KEY from environment or config.
-    # In backend/.env, GEMINI_API_KEY, GROQ_API_KEY, OPENROUTER_API_KEY are configured.
-    # Let's import os to load them directly from os.getenv to avoid any settings mapping issues.
-    import os
-    gemini_key = os.getenv("GEMINI_API_KEY", "")
+    if not api_key:
+        import os
+        api_key = os.getenv("GEMINI_API_KEY", "").strip()
     
-    if not gemini_key:
+    if not api_key:
         logger.error("Gemini API key is not configured.")
         return {"success": False, "error": "Gemini API key missing."}
         
-    url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={gemini_key}"
+    url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={api_key}"
     
     headers = {
         "Content-Type": "application/json"
@@ -46,8 +43,7 @@ def call_gemini(prompt: str) -> Dict[str, Any]:
         data = json.dumps(payload).encode("utf-8")
         req = urllib.request.Request(url, data=data, headers=headers, method="POST")
         
-        # 10 second timeout for responsiveness
-        with urllib.request.urlopen(req, timeout=12) as response:
+        with urllib.request.urlopen(req, timeout=timeout) as response:
             res_body = response.read().decode("utf-8")
             res_json = json.loads(res_body)
             
@@ -64,6 +60,21 @@ def call_gemini(prompt: str) -> Dict[str, Any]:
             logger.warning(f"Gemini returned unexpected JSON structure: {res_body}")
             return {"success": False, "error": "Empty or invalid response structure."}
             
+    except urllib.error.HTTPError as e:
+        logger.error(f"Gemini API HTTP Error {e.code}: {e.reason}")
+        return {
+            "success": False, 
+            "error": f"HTTP Error {e.code}: {e.reason}", 
+            "status_code": e.code
+        }
+    except urllib.error.URLError as e:
+        logger.error(f"Gemini API Network/Timeout Error: {e.reason}")
+        return {
+            "success": False, 
+            "error": f"Network Error: {e.reason}", 
+            "is_network_error": True
+        }
     except Exception as e:
-        logger.error(f"Gemini API call failed: {str(e)}")
+        logger.error(f"Gemini API unexpected failure: {str(e)}")
         return {"success": False, "error": str(e)}
+

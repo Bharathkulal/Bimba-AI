@@ -6,13 +6,15 @@ from typing import Dict, Any
 
 logger = logging.getLogger("groq_provider")
 
-def call_groq(prompt: str) -> Dict[str, Any]:
+def call_groq(prompt: str, api_key: str = None, timeout: int = 12) -> Dict[str, Any]:
     """
     Calls the Groq API directly using REST endpoints.
     """
-    groq_key = os.getenv("GROQ_API_KEY", "")
+    if not api_key:
+        import os
+        api_key = os.getenv("GROQ_API_KEY", "").strip()
     
-    if not groq_key:
+    if not api_key:
         logger.error("Groq API key is not configured.")
         return {"success": False, "error": "Groq API key missing."}
         
@@ -20,7 +22,7 @@ def call_groq(prompt: str) -> Dict[str, Any]:
     
     headers = {
         "Content-Type": "application/json",
-        "Authorization": f"Bearer {groq_key}"
+        "Authorization": f"Bearer {api_key}"
     }
     
     payload = {
@@ -41,7 +43,7 @@ def call_groq(prompt: str) -> Dict[str, Any]:
         data = json.dumps(payload).encode("utf-8")
         req = urllib.request.Request(url, data=data, headers=headers, method="POST")
         
-        with urllib.request.urlopen(req, timeout=12) as response:
+        with urllib.request.urlopen(req, timeout=timeout) as response:
             res_body = response.read().decode("utf-8")
             res_json = json.loads(res_body)
             
@@ -57,6 +59,21 @@ def call_groq(prompt: str) -> Dict[str, Any]:
             logger.warning(f"Groq returned unexpected JSON structure: {res_body}")
             return {"success": False, "error": "Empty or invalid response structure."}
             
+    except urllib.error.HTTPError as e:
+        logger.error(f"Groq API HTTP Error {e.code}: {e.reason}")
+        return {
+            "success": False, 
+            "error": f"HTTP Error {e.code}: {e.reason}", 
+            "status_code": e.code
+        }
+    except urllib.error.URLError as e:
+        logger.error(f"Groq API Network/Timeout Error: {e.reason}")
+        return {
+            "success": False, 
+            "error": f"Network Error: {e.reason}", 
+            "is_network_error": True
+        }
     except Exception as e:
-        logger.error(f"Groq API call failed: {str(e)}")
+        logger.error(f"Groq API unexpected failure: {str(e)}")
         return {"success": False, "error": str(e)}
+

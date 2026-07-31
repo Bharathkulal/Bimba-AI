@@ -1,4 +1,5 @@
 import os
+from typing import Any
 from bson import ObjectId
 from pymongo import MongoClient, ASCENDING
 
@@ -15,6 +16,15 @@ client = MongoClient(
 )
 db = client[settings.DATABASE_NAME]
 
+def stringify_object_ids(obj: Any) -> Any:
+    if isinstance(obj, ObjectId):
+        return str(obj)
+    if isinstance(obj, dict):
+        return {k: stringify_object_ids(v) for k, v in obj.items()}
+    if isinstance(obj, list):
+        return [stringify_object_ids(item) for item in obj]
+    return obj
+
 class MongoModel(dict):
     """
     A custom dictionary class that supports attribute (dot) access
@@ -22,10 +32,14 @@ class MongoModel(dict):
     """
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        for k, v in list(self.items()):
+            if isinstance(v, ObjectId):
+                self[k] = str(v)
+            elif isinstance(v, (dict, list)):
+                self[k] = stringify_object_ids(v)
         # Ensure we always have string representations of _id as id
         if "_id" in self and "id" not in self:
             try:
-                # If _id is integer, cast it. Otherwise, cast to string.
                 if isinstance(self["_id"], int):
                     self["id"] = self["_id"]
                 else:
