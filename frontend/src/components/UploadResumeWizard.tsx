@@ -100,6 +100,35 @@ export const UploadResumeWizard: React.FC<UploadResumeWizardProps> = ({
 
   // Analysis Loading States
   const [analysisLoading, setAnalysisLoading] = useState<boolean>(false);
+  const [jobsError, setJobsError] = useState<string | null>(null);
+
+  const buildAnalysisInsights = () => {
+    const scores = analysisData?.scores || {};
+    const suggestions = analysisData?.suggestions || [];
+    const overall = scores.overall_score ?? liveScores.overall;
+    const ats = scores.ats_score ?? liveScores.ats;
+    const extractedSkills = (parsedData?.skills || [])
+      .map((skill: any) => skill.name || skill)
+      .filter(Boolean)
+      .slice(0, 5);
+
+    return {
+      strengths: [
+        overall >= 80 ? 'The resume has a strong structure and clear professional narrative.' : 'The core sections are present and the document reads coherently.',
+        ats >= 75 ? 'ATS formatting and section hierarchy are well aligned for screening systems.' : 'Keyword placement and section clarity can be strengthened for recruiter screens.',
+        extractedSkills.length >= 3 ? `Your profile highlights ${extractedSkills.join(', ')}.` : 'The skill section is present and can be expanded with role-specific terms.'
+      ].filter(Boolean),
+      weaknesses: suggestions.length > 0
+        ? suggestions.slice(0, 3)
+        : [
+            'Add measurable outcomes and impact to experience bullets.',
+            'Improve keyword density for the target role and industry.'
+          ],
+      missingSkills: suggestions
+        .filter((item: string) => /keyword|skill|certif|technology/i.test(item))
+        .slice(0, 3)
+    };
+  };
 
   const runAIAnalysis = async () => {
     if (!resumeId) return;
@@ -368,6 +397,23 @@ export const UploadResumeWizard: React.FC<UploadResumeWizardProps> = ({
     onSuccess(resumeId || 0);
   };
 
+  const handleSaveJob = async (job: JobListItem) => {
+    if (!resumeId) return;
+    try {
+      await jobsService.saveJob({
+        job_id: job.id,
+        company: job.company,
+        title: job.title,
+        location: job.location,
+        logo: job.logo,
+        source: 'Bimba AI',
+        application_url: job.apply_url
+      });
+    } catch (e) {
+      console.error('Failed to save job', e);
+    }
+  };
+
   const handleSelectGoal = (goal: string) => {
     setCareerGoal(goal);
     // Customise summary wording later
@@ -444,23 +490,79 @@ export const UploadResumeWizard: React.FC<UploadResumeWizardProps> = ({
     }
   };
 
+  const buildComparisonBulletsFromOptimizedResume = (
+    optimizedResume: any,
+    reasonHint: string
+  ) => {
+    const entries: Array<{
+      section: string;
+      original: string;
+      improved: string;
+      reason: string;
+    }> = [];
+
+    const currentSummary = parsedData?.personal_info?.summary || 'No summary detected.';
+    const optimizedSummary = optimizedResume?.personal_info?.summary || '';
+
+    if (optimizedSummary && optimizedSummary !== currentSummary) {
+      entries.push({
+        section: 'Profile Summary',
+        original: currentSummary,
+        improved: optimizedSummary,
+        reason: reasonHint
+      });
+    }
+
+    const currentExperiences = Array.isArray(parsedData?.experience) ? parsedData.experience : [];
+    const optimizedExperiences = Array.isArray(optimizedResume?.experience) ? optimizedResume.experience : [];
+
+    currentExperiences.forEach((exp: any, idx: number) => {
+      const optimizedExp = optimizedExperiences[idx] || {};
+      const currentDescription = exp.description || '';
+      const improvedDescription = optimizedExp.description || '';
+      if (improvedDescription && improvedDescription !== currentDescription) {
+        entries.push({
+          section: `${exp.role || exp.title || 'Experience'} ${idx + 1}`,
+          original: currentDescription,
+          improved: improvedDescription,
+          reason: reasonHint
+        });
+      }
+    });
+
+    if (entries.length === 0) {
+      entries.push({
+        section: 'Resume Content',
+        original: currentSummary || 'No major rewrite was generated.',
+        improved: optimizedResume?.personal_info?.summary || 'The backend returned refreshed content for your resume.',
+        reason: reasonHint
+      });
+    }
+
+    return entries;
+  };
+
   const fetchJobs = async () => {
+    if (!resumeId) return;
     setJobsLoading(true);
+    setJobsError(null);
     try {
-      const res = await jobsService.searchJobs({ limit: 4 });
-      setJobs(res.jobs || []);
-    } catch (e) {
+      const res = await jobsService.getRecommendations(resumeId);
+      setJobs(Array.isArray(res.jobs) ? res.jobs : []);
+    } catch (e: any) {
       console.error(e);
+      setJobs([]);
+      setJobsError(e.response?.data?.detail || 'We could not load job recommendations right now.');
     } finally {
       setJobsLoading(false);
     }
   };
 
   useEffect(() => {
-    if (currentStage === 9) {
+    if (currentStage === 8 && resumeId) {
       fetchJobs();
     }
-  }, [currentStage]);
+  }, [currentStage, resumeId]);
 
   return (
     <div className={currentStage === 7
@@ -886,22 +988,40 @@ export const UploadResumeWizard: React.FC<UploadResumeWizardProps> = ({
  
                 {/* Findings List (Strengths & Weaknesses) */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-2">
-                  {[
-                    { badge: 'Top Strength', style: isDark ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400' : 'bg-emerald-50 border-emerald-200/60 text-emerald-800', title: 'Strong technical skill variety', text: 'Excellent representation of modern libraries and technologies in your stack list.' },
-                    { badge: 'Critical Weakness', style: isDark ? 'bg-rose-500/10 border-rose-500/20 text-rose-400' : 'bg-rose-50 border-rose-200/60 text-rose-800', title: 'Weak metric attribution in bullets', text: 'Bullet statements describe general daily tasks instead of quantified outcomes.' },
-                    { badge: 'Missing Skills', style: isDark ? 'bg-amber-500/10 border-amber-500/20 text-amber-400' : 'bg-amber-50 border-amber-200/60 text-amber-800', title: 'Keywords to add', text: 'Consider adding Postgres, Docker, and AWS keywords to boost parser hits.' }
-                  ].map((diag, idx) => (
-                    <div key={idx} className={`border rounded-2xl p-4 flex gap-3 items-start ${diag.style}`}>
-                      <Info size={16} className="shrink-0 mt-0.5" />
-                      <div className="text-left">
-                        <span className="text-[9px] font-extrabold uppercase tracking-wider px-2 py-0.5 rounded bg-white/5 border border-current">
-                          {diag.badge}
-                        </span>
-                        <h4 className={`text-xs font-bold mt-2 ${isDark ? 'text-white' : 'text-slate-800'}`}>{diag.title}</h4>
-                        <p className={`text-[11px] mt-1 leading-relaxed ${isDark ? 'text-slate-350' : 'text-slate-600 font-semibold'}`}>{diag.text}</p>
+                  {(() => {
+                    const insights = buildAnalysisInsights();
+                    return [
+                      {
+                        badge: 'Top Strength',
+                        style: isDark ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400' : 'bg-emerald-50 border-emerald-200/60 text-emerald-800',
+                        title: 'Key strength from the latest audit',
+                        text: insights.strengths[0] || 'The profile structure is clear and complete.'
+                      },
+                      {
+                        badge: 'Critical Weakness',
+                        style: isDark ? 'bg-rose-500/10 border-rose-500/20 text-rose-400' : 'bg-rose-50 border-rose-200/60 text-rose-800',
+                        title: 'Primary improvement area',
+                        text: insights.weaknesses[0] || 'Add more measurable outcomes and better keyword density.'
+                      },
+                      {
+                        badge: 'Missing Skills',
+                        style: isDark ? 'bg-amber-500/10 border-amber-500/20 text-amber-400' : 'bg-amber-50 border-amber-200/60 text-amber-800',
+                        title: 'Recommended additions',
+                        text: insights.missingSkills.length > 0 ? insights.missingSkills.join(' • ') : 'Add role-specific keywords and relevant credentials.'
+                      }
+                    ].map((diag, idx) => (
+                      <div key={idx} className={`border rounded-2xl p-4 flex gap-3 items-start ${diag.style}`}>
+                        <Info size={16} className="shrink-0 mt-0.5" />
+                        <div className="text-left">
+                          <span className="text-[9px] font-extrabold uppercase tracking-wider px-2 py-0.5 rounded bg-white/5 border border-current">
+                            {diag.badge}
+                          </span>
+                          <h4 className={`text-xs font-bold mt-2 ${isDark ? 'text-white' : 'text-slate-800'}`}>{diag.title}</h4>
+                          <p className={`text-[11px] mt-1 leading-relaxed ${isDark ? 'text-slate-350' : 'text-slate-600 font-semibold'}`}>{diag.text}</p>
+                        </div>
                       </div>
-                    </div>
-                  ))}
+                    ));
+                  })()}
                 </div>
  
                 <div className="flex justify-end gap-3 mt-4">
@@ -1006,27 +1126,12 @@ export const UploadResumeWizard: React.FC<UploadResumeWizardProps> = ({
                                 const optRes = await apiClient.post(`/api/resume-studio/${resumeId}/optimize-jd`, {
                                   job_description: jd
                                 });
-                                const optData = optRes.data.optimized_resume || {};
-                                const repairs = [
-                                  {
-                                    section: 'Summary / Profile',
-                                    original: parsedData.personal_info?.summary || 'Capable software developer.',
-                                    improved: optData.personal_info?.summary || 'Tailored developer optimized for target role objectives.',
-                                    reason: 'Wording tailored specifically to match key skills for ' + targetRole
-                                  }
-                                ];
-                                if (optData.experience && optData.experience.length > 0) {
-                                  optData.experience.forEach((exp: any, idx: number) => {
-                                    const origExp = parsedData.experience?.[idx] || {};
-                                    repairs.push({
-                                      section: `Experience: ${exp.company || 'Company'}`,
-                                      original: origExp.description || 'Assisted with software features.',
-                                      improved: exp.description || 'Architected and deployed scalable solutions.',
-                                      reason: 'Injected metric attributions and action verbs matching target role qualifications.'
-                                    });
-                                  });
-                                }
-                                setComparisonBullets(repairs);
+                                const optimizedResume = optRes.data.optimized_resume || {};
+                                const matchMetrics = optRes.data.match_metrics || {};
+                                const reasonHint = Array.isArray(matchMetrics.recommended_improvements) && matchMetrics.recommended_improvements.length > 0
+                                  ? matchMetrics.recommended_improvements[0]
+                                  : `Tailored the resume for ${targetRole}.`;
+                                setComparisonBullets(buildComparisonBulletsFromOptimizedResume(optimizedResume, reasonHint));
                                 setCurrentStage(6);
                               } catch (e) {
                                 console.error(e);
@@ -1071,26 +1176,10 @@ export const UploadResumeWizard: React.FC<UploadResumeWizardProps> = ({
                                   improvement_goal: "Create the Best General ATS Resume"
                                 });
                                 const improvedDoc = optRes.data.improved || {};
-                                const repairs = [
-                                  {
-                                    section: 'Summary',
-                                    original: parsedData.personal_info?.summary || 'Developer seeking role.',
-                                    improved: improvedDoc.personal_info?.summary || 'Results-oriented developer with enhanced general ATS styling.',
-                                    reason: 'Polished summary layout for executive tone and general recruiter appeal.'
-                                  }
-                                ];
-                                if (improvedDoc.experience && improvedDoc.experience.length > 0) {
-                                  improvedDoc.experience.forEach((exp: any, idx: number) => {
-                                    const origExp = parsedData.experience?.[idx] || {};
-                                    repairs.push({
-                                      section: `Experience: ${exp.company || 'Company'}`,
-                                      original: origExp.description || 'Assisted with tasks.',
-                                      improved: exp.description || 'Spearheaded key development modules.',
-                                      reason: 'Strengthened action verb usage and polished sentence clarity.'
-                                    });
-                                  });
-                                }
-                                setComparisonBullets(repairs);
+                                setComparisonBullets(buildComparisonBulletsFromOptimizedResume(
+                                  improvedDoc,
+                                  'Improved phrasing, clarity, and ATS alignment for general recruiter screening.'
+                                ));
                                 setCurrentStage(6);
                               } catch (e) {
                                 console.error(e);
@@ -1209,14 +1298,17 @@ export const UploadResumeWizard: React.FC<UploadResumeWizardProps> = ({
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-h-[350px] overflow-y-auto pr-1">
-                  {[
-                    { role: 'Junior Frontend Developer', company: 'Google Partner Services', loc: 'Bangalore, KA', score: 94, salary: '₹8,50,000 - ₹12,00,000', skills: ['React', 'JavaScript', 'Tailwind CSS'] },
-                    { role: 'Software Engineer - Entry Level', company: 'Infosys Ltd', loc: 'Hyderabad, TS', score: 91, salary: '₹6,00,000 - ₹8,00,000', skills: ['Python', 'SQL', 'Git'] },
-                    { role: 'Associate Java Developer', company: 'Accenture India', loc: 'Remote / India', score: 88, salary: '₹7,50,000', skills: ['Java', 'Spring Boot', 'SQL'] },
-                    { role: 'Intern Developer', company: 'Zoho Corporation', loc: 'Chennai, TN', score: 86, salary: '₹4,00,000', skills: ['HTML', 'CSS', 'JavaScript'] }
-                  ].map((job, idx) => (
+                  {jobsLoading ? (
+                    <div className="md:col-span-2 text-center py-8 text-slate-500 font-medium">
+                      Loading live job matches from your resume profile...
+                    </div>
+                  ) : jobsError ? (
+                    <div className="md:col-span-2 text-center py-8 text-rose-500 font-medium">
+                      {jobsError}
+                    </div>
+                  ) : jobs.length > 0 ? jobs.map((job, idx) => (
                     <div 
-                      key={idx}
+                      key={job.id || idx}
                       className={`border rounded-2xl p-4 flex flex-col justify-between gap-3 ${
                         isDark ? 'border-white/10 bg-white/5' : 'border-slate-200/80 bg-slate-50/50'
                       }`}
@@ -1224,19 +1316,19 @@ export const UploadResumeWizard: React.FC<UploadResumeWizardProps> = ({
                       <div>
                         <div className="flex justify-between items-start">
                           <div>
-                            <h4 className={`text-xs font-bold ${isDark ? 'text-white' : 'text-slate-800'}`}>{job.role}</h4>
+                            <h4 className={`text-xs font-bold ${isDark ? 'text-white' : 'text-slate-800'}`}>{job.title}</h4>
                             <p className="text-[10px] text-emerald-500 font-extrabold">{job.company}</p>
                           </div>
                           <span className="text-[10px] px-2 py-0.5 rounded-full font-black bg-emerald-500/10 text-emerald-500">
-                            {job.score}% Match
+                            {job.ai_match_score ?? 0}% Match
                           </span>
                         </div>
                         <p className="text-[9px] text-slate-450 mt-1 flex items-center gap-1">
-                          <MapPin size={10} /> {job.loc} | {job.salary}
+                          <MapPin size={10} /> {job.location} | {job.salary || job.employment_type || 'Details available on the source listing'}
                         </p>
                         
                         <div className="flex flex-wrap gap-1 mt-3">
-                          {job.skills.map((s, sidx) => (
+                          {(job.skills_matched || job.skills_missing || []).slice(0, 4).map((s, sidx) => (
                             <span key={sidx} className={`px-1.5 py-0.5 rounded text-[8px] ${
                               isDark ? 'bg-white/5 text-slate-400' : 'bg-slate-200/60 text-slate-650 font-bold'
                             }`}>
@@ -1247,17 +1339,32 @@ export const UploadResumeWizard: React.FC<UploadResumeWizardProps> = ({
                       </div>
 
                       <div className="flex gap-2 border-t border-slate-200/50 dark:border-white/5 pt-2.5 mt-1">
-                        <button className="flex-1 py-1.5 text-[10px] font-bold bg-emerald-500 hover:bg-emerald-600 text-white rounded-lg cursor-pointer">
-                          Apply Now
+                        <button
+                          onClick={() => {
+                            if (job.apply_url) {
+                              window.open(job.apply_url, '_blank', 'noopener,noreferrer');
+                            }
+                          }}
+                          className={`flex-1 py-1.5 text-[10px] font-bold rounded-lg ${job.apply_url ? 'bg-emerald-500 hover:bg-emerald-600 text-white cursor-pointer' : 'bg-slate-200 text-slate-500 cursor-not-allowed'}`}
+                          disabled={!job.apply_url}
+                        >
+                          {job.apply_url ? 'Apply Now' : 'Link unavailable'}
                         </button>
-                        <button className={`px-2.5 py-1.5 text-[10px] font-bold rounded-lg border ${
-                          isDark ? 'border-white/10 text-slate-400 hover:text-white' : 'border-slate-200 text-slate-500 hover:text-slate-800'
-                        }`}>
+                        <button
+                          onClick={() => handleSaveJob(job)}
+                          className={`px-2.5 py-1.5 text-[10px] font-bold rounded-lg border ${
+                            isDark ? 'border-white/10 text-slate-400 hover:text-white' : 'border-slate-200 text-slate-500 hover:text-slate-800'
+                          }`}
+                        >
                           Save
                         </button>
                       </div>
                     </div>
-                  ))}
+                  )) : (
+                    <div className="md:col-span-2 text-center py-8 text-slate-500 font-medium">
+                      No matching jobs were found for this resume yet. Try improving the resume and running the analysis again.
+                    </div>
+                  )}
                 </div>
 
                 <div className="flex justify-end gap-3 mt-4 border-t border-slate-200/85 dark:border-white/10 pt-4">

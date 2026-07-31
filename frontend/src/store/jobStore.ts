@@ -8,6 +8,7 @@ export interface Job {
   location: string;
   description: string;
   url: string;
+  apply_url?: string;
   source: string;
   match_score?: number;
   reason?: string;
