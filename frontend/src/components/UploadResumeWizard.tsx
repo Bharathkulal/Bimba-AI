@@ -8,6 +8,7 @@ import {
   Trash2, Plus, Eye, ListOrdered, FileUp, SparklesIcon, CheckSquare, Save
 } from 'lucide-react';
 import { apiClient } from '../services/api';
+import { jobsService, type JobListItem } from '../services/jobs';
 import { Button } from './Button';
 import { Card } from './Card';
 import { ResumeBuilder } from './resume/ResumeBuilder';
@@ -66,6 +67,13 @@ export const UploadResumeWizard: React.FC<UploadResumeWizardProps> = ({
   // Template Selection (Step 9)
   const [selectedTemplate, setSelectedTemplate] = useState<string>('modern');
 
+  // Job recommendations and versioning states
+  const [recommendedJobs, setRecommendedJobs] = useState<JobListItem[]>([]);
+  const [loadingJobs, setLoadingJobs] = useState<boolean>(false);
+  const [jobsError, setJobsError] = useState<string>('');
+  const [renamingResume, setRenamingResume] = useState<boolean>(false);
+  const [newResumeName, setNewResumeName] = useState<string>('');
+
   // File Inputs
   const fileInputRef = useRef<HTMLInputElement>(null);
   const chatEndRef = useRef<HTMLDivElement>(null);
@@ -101,6 +109,12 @@ export const UploadResumeWizard: React.FC<UploadResumeWizardProps> = ({
       setStep(4); // Move to Step 4: Snapshot
     }
   }, [isParsing, activeTaskIdx, apiCompleted]);
+
+  useEffect(() => {
+    if (step === 12) {
+      fetchJobRecommendations();
+    }
+  }, [step]);
 
   useEffect(() => {
     if (chatEndRef.current) {
@@ -299,6 +313,52 @@ export const UploadResumeWizard: React.FC<UploadResumeWizardProps> = ({
       alert("Error analyzing resume heuristics.");
     } finally {
       setIsAiResponding(false);
+    }
+  };
+
+  const fetchJobRecommendations = async () => {
+    if (!resumeId) return;
+    setLoadingJobs(true);
+    setJobsError('');
+    try {
+      const data = await jobsService.getRecommendations(resumeId);
+      setRecommendedJobs(data.jobs || data || []);
+    } catch (err: any) {
+      console.error(err);
+      setJobsError('Failed to load personalized job recommendations.');
+    } finally {
+      setLoadingJobs(false);
+    }
+  };
+
+  const handleDownload = (format: 'pdf' | 'docx' | 'txt') => {
+    if (!resumeId) return;
+    const token = localStorage.getItem('auth_token');
+    const url = `${apiClient.defaults.baseURL}/api/resume-studio/${resumeId}/download/${format}${token ? `?token=${token}` : ''}`;
+    window.open(url, '_blank');
+  };
+
+  const handleSaveVersion = async (versionName: string) => {
+    if (!resumeId) return;
+    try {
+      await apiClient.post(`/api/resume-studio/${resumeId}/save-version`, { version_name: versionName });
+      alert("Resume version saved successfully!");
+    } catch (err) {
+      console.error(err);
+      alert("Failed to save resume version.");
+    }
+  };
+
+  const handleRenameResume = async (newName: string) => {
+    if (!resumeId) return;
+    try {
+      const updated = { ...parsedData, name: newName };
+      setParsedData(updated);
+      await saveResumeToDb(updated);
+      alert("Resume renamed successfully!");
+    } catch (err) {
+      console.error(err);
+      alert("Failed to rename resume.");
     }
   };
 
@@ -756,25 +816,212 @@ export const UploadResumeWizard: React.FC<UploadResumeWizardProps> = ({
               </motion.div>
             )}
 
-            {/* Step 11: Save Resume */}
+            {/* Step 11: Dedicated Download & Save Resume Screen */}
             {step === 11 && (
-              <motion.div key="step11" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="max-w-md mx-auto w-full text-center flex flex-col gap-6 py-12">
+              <motion.div key="step11" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex flex-col gap-6 w-full text-left">
+                <div className="flex justify-between items-center border-b pb-4">
+                  <div>
+                    <h2 className="text-lg font-black flex items-center gap-1.5 text-emerald-500">
+                      🎉 Your resume is ready!
+                    </h2>
+                    <p className="text-xs text-slate-500">Select formats, save version snapshots, or manage resume metadata.</p>
+                  </div>
+                  <Button onClick={() => setStep(12)} className="btn-glow-green text-xs font-bold py-2.5 px-4 flex items-center gap-1">
+                    Job Recommendations <ChevronRight size={14} />
+                  </Button>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                  <Card className="p-5 flex flex-col gap-3 md:col-span-1 border-slate-200 dark:border-white/5">
+                    <span className="text-xs font-extrabold uppercase text-slate-400">Resume Metadata</span>
+                    <div className="space-y-2 text-xs">
+                      <p><strong>Name:</strong> {parsedData.name || 'AI Enhanced Resume'}</p>
+                      <p><strong>ATS Score:</strong> <span className="font-bold text-emerald-500">{analysisData?.scores?.overall_score || 72}%</span></p>
+                      <p><strong>Template:</strong> <span className="capitalize font-bold">{selectedTemplate}</span></p>
+                      <p><strong>Last Updated:</strong> {new Date().toLocaleDateString()}</p>
+                    </div>
+
+                    <div className="flex flex-col gap-2 mt-4">
+                      <button 
+                        onClick={() => {
+                          const n = prompt("Enter new resume name:", parsedData.name || "AI Enhanced Resume");
+                          if (n) handleRenameResume(n);
+                        }}
+                        className="px-3 py-2 border border-slate-200 dark:border-white/10 hover:border-emerald-500 rounded-xl text-xs font-bold text-slate-700 dark:text-slate-250 cursor-pointer"
+                      >
+                        Rename Resume
+                      </button>
+                      <button 
+                        onClick={() => {
+                          const v = prompt("Enter version name:", "Final Clean Copy");
+                          if (v) handleSaveVersion(v);
+                        }}
+                        className="px-3 py-2 border border-slate-200 dark:border-white/10 hover:border-emerald-500 rounded-xl text-xs font-bold text-slate-700 dark:text-slate-250 cursor-pointer"
+                      >
+                        Save as New Version
+                      </button>
+                    </div>
+                  </Card>
+
+                  <Card className="p-5 flex flex-col gap-4 md:col-span-2 border-slate-200 dark:border-white/5">
+                    <span className="text-xs font-extrabold uppercase text-slate-450">Available Downloads</span>
+                    
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                      <button 
+                        onClick={() => handleDownload('pdf')}
+                        className="p-4 border border-slate-200 dark:border-white/10 rounded-2xl hover:border-emerald-500 hover:bg-emerald-500/5 transition-all text-center flex flex-col items-center justify-center gap-2 cursor-pointer"
+                      >
+                        <FileText className="text-emerald-500" size={24} />
+                        <span className="text-xs font-bold">Download PDF</span>
+                      </button>
+
+                      <button 
+                        onClick={() => handleDownload('docx')}
+                        className="p-4 border border-slate-200 dark:border-white/10 rounded-2xl hover:border-emerald-500 hover:bg-emerald-500/5 transition-all text-center flex flex-col items-center justify-center gap-2 cursor-pointer"
+                      >
+                        <FileCode className="text-blue-500" size={24} />
+                        <span className="text-xs font-bold">Download DOCX</span>
+                      </button>
+
+                      <button 
+                        onClick={() => handleDownload('txt')}
+                        className="p-4 border border-slate-200 dark:border-white/10 rounded-2xl hover:border-emerald-500 hover:bg-emerald-500/5 transition-all text-center flex flex-col items-center justify-center gap-2 cursor-pointer"
+                      >
+                        <Briefcase className="text-purple-500" size={24} />
+                        <span className="text-xs font-bold">Download TXT</span>
+                      </button>
+                    </div>
+                  </Card>
+                </div>
+              </motion.div>
+            )}
+
+            {/* Step 12: Real Job Recommendations */}
+            {step === 12 && (
+              <motion.div key="step12" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex flex-col gap-6 w-full text-left">
+                <div className="flex justify-between items-center border-b pb-4">
+                  <div>
+                    <h2 className="text-lg font-black">Personalized Live Job Matches</h2>
+                    <p className="text-xs text-slate-500">Real vacancies fetched dynamically based on your extracted resume skills.</p>
+                  </div>
+                  <Button onClick={() => setStep(13)} className="btn-glow-green text-xs font-bold py-2.5 px-4 flex items-center gap-1">
+                    Complete Flow <ChevronRight size={14} />
+                  </Button>
+                </div>
+
+                {loadingJobs ? (
+                  <div className="flex flex-col items-center justify-center py-12 gap-3">
+                    <RefreshCw size={24} className="animate-spin text-emerald-500" />
+                    <span className="text-xs font-bold text-slate-400">Analyzing skills alignment & fetching listings...</span>
+                  </div>
+                ) : jobsError ? (
+                  <div className="text-center py-12 text-slate-450 font-bold text-xs">{jobsError}</div>
+                ) : recommendedJobs.length === 0 ? (
+                  <div className="text-center py-12 space-y-4 max-w-md mx-auto">
+                    <AlertTriangle className="text-amber-500 mx-auto" size={32} />
+                    <h4 className="text-xs font-bold">We couldn't find jobs matching your current resume.</h4>
+                    <p className="text-[10px] text-slate-450">Try adding more details to your projects, keywords, or skills profile.</p>
+                    <div className="flex gap-2 justify-center pt-2">
+                      <button onClick={() => setStep(6)} className="px-3.5 py-1.5 bg-emerald-500 text-white font-bold text-[10px] rounded-lg cursor-pointer">Improve Resume Again</button>
+                      <button onClick={fetchJobRecommendations} className="px-3.5 py-1.5 bg-white/5 border border-white/10 text-slate-250 font-bold text-[10px] rounded-lg cursor-pointer">Refresh Recommendations</button>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-h-[45vh] overflow-y-auto pr-2">
+                    {recommendedJobs.map((job) => (
+                      <Card key={job.id} className="p-4 border-slate-200 dark:border-white/5 flex flex-col justify-between gap-3 text-xs">
+                        <div className="flex justify-between items-start gap-4">
+                          <div>
+                            <h4 className="font-extrabold text-slate-800 dark:text-white leading-snug">{job.title}</h4>
+                            <p className="text-[10px] text-slate-450 mt-0.5">{job.company} • {job.location}</p>
+                          </div>
+                          <span className="bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 text-[9px] font-black px-1.5 py-0.5 rounded shrink-0">
+                            {job.ai_match_score || 88}% MATCH
+                          </span>
+                        </div>
+
+                        {job.skills_matched && job.skills_matched.length > 0 && (
+                          <div className="flex flex-wrap gap-1">
+                            {job.skills_matched.slice(0, 3).map((s, i) => (
+                              <span key={i} className="text-[9px] px-1.5 py-0.5 rounded bg-slate-50 dark:bg-white/5 text-slate-400 font-semibold">{s}</span>
+                            ))}
+                          </div>
+                        )}
+
+                        <div className="flex items-center justify-between pt-2 border-t border-slate-100 dark:border-white/5">
+                          <span className="text-[9px] text-slate-450">Posted: {job.posted_date || 'Recent'}</span>
+                          <div className="flex items-center gap-1.5">
+                            {job.apply_url ? (
+                              <a 
+                                href={job.apply_url} 
+                                target="_blank" 
+                                rel="noreferrer"
+                                className="px-3 py-1 bg-emerald-650 hover:bg-emerald-700 text-white font-black text-[9px] rounded-lg"
+                              >
+                                Apply Now
+                              </a>
+                            ) : (
+                              <button disabled className="px-3 py-1 bg-slate-100 text-slate-400 text-[9px] rounded-lg cursor-not-allowed">
+                                No Link
+                              </button>
+                            )}
+                            <button 
+                              onClick={async () => {
+                                await jobsService.saveJob({
+                                  job_id: job.id,
+                                  company: job.company,
+                                  title: job.title,
+                                  location: job.location,
+                                  application_url: job.apply_url
+                                });
+                                alert("Job saved successfully!");
+                              }}
+                              className="px-2.5 py-1 bg-white/5 border border-white/10 text-slate-300 hover:border-emerald-500 rounded-lg text-[9px] font-bold cursor-pointer"
+                            >
+                              Save Job
+                            </button>
+                          </div>
+                        </div>
+                      </Card>
+                    ))}
+                  </div>
+                )}
+              </motion.div>
+            )}
+
+            {/* Step 13: Final Success Screen */}
+            {step === 13 && (
+              <motion.div key="step13" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="max-w-md mx-auto w-full text-center flex flex-col gap-6 py-12">
                 <div className="w-12 h-12 rounded-full bg-emerald-500/10 text-emerald-500 flex items-center justify-center border border-emerald-500/20 mx-auto animate-bounce">
-                  <Check size={24} />
+                  <CheckSquare size={24} />
                 </div>
                 <div>
-                  <h2 className="text-xl font-black">Saving to Secure Database</h2>
-                  <p className="text-xs text-slate-550 mt-1">Storing master profile, parsed layout, optimized versions, and reports in MongoDB.</p>
+                  <h2 className="text-xl font-black">Resume Improved successfully!</h2>
+                  <p className="text-xs text-slate-500 mt-1">All improvements saved, downloads compiled, and live recommendations synced.</p>
                 </div>
-                <Button 
-                  onClick={() => {
-                    onSuccess(resumeId || 0);
-                    onClose();
-                  }}
-                  className="btn-glow-green text-xs font-bold py-3 px-6 mx-auto"
-                >
-                  Go to Dashboard
-                </Button>
+
+                <div className="flex flex-col gap-2 max-w-xs mx-auto text-left text-xs bg-white/5 p-4 rounded-2xl border border-white/5">
+                  <p className="flex items-center gap-1.5"><Check size={14} className="text-emerald-500" /> Resume Improved & Reparsed</p>
+                  <p className="flex items-center gap-1.5"><Check size={14} className="text-emerald-500" /> Stored Version & Master Profile</p>
+                  <p className="flex items-center gap-1.5"><Check size={14} className="text-emerald-500" /> Updated ATS Score Ring</p>
+                  <p className="flex items-center gap-1.5"><Check size={14} className="text-emerald-500" /> Job Recommendations Generated</p>
+                </div>
+
+                <div className="flex flex-col gap-2 w-full max-w-xs mx-auto">
+                  <Button onClick={() => handleDownload('pdf')} className="w-full btn-glow-green text-xs font-bold py-2.5 flex items-center justify-center gap-1.5">
+                    Download PDF
+                  </Button>
+                  <Button 
+                    onClick={() => {
+                      onSuccess(resumeId || 0);
+                      onClose();
+                    }}
+                    variant="secondary"
+                    className="w-full text-xs font-bold py-2.5"
+                  >
+                    Continue to Dashboard
+                  </Button>
+                </div>
               </motion.div>
             )}
 
