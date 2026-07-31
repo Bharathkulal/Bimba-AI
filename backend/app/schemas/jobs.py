@@ -55,6 +55,8 @@ class JobSaveRequest(BaseModel):
     title: str
     location: str
     logo: Optional[str] = None
+    source: Optional[str] = None
+    application_url: Optional[str] = None
 
 # Saved Job response schema
 class SavedJobResponse(BaseModel):
@@ -64,6 +66,8 @@ class SavedJobResponse(BaseModel):
     title: str
     location: str
     logo: Optional[str] = None
+    source: Optional[str] = None
+    application_url: Optional[str] = None
     saved_at: datetime
 
     class Config:

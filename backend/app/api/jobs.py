@@ -20,7 +20,6 @@ from app.schemas.jobs import (
 )
 
 import json
-import random
 
 router = APIRouter(prefix="/jobs", tags=["Jobs Module"])
 
@@ -110,6 +109,8 @@ def save_job(
         "title": payload.title,
         "location": payload.location,
         "logo": payload.logo,
+        "source": payload.source,
+        "application_url": payload.application_url,
         "saved_at": datetime.utcnow()
     }
     db.saved_jobs.insert_one(saved_doc)
@@ -284,14 +285,14 @@ def get_job_recommendations(
             "company": job.get("company"),
             "location": job.get("location"),
             "logo": job.get("logo"),
-            "salary": job.get("salary") or "Competitive",
-            "employment_type": job.get("employment_type") or "Full-time",
-            "remote": job.get("remote", True),
-            "posted_date": job.get("posted_date") or "Recently",
-            "ai_match_score": job.get("ai_match_score") or random.randint(70, 95),
+            "salary": job.get("salary") or "Not disclosed",
+            "employment_type": job.get("employment_type") or "Not available",
+            "remote": bool(job.get("remote", False)),
+            "posted_date": job.get("posted_date") or "Not available",
+            "ai_match_score": job.get("ai_match_score") or 0,
             "skills_matched": job.get("skills_matched", []),
             "skills_missing": job.get("skills_missing", []),
-            "apply_url": job.get("apply_url") or "https://linkedin.com",
+            "apply_url": job.get("apply_url") or job.get("application_url") or "",
             "match_breakdown": {
                 "why_recommended": why[:4],
                 "missing_skills_learn": missing_skills_list[:3]
@@ -444,18 +445,16 @@ def manual_job_search_endpoint(
     })
     
     if not analysis_record:
-        # Fallback to general search without AI matching scores (or mock scores)
-        # Search via LinkedIn provider
         from app.services.jobs.linkedin_provider import LinkedInProvider
         provider = LinkedInProvider()
         jobs = provider.search_jobs(student, payload.keyword, payload.location, 10)
-        
+
         ranked_jobs = []
-        for j in jobs:
+        for job in jobs:
             ranked_jobs.append({
-                **j,
-                "match_score": 70,
-                "reason": "Resume not uploaded yet. Showing default match.",
+                **job,
+                "match_score": 0,
+                "reason": "Resume analysis is unavailable. No match score calculated yet.",
                 "matched_skills": [],
                 "missing_skills": []
             })
@@ -567,7 +566,7 @@ def create_manual_application(
         "company": payload.company,
         "company_logo": "https://images.unsplash.com/photo-1549923746-c502d488b3ea?w=100&auto=format&fit=crop&q=60",
         "title": payload.title,
-        "job_url": payload.job_url or "https://linkedin.com",
+        "job_url": payload.job_url or "",
         "location": payload.location or "Remote",
         "salary_offered": payload.salary_offered or "Competitive",
         "application_method": payload.application_method or "External Website",

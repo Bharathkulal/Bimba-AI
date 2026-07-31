@@ -25,11 +25,16 @@ export const JobCard: React.FC<JobCardProps> = ({ job }) => {
     }
   };
 
+  const applicationUrl = job.url || job.apply_url || '';
+
   const handleApply = async () => {
+    if (!applicationUrl) {
+      return;
+    }
     if (!isApplied) {
       await applyForJob(job, 'applied', 'Applied from Bimba AI recommendations');
     }
-    window.open(job.url, '_blank');
+    window.open(applicationUrl, '_blank', 'noopener,noreferrer');
   };
 
   return (
@@ -65,7 +70,7 @@ export const JobCard: React.FC<JobCardProps> = ({ job }) => {
       {/* Location */}
       <div className="flex items-center gap-1.5 text-[10px] text-slate-450 dark:text-slate-400 font-extrabold -mt-1">
         <MapPin size={12} className="text-emerald-500" />
-        <span>{job.location || 'India'}</span>
+        <span>{job.location || 'Not available'}</span>
       </div>
 
       {/* Match Rating */}
@@ -122,8 +127,9 @@ export const JobCard: React.FC<JobCardProps> = ({ job }) => {
           variant={isApplied ? 'outline' : 'primary'}
           className="font-bold gap-1 text-[11px]"
           icon={<ExternalLink size={12} />}
+          disabled={!applicationUrl}
         >
-          {isApplied ? 'Applied (Visit Link)' : 'Apply Now'}
+          {applicationUrl ? (isApplied ? 'Applied (Visit Link)' : 'Apply Now') : 'Application link unavailable.'}
         </Button>
       </div>
 

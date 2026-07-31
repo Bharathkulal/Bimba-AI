@@ -358,7 +358,7 @@ export const JobsDashboard: React.FC = () => {
             </div>
           ) : (activeTab === 'explore' ? jobs : activeTab === 'saved' ? savedJobs : activeTab === 'recommended' ? recommendedJobs : applications).length === 0 ? (
             <div className="text-center py-12 text-slate-400 text-xs font-semibold bg-white border border-slate-200/80 rounded-2xl">
-              No jobs found.
+              No matching jobs were found.
             </div>
           ) : (
             (activeTab === 'explore' ? jobs : activeTab === 'saved' ? savedJobs : activeTab === 'recommended' ? recommendedJobs : applications).map((job: any) => {
@@ -569,8 +569,9 @@ export const JobsDashboard: React.FC = () => {
                   variant="primary"
                   size="sm"
                   className="flex items-center gap-1.5"
+                  disabled={!selectedJob.apply_url}
                 >
-                  Apply Now
+                  {selectedJob.apply_url ? 'Apply Now' : 'Application link unavailable.'}
                 </Button>
               </div>
 

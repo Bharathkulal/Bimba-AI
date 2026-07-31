@@ -45,6 +45,8 @@ export interface SavedJob {
   title: string;
   location: string;
   logo?: string;
+  source?: string;
+  application_url?: string;
   saved_at: string;
 }
 
@@ -99,6 +101,8 @@ export const jobsService = {
     title: string;
     location: string;
     logo?: string;
+    source?: string;
+    application_url?: string;
   }): Promise<SavedJob> {
     const response = await apiClient.post('/api/jobs/save', job);
     return response.data;

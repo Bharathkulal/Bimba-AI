@@ -1,44 +1,173 @@
-import json
 import logging
-from typing import List, Dict, Any
+import re
+from typing import Any, Dict, List
+
+from app.models.student import Student
 from app.services.jobs.jsearch_provider import JSearchProvider
 from app.services.jobs.linkedin_provider import LinkedInProvider
-from app.services.ai_gateway import generate_ai_response
-from app.models.student import Student
 
 logger = logging.getLogger("job_recommendation_service")
 
-JOB_MATCHING_PROMPT_TEMPLATE = """
-You are an expert technical recruiter and ATS resume matching engine.
-Compare the candidate's resume profile with the job description below and calculate their match suitability.
+STOP_WORDS = {
+    "the",
+    "and",
+    "for",
+    "with",
+    "using",
+    "build",
+    "building",
+    "team",
+    "role",
+    "developer",
+    "engineer",
+    "software",
+    "service",
+    "services",
+    "platform",
+    "product",
+    "developer",
+    "senior",
+    "junior",
+    "mid",
+    "level",
+    "company",
+    "work",
+    "remote",
+    "full",
+    "time",
+    "part",
+    "intern",
+    "internship",
+    "experience",
+    "experience",
+    "years",
+    "year",
+}
 
-Candidate Resume Profile:
-- Skills: {skills}
-- Summary: {summary}
-- Target Role: {target_role}
 
-Job Details:
-- Title: {job_title}
-- Company: {company}
-- Location: {location}
-- Description: {job_desc}
+def _normalize_text(value: Any) -> str:
+    if not value:
+        return ""
+    return str(value).strip()
 
-You MUST output your response ONLY as a valid JSON object matching the schema below. Do not wrap it in markdown code blocks.
 
-Required JSON Schema:
-{{
-  "match_score": 92,
-  "reason": "Strong match in React development, but lacks AWS cloud deployment experience",
-  "matched_skills": ["React", "JavaScript"],
-  "missing_skills": ["AWS", "Docker"]
-}}
+def _normalize_list(values: Any) -> List[str]:
+    if not values:
+        return []
+    if isinstance(values, str):
+        values = [values]
+    return [str(item).strip() for item in values if str(item).strip()]
 
-CRITICAL RULES:
-1. Output match_score as an integer between 0 and 100.
-2. Under matched_skills, include only skills that appear in BOTH the candidate profile and the job description.
-3. Under missing_skills, include skills required for the job that the candidate lacks.
-4. Output ONLY the JSON. No other text.
-"""
+
+def _extract_years(experience_items: List[Dict[str, Any]]) -> int:
+    total_years = 0
+    for item in experience_items:
+        if isinstance(item, dict):
+            duration = item.get("duration") or item.get("years") or ""
+        else:
+            duration = ""
+        numbers = re.findall(r"(\d+)", str(duration))
+        if numbers:
+            total_years += int(numbers[0])
+    return total_years
+
+
+def _extract_candidate_profile(resume_analysis: Dict[str, Any], student: Student, keyword: str) -> Dict[str, Any]:
+    ext_data = (resume_analysis or {}).get("extracted_data", {}) or {}
+    skills = _normalize_list(ext_data.get("skills"))
+    technologies = _normalize_list(ext_data.get("technologies"))
+    experience_items = ext_data.get("experience") or []
+    education = _normalize_list(ext_data.get("education"))
+    target_role = _normalize_text(ext_data.get("target_role") or keyword) or "Software Engineer"
+    location_preference = _normalize_text(ext_data.get("location_preference") or ext_data.get("preferred_location") or student.address or "India")
+    salary_preference = _normalize_text(ext_data.get("salary_preference") or "")
+    industry = _normalize_text(ext_data.get("industry") or ext_data.get("preferred_industry") or "")
+    experience_years = _extract_years(experience_items if isinstance(experience_items, list) else [])
+
+    return {
+        "skills": skills,
+        "technologies": technologies,
+        "experience_years": experience_years,
+        "education": education,
+        "target_role": target_role,
+        "location_preference": location_preference,
+        "salary_preference": salary_preference,
+        "industry": industry,
+    }
+
+
+def _tokenize(text: str) -> List[str]:
+    tokens = re.findall(r"[a-z0-9+#.]+", (text or "").lower())
+    return [token for token in tokens if len(token) > 2 and token not in STOP_WORDS]
+
+
+def _experience_match(profile: Dict[str, Any], job: Dict[str, Any]) -> int:
+    profile_years = profile.get("experience_years", 0)
+    job_experience = _normalize_text(job.get("experience") or "")
+    if not job_experience:
+        return 15
+
+    if "senior" in job_experience.lower() and profile_years >= 4:
+        return 15
+    if "mid" in job_experience.lower() and profile_years >= 2:
+        return 15
+    if "entry" in job_experience.lower() and profile_years >= 0:
+        return 15
+    return 8
+
+
+def calculate_resume_job_match_score(profile: Dict[str, Any], job: Dict[str, Any]) -> int:
+    profile_skills = [skill.lower() for skill in profile.get("skills", []) + profile.get("technologies", []) if skill]
+    profile_terms = set(profile_skills)
+
+    job_text = " ".join([
+        _normalize_text(job.get("title")),
+        _normalize_text(job.get("description")),
+        _normalize_text(job.get("location")),
+        _normalize_text(job.get("employment_type")),
+        _normalize_text(job.get("experience")),
+        _normalize_text(job.get("salary")),
+    ])
+    job_tokens = set(_tokenize(job_text))
+
+    matched_skills = [skill for skill in sorted(profile_terms) if skill in job_tokens]
+    missing_skills = [skill for skill in sorted(profile_terms) if skill not in job_tokens]
+
+    skills_score = 0
+    if profile_terms:
+        skills_score = round((len(matched_skills) / max(1, len(profile_terms))) * 45)
+
+    experience_score = _experience_match(profile, job)
+
+    location_preference = (profile.get("location_preference") or "").lower()
+    job_location = (job.get("location") or "").lower()
+    if "remote" in job_location or "remote" in location_preference:
+        location_score = 10
+    elif location_preference and location_preference in job_location:
+        location_score = 10
+    else:
+        location_score = 5
+
+    education_score = 10 if not profile.get("education") else 10
+    keyword_score = round(min(10, len(matched_skills) * 2))
+
+    title_tokens = set(_tokenize(_normalize_text(job.get("title"))))
+    role_tokens = set(_tokenize(_normalize_text(profile.get("target_role"))))
+    title_similarity = round((len(title_tokens & role_tokens) / max(1, len(role_tokens))) * 5) if role_tokens else 0
+
+    seniority_score = 5 if "senior" in _normalize_text(job.get("title")).lower() and profile.get("experience_years", 0) >= 3 else 3
+
+    score = min(100, skills_score + experience_score + location_score + education_score + keyword_score + title_similarity + seniority_score)
+    return int(score)
+
+
+def _build_reason(profile: Dict[str, Any], job: Dict[str, Any], matched_skills: List[str], missing_skills: List[str], score: int) -> str:
+    if matched_skills:
+        return f"Strong overlap with your {', '.join(matched_skills[:3])} profile and a {score}% overall fit." 
+    if missing_skills:
+        return f"This role aligns with your background, but you may want to strengthen {', '.join(missing_skills[:3])}."
+    return f"This role is a {score}% fit based on the resume profile and job requirements."
+
 
 def get_job_recommendations_with_matching(
     db: Any,
@@ -46,95 +175,69 @@ def get_job_recommendations_with_matching(
     resume_analysis: Dict[str, Any],
     keyword: str,
     location: str = "India",
-    limit: int = 5
+    limit: int = 5,
 ) -> List[Dict[str, Any]]:
-    """
-    Main coordinator:
-    1. Search jobs via JSearch.
-    2. Fallback to LinkedIn if JSearch raises error.
-    3. Run AI matching on each job.
-    4. Return ranked list.
-    """
-    # ── 1. Search Jobs with Fallback ──
-    jobs = []
-    
-    # Try JSearch
+    jobs: List[Dict[str, Any]] = []
+
     try:
         jsearch = JSearchProvider()
         jobs = jsearch.search_jobs(student, keyword, location, limit)
-    except Exception as e:
-        logger.warning(f"JSearch Provider failed: {str(e)}. Falling back to LinkedIn.")
-        
-    # Fallback to LinkedIn
+    except Exception as exc:
+        logger.warning("JSearch provider failed: %s", exc)
+
     if not jobs:
         try:
             linkedin = LinkedInProvider()
             jobs = linkedin.search_jobs(student, keyword, location, limit)
-        except Exception as e:
-            logger.error(f"LinkedIn Provider failed: {str(e)}")
+        except Exception as exc:
+            logger.error("LinkedIn provider failed: %s", exc)
             jobs = []
-            
+
     if not jobs:
         logger.warning("No jobs returned by any provider.")
         return []
 
-    # ── 2. Parse Candidate Profile ──
-    ext_data = resume_analysis.get("extracted_data", {})
-    skills_list = ext_data.get("skills", [])
-    skills_str = ", ".join(skills_list)
-    summary_text = ext_data.get("summary", [""])[0] if isinstance(ext_data.get("summary"), list) and ext_data.get("summary") else ext_data.get("summary", "")
-    target_role = ext_data.get("target_role", keyword)
+    profile = _extract_candidate_profile(resume_analysis, student, keyword)
+    ranked_jobs: List[Dict[str, Any]] = []
 
-    # ── 3. Match Jobs with AI Gateway ──
-    ranked_jobs = []
-    
     for job in jobs:
-        prompt = JOB_MATCHING_PROMPT_TEMPLATE.format(
-            skills=skills_str,
-            summary=summary_text,
-            target_role=target_role,
-            job_title=job["title"],
-            company=job["company"],
-            location=job["location"],
-            job_desc=job["description"][:1000] # truncate to avoid token exhaust
-        )
-        
-        # Invoke AI Gateway
-        try:
-            raw_response = generate_ai_response(db, prompt, task_type="job_matching")
-            cleaned = raw_response.strip()
-            if cleaned.startswith("```json"):
-                cleaned = cleaned[7:]
-            if cleaned.endswith("```"):
-                cleaned = cleaned[:-3]
-                
-            parsed = json.loads(cleaned.strip())
-            match_score = int(parsed.get("match_score", 65))
-            reason = str(parsed.get("reason", "Medium match level"))
-            matched_skills = list(parsed.get("matched_skills", []))
-            missing_skills = list(parsed.get("missing_skills", []))
-        except Exception as e:
-            logger.error(f"AI Match Parsing failed for job {job['id']}: {str(e)}")
-            # Default fallback matching
-            match_score = 75
-            reason = "Default matching applied"
-            matched_skills = [s for s in skills_list[:3]]
-            missing_skills = ["Docker"]
+        score = calculate_resume_job_match_score(profile, job)
+        matched_skills = []
+        missing_skills = []
+        if profile.get("skills") or profile.get("technologies"):
+            profile_terms = [skill.lower() for skill in profile.get("skills", []) + profile.get("technologies", []) if skill]
+            matched_skills = [skill for skill in sorted(set(profile_terms)) if skill in _tokenize(" ".join([
+                _normalize_text(job.get("title")),
+                _normalize_text(job.get("description")),
+            ]))]
+            missing_skills = [skill for skill in sorted(set(profile_terms)) if skill not in matched_skills]
 
+        application_url = _normalize_text(job.get("url") or job.get("apply_url") or job.get("application_url"))
         ranked_jobs.append({
-            "id": job["id"],
-            "title": job["title"],
-            "company": job["company"],
-            "location": job["location"],
-            "description": job["description"],
-            "url": job["url"],
-            "source": job["source"],
-            "match_score": match_score,
-            "reason": reason,
-            "matched_skills": matched_skills,
-            "missing_skills": missing_skills
+            "id": str(job.get("id") or ""),
+            "title": _normalize_text(job.get("title") or "Job title not available"),
+            "company": _normalize_text(job.get("company") or "Not disclosed"),
+            "location": _normalize_text(job.get("location") or "Not available"),
+            "description": _normalize_text(job.get("description") or "No description provided."),
+            "url": application_url,
+            "application_url": application_url,
+            "apply_url": application_url,
+            "source": _normalize_text(job.get("source") or "provider"),
+            "salary": _normalize_text(job.get("salary") or "Not disclosed"),
+            "employment_type": _normalize_text(job.get("employment_type") or "Not available"),
+            "remote": bool(job.get("remote")),
+            "posted_date": _normalize_text(job.get("posted_date") or "Not available"),
+            "experience": _normalize_text(job.get("experience") or "Not available"),
+            "logo": job.get("logo"),
+            "requirements": job.get("requirements") or [],
+            "responsibilities": job.get("responsibilities") or [],
+            "benefits": job.get("benefits") or [],
+            "match_score": score,
+            "ai_match_score": score,
+            "reason": _build_reason(profile, job, matched_skills, missing_skills, score),
+            "matched_skills": matched_skills[:5],
+            "missing_skills": missing_skills[:5],
         })
 
-    # Sort by match score descending
-    ranked_jobs.sort(key=lambda x: x["match_score"], reverse=True)
+    ranked_jobs.sort(key=lambda item: item["match_score"], reverse=True)
     return ranked_jobs

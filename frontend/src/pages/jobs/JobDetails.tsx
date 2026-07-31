@@ -88,10 +88,13 @@ export const JobDetails: React.FC = () => {
 
   const handleApply = async () => {
     if (!job) return;
-    // Open external apply link
-    window.open(job.apply_url || 'https://linkedin.com', '_blank');
+    const applicationUrl = job.apply_url || '';
+    if (!applicationUrl) {
+      showToast('Application link unavailable.', 'error');
+      return;
+    }
+    window.open(applicationUrl, '_blank', 'noopener,noreferrer');
 
-    // Create a database application tracking history
     if (!application) {
       try {
         const app = await jobsService.applyJob({
@@ -268,9 +271,10 @@ export const JobDetails: React.FC = () => {
             ) : (
               <button 
                 onClick={handleApply}
-                className="flex-grow md:flex-grow-0 px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-extrabold text-xs rounded-xl shadow-md shadow-blue-500/10 transition-all duration-200 cursor-pointer flex items-center justify-center gap-1.5 hover:scale-102"
+                disabled={!job.apply_url}
+                className="flex-grow md:flex-grow-0 px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-extrabold text-xs rounded-xl shadow-md shadow-blue-500/10 transition-all duration-200 cursor-pointer flex items-center justify-center gap-1.5 hover:scale-102 disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                Apply Externally <ExternalLink size={13} />
+                {job.apply_url ? 'Apply Externally' : 'Application link unavailable.'} <ExternalLink size={13} />
               </button>
             )}
           </div>
@@ -285,15 +289,15 @@ export const JobDetails: React.FC = () => {
           <div className="bg-white border border-slate-200/60 rounded-[22px] p-5 shadow-sm grid grid-cols-2 sm:grid-cols-4 gap-4 text-left">
             <div className="flex flex-col">
               <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest leading-none">Salary Range</span>
-              <span className="text-xs font-black text-slate-800 mt-2 flex items-center gap-0.5"><DollarSign size={13} className="text-slate-400" /> {job.salary || 'Not specified'}</span>
+              <span className="text-xs font-black text-slate-800 mt-2 flex items-center gap-0.5"><DollarSign size={13} className="text-slate-400" /> {job.salary || 'Not disclosed'}</span>
             </div>
             <div className="flex flex-col">
               <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest leading-none">Job Type</span>
-              <span className="text-xs font-black text-slate-800 mt-2 flex items-center gap-0.5"><Briefcase size={13} className="text-slate-400" /> {job.employment_type || 'Full-time'}</span>
+              <span className="text-xs font-black text-slate-800 mt-2 flex items-center gap-0.5"><Briefcase size={13} className="text-slate-400" /> {job.employment_type || 'Not available'}</span>
             </div>
             <div className="flex flex-col">
               <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest leading-none">Experience</span>
-              <span className="text-xs font-black text-slate-800 mt-2 flex items-center gap-0.5"><Award size={13} className="text-slate-400" /> {job.experience || 'Entry level'}</span>
+              <span className="text-xs font-black text-slate-800 mt-2 flex items-center gap-0.5"><Award size={13} className="text-slate-400" /> {job.experience || 'Not available'}</span>
             </div>
             <div className="flex flex-col">
               <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest leading-none">Workplace</span>

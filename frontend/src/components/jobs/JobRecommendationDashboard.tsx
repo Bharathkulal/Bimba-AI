@@ -65,7 +65,7 @@ export const JobRecommendationDashboard: React.FC<JobRecommendationDashboardProp
         </div>
       ) : recommendations.length === 0 ? (
         <div className="text-center py-12 text-slate-450 font-bold text-xs bg-slate-50/50 dark:bg-white/5 border border-dashed rounded-3xl flex flex-col items-center gap-3">
-          <span>No recommendations cached. Click the button to scan your resume details.</span>
+          <span>No matching jobs were found. Refresh the search or upload an updated resume.</span>
           <Button
             onClick={handleScan}
             size="sm"

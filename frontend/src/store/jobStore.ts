@@ -23,6 +23,8 @@ export interface SavedJob {
   title: string;
   location: string;
   logo?: string;
+  source?: string;
+  application_url?: string;
   saved_at: string;
 }
 
@@ -133,7 +135,9 @@ export const useJobStore = create<JobState>((set, get) => ({
         company: job.company,
         title: job.title,
         location: job.location,
-        logo: job.logo || ''
+        logo: job.logo || '',
+        source: job.source,
+        application_url: job.url || job.apply_url || ''
       });
       await get().fetchSavedJobs();
     } catch (err) {
