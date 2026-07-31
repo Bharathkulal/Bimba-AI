@@ -1,6 +1,6 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Outlet, useLocation, useNavigate } from 'react-router-dom';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import { 
   Home, FileText, Briefcase, Building, 
   User, Settings 
@@ -14,6 +14,7 @@ export const DashboardLayout: React.FC = () => {
   const navigate = useNavigate();
   const { theme } = useThemeStore();
   const isDark = theme === 'dark';
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
   const menuItems = [
     { label: 'Dashboard', path: '/dashboard', icon: Home },
@@ -26,40 +27,31 @@ export const DashboardLayout: React.FC = () => {
 
   return (
     <div 
-      className={`min-h-screen flex overflow-x-hidden font-sans relative transition-colors duration-300 ${
-        isDark ? 'text-white' : 'bg-[#F8F8F8] text-[#111111]'
+      className={`min-h-screen flex flex-col font-sans relative transition-colors duration-300 ${
+        isDark ? 'bg-[#0B132B] text-white' : 'bg-slate-50 text-slate-900'
       }`}
-      style={isDark ? { background: 'linear-gradient(180deg, #08111D 0%, #0F172A 40%, #111827 100%)' } : {}}
     >
-      {/* Decorative subtle gradient background blur — light mode only */}
-      {!isDark && (
-        <>
-          <div className="absolute top-[-10%] left-[-15%] w-[45%] h-[45%] rounded-full bg-[#111111]/3 blur-[120px] pointer-events-none z-0" />
-          <div className="absolute bottom-[-10%] right-[-15%] w-[40%] h-[40%] rounded-full bg-[#111111]/3 blur-[120px] pointer-events-none z-0" />
-        </>
-      )}
-
-      {/* Floating Hover-Collapsible Sidebar (Desktop/Tablet) */}
+      {/* Drawer Overlay Sidebar (Controlled by 3-line Hamburger Menu) */}
       <Sidebar 
-        isMobileOpen={false}
-        onCloseMobile={() => {}}
+        isOpen={isSidebarOpen}
+        onClose={() => setIsSidebarOpen(false)}
       />
 
-      {/* Content Area Wrapper - Stable Left Padding on Desktop, bottom padding on mobile */}
-      <div className="flex-grow min-h-screen flex flex-col z-10 w-full md:pl-28 pb-16 md:pb-0 transition-all duration-350">
+      {/* Main Page Layout */}
+      <div className="flex-grow min-h-screen flex flex-col w-full pb-16 md:pb-0">
         
-        {/* Sticky Top Navbar */}
+        {/* Full-Width Sticky Top Header Navbar */}
         <DashboardNavbar 
-          onToggleMobileSidebar={() => {}}
+          onToggleSidebar={() => setIsSidebarOpen(prev => !prev)}
         />
         
-        {/* Main Content Pane with Lightweight Page Transition */}
-        <main className="p-4 md:p-8 flex-grow pb-20 md:pb-8 w-full overflow-hidden">
+        {/* Full-Width Dashboard Content Container */}
+        <main className="w-full flex-grow p-4 sm:p-6 md:p-8 max-w-7xl mx-auto">
           <motion.div
             key={location.pathname}
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ duration: 0.15 }}
+            initial={{ opacity: 0, y: 4 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.2 }}
             className="w-full h-full"
           >
             <Outlet />
@@ -67,11 +59,11 @@ export const DashboardLayout: React.FC = () => {
         </main>
       </div>
 
-      {/* Premium Bottom Navigation Tab Bar - MOBILE */}
-      <nav className={`md:hidden fixed bottom-0 left-0 right-0 backdrop-blur-lg border-t py-2 px-3 flex items-center justify-around z-45 shadow-2xl transition-colors duration-300 ${
+      {/* Mobile Bottom Navigation Tab Bar */}
+      <nav className={`md:hidden fixed bottom-0 left-0 right-0 backdrop-blur-xl border-t py-2 px-3 flex items-center justify-around z-30 shadow-2xl transition-colors duration-300 ${
         isDark 
-          ? 'bg-[#111827]/90 border-white/5' 
-          : 'bg-white/95 border-[#E5E7EB]'
+          ? 'bg-[#0F172A]/95 border-white/10' 
+          : 'bg-white/95 border-slate-200'
       }`}>
         {menuItems.map((item) => {
           const Icon = item.icon;
@@ -83,20 +75,20 @@ export const DashboardLayout: React.FC = () => {
             <button
               key={item.label}
               onClick={() => navigate(item.path)}
-              className="flex flex-col items-center justify-center py-1.5 px-2.5 relative cursor-pointer flex-1"
+              className="flex flex-col items-center justify-center py-1.5 px-2 cursor-pointer flex-1"
             >
               <Icon 
                 size={18} 
                 className={`transition-colors duration-200 ${
                   isActive 
                     ? 'text-emerald-500' 
-                    : 'text-[#9CA3AF]'
+                    : 'text-slate-400'
                 }`}
               />
-              <span className={`text-[8.5px] mt-1 tracking-wide transition-colors duration-200 ${
+              <span className={`text-[9px] mt-1 tracking-wide transition-colors duration-200 ${
                 isActive 
                   ? 'text-emerald-500 font-extrabold' 
-                  : 'text-[#6B7280] font-medium'
+                  : 'text-slate-500 font-medium'
               }`}>
                 {item.label}
               </span>
