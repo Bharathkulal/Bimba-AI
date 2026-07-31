@@ -15,7 +15,7 @@ export const FlowCVTemplate: React.FC<TemplateProps> = ({ data, fontFamily, font
     <div className="p-8 bg-white text-[#2D3748] max-w-[800px] mx-auto text-left font-sans leading-normal">
       {/* Header - Flowy Minimalist */}
       <div className="mb-6">
-        <h1 className="text-3xl font-black text-[#1A202C] tracking-tight">{pInfo.name || 'Candidate Name'}</h1>
+        <h1 className="text-3xl font-black text-[#1A202C] tracking-tight">{pInfo.name || ''}</h1>
         <div className="text-[10.5px] text-slate-500 font-semibold tracking-wide mt-1.5 flex flex-wrap gap-3">
           {contactParts.map((item, idx) => (
             <span key={idx}>

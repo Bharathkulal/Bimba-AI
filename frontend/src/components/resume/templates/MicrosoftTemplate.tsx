@@ -15,7 +15,7 @@ export const MicrosoftTemplate: React.FC<TemplateProps> = ({ data, fontFamily, f
     <div className="p-8 bg-white text-[#111111] max-w-[800px] mx-auto text-left font-sans leading-normal">
       {/* Header - Left Aligned */}
       <div className="border-b-4 border-slate-900 pb-3 mb-5">
-        <h1 className="text-3xl font-black text-slate-900 tracking-tight">{pInfo.name || 'Candidate Name'}</h1>
+        <h1 className="text-3xl font-black text-slate-900 tracking-tight">{pInfo.name || ''}</h1>
         <div className="text-[10px] text-slate-500 font-bold tracking-wide mt-1 flex flex-wrap gap-2.5">
           {contactParts.map((item, idx) => (
             <span key={idx}>

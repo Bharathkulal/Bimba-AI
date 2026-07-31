@@ -106,11 +106,8 @@ class ResumeParser:
             if not found:
                 norm_personal[target] = ""
                 
-        # Ensure default values if name/email are empty to avoid crash
-        if not norm_personal["name"]:
-            norm_personal["name"] = "Candidate"
-        if not norm_personal["email"]:
-            norm_personal["email"] = "info@bimba-ai.com"
+        # Leave empty if not extracted to avoid mock data issues
+        pass
             
         normalized["personal_info"] = norm_personal
         

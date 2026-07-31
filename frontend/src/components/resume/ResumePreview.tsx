@@ -4,7 +4,7 @@ import { TemplateRegistry } from './templates';
 import { FileText, Download, Sparkles, RefreshCw } from 'lucide-react';
 
 export const ResumePreview: React.FC = () => {
-  const { resumeData, selectedTemplate, generatePdf, generating } = useResumeBuilderStore();
+  const { resumeData, selectedTemplate, generatePdf, generating, resumeId } = useResumeBuilderStore();
   const [fontFamily, setFontFamily] = useState('Inter');
   const [fontSize, setFontSize] = useState('11pt');
 
@@ -14,10 +14,7 @@ export const ResumePreview: React.FC = () => {
   const TemplateComponent = TemplateRegistry[selectedTemplate] || TemplateRegistry.harvard;
 
   const handleDownload = async () => {
-    // Extract resumeId from query parameters or window path if available
-    const pathParts = window.location.pathname.split('/');
-    const resumeId = parseInt(pathParts[pathParts.length - 1], 10);
-    if (!isNaN(resumeId)) {
+    if (resumeId) {
       const res = await generatePdf(resumeId);
       if (res && res.pdf_url) {
         window.open(res.pdf_url, '_blank');

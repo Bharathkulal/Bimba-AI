@@ -82,23 +82,28 @@ def get_resume_builder_data(
         improvements = analysis_record.get("ai_improvements", {})
 
     personal_info = extracted.get("personal_info") or {}
+    doc_name = resume_doc.get("name") or ""
+    clean_name = doc_name.replace("AI Parsed - ", "").replace("AI Diagnostic - ", "").replace("AI Optimized - ", "").strip()
+    if clean_name.lower() == "resume":
+        clean_name = ""
+
     if not personal_info:
         personal_info = {
-            "name": extracted.get("name") or resume_doc.get("name") or student.student_name or "",
+            "name": extracted.get("name") or clean_name or student.student_name or "",
             "email": extracted.get("email") or resume_doc.get("email") or student.personal_email or "",
             "phone": extracted.get("phone") or resume_doc.get("phone") or student.phone or "",
-            "location": extracted.get("location") or resume_doc.get("address") or student.address or "Mangalore, India"
+            "location": extracted.get("location") or resume_doc.get("address") or student.address or ""
         }
         
-    # Standard fallback validation
+    # Standard validation without fake fallbacks
     if not personal_info.get("name"):
-        personal_info["name"] = student.student_name or "Candidate"
+        personal_info["name"] = student.student_name or ""
     if not personal_info.get("email"):
-        personal_info["email"] = student.personal_email or "student@bimba.ai"
+        personal_info["email"] = student.personal_email or ""
     if not personal_info.get("phone"):
-        personal_info["phone"] = student.phone or "9876543210"
+        personal_info["phone"] = student.phone or ""
     if not personal_info.get("location"):
-        personal_info["location"] = student.address or "Mangalore, India"
+        personal_info["location"] = student.address or ""
 
     # Construct clean response
     return {
@@ -109,36 +114,36 @@ def get_resume_builder_data(
             "skills": skills,
             "experience": [
                 {
-                    "position": exp.get("position") or exp.get("role") or "Software Engineer",
-                    "company": exp.get("company") or "Company Name",
-                    "duration": exp.get("duration") or exp.get("year") or "2024 - Present",
+                    "position": exp.get("position") or exp.get("role") or "",
+                    "company": exp.get("company") or "",
+                    "duration": exp.get("duration") or exp.get("year") or "",
                     "description": exp.get("description") or ""
                 } if isinstance(exp, dict) else {
-                    "position": "Software Engineer",
-                    "company": "Company Name",
-                    "duration": "2024 - Present",
+                    "position": "",
+                    "company": "",
+                    "duration": "",
                     "description": str(exp)
                 } for exp in experience
             ] if isinstance(experience, list) else [],
             "projects": [
                 {
-                    "title": proj.get("title") or proj.get("name") or "Project Title",
-                    "technologies": proj.get("technologies") or "React, FastAPI",
+                    "title": proj.get("title") or proj.get("name") or "",
+                    "technologies": proj.get("technologies") or proj.get("tech_stack") or "",
                     "description": proj.get("description") or ""
                 } if isinstance(proj, dict) else {
-                    "title": "Project Title",
-                    "technologies": "React, FastAPI",
+                    "title": "",
+                    "technologies": "",
                     "description": str(proj)
                 } for proj in projects
             ] if isinstance(projects, list) else [],
             "education": [
                 {
-                    "degree": edu.get("degree") or edu.get("course") or "BCA",
-                    "institution": edu.get("institution") or edu.get("school") or edu.get("college") or "College Name",
-                    "year": edu.get("year") or edu.get("passing_year") or "2024"
+                    "degree": edu.get("degree") or edu.get("course") or "",
+                    "institution": edu.get("institution") or edu.get("school") or edu.get("college") or "",
+                    "year": edu.get("year") or edu.get("passing_year") or ""
                 } if isinstance(edu, dict) else {
-                    "degree": "BCA",
-                    "institution": "College Name",
+                    "degree": "",
+                    "institution": "",
                     "year": str(edu)
                 } for edu in education
             ] if isinstance(education, list) else []

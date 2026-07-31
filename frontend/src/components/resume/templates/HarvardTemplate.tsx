@@ -28,7 +28,7 @@ export const HarvardTemplate: React.FC<TemplateProps> = ({ data, fontFamily, fon
     <div className={`p-8 bg-white text-[#111111] max-w-[800px] mx-auto text-left ${fontClass} leading-normal`}>
       {/* Header */}
       <div className="text-center border-b-2 border-slate-900 pb-3 mb-6">
-        <h1 className="text-3xl font-bold uppercase tracking-tight text-slate-900">{pInfo.name || 'Candidate Name'}</h1>
+        <h1 className="text-3xl font-bold uppercase tracking-tight text-slate-900">{pInfo.name || ''}</h1>
         <div className="text-[11px] text-slate-650 font-semibold tracking-wide mt-1.5 flex flex-wrap justify-center gap-2">
           {contactParts.map((item, idx) => (
             <span key={idx}>

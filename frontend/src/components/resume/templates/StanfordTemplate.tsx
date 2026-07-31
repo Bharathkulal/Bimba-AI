@@ -15,7 +15,7 @@ export const StanfordTemplate: React.FC<TemplateProps> = ({ data, fontFamily, fo
     <div className="p-8 bg-white text-[#1E293B] max-w-[800px] mx-auto text-left font-serif leading-relaxed">
       {/* Header */}
       <div className="text-center mb-6">
-        <h1 className="text-3xl font-extrabold tracking-tight text-red-800">{pInfo.name || 'Candidate Name'}</h1>
+        <h1 className="text-3xl font-extrabold tracking-tight text-red-800">{pInfo.name || ''}</h1>
         <div className="text-[11px] text-slate-500 font-semibold mt-1 tracking-wider uppercase flex flex-wrap justify-center gap-3">
           {contactParts.map((item, idx) => (
             <span key={idx}>

@@ -15,7 +15,7 @@ export const NovoresumeTemplate: React.FC<TemplateProps> = ({ data, fontFamily, 
     <div className="p-8 bg-white text-[#2C3E50] max-w-[800px] mx-auto text-left font-sans leading-normal">
       {/* Header - Colored Accent Box top border */}
       <div className="border-t-4 border-[#3498DB] pt-4 mb-5 text-center">
-        <h1 className="text-2xl font-black tracking-tight text-slate-800 uppercase">{pInfo.name || 'Candidate Name'}</h1>
+        <h1 className="text-2xl font-black tracking-tight text-slate-800 uppercase">{pInfo.name || ''}</h1>
         <div className="text-[10px] text-slate-500 font-bold mt-1.5 flex flex-wrap justify-center gap-2">
           {contactParts.map((item, idx) => (
             <span key={idx} className="bg-slate-100 px-2 py-0.5 rounded text-slate-650">

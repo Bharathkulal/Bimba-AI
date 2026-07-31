@@ -45,6 +45,7 @@ export interface GeneratedVersion {
 }
 
 interface ResumeBuilderState {
+  resumeId: number | null;
   resumeData: ResumeBuilderData | null;
   aiImprovements: any | null;
   selectedTemplate: string;
@@ -55,6 +56,7 @@ interface ResumeBuilderState {
   
   fetchBuilderData: (resumeId: number) => Promise<void>;
   updateResumeData: (updater: (prev: ResumeBuilderData) => ResumeBuilderData) => void;
+  saveResumeData: () => Promise<void>;
   setSelectedTemplate: (template: string) => void;
   generatePdf: (resumeId: number) => Promise<{ pdf_url: string; pdf_base64?: string } | null>;
   fetchPreviousVersions: (resumeId: number) => Promise<void>;
@@ -62,6 +64,7 @@ interface ResumeBuilderState {
 }
 
 export const useResumeBuilderStore = create<ResumeBuilderState>((set, get) => ({
+  resumeId: null,
   resumeData: null,
   aiImprovements: null,
   selectedTemplate: 'ats_classic',
@@ -71,7 +74,7 @@ export const useResumeBuilderStore = create<ResumeBuilderState>((set, get) => ({
   errors: null,
 
   fetchBuilderData: async (resumeId: number) => {
-    set({ loading: true, errors: null });
+    set({ loading: true, errors: null, resumeId });
     try {
       const response = await apiClient.get(`/api/resume/builder/${resumeId}`);
       if (response.data.success) {
@@ -92,8 +95,28 @@ export const useResumeBuilderStore = create<ResumeBuilderState>((set, get) => ({
   updateResumeData: (updater) => {
     set((state) => {
       if (!state.resumeData) return {};
-      return { resumeData: updater(state.resumeData) };
+      const nextData = updater(state.resumeData);
+      
+      // Auto-persist to MongoDB in background
+      const resumeId = state.resumeId;
+      if (resumeId) {
+        apiClient.put(`/api/resume/${resumeId}/update`, nextData).catch(err => {
+          console.error("Autosave failed:", err);
+        });
+      }
+      
+      return { resumeData: nextData };
     });
+  },
+
+  saveResumeData: async () => {
+    const { resumeId, resumeData } = get();
+    if (!resumeId || !resumeData) return;
+    try {
+      await apiClient.put(`/api/resume/${resumeId}/update`, resumeData);
+    } catch (err: any) {
+      console.error("Manual save failed:", err);
+    }
   },
 
   setSelectedTemplate: (template) => set({ selectedTemplate: template }),
@@ -104,6 +127,9 @@ export const useResumeBuilderStore = create<ResumeBuilderState>((set, get) => ({
 
     set({ generating: true, errors: null });
     try {
+      // Force save latest state before compiling PDF
+      await apiClient.put(`/api/resume/${resumeId}/update`, resumeData);
+      
       const response = await apiClient.post(`/api/resume/generate-pdf/${resumeId}`, {
         template: selectedTemplate,
         resume_data: resumeData
@@ -138,6 +164,7 @@ export const useResumeBuilderStore = create<ResumeBuilderState>((set, get) => ({
   },
 
   clearBuilderStore: () => set({
+    resumeId: null,
     resumeData: null,
     aiImprovements: null,
     selectedTemplate: 'ats_classic',

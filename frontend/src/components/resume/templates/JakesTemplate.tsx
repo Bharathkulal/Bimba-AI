@@ -22,7 +22,7 @@ export const JakesTemplate: React.FC<TemplateProps> = ({ data, fontFamily, fontS
     <div className={`p-8 bg-white text-[#111111] max-w-[800px] mx-auto text-left ${getFontClass()} leading-normal`}>
       {/* Header */}
       <div className="text-center mb-5">
-        <h1 className="text-2xl font-bold tracking-wide uppercase">{pInfo.name || 'Candidate Name'}</h1>
+        <h1 className="text-2xl font-bold tracking-wide uppercase">{pInfo.name || ''}</h1>
         <div className="text-[10px] text-slate-500 font-medium tracking-wide mt-1.5 flex flex-wrap justify-center gap-1.5">
           {contactParts.map((item, idx) => (
             <span key={idx}>

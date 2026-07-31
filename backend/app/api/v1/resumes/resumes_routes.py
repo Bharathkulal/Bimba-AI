@@ -171,10 +171,10 @@ def create_resume(payload: dict, student: Student = Depends(get_current_student)
     default_education = [
         {
             "id": default_edu_id,
-            "institution": student.section or "Bimba University",
-            "degree": student.department,
-            "passing_year": 2026,
-            "cgpa": 9.1,
+            "institution": student.section or "",
+            "degree": student.department or "",
+            "passing_year": None,
+            "cgpa": None,
             "board": None,
             "percentage": None,
             "achievements": None
@@ -1054,11 +1054,11 @@ def simulated_resume_parse(text: str) -> dict:
     if lines:
         name = lines[0]
         
-    email = email_match.group(0) if email_match else "candidate@example.com"
-    phone = phone_match.group(0) if phone_match else "+91 99999 99999"
+    email = email_match.group(0) if email_match else ""
+    phone = phone_match.group(0) if phone_match else ""
     
-    summary = "Detail-oriented professional with experience in software systems."
-    education = [{"institution": "Bimba University", "degree": "Bachelor of Computer Applications", "passing_year": 2026, "cgpa": 9.1}]
+    summary = ""
+    education = []
     experience = []
     projects = []
     skills = []
@@ -1086,23 +1086,20 @@ def simulated_resume_parse(text: str) -> dict:
                 if part and len(part) < 30:
                     skills.append({"category": "Programming", "name": part, "level": 4})
         elif current_section == "experience" and len(experience) < 3:
-            experience.append({"company": "SaaS Corp", "position": "Software Engineer Intern", "duration": "3 Months", "description": line})
+            experience.append({"company": "", "position": "", "duration": "", "description": line})
             current_section = None
         elif current_section == "projects" and len(projects) < 3:
-            projects.append({"name": "AI Web Application", "tech_stack": "React, Python", "description": line})
+            projects.append({"name": "", "tech_stack": "", "description": line})
             current_section = None
             
-    if not skills:
-        skills = [{"category": "Programming", "name": "React", "level": 4}, {"category": "Programming", "name": "Python", "level": 4}]
-        
     return {
         "personal_info": {
             "name": name,
             "email": email,
             "phone": phone,
-            "address": "Mangalore, India",
-            "linkedin": "linkedin.com/in/candidate",
-            "github": "github.com/candidate",
+            "address": "",
+            "linkedin": "",
+            "github": "",
             "portfolio": "",
             "summary": summary
         },
@@ -1112,12 +1109,12 @@ def simulated_resume_parse(text: str) -> dict:
         "skills": skills,
         "certifications": [],
         "achievements": {
-            "hackathons": "Participant in Smart India Hackathon",
+            "hackathons": "",
             "awards": "",
-            "soft_skills": "Teamwork, Communication",
+            "soft_skills": "",
             "extracurricular": ""
         },
-        "languages": ["English"],
+        "languages": [],
         "links": []
     }
 

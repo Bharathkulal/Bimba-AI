@@ -15,7 +15,7 @@ export const IndeedTemplate: React.FC<TemplateProps> = ({ data, fontFamily, font
     <div className="p-8 bg-white text-[#333333] max-w-[800px] mx-auto text-left font-sans leading-snug">
       {/* Header */}
       <div className="mb-4">
-        <h1 className="text-2xl font-black text-slate-800 tracking-tight">{pInfo.name || 'Candidate Name'}</h1>
+        <h1 className="text-2xl font-black text-slate-800 tracking-tight">{pInfo.name || ''}</h1>
         <div className="text-[10px] text-slate-500 font-bold mt-1 flex flex-wrap gap-2">
           {contactParts.map((item, idx) => (
             <span key={idx} className="bg-slate-100 px-2 py-0.5 rounded">

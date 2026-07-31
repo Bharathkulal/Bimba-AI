@@ -33,7 +33,7 @@ class ResumeRepository:
         education_list = []
         for idx, edu in enumerate(parsed_data.get("education", []) or []):
             if isinstance(edu, str):
-                edu = {"degree": edu, "institution": "Institution", "year": "2024"}
+                edu = {"degree": edu, "institution": "", "year": ""}
             elif not isinstance(edu, dict):
                 edu = {}
             if not edu.get("id"):
@@ -44,7 +44,7 @@ class ResumeRepository:
         experience_list = []
         for exp in (parsed_data.get("experience", []) or []):
             if isinstance(exp, str):
-                exp = {"position": "Software Engineer", "company": "Company", "duration": "2024", "description": exp}
+                exp = {"position": "", "company": "", "duration": "", "description": exp}
             elif not isinstance(exp, dict):
                 exp = {}
             if not exp.get("id"):
@@ -55,7 +55,7 @@ class ResumeRepository:
         projects_list = []
         for proj in (parsed_data.get("projects", []) or []):
             if isinstance(proj, str):
-                proj = {"title": "Project", "technologies": "React, Python", "description": proj}
+                proj = {"title": "", "technologies": "", "description": proj}
             elif not isinstance(proj, dict):
                 proj = {}
             if not proj.get("id"):
@@ -79,18 +79,18 @@ class ResumeRepository:
         resume_doc = {
             "id": next_id,
             "student_id": student_id,
-            "name": f"AI Parsed - {personal_info.get('name', 'Resume')}",
+            "name": f"AI Parsed - {personal_info.get('name') or 'Resume'}",
             "resume_type": "Experienced" if len(experience) > 0 else "Fresher",
-            "target_role": personal_info.get("title") or "Software Engineer",
-            "career_objective": personal_info.get("summary") or "Tailored Resume profile.",
-            "preferred_industry": "Technology",
+            "target_role": personal_info.get("title") or "",
+            "career_objective": personal_info.get("summary") or "",
+            "preferred_industry": "",
             "language": "English",
-            "expected_salary": "Competitive",
+            "expected_salary": "",
             "visibility": "Private",
             "status": "Draft",
-            "template_id": "celestial",
-            "color_theme": "blue",
-            "ats_score": 70,
+            "template_id": "harvard",
+            "color_theme": "indigo",
+            "ats_score": 0,
             
             # Map sections
             "phone": personal_info.get("phone", ""),

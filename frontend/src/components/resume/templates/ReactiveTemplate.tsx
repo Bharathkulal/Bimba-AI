@@ -16,7 +16,7 @@ export const ReactiveTemplate: React.FC<TemplateProps> = ({ data, fontFamily, fo
       {/* Header */}
       <div className="mb-6 flex justify-between items-end border-b-2 border-indigo-600 pb-3">
         <div>
-          <h1 className="text-3xl font-black text-slate-800 tracking-tight">{pInfo.name || 'Candidate Name'}</h1>
+          <h1 className="text-3xl font-black text-slate-800 tracking-tight">{pInfo.name || ''}</h1>
           <p className="text-[10px] text-indigo-650 font-bold uppercase tracking-wider mt-1">Professional Resume</p>
         </div>
         <div className="text-[10px] text-slate-500 font-semibold tracking-wide text-right space-y-0.5">
