@@ -63,6 +63,63 @@ export const UploadResumeWizard: React.FC<UploadResumeWizardProps> = ({
   // Edit / Completion states (Step 4 & 6)
   const [editSectionType, setEditSectionType] = useState<string | null>(null);
   const [customSections, setCustomSections] = useState<any[]>([]);
+  const [editingCards, setEditingCards] = useState<{ [key: string]: boolean }>({});
+
+  const toggleEditCard = (cardKey: string) => {
+    setEditingCards(prev => {
+      const isEditing = !prev[cardKey];
+      if (!isEditing) {
+        saveResumeToDb(parsedData);
+      }
+      return { ...prev, [cardKey]: isEditing };
+    });
+  };
+
+  const handleAddItemToSection = (sectionKey: string, defaultItem: any) => {
+    const currentList = Array.isArray(parsedData[sectionKey]) ? parsedData[sectionKey] : [];
+    const updatedList = [...currentList, defaultItem];
+    const updatedData = { ...parsedData, [sectionKey]: updatedList };
+    setParsedData(updatedData);
+    setEditingCards(prev => ({ ...prev, [sectionKey]: true }));
+    saveResumeToDb(updatedData);
+  };
+
+  const handleDeleteItemFromSection = (sectionKey: string, index: number) => {
+    const currentList = Array.isArray(parsedData[sectionKey]) ? parsedData[sectionKey] : [];
+    const updatedList = currentList.filter((_: any, i: number) => i !== index);
+    const updatedData = { ...parsedData, [sectionKey]: updatedList };
+    setParsedData(updatedData);
+    saveResumeToDb(updatedData);
+  };
+
+  const handleUpdateItemField = (sectionKey: string, index: number, field: string, value: any) => {
+    const currentList = [...(parsedData[sectionKey] || [])];
+    if (field === '') {
+      currentList[index] = value;
+    } else if (typeof currentList[index] === 'object' && currentList[index] !== null) {
+      currentList[index] = { ...currentList[index], [field]: value };
+    } else {
+      currentList[index] = value;
+    }
+    const updatedData = { ...parsedData, [sectionKey]: currentList };
+    setParsedData(updatedData);
+  };
+
+  const handleUpdateScalarField = (field: string, value: any) => {
+    const updatedData = { ...parsedData, [field]: value };
+    setParsedData(updatedData);
+  };
+
+  const handleUpdatePersonalInfoField = (field: string, value: any) => {
+    const updatedData = {
+      ...parsedData,
+      personal_info: {
+        ...(parsedData.personal_info || {}),
+        [field]: value
+      }
+    };
+    setParsedData(updatedData);
+  };
 
   // Template Selection (Step 9)
   const [selectedTemplate, setSelectedTemplate] = useState<string>('modern');
@@ -279,7 +336,7 @@ export const UploadResumeWizard: React.FC<UploadResumeWizardProps> = ({
 
   const saveResumeToDb = async (data: any) => {
     if (!resumeId) return;
-    await apiClient.post(`/api/resume-studio/${resumeId}/save-final`, {
+    const payload = {
       master: {
         name: `AI Enhanced - ${data.personal_info?.name || 'Resume'}`,
         resume_type: data.experience?.length > 0 ? 'Experienced' : 'Fresher',
@@ -290,15 +347,31 @@ export const UploadResumeWizard: React.FC<UploadResumeWizardProps> = ({
         linkedin: data.personal_info?.linkedin || '',
         github: data.personal_info?.github || '',
         portfolio: data.personal_info?.portfolio || '',
-        summary: data.personal_info?.summary || ''
+        summary: data.summary || data.personal_info?.summary || ''
       },
       personal_info: data.personal_info || {},
+      summary: data.summary || '',
+      objective: data.objective || '',
       education: data.education || [],
       experience: data.experience || [],
       projects: data.projects || [],
-      skills: data.skills || [],
-      certifications: data.certifications || []
-    });
+      technicalSkills: data.technicalSkills || data.skills || [],
+      softSkills: data.softSkills || [],
+      certifications: data.certifications || [],
+      internships: data.internships || [],
+      achievements: data.achievements || [],
+      languages: data.languages || [],
+      portfolioLinks: data.portfolioLinks || [],
+      publications: data.publications || [],
+      volunteerExperience: data.volunteerExperience || [],
+      references: data.references || []
+    };
+    try {
+      await apiClient.put(`/api/resume-studio/profile/${resumeId}`, payload);
+      await apiClient.put(`/api/resume/${resumeId}/update`, payload);
+    } catch (err) {
+      console.error("Error saving resume profile:", err);
+    }
   };
 
   const runAnalysis = async (nextStep: number) => {
@@ -549,44 +622,472 @@ export const UploadResumeWizard: React.FC<UploadResumeWizardProps> = ({
                 <div className="flex justify-between items-center border-b pb-4">
                   <div>
                     <h2 className="text-lg font-black">AI Resume Snapshot</h2>
-                    <p className="text-xs text-slate-500">Review all information extracted from your resume. You can edit any details below.</p>
+                    <p className="text-xs text-slate-500">Review and edit all extracted sections. Each card supports editing, saving, adding, and deleting items.</p>
                   </div>
                   <Button onClick={() => setStep(5)} className="btn-glow-green text-xs font-bold py-2.5 px-4 flex items-center gap-1">
                     Continue to Interview <ChevronRight size={14} />
                   </Button>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-h-[50vh] overflow-y-auto pr-2">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-h-[60vh] overflow-y-auto pr-2">
+                  
+                  {/* 1. Personal Information Card */}
                   <Card className="p-5 flex flex-col gap-3">
                     <div className="flex justify-between items-center border-b pb-2">
                       <span className="text-xs font-bold text-emerald-500 uppercase">Personal Information</span>
-                      <button onClick={() => setEditSectionType('personal')} className="text-[10px] font-bold text-slate-400 hover:text-emerald-500">Edit</button>
+                      <button 
+                        onClick={() => toggleEditCard('personal_info')} 
+                        className="text-[10px] font-bold text-slate-400 hover:text-emerald-500 cursor-pointer flex items-center gap-1"
+                      >
+                        {editingCards['personal_info'] ? <><Save size={11} className="text-emerald-500"/> Save</> : <><FileEdit size={11}/> Edit</>}
+                      </button>
                     </div>
-                    <div className="text-xs space-y-2">
-                      <p><strong>Name:</strong> {parsedData.personal_info?.name || 'Not Provided'}</p>
-                      <p><strong>Email:</strong> {parsedData.personal_info?.email || 'Not Provided'}</p>
-                      <p><strong>Phone:</strong> {parsedData.personal_info?.phone || 'Not Provided'}</p>
-                      <p><strong>LinkedIn:</strong> {parsedData.personal_info?.linkedin || 'Not Provided'}</p>
-                      <p><strong>GitHub:</strong> {parsedData.personal_info?.github || 'Not Provided'}</p>
-                    </div>
+                    {editingCards['personal_info'] ? (
+                      <div className="grid grid-cols-2 gap-2 text-xs">
+                        <div>
+                          <label className="text-[9px] font-bold text-slate-400 uppercase">Full Name</label>
+                          <input type="text" value={parsedData.personal_info?.name || ''} onChange={(e) => handleUpdatePersonalInfoField('name', e.target.value)} className="w-full p-1.5 border border-slate-200 dark:border-white/10 rounded bg-white dark:bg-slate-900 text-xs" />
+                        </div>
+                        <div>
+                          <label className="text-[9px] font-bold text-slate-400 uppercase">Email</label>
+                          <input type="email" value={parsedData.personal_info?.email || ''} onChange={(e) => handleUpdatePersonalInfoField('email', e.target.value)} className="w-full p-1.5 border border-slate-200 dark:border-white/10 rounded bg-white dark:bg-slate-900 text-xs" />
+                        </div>
+                        <div>
+                          <label className="text-[9px] font-bold text-slate-400 uppercase">Phone</label>
+                          <input type="text" value={parsedData.personal_info?.phone || ''} onChange={(e) => handleUpdatePersonalInfoField('phone', e.target.value)} className="w-full p-1.5 border border-slate-200 dark:border-white/10 rounded bg-white dark:bg-slate-900 text-xs" />
+                        </div>
+                        <div>
+                          <label className="text-[9px] font-bold text-slate-400 uppercase">Address</label>
+                          <input type="text" value={parsedData.personal_info?.address || ''} onChange={(e) => handleUpdatePersonalInfoField('address', e.target.value)} className="w-full p-1.5 border border-slate-200 dark:border-white/10 rounded bg-white dark:bg-slate-900 text-xs" />
+                        </div>
+                        <div>
+                          <label className="text-[9px] font-bold text-slate-400 uppercase">LinkedIn</label>
+                          <input type="text" value={parsedData.personal_info?.linkedin || ''} onChange={(e) => handleUpdatePersonalInfoField('linkedin', e.target.value)} className="w-full p-1.5 border border-slate-200 dark:border-white/10 rounded bg-white dark:bg-slate-900 text-xs" />
+                        </div>
+                        <div>
+                          <label className="text-[9px] font-bold text-slate-400 uppercase">GitHub</label>
+                          <input type="text" value={parsedData.personal_info?.github || ''} onChange={(e) => handleUpdatePersonalInfoField('github', e.target.value)} className="w-full p-1.5 border border-slate-200 dark:border-white/10 rounded bg-white dark:bg-slate-900 text-xs" />
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="text-xs space-y-1">
+                        <p><strong>Name:</strong> {parsedData.personal_info?.name || 'Not Provided'}</p>
+                        <p><strong>Email:</strong> {parsedData.personal_info?.email || 'Not Provided'}</p>
+                        <p><strong>Phone:</strong> {parsedData.personal_info?.phone || 'Not Provided'}</p>
+                        <p><strong>Address:</strong> {parsedData.personal_info?.address || 'Not Provided'}</p>
+                        <p><strong>LinkedIn:</strong> {parsedData.personal_info?.linkedin || 'Not Provided'}</p>
+                        <p><strong>GitHub:</strong> {parsedData.personal_info?.github || 'Not Provided'}</p>
+                      </div>
+                    )}
                   </Card>
 
+                  {/* 2. Professional Summary Card */}
+                  <Card className="p-5 flex flex-col gap-3">
+                    <div className="flex justify-between items-center border-b pb-2">
+                      <span className="text-xs font-bold text-emerald-500 uppercase">Professional Summary</span>
+                      <button 
+                        onClick={() => toggleEditCard('summary')} 
+                        className="text-[10px] font-bold text-slate-400 hover:text-emerald-500 cursor-pointer flex items-center gap-1"
+                      >
+                        {editingCards['summary'] ? <><Save size={11} className="text-emerald-500"/> Save</> : <><FileEdit size={11}/> Edit</>}
+                      </button>
+                    </div>
+                    {editingCards['summary'] ? (
+                      <textarea rows={4} value={parsedData.summary || ''} onChange={(e) => handleUpdateScalarField('summary', e.target.value)} className="w-full p-2 border border-slate-200 dark:border-white/10 rounded bg-white dark:bg-slate-900 text-xs font-medium" />
+                    ) : (
+                      <p className="text-xs text-slate-600 dark:text-slate-300 italic">{parsedData.summary || 'No professional summary provided.'}</p>
+                    )}
+                  </Card>
+
+                  {/* 3. Career Objective Card */}
+                  <Card className="p-5 flex flex-col gap-3">
+                    <div className="flex justify-between items-center border-b pb-2">
+                      <span className="text-xs font-bold text-emerald-500 uppercase">Career Objective</span>
+                      <button 
+                        onClick={() => toggleEditCard('objective')} 
+                        className="text-[10px] font-bold text-slate-400 hover:text-emerald-500 cursor-pointer flex items-center gap-1"
+                      >
+                        {editingCards['objective'] ? <><Save size={11} className="text-emerald-500"/> Save</> : <><FileEdit size={11}/> Edit</>}
+                      </button>
+                    </div>
+                    {editingCards['objective'] ? (
+                      <textarea rows={4} value={parsedData.objective || ''} onChange={(e) => handleUpdateScalarField('objective', e.target.value)} className="w-full p-2 border border-slate-200 dark:border-white/10 rounded bg-white dark:bg-slate-900 text-xs font-medium" />
+                    ) : (
+                      <p className="text-xs text-slate-600 dark:text-slate-300 italic">{parsedData.objective || 'No career objective provided.'}</p>
+                    )}
+                  </Card>
+
+                  {/* 4. Education Card */}
                   <Card className="p-5 flex flex-col gap-3">
                     <div className="flex justify-between items-center border-b pb-2">
                       <span className="text-xs font-bold text-emerald-500 uppercase">Education</span>
-                      <button onClick={() => setEditSectionType('education')} className="text-[10px] font-bold text-slate-400 hover:text-emerald-500">Edit</button>
+                      <div className="flex items-center gap-2">
+                        <button onClick={() => handleAddItemToSection('education', { institution: 'University', degree: 'Degree', passing_year: '2025', cgpa_percentage: '', location: '' })} className="text-[10px] font-bold text-emerald-500 hover:text-emerald-600 cursor-pointer flex items-center gap-0.5"><Plus size={11}/> Add Item</button>
+                        <button onClick={() => toggleEditCard('education')} className="text-[10px] font-bold text-slate-400 hover:text-emerald-500 cursor-pointer flex items-center gap-1">{editingCards['education'] ? <><Save size={11} className="text-emerald-500"/> Save</> : <><FileEdit size={11}/> Edit</>}</button>
+                      </div>
                     </div>
                     <div className="text-xs space-y-2">
                       {parsedData.education?.length > 0 ? (
                         parsedData.education.map((edu: any, idx: number) => (
-                          <div key={idx} className="border-b last:border-0 pb-1">
-                            <p className="font-bold">{edu.institution}</p>
-                            <p className="text-[10px] text-slate-400">{edu.degree} • {edu.year}</p>
+                          <div key={idx} className="border-b last:border-0 pb-2 flex justify-between items-start gap-2">
+                            {editingCards['education'] ? (
+                              <div className="grid grid-cols-2 gap-1.5 w-full">
+                                <input type="text" value={edu.institution || ''} placeholder="Institution" onChange={(e) => handleUpdateItemField('education', idx, 'institution', e.target.value)} className="p-1 border border-slate-200 rounded text-xs" />
+                                <input type="text" value={edu.degree || ''} placeholder="Degree" onChange={(e) => handleUpdateItemField('education', idx, 'degree', e.target.value)} className="p-1 border border-slate-200 rounded text-xs" />
+                                <input type="text" value={edu.passing_year || edu.year || ''} placeholder="Year" onChange={(e) => handleUpdateItemField('education', idx, 'passing_year', e.target.value)} className="p-1 border border-slate-200 rounded text-xs" />
+                                <input type="text" value={edu.cgpa_percentage || ''} placeholder="CGPA/Grade" onChange={(e) => handleUpdateItemField('education', idx, 'cgpa_percentage', e.target.value)} className="p-1 border border-slate-200 rounded text-xs" />
+                              </div>
+                            ) : (
+                              <div>
+                                <p className="font-bold">{edu.institution || 'Institution'}</p>
+                                <p className="text-[10px] text-slate-500">{edu.degree} • {edu.passing_year || edu.year} {edu.cgpa_percentage ? `• ${edu.cgpa_percentage}` : ''}</p>
+                              </div>
+                            )}
+                            <button onClick={() => handleDeleteItemFromSection('education', idx)} className="text-rose-500 hover:text-rose-600 p-1 cursor-pointer shrink-0"><Trash2 size={12}/></button>
                           </div>
                         ))
                       ) : <p className="text-slate-450">No education entries found.</p>}
                     </div>
                   </Card>
+
+                  {/* 5. Experience Card */}
+                  <Card className="p-5 flex flex-col gap-3">
+                    <div className="flex justify-between items-center border-b pb-2">
+                      <span className="text-xs font-bold text-emerald-500 uppercase">Experience</span>
+                      <div className="flex items-center gap-2">
+                        <button onClick={() => handleAddItemToSection('experience', { company: 'Company Name', position: 'Role Title', duration: '2024 - Present', description: '' })} className="text-[10px] font-bold text-emerald-500 hover:text-emerald-600 cursor-pointer flex items-center gap-0.5"><Plus size={11}/> Add Item</button>
+                        <button onClick={() => toggleEditCard('experience')} className="text-[10px] font-bold text-slate-400 hover:text-emerald-500 cursor-pointer flex items-center gap-1">{editingCards['experience'] ? <><Save size={11} className="text-emerald-500"/> Save</> : <><FileEdit size={11}/> Edit</>}</button>
+                      </div>
+                    </div>
+                    <div className="text-xs space-y-2">
+                      {parsedData.experience?.length > 0 ? (
+                        parsedData.experience.map((exp: any, idx: number) => (
+                          <div key={idx} className="border-b last:border-0 pb-2 flex justify-between items-start gap-2">
+                            {editingCards['experience'] ? (
+                              <div className="flex flex-col gap-1 w-full">
+                                <div className="grid grid-cols-2 gap-1.5">
+                                  <input type="text" value={exp.company || ''} placeholder="Company" onChange={(e) => handleUpdateItemField('experience', idx, 'company', e.target.value)} className="p-1 border border-slate-200 rounded text-xs" />
+                                  <input type="text" value={exp.position || ''} placeholder="Position" onChange={(e) => handleUpdateItemField('experience', idx, 'position', e.target.value)} className="p-1 border border-slate-200 rounded text-xs" />
+                                </div>
+                                <input type="text" value={exp.duration || ''} placeholder="Duration" onChange={(e) => handleUpdateItemField('experience', idx, 'duration', e.target.value)} className="p-1 border border-slate-200 rounded text-xs" />
+                                <textarea rows={2} value={exp.description || ''} placeholder="Description" onChange={(e) => handleUpdateItemField('experience', idx, 'description', e.target.value)} className="p-1 border border-slate-200 rounded text-xs" />
+                              </div>
+                            ) : (
+                              <div>
+                                <p className="font-bold">{exp.position} {exp.company ? `@ ${exp.company}` : ''}</p>
+                                <p className="text-[10px] text-slate-400">{exp.duration}</p>
+                                <p className="text-slate-600 dark:text-slate-300 mt-1">{exp.description}</p>
+                              </div>
+                            )}
+                            <button onClick={() => handleDeleteItemFromSection('experience', idx)} className="text-rose-500 hover:text-rose-600 p-1 cursor-pointer shrink-0"><Trash2 size={12}/></button>
+                          </div>
+                        ))
+                      ) : <p className="text-slate-450">No experience entries found.</p>}
+                    </div>
+                  </Card>
+
+                  {/* 6. Projects Card */}
+                  <Card className="p-5 flex flex-col gap-3">
+                    <div className="flex justify-between items-center border-b pb-2">
+                      <span className="text-xs font-bold text-emerald-500 uppercase">Projects</span>
+                      <div className="flex items-center gap-2">
+                        <button onClick={() => handleAddItemToSection('projects', { name: 'Project Title', tech_stack: 'React, Node', description: '' })} className="text-[10px] font-bold text-emerald-500 hover:text-emerald-600 cursor-pointer flex items-center gap-0.5"><Plus size={11}/> Add Item</button>
+                        <button onClick={() => toggleEditCard('projects')} className="text-[10px] font-bold text-slate-400 hover:text-emerald-500 cursor-pointer flex items-center gap-1">{editingCards['projects'] ? <><Save size={11} className="text-emerald-500"/> Save</> : <><FileEdit size={11}/> Edit</>}</button>
+                      </div>
+                    </div>
+                    <div className="text-xs space-y-2">
+                      {parsedData.projects?.length > 0 ? (
+                        parsedData.projects.map((proj: any, idx: number) => (
+                          <div key={idx} className="border-b last:border-0 pb-2 flex justify-between items-start gap-2">
+                            {editingCards['projects'] ? (
+                              <div className="flex flex-col gap-1 w-full">
+                                <div className="grid grid-cols-2 gap-1.5">
+                                  <input type="text" value={proj.name || proj.title || ''} placeholder="Project Name" onChange={(e) => handleUpdateItemField('projects', idx, 'name', e.target.value)} className="p-1 border border-slate-200 rounded text-xs" />
+                                  <input type="text" value={proj.tech_stack || proj.technologies || ''} placeholder="Tech Stack" onChange={(e) => handleUpdateItemField('projects', idx, 'tech_stack', e.target.value)} className="p-1 border border-slate-200 rounded text-xs" />
+                                </div>
+                                <textarea rows={2} value={proj.description || ''} placeholder="Description" onChange={(e) => handleUpdateItemField('projects', idx, 'description', e.target.value)} className="p-1 border border-slate-200 rounded text-xs" />
+                              </div>
+                            ) : (
+                              <div>
+                                <p className="font-bold">{proj.name || proj.title}</p>
+                                <p className="text-[10px] text-slate-400">{proj.tech_stack || proj.technologies}</p>
+                                <p className="text-slate-600 dark:text-slate-300 mt-1">{proj.description}</p>
+                              </div>
+                            )}
+                            <button onClick={() => handleDeleteItemFromSection('projects', idx)} className="text-rose-500 hover:text-rose-600 p-1 cursor-pointer shrink-0"><Trash2 size={12}/></button>
+                          </div>
+                        ))
+                      ) : <p className="text-slate-450">No projects found.</p>}
+                    </div>
+                  </Card>
+
+                  {/* 7. Technical Skills Card */}
+                  <Card className="p-5 flex flex-col gap-3">
+                    <div className="flex justify-between items-center border-b pb-2">
+                      <span className="text-xs font-bold text-emerald-500 uppercase">Technical Skills</span>
+                      <div className="flex items-center gap-2">
+                        <button onClick={() => handleAddItemToSection('technicalSkills', 'New Skill')} className="text-[10px] font-bold text-emerald-500 hover:text-emerald-600 cursor-pointer flex items-center gap-0.5"><Plus size={11}/> Add Item</button>
+                        <button onClick={() => toggleEditCard('technicalSkills')} className="text-[10px] font-bold text-slate-400 hover:text-emerald-500 cursor-pointer flex items-center gap-1">{editingCards['technicalSkills'] ? <><Save size={11} className="text-emerald-500"/> Save</> : <><FileEdit size={11}/> Edit</>}</button>
+                      </div>
+                    </div>
+                    <div className="flex flex-wrap gap-1.5">
+                      {(parsedData.technicalSkills || parsedData.skills || []).map((skill: any, idx: number) => (
+                        <div key={idx} className="flex items-center gap-1 bg-emerald-50 dark:bg-emerald-950/20 border border-emerald-200 dark:border-emerald-900/30 px-2 py-1 rounded text-xs text-emerald-700 dark:text-emerald-300 font-semibold">
+                          {editingCards['technicalSkills'] ? (
+                            <input type="text" value={typeof skill === 'object' ? skill.name : skill} onChange={(e) => handleUpdateItemField('technicalSkills', idx, 'name', e.target.value)} className="w-20 bg-transparent border-b border-emerald-400 text-xs focus:outline-none" />
+                          ) : (
+                            <span>{typeof skill === 'object' ? skill.name : skill}</span>
+                          )}
+                          <button onClick={() => handleDeleteItemFromSection('technicalSkills', idx)} className="text-rose-500 hover:text-rose-600 cursor-pointer ml-1"><X size={10}/></button>
+                        </div>
+                      ))}
+                    </div>
+                  </Card>
+
+                  {/* 8. Soft Skills Card */}
+                  <Card className="p-5 flex flex-col gap-3">
+                    <div className="flex justify-between items-center border-b pb-2">
+                      <span className="text-xs font-bold text-emerald-500 uppercase">Soft Skills</span>
+                      <div className="flex items-center gap-2">
+                        <button onClick={() => handleAddItemToSection('softSkills', 'Leadership')} className="text-[10px] font-bold text-emerald-500 hover:text-emerald-600 cursor-pointer flex items-center gap-0.5"><Plus size={11}/> Add Item</button>
+                        <button onClick={() => toggleEditCard('softSkills')} className="text-[10px] font-bold text-slate-400 hover:text-emerald-500 cursor-pointer flex items-center gap-1">{editingCards['softSkills'] ? <><Save size={11} className="text-emerald-500"/> Save</> : <><FileEdit size={11}/> Edit</>}</button>
+                      </div>
+                    </div>
+                    <div className="flex flex-wrap gap-1.5">
+                      {(parsedData.softSkills || []).map((skill: any, idx: number) => (
+                        <div key={idx} className="flex items-center gap-1 bg-slate-100 dark:bg-white/10 border border-slate-200 dark:border-white/10 px-2 py-1 rounded text-xs text-slate-700 dark:text-slate-200 font-semibold">
+                          {editingCards['softSkills'] ? (
+                            <input type="text" value={skill} onChange={(e) => handleUpdateItemField('softSkills', idx, '', e.target.value)} className="w-20 bg-transparent border-b border-slate-400 text-xs focus:outline-none" />
+                          ) : (
+                            <span>{skill}</span>
+                          )}
+                          <button onClick={() => handleDeleteItemFromSection('softSkills', idx)} className="text-rose-500 hover:text-rose-600 cursor-pointer ml-1"><X size={10}/></button>
+                        </div>
+                      ))}
+                    </div>
+                  </Card>
+
+                  {/* 9. Certifications Card */}
+                  <Card className="p-5 flex flex-col gap-3">
+                    <div className="flex justify-between items-center border-b pb-2">
+                      <span className="text-xs font-bold text-emerald-500 uppercase">Certifications</span>
+                      <div className="flex items-center gap-2">
+                        <button onClick={() => handleAddItemToSection('certifications', { name: 'Certificate Name', organization: 'Issuer', issue_date: '2024' })} className="text-[10px] font-bold text-emerald-500 hover:text-emerald-600 cursor-pointer flex items-center gap-0.5"><Plus size={11}/> Add Item</button>
+                        <button onClick={() => toggleEditCard('certifications')} className="text-[10px] font-bold text-slate-400 hover:text-emerald-500 cursor-pointer flex items-center gap-1">{editingCards['certifications'] ? <><Save size={11} className="text-emerald-500"/> Save</> : <><FileEdit size={11}/> Edit</>}</button>
+                      </div>
+                    </div>
+                    <div className="text-xs space-y-2">
+                      {(parsedData.certifications || []).map((cert: any, idx: number) => (
+                        <div key={idx} className="border-b last:border-0 pb-2 flex justify-between items-start gap-2">
+                          {editingCards['certifications'] ? (
+                            <div className="grid grid-cols-2 gap-1.5 w-full">
+                              <input type="text" value={cert.name || ''} placeholder="Certificate Name" onChange={(e) => handleUpdateItemField('certifications', idx, 'name', e.target.value)} className="p-1 border border-slate-200 rounded text-xs" />
+                              <input type="text" value={cert.organization || ''} placeholder="Issuer" onChange={(e) => handleUpdateItemField('certifications', idx, 'organization', e.target.value)} className="p-1 border border-slate-200 rounded text-xs" />
+                            </div>
+                          ) : (
+                            <div>
+                              <p className="font-bold">{cert.name}</p>
+                              <p className="text-[10px] text-slate-400">{cert.organization} • {cert.issue_date}</p>
+                            </div>
+                          )}
+                          <button onClick={() => handleDeleteItemFromSection('certifications', idx)} className="text-rose-500 hover:text-rose-600 p-1 cursor-pointer shrink-0"><Trash2 size={12}/></button>
+                        </div>
+                      ))}
+                    </div>
+                  </Card>
+
+                  {/* 10. Internships Card */}
+                  <Card className="p-5 flex flex-col gap-3">
+                    <div className="flex justify-between items-center border-b pb-2">
+                      <span className="text-xs font-bold text-emerald-500 uppercase">Internships</span>
+                      <div className="flex items-center gap-2">
+                        <button onClick={() => handleAddItemToSection('internships', { company: 'Company', role: 'Intern Role', duration: 'Summer 2024', description: '' })} className="text-[10px] font-bold text-emerald-500 hover:text-emerald-600 cursor-pointer flex items-center gap-0.5"><Plus size={11}/> Add Item</button>
+                        <button onClick={() => toggleEditCard('internships')} className="text-[10px] font-bold text-slate-400 hover:text-emerald-500 cursor-pointer flex items-center gap-1">{editingCards['internships'] ? <><Save size={11} className="text-emerald-500"/> Save</> : <><FileEdit size={11}/> Edit</>}</button>
+                      </div>
+                    </div>
+                    <div className="text-xs space-y-2">
+                      {(parsedData.internships || []).map((intern: any, idx: number) => (
+                        <div key={idx} className="border-b last:border-0 pb-2 flex justify-between items-start gap-2">
+                          {editingCards['internships'] ? (
+                            <div className="flex flex-col gap-1 w-full">
+                              <div className="grid grid-cols-2 gap-1.5">
+                                <input type="text" value={intern.company || ''} placeholder="Company" onChange={(e) => handleUpdateItemField('internships', idx, 'company', e.target.value)} className="p-1 border border-slate-200 rounded text-xs" />
+                                <input type="text" value={intern.role || ''} placeholder="Role" onChange={(e) => handleUpdateItemField('internships', idx, 'role', e.target.value)} className="p-1 border border-slate-200 rounded text-xs" />
+                              </div>
+                              <textarea rows={2} value={intern.description || ''} placeholder="Description" onChange={(e) => handleUpdateItemField('internships', idx, 'description', e.target.value)} className="p-1 border border-slate-200 rounded text-xs" />
+                            </div>
+                          ) : (
+                            <div>
+                              <p className="font-bold">{intern.role} @ {intern.company}</p>
+                              <p className="text-[10px] text-slate-400">{intern.duration}</p>
+                              <p className="text-slate-600 dark:text-slate-300 mt-1">{intern.description}</p>
+                            </div>
+                          )}
+                          <button onClick={() => handleDeleteItemFromSection('internships', idx)} className="text-rose-500 hover:text-rose-600 p-1 cursor-pointer shrink-0"><Trash2 size={12}/></button>
+                        </div>
+                      ))}
+                    </div>
+                  </Card>
+
+                  {/* 11. Achievements Card */}
+                  <Card className="p-5 flex flex-col gap-3">
+                    <div className="flex justify-between items-center border-b pb-2">
+                      <span className="text-xs font-bold text-emerald-500 uppercase">Achievements & Awards</span>
+                      <div className="flex items-center gap-2">
+                        <button onClick={() => handleAddItemToSection('achievements', '1st Place Hackathon')} className="text-[10px] font-bold text-emerald-500 hover:text-emerald-600 cursor-pointer flex items-center gap-0.5"><Plus size={11}/> Add Item</button>
+                        <button onClick={() => toggleEditCard('achievements')} className="text-[10px] font-bold text-slate-400 hover:text-emerald-500 cursor-pointer flex items-center gap-1">{editingCards['achievements'] ? <><Save size={11} className="text-emerald-500"/> Save</> : <><FileEdit size={11}/> Edit</>}</button>
+                      </div>
+                    </div>
+                    <div className="text-xs space-y-1.5">
+                      {(parsedData.achievements || []).map((ach: any, idx: number) => {
+                        const displayText = typeof ach === 'string' ? ach : (ach.description || ach.title || JSON.stringify(ach));
+                        return (
+                          <div key={idx} className="flex justify-between items-center gap-2 border-b last:border-0 pb-1">
+                            {editingCards['achievements'] ? (
+                              <input type="text" value={displayText} onChange={(e) => handleUpdateItemField('achievements', idx, '', e.target.value)} className="w-full p-1 border border-slate-200 rounded text-xs dark:bg-slate-800 dark:border-slate-700" />
+                            ) : (
+                              <span>• {displayText}</span>
+                            )}
+                            <button onClick={() => handleDeleteItemFromSection('achievements', idx)} className="text-rose-500 hover:text-rose-600 p-1 cursor-pointer shrink-0"><Trash2 size={12}/></button>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </Card>
+
+                  {/* 12. Languages Card */}
+                  <Card className="p-5 flex flex-col gap-3">
+                    <div className="flex justify-between items-center border-b pb-2">
+                      <span className="text-xs font-bold text-emerald-500 uppercase">Languages</span>
+                      <div className="flex items-center gap-2">
+                        <button onClick={() => handleAddItemToSection('languages', 'English (Fluent)')} className="text-[10px] font-bold text-emerald-500 hover:text-emerald-600 cursor-pointer flex items-center gap-0.5"><Plus size={11}/> Add Item</button>
+                        <button onClick={() => toggleEditCard('languages')} className="text-[10px] font-bold text-slate-400 hover:text-emerald-500 cursor-pointer flex items-center gap-1">{editingCards['languages'] ? <><Save size={11} className="text-emerald-500"/> Save</> : <><FileEdit size={11}/> Edit</>}</button>
+                      </div>
+                    </div>
+                    <div className="flex flex-wrap gap-1.5">
+                      {(parsedData.languages || []).map((lang: any, idx: number) => (
+                        <div key={idx} className="flex items-center gap-1 bg-slate-100 dark:bg-white/10 border border-slate-200 dark:border-white/10 px-2 py-1 rounded text-xs font-semibold">
+                          {editingCards['languages'] ? (
+                            <input type="text" value={lang} onChange={(e) => handleUpdateItemField('languages', idx, '', e.target.value)} className="w-20 bg-transparent border-b border-slate-400 text-xs focus:outline-none" />
+                          ) : (
+                            <span>{lang}</span>
+                          )}
+                          <button onClick={() => handleDeleteItemFromSection('languages', idx)} className="text-rose-500 hover:text-rose-600 cursor-pointer ml-1"><X size={10}/></button>
+                        </div>
+                      ))}
+                    </div>
+                  </Card>
+
+                  {/* 13. Portfolio & Links Card */}
+                  <Card className="p-5 flex flex-col gap-3">
+                    <div className="flex justify-between items-center border-b pb-2">
+                      <span className="text-xs font-bold text-emerald-500 uppercase">Portfolio & Web Links</span>
+                      <div className="flex items-center gap-2">
+                        <button onClick={() => handleAddItemToSection('portfolioLinks', 'https://portfolio.me')} className="text-[10px] font-bold text-emerald-500 hover:text-emerald-600 cursor-pointer flex items-center gap-0.5"><Plus size={11}/> Add Item</button>
+                        <button onClick={() => toggleEditCard('portfolioLinks')} className="text-[10px] font-bold text-slate-400 hover:text-emerald-500 cursor-pointer flex items-center gap-1">{editingCards['portfolioLinks'] ? <><Save size={11} className="text-emerald-500"/> Save</> : <><FileEdit size={11}/> Edit</>}</button>
+                      </div>
+                    </div>
+                    <div className="text-xs space-y-1.5">
+                      {(parsedData.portfolioLinks || []).map((link: any, idx: number) => (
+                        <div key={idx} className="flex justify-between items-center gap-2 border-b last:border-0 pb-1">
+                          {editingCards['portfolioLinks'] ? (
+                            <input type="text" value={link} onChange={(e) => handleUpdateItemField('portfolioLinks', idx, '', e.target.value)} className="w-full p-1 border border-slate-200 rounded text-xs" />
+                          ) : (
+                            <a href={link} target="_blank" rel="noreferrer" className="text-emerald-600 hover:underline truncate">{link}</a>
+                          )}
+                          <button onClick={() => handleDeleteItemFromSection('portfolioLinks', idx)} className="text-rose-500 hover:text-rose-600 p-1 cursor-pointer shrink-0"><Trash2 size={12}/></button>
+                        </div>
+                      ))}
+                    </div>
+                  </Card>
+
+                  {/* 14. Publications Card */}
+                  <Card className="p-5 flex flex-col gap-3">
+                    <div className="flex justify-between items-center border-b pb-2">
+                      <span className="text-xs font-bold text-emerald-500 uppercase">Publications</span>
+                      <div className="flex items-center gap-2">
+                        <button onClick={() => handleAddItemToSection('publications', { title: 'Paper Title', publisher: 'IEEE / Journal', year: '2024' })} className="text-[10px] font-bold text-emerald-500 hover:text-emerald-600 cursor-pointer flex items-center gap-0.5"><Plus size={11}/> Add Item</button>
+                        <button onClick={() => toggleEditCard('publications')} className="text-[10px] font-bold text-slate-400 hover:text-emerald-500 cursor-pointer flex items-center gap-1">{editingCards['publications'] ? <><Save size={11} className="text-emerald-500"/> Save</> : <><FileEdit size={11}/> Edit</>}</button>
+                      </div>
+                    </div>
+                    <div className="text-xs space-y-2">
+                      {(parsedData.publications || []).map((pub: any, idx: number) => (
+                        <div key={idx} className="border-b last:border-0 pb-2 flex justify-between items-start gap-2">
+                          {editingCards['publications'] ? (
+                            <div className="grid grid-cols-2 gap-1.5 w-full">
+                              <input type="text" value={pub.title || ''} placeholder="Title" onChange={(e) => handleUpdateItemField('publications', idx, 'title', e.target.value)} className="p-1 border border-slate-200 rounded text-xs" />
+                              <input type="text" value={pub.publisher || ''} placeholder="Publisher" onChange={(e) => handleUpdateItemField('publications', idx, 'publisher', e.target.value)} className="p-1 border border-slate-200 rounded text-xs" />
+                            </div>
+                          ) : (
+                            <div>
+                              <p className="font-bold">{pub.title}</p>
+                              <p className="text-[10px] text-slate-400">{pub.publisher} • {pub.year}</p>
+                            </div>
+                          )}
+                          <button onClick={() => handleDeleteItemFromSection('publications', idx)} className="text-rose-500 hover:text-rose-600 p-1 cursor-pointer shrink-0"><Trash2 size={12}/></button>
+                        </div>
+                      ))}
+                    </div>
+                  </Card>
+
+                  {/* 15. Volunteer Experience Card */}
+                  <Card className="p-5 flex flex-col gap-3">
+                    <div className="flex justify-between items-center border-b pb-2">
+                      <span className="text-xs font-bold text-emerald-500 uppercase">Volunteer Experience</span>
+                      <div className="flex items-center gap-2">
+                        <button onClick={() => handleAddItemToSection('volunteerExperience', { organization: 'NGO / Org', role: 'Volunteer', duration: '2024' })} className="text-[10px] font-bold text-emerald-500 hover:text-emerald-600 cursor-pointer flex items-center gap-0.5"><Plus size={11}/> Add Item</button>
+                        <button onClick={() => toggleEditCard('volunteerExperience')} className="text-[10px] font-bold text-slate-400 hover:text-emerald-500 cursor-pointer flex items-center gap-1">{editingCards['volunteerExperience'] ? <><Save size={11} className="text-emerald-500"/> Save</> : <><FileEdit size={11}/> Edit</>}</button>
+                      </div>
+                    </div>
+                    <div className="text-xs space-y-2">
+                      {(parsedData.volunteerExperience || []).map((vol: any, idx: number) => (
+                        <div key={idx} className="border-b last:border-0 pb-2 flex justify-between items-start gap-2">
+                          {editingCards['volunteerExperience'] ? (
+                            <div className="grid grid-cols-2 gap-1.5 w-full">
+                              <input type="text" value={vol.organization || ''} placeholder="Organization" onChange={(e) => handleUpdateItemField('volunteerExperience', idx, 'organization', e.target.value)} className="p-1 border border-slate-200 rounded text-xs" />
+                              <input type="text" value={vol.role || ''} placeholder="Role" onChange={(e) => handleUpdateItemField('volunteerExperience', idx, 'role', e.target.value)} className="p-1 border border-slate-200 rounded text-xs" />
+                            </div>
+                          ) : (
+                            <div>
+                              <p className="font-bold">{vol.role} @ {vol.organization}</p>
+                              <p className="text-[10px] text-slate-400">{vol.duration}</p>
+                            </div>
+                          )}
+                          <button onClick={() => handleDeleteItemFromSection('volunteerExperience', idx)} className="text-rose-500 hover:text-rose-600 p-1 cursor-pointer shrink-0"><Trash2 size={12}/></button>
+                        </div>
+                      ))}
+                    </div>
+                  </Card>
+
+                  {/* 16. References Card */}
+                  <Card className="p-5 flex flex-col gap-3">
+                    <div className="flex justify-between items-center border-b pb-2">
+                      <span className="text-xs font-bold text-emerald-500 uppercase">References</span>
+                      <div className="flex items-center gap-2">
+                        <button onClick={() => handleAddItemToSection('references', { name: 'Reference Name', title: 'Professor / Manager', company: 'Org', email: '' })} className="text-[10px] font-bold text-emerald-500 hover:text-emerald-600 cursor-pointer flex items-center gap-0.5"><Plus size={11}/> Add Item</button>
+                        <button onClick={() => toggleEditCard('references')} className="text-[10px] font-bold text-slate-400 hover:text-emerald-500 cursor-pointer flex items-center gap-1">{editingCards['references'] ? <><Save size={11} className="text-emerald-500"/> Save</> : <><FileEdit size={11}/> Edit</>}</button>
+                      </div>
+                    </div>
+                    <div className="text-xs space-y-2">
+                      {(parsedData.references || []).map((ref: any, idx: number) => (
+                        <div key={idx} className="border-b last:border-0 pb-2 flex justify-between items-start gap-2">
+                          {editingCards['references'] ? (
+                            <div className="grid grid-cols-2 gap-1.5 w-full">
+                              <input type="text" value={ref.name || ''} placeholder="Name" onChange={(e) => handleUpdateItemField('references', idx, 'name', e.target.value)} className="p-1 border border-slate-200 rounded text-xs" />
+                              <input type="text" value={ref.title || ''} placeholder="Title" onChange={(e) => handleUpdateItemField('references', idx, 'title', e.target.value)} className="p-1 border border-slate-200 rounded text-xs" />
+                            </div>
+                          ) : (
+                            <div>
+                              <p className="font-bold">{ref.name}</p>
+                              <p className="text-[10px] text-slate-400">{ref.title} {ref.company ? `@ ${ref.company}` : ''}</p>
+                            </div>
+                          )}
+                          <button onClick={() => handleDeleteItemFromSection('references', idx)} className="text-rose-500 hover:text-rose-600 p-1 cursor-pointer shrink-0"><Trash2 size={12}/></button>
+                        </div>
+                      ))}
+                    </div>
+                  </Card>
+
                 </div>
               </motion.div>
             )}

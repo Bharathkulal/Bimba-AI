@@ -105,14 +105,20 @@ def get_resume_builder_data(
     if not personal_info.get("location"):
         personal_info["location"] = student.address or ""
 
-    # Construct clean response
+    # Check MongoDB resume_profiles collection
+    profile_doc = db.resume_profiles.find_one({"resumeId": resume_id}) or {}
+
+    # Construct clean response with all 15 sections
     return {
         "success": True,
         "extracted_data": {
-            "personal_info": personal_info,
-            "summary": summary[0] if isinstance(summary, list) and summary else str(summary),
-            "skills": skills,
-            "experience": [
+            "personal_info": profile_doc.get("personal_info") or personal_info,
+            "summary": profile_doc.get("summary") or (summary[0] if isinstance(summary, list) and summary else str(summary or "")),
+            "objective": profile_doc.get("objective") or "",
+            "skills": profile_doc.get("technicalSkills") or skills,
+            "technicalSkills": profile_doc.get("technicalSkills") or skills,
+            "softSkills": profile_doc.get("softSkills") or [],
+            "experience": profile_doc.get("experience") or [
                 {
                     "position": exp.get("position") or exp.get("role") or "",
                     "company": exp.get("company") or "",
@@ -125,7 +131,7 @@ def get_resume_builder_data(
                     "description": str(exp)
                 } for exp in experience
             ] if isinstance(experience, list) else [],
-            "projects": [
+            "projects": profile_doc.get("projects") or [
                 {
                     "title": proj.get("title") or proj.get("name") or "",
                     "technologies": proj.get("technologies") or proj.get("tech_stack") or "",
@@ -136,7 +142,7 @@ def get_resume_builder_data(
                     "description": str(proj)
                 } for proj in projects
             ] if isinstance(projects, list) else [],
-            "education": [
+            "education": profile_doc.get("education") or [
                 {
                     "degree": edu.get("degree") or edu.get("course") or "",
                     "institution": edu.get("institution") or edu.get("school") or edu.get("college") or "",
@@ -146,7 +152,15 @@ def get_resume_builder_data(
                     "institution": "",
                     "year": str(edu)
                 } for edu in education
-            ] if isinstance(education, list) else []
+            ] if isinstance(education, list) else [],
+            "certifications": profile_doc.get("certifications") or [],
+            "internships": profile_doc.get("internships") or [],
+            "achievements": profile_doc.get("achievements") or [],
+            "languages": profile_doc.get("languages") or [],
+            "portfolioLinks": profile_doc.get("portfolioLinks") or [],
+            "publications": profile_doc.get("publications") or [],
+            "volunteerExperience": profile_doc.get("volunteerExperience") or [],
+            "references": profile_doc.get("references") or []
         },
         "ai_improvements": improvements
     }

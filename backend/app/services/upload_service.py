@@ -76,27 +76,39 @@ class UploadService:
                 experience = []
                 projects = []
                 education = []
+                publications = []
+                achievements = []
                 
                 current_section = None
                 for line in lines[1:]:
-                    lower_line = line.lower()
+                    raw_clean = line.strip()
+                    if not raw_clean:
+                        continue
+                    lower_line = raw_clean.lower()
                     
-                    # Whitespace-tolerant section detection
-                    if re.search(r"\b(s\s*k\s*i\s*l\s*l\s*s|t\s*e\s*c\s*h\s*n\s*o\s*l\s*o\s*g\s*i\s*e\s*s)\b", lower_line):
-                        current_section = "skills"
-                        continue
-                    elif re.search(r"\b(e\s*x\s*p\s*e\s*r\s*i\s*e\s*n\s*c\s*e|e\s*m\s*p\s*l\s*o\s*y\s*m\s*e\s*n\s*t|w\s*o\s*r\s*k\s* \s*h\s*i\s*s\s*t\s*o\s*r\s*y)\b", lower_line):
-                        current_section = "experience"
-                        continue
-                    elif re.search(r"\b(p\s*r\s*o\s*j\s*e\s*c\s*t\s*s)\b", lower_line):
-                        current_section = "projects"
-                        continue
-                    elif re.search(r"\b(e\s*d\s*u\s*c\s*a\s*t\s*i\s*o\s*n|a\s*c\s*a\s*d\s*e\s*m\s*i\s*c\s*s)\b", lower_line):
-                        current_section = "education"
-                        continue
-                    elif re.search(r"\b(p\s*u\s*b\s*l\s*i\s*c\s*a\s*t\s*i\s*o\s*n\s*s|a\s*c\s*h\s*i\s*e\s*v\s*e\s*m\s*e\s*n\s*t\s*s|a\s*w\s*a\s*r\s*d\s*s)\b", lower_line):
-                        current_section = None
-                        continue
+                    is_bullet = bool(re.match(r"^(?:[•\-\*]|(?:\d{1,2}\.\s+))", raw_clean))
+                    is_header_candidate = not is_bullet and len(raw_clean) < 35
+                    
+                    # Section header detection ONLY on header candidate lines
+                    if is_header_candidate:
+                        if re.search(r"\b(s\s*k\s*i\s*l\s*l\s*s|t\s*e\s*c\s*h\s*n\s*o\s*l\s*o\s*g\s*i\s*e\s*s)\b", lower_line):
+                            current_section = "skills"
+                            continue
+                        elif re.search(r"\b(e\s*x\s*p\s*e\s*r\s*i\s*e\s*n\s*c\s*e|e\s*m\s*p\s*l\s*o\s*y\s*m\s*e\s*n\s*t|w\s*o\s*r\s*k\s* \s*h\s*i\s*s\s*t\s*o\s*r\s*y)\b", lower_line):
+                            current_section = "experience"
+                            continue
+                        elif re.search(r"\b(p\s*r\s*o\s*j\s*e\s*c\s*t\s*s)\b", lower_line):
+                            current_section = "projects"
+                            continue
+                        elif re.search(r"\b(e\s*d\s*u\s*c\s*a\s*t\s*i\s*o\s*n|a\s*c\s*a\s*d\s*e\s*m\s*i\s*c\s*s)\b", lower_line):
+                            current_section = "education"
+                            continue
+                        elif re.search(r"\b(p\s*u\s*b\s*l\s*i\s*c\s*a\s*t\s*i\s*o\s*n\s*s|p\s*a\s*t\s*e\s*n\s*t\s*s|r\s*e\s*s\s*e\s*a\s*r\s*c\s*h)\b", lower_line):
+                            current_section = "publications"
+                            continue
+                        elif re.search(r"\b(a\s*c\s*h\s*i\s*e\s*v\s*e\s*m\s*e\s*n\s*t\s*s|a\s*w\s*a\s*r\s*d\s*s|h\s*o\s*n\s*o\s*r\s*s|a\s*c\s*t\s*i\s*v\s*i\s*t\s*i\s*e\s*s|c\s*o\s*n\s*t\s*r\s*i\s*b\s*u\s*t\s*i\s*o\s*n\s*s)\b", lower_line):
+                            current_section = "achievements"
+                            continue
                         
                     if current_section == "skills":
                         clean_line = re.sub(r"^(programming|frameworks|devops|cloud providers|tools|languages)\b", "", line, flags=re.IGNORECASE).strip()
@@ -117,13 +129,34 @@ class UploadService:
                             else:
                                 experience[-1]["description"] += "\n" + line
                     elif current_section == "projects":
-                        clean_line = re.sub(r"^[•\-\*]\s*", "", line).strip()
+                        is_bullet = bool(re.match(r"^(?:[•\-\*]|(?:\d{1,2}\.\s+))", line.strip()))
+                        clean_line = re.sub(r"^(?:[•\-\*]|(?:\d{1,2}\.\s+))\s*", "", line).strip()
                         if clean_line:
                             parts = re.split(r"\s*[\-–—:]\s+", clean_line, maxsplit=1)
-                            if len(parts) == 2:
+                            if len(parts) == 2 and len(parts[0].strip()) < 50:
                                 projects.append({"name": parts[0].strip(), "tech_stack": "", "description": parts[1].strip()})
+                            elif is_bullet or not projects:
+                                projects.append({"name": clean_line, "tech_stack": "", "description": clean_line})
                             else:
-                                projects.append({"name": "Project", "tech_stack": "", "description": clean_line})
+                                # Multi-line text wrapping: append to description of previous project!
+                                projects[-1]["description"] += " " + clean_line
+                    elif current_section == "publications":
+                        is_bullet = bool(re.match(r"^(?:[•\-\*]|(?:\d{1,2}\.\s+))", line.strip()))
+                        clean_line = re.sub(r"^(?:[•\-\*]|(?:\d{1,2}\.\s+))\s*", "", line).strip()
+                        if clean_line:
+                            if is_bullet or not publications:
+                                publications.append({"title": "", "publisher": clean_line, "year": "", "url": "", "description": clean_line})
+                            else:
+                                publications[-1]["description"] += " " + clean_line
+                                publications[-1]["publisher"] += " " + clean_line
+                    elif current_section == "achievements":
+                        is_bullet = bool(re.match(r"^(?:[•\-\*]|(?:\d{1,2}\.\s+))", line.strip()))
+                        clean_line = re.sub(r"^(?:[•\-\*]|(?:\d{1,2}\.\s+))\s*", "", line).strip()
+                        if clean_line:
+                            if is_bullet or not achievements:
+                                achievements.append(clean_line)
+                            else:
+                                achievements[-1] += " " + clean_line
                     elif current_section == "education":
                         year_match = re.search(r"\b(19|20)\d{2}\s*-\s*\b(19|20)\d{2}\b", line)
                         if year_match:
@@ -140,6 +173,30 @@ class UploadService:
                         else:
                             education.append({"institution": line, "degree": "", "year": "", "passing_year": ""})
                             
+                # Post-process publications to extract title, year, and clean citation text
+                cleaned_pubs = []
+                for p in publications:
+                    full_text = p.get("description", "").strip()
+                    if not full_text:
+                        continue
+                    quote_match = re.search(r'["“]([^"”]+)["”]', full_text)
+                    if quote_match:
+                        title = quote_match.group(1).strip()
+                    else:
+                        title = full_text.split(".")[0].strip()
+                    
+                    year_match = re.search(r"\b(19|20)\d{2}\b", full_text)
+                    year = year_match.group(0) if year_match else ""
+                    
+                    cleaned_pubs.append({
+                        "title": title,
+                        "publisher": full_text,
+                        "year": year,
+                        "url": "",
+                        "description": full_text
+                    })
+                publications = cleaned_pubs
+                            
                 parsed_data = {
                     "personal_info": {
                         "name": name,
@@ -148,24 +205,41 @@ class UploadService:
                         "address": "",
                         "linkedin": linkedin,
                         "github": github,
-                        "portfolio": "",
-                        "summary": ""
+                        "portfolio": ""
                     },
+                    "summary": "",
+                    "objective": "",
                     "education": education,
                     "experience": experience,
                     "projects": projects,
-                    "skills": skills,
+                    "technicalSkills": [s["name"] if isinstance(s, dict) and "name" in s else str(s) for s in skills],
+                    "softSkills": [],
                     "certifications": [],
-                    "achievements": {
-                        "hackathons": "",
-                        "awards": "",
-                        "soft_skills": "",
-                        "extracurricular": ""
-                    },
+                    "internships": [],
+                    "achievements": achievements,
                     "languages": [],
-                    "links": []
+                    "portfolioLinks": [link for link in [linkedin, github] if link],
+                    "publications": publications,
+                    "volunteerExperience": [],
+                    "references": []
                 }
             
+            # Ensure all 15 sections exist with array/string defaults (no nulls)
+            list_sections = [
+                "education", "experience", "projects", "technicalSkills", "softSkills",
+                "certifications", "internships", "achievements", "languages",
+                "portfolioLinks", "publications", "volunteerExperience", "references"
+            ]
+            for sec in list_sections:
+                if sec not in parsed_data or parsed_data[sec] is None:
+                    parsed_data[sec] = []
+                elif not isinstance(parsed_data[sec], list):
+                    parsed_data[sec] = [parsed_data[sec]]
+                    
+            for sec in ["summary", "objective"]:
+                if sec not in parsed_data or parsed_data[sec] is None:
+                    parsed_data[sec] = ""
+
             # 5. Database Save Operations
             cloudinary_url = None
             public_id = None
@@ -186,6 +260,35 @@ class UploadService:
                 filepath=filepath,
                 cloudinary_url=cloudinary_url,
                 public_id=public_id
+            )
+
+            # Save / Upsert to MongoDB resume_profiles collection
+            from datetime import datetime, timezone
+            profile_doc = {
+                "userId": student_id,
+                "resumeId": resume_id,
+                "personal_info": parsed_data.get("personal_info", {}),
+                "summary": parsed_data.get("summary", ""),
+                "objective": parsed_data.get("objective", ""),
+                "education": parsed_data.get("education", []),
+                "experience": parsed_data.get("experience", []),
+                "projects": parsed_data.get("projects", []),
+                "technicalSkills": parsed_data.get("technicalSkills", []),
+                "softSkills": parsed_data.get("softSkills", []),
+                "certifications": parsed_data.get("certifications", []),
+                "internships": parsed_data.get("internships", []),
+                "achievements": parsed_data.get("achievements", []),
+                "languages": parsed_data.get("languages", []),
+                "portfolioLinks": parsed_data.get("portfolioLinks", []),
+                "publications": parsed_data.get("publications", []),
+                "volunteerExperience": parsed_data.get("volunteerExperience", []),
+                "references": parsed_data.get("references", []),
+                "lastUpdated": datetime.now(timezone.utc).isoformat()
+            }
+            self.db.resume_profiles.update_one(
+                {"resumeId": resume_id},
+                {"$set": profile_doc},
+                upsert=True
             )
             
             log_stage("UPLOAD", "COMPLETED", f"Orchestration completed successfully for {filename}")

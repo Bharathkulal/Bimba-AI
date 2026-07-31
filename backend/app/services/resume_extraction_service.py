@@ -68,7 +68,8 @@ def segment_sections(text: str) -> Dict[str, List[str]]:
         "experience": [],
         "education": [],
         "projects": [],
-        "certifications": []
+        "certifications": [],
+        "publications": []
     }
     
     # Section keywords mapping
@@ -76,7 +77,8 @@ def segment_sections(text: str) -> Dict[str, List[str]]:
         "experience": ["experience", "work history", "employment", "professional history", "career history"],
         "education": ["education", "academic", "degree", "university", "college", "school"],
         "projects": ["projects", "personal projects", "academic projects", "key projects"],
-        "certifications": ["certifications", "certificates", "courses", "credentials", "licenses"]
+        "certifications": ["certifications", "certificates", "courses", "credentials", "licenses"],
+        "publications": ["publications", "patents", "research papers", "papers", "books"]
     }
     
     for line in lines:
@@ -124,14 +126,30 @@ def extract_structured_data(text: str) -> Dict[str, Any]:
     skills = extract_skills(clean_text)
     sections = segment_sections(clean_text)
     
+    # Process structured publication list
+    pub_list = []
+    for item in sections.get("publications", []):
+        quote_match = re.search(r'["“]([^"”]+)["”]', item)
+        title = quote_match.group(1) if quote_match else item.split(".")[0]
+        year_match = re.search(r"\b(19|20)\d{2}\b", item)
+        year = year_match.group(0) if year_match else ""
+        pub_list.append({
+            "title": title.strip(),
+            "publisher": item,
+            "year": year,
+            "url": "",
+            "description": item
+        })
+
     return {
         "name": info["name"],
         "email": info["email"],
         "phone": info["phone"],
         "location": info["location"],
         "skills": skills,
-        "education": sections["education"][:5], # limit to avoid bloat
+        "education": sections["education"][:5],
         "experience": sections["experience"][:10],
-        "projects": sections["projects"][:5],
-        "certifications": sections["certifications"][:5]
+        "projects": sections["projects"][:10],
+        "certifications": sections["certifications"][:5],
+        "publications": pub_list
     }

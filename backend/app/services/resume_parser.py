@@ -48,42 +48,51 @@ class ResumeParser:
                 
         # 4. Map equivalent variations of key names to standard keys
         print("========== STEP 6 ==========")
-        print("Schema Validation")
+        print("Schema Validation & Full Section Normalization")
         
         standard_keys = {
-            "personal_info": ["personal_info", "personalInfo", "contact", "profile", "personal_information", "personal", "about", "basic_info", "info"],
+            "personal_info": ["personal_info", "personalInfo", "contact", "profile", "personal_information", "personal", "basic_info", "info"],
+            "summary": ["summary", "profile_summary", "professional_summary", "about_me", "about"],
+            "objective": ["objective", "career_objective"],
             "education": ["education", "educationInfo", "academic", "academics", "studies", "degree", "degrees", "qualifications"],
-            "experience": ["experience", "work_experience", "workExperience", "history", "employment", "jobs", "work_history", "workHistory", "experiences"],
-            "skills": ["skills", "key_skills", "technical_skills", "skillsInfo", "technologies", "skillset", "skill_sets"],
-            "projects": ["projects", "project_details", "portfolio_projects", "experience_projects", "project_list"],
+            "experience": ["experience", "work_experience", "workExperience", "history", "employment", "jobs", "work_history", "experiences"],
+            "projects": ["projects", "project_details", "portfolio_projects", "academic_projects", "project_list"],
+            "technicalSkills": ["technicalSkills", "technical_skills", "skills", "key_skills", "skillsInfo", "technologies", "skillset", "skill_sets"],
+            "softSkills": ["softSkills", "soft_skills", "interpersonal_skills"],
             "certifications": ["certifications", "certificates", "certifications_list", "credentials"],
-            "achievements": ["achievements", "awards", "honors", "accomplishments"],
+            "internships": ["internships", "internship_experience", "industrial_training"],
+            "achievements": ["achievements", "awards", "honors", "accomplishments", "hackathons"],
             "languages": ["languages", "languages_spoken", "spoken_languages"],
-            "links": ["links", "urls", "social_links", "socials"]
+            "portfolioLinks": ["portfolioLinks", "links", "urls", "social_links", "socials"],
+            "publications": ["publications", "research_papers", "papers"],
+            "volunteerExperience": ["volunteerExperience", "volunteer", "social_service", "community_service"],
+            "references": ["references", "referees"]
         }
         
         normalized = {}
         for target, variations in standard_keys.items():
-            found = False
+            val = None
             for var in variations:
-                if var in parsed:
-                    normalized[target] = parsed[var]
-                    found = True
+                if var in parsed and parsed[var] is not None:
+                    val = parsed[var]
                     break
-            if not found:
-                # Set default empty collections if missing
-                if target in ["education", "experience", "skills", "projects", "certifications", "languages", "links"]:
-                    normalized[target] = []
-                elif target == "achievements":
-                    normalized[target] = {}
+            
+            if target in ["summary", "objective"]:
+                normalized[target] = str(val).strip() if val else ""
+            elif target == "personal_info":
+                normalized[target] = val if isinstance(val, dict) else {}
+            else:
+                if isinstance(val, list):
+                    normalized[target] = val
+                elif isinstance(val, str) and val.strip():
+                    normalized[target] = [val.strip()]
+                elif isinstance(val, dict) and val:
+                    normalized[target] = [val]
                 else:
-                    normalized[target] = {}
-                    
+                    normalized[target] = []
+
         # Map personal_info nested fields
         personal_info = normalized.get("personal_info", {})
-        if not isinstance(personal_info, dict) or not personal_info:
-            personal_info = {}
-            
         personal_fields_map = {
             "name": ["name", "fullName", "full_name"],
             "email": ["email", "emailAddress", "email_address"],
@@ -91,43 +100,32 @@ class ResumeParser:
             "address": ["address", "location", "city_state", "residence"],
             "linkedin": ["linkedin", "linkedin_url", "linkedinUrl"],
             "github": ["github", "github_url", "githubUrl"],
-            "portfolio": ["portfolio", "portfolio_url", "portfolioUrl", "website"],
-            "summary": ["summary", "about_me", "about", "objective", "career_objective", "profile"]
+            "portfolio": ["portfolio", "portfolio_url", "portfolioUrl", "website"]
         }
         
         norm_personal = {}
         for target, variations in personal_fields_map.items():
-            found = False
+            found_val = ""
             for var in variations:
                 if var in personal_info and personal_info[var]:
-                    norm_personal[target] = str(personal_info[var]).strip()
-                    found = True
+                    found_val = str(personal_info[var]).strip()
                     break
-            if not found:
-                norm_personal[target] = ""
-                
-        # Leave empty if not extracted to avoid mock data issues
-        pass
-            
+            norm_personal[target] = found_val
+
+        # If summary/objective were inside personal_info, fallback extract them
+        if not normalized["summary"] and "summary" in personal_info and personal_info["summary"]:
+            normalized["summary"] = str(personal_info["summary"]).strip()
+        if not normalized["objective"] and "objective" in personal_info and personal_info["objective"]:
+            normalized["objective"] = str(personal_info["objective"]).strip()
+
         normalized["personal_info"] = norm_personal
         
-        # Ensure achievements has correct structure
-        achievements = normalized.get("achievements", {})
-        if not isinstance(achievements, dict) or not achievements:
-            achievements = {}
-        norm_achievements = {
-            "hackathons": achievements.get("hackathons", "") or "",
-            "awards": achievements.get("awards", "") or "",
-            "soft_skills": achievements.get("soft_skills", "") or "",
-            "extracurricular": achievements.get("extracurricular", "") or ""
-        }
-        normalized["achievements"] = norm_achievements
-        
-        # Ensure nested arrays contain valid objects
-        for arr_key in ["education", "experience", "projects", "skills", "certifications"]:
-            if not isinstance(normalized[arr_key], list):
-                normalized[arr_key] = []
-                
+        # Make sure skills compatibility: if technicalSkills has dict objects or strings, keep clean
+        if not normalized["technicalSkills"] and "skills" in parsed:
+            raw_skills = parsed["skills"]
+            if isinstance(raw_skills, list):
+                normalized["technicalSkills"] = raw_skills
+
         print("Mapped Mappings and Auto-repair Results:")
         print(f"Required Fields Standardized: {list(normalized.keys())}")
         print("=============================\n")

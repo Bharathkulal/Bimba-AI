@@ -1,19 +1,35 @@
 # Modular AI prompt templates for Resume Intelligence Platform
 
 RESUME_PARSE_PROMPT = """
-You are an expert AI Resume Parser. Your task is to extract all content from the following resume text and parse it into a clean, structured JSON format. 
-Make sure to extract:
-1. Personal Information (name, email, phone, address, linkedin, github, portfolio, summary)
-2. Education (institution, degree, board, percentage, cgpa, passing_year, achievements)
-3. Experience (company, position, duration, description, achievements)
-4. Projects (name, description, tech_stack, role, duration, github_link, live_demo, achievements)
-5. Skills (category, name, level as a rating from 1 to 5)
-6. Certifications (name, organization, issue_date, credential_id, credential_url)
-7. Achievements (hackathons, awards, soft_skills, extracurricular)
-8. Languages (list of languages)
-9. Links (additional urls)
+You are an expert AI Resume Parser. Your task is to extract all content from the following resume text and parse it into a clean, structured JSON format.
+This parser must work universally across all degrees, majors, and formats (e.g. BCA, BBA, B.Com, B.Tech, MBA, MCA, M.Tech, BS, MS, BA, MA, etc.).
 
-Ensure that you DO NOT invent or fabricate any details. Extract only what is present in the text. Return ONLY a valid JSON object matching this schema, without markdown code blocks:
+Extract all available sections:
+1. Personal Information (name, email, phone, address, linkedin, github, portfolio)
+2. Summary (professional summary / profile summary / about me)
+3. Objective (career objective)
+4. Education (institution, degree, field_of_study, passing_year, cgpa_percentage, location, achievements)
+5. Experience (company, position, duration, location, description, achievements)
+6. Projects (name, description, tech_stack, role, duration, github_link, live_demo)
+7. Technical Skills (list of technical skills / programming languages / tools)
+8. Soft Skills (list of soft skills / interpersonal skills)
+9. Certifications (name, organization, issue_date, credential_id, credential_url)
+10. Internships (company, role, duration, location, description, achievements)
+11. Achievements (list of achievements, awards, hackathons, honors)
+12. Languages (list of languages spoken/known)
+13. Portfolio Links (list of portfolio, GitHub, LinkedIn, or personal website links)
+14. Publications (title, publisher, year, url, description)
+15. Volunteer Experience (organization, role, duration, description)
+16. References (name, title, company, email, phone, relationship)
+
+CRITICAL RULES:
+- Return ONLY a valid JSON object matching the exact schema below.
+- Do NOT add markdown code wrappers (no ```json).
+- IF A SECTION IS MISSING IN THE RESUME, YOU MUST RETURN AN EMPTY ARRAY [] FOR LIST FIELDS AND AN EMPTY STRING "" FOR TEXT FIELDS. NEVER RETURN NULL OR OMIT KEYS.
+- ACHIEVEMENTS & AWARDS PARSING: Parse content strictly according to the section header under which it appears in the original resume. All bullet points listed under an "ACHIEVEMENTS" header belong in the "achievements" array. Do NOT move items from the "ACHIEVEMENTS" section into "publications" even if they mention patents, books, YouTube, or articles. Only populate "publications" if there is an explicit "PUBLICATIONS", "PATENTS", or "RESEARCH PAPERS" section header in the resume text.
+- PROJECTS PARSING: Each distinct project begins with a title or bullet point. If a project description wraps across multiple lines in the text, DO NOT split wrapped lines into separate projects titled "Project". Combine all description text under the SAME parent project entry so the total count of projects matches the actual resume.
+
+Schema:
 {
   "personal_info": {
     "name": "string",
@@ -22,18 +38,19 @@ Ensure that you DO NOT invent or fabricate any details. Extract only what is pre
     "address": "string",
     "linkedin": "string",
     "github": "string",
-    "portfolio": "string",
-    "summary": "string"
+    "portfolio": "string"
   },
+  "summary": "string",
+  "objective": "string",
   "education": [
     {
       "institution": "string",
       "degree": "string",
-      "board": "string or null",
-      "percentage": "float or null",
-      "cgpa": "float or null",
-      "passing_year": "integer",
-      "achievements": "string or null"
+      "field_of_study": "string",
+      "passing_year": "string",
+      "cgpa_percentage": "string",
+      "location": "string",
+      "achievements": "string"
     }
   ],
   "experience": [
@@ -41,8 +58,9 @@ Ensure that you DO NOT invent or fabricate any details. Extract only what is pre
       "company": "string",
       "position": "string",
       "duration": "string",
+      "location": "string",
       "description": "string",
-      "achievements": "string or null"
+      "achievements": "string"
     }
   ],
   "projects": [
@@ -50,37 +68,63 @@ Ensure that you DO NOT invent or fabricate any details. Extract only what is pre
       "name": "string",
       "description": "string",
       "tech_stack": "string",
-      "role": "string or null",
-      "duration": "string or null",
-      "github_link": "string or null",
-      "live_demo": "string or null",
-      "achievements": "string or null"
+      "role": "string",
+      "duration": "string",
+      "github_link": "string",
+      "live_demo": "string"
     }
   ],
-  "skills": [
-    {
-      "category": "string",
-      "name": "string",
-      "level": 3
-    }
-  ],
+  "technicalSkills": ["string"],
+  "softSkills": ["string"],
   "certifications": [
     {
       "name": "string",
       "organization": "string",
-      "issue_date": "string or null",
-      "credential_id": "string or null",
-      "credential_url": "string or null"
+      "issue_date": "string",
+      "credential_id": "string",
+      "credential_url": "string"
     }
   ],
-  "achievements": {
-    "hackathons": "string or null",
-    "awards": "string or null",
-    "soft_skills": "string or null",
-    "extracurricular": "string or null"
-  },
+  "internships": [
+    {
+      "company": "string",
+      "role": "string",
+      "duration": "string",
+      "location": "string",
+      "description": "string",
+      "achievements": "string"
+    }
+  ],
+  "achievements": ["string"],
   "languages": ["string"],
-  "links": ["string"]
+  "portfolioLinks": ["string"],
+  "publications": [
+    {
+      "title": "string",
+      "publisher": "string",
+      "year": "string",
+      "url": "string",
+      "description": "string"
+    }
+  ],
+  "volunteerExperience": [
+    {
+      "organization": "string",
+      "role": "string",
+      "duration": "string",
+      "description": "string"
+    }
+  ],
+  "references": [
+    {
+      "name": "string",
+      "title": "string",
+      "company": "string",
+      "email": "string",
+      "phone": "string",
+      "relationship": "string"
+    }
+  ]
 }
 
 Resume Text:

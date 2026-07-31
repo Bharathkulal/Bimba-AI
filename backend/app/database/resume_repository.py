@@ -170,6 +170,37 @@ class ResumeRepository:
             })
         except Exception as e:
             log_error("DATABASE", "ATS Scorecard initialization failed", e)
+
+        # Sync profile document to resume_profiles collection
+        try:
+            profile_doc = {
+                "userId": student_id,
+                "resumeId": next_id,
+                "personal_info": parsed_data.get("personal_info", {}),
+                "summary": parsed_data.get("summary", ""),
+                "objective": parsed_data.get("objective", ""),
+                "education": parsed_data.get("education", []),
+                "experience": parsed_data.get("experience", []),
+                "projects": parsed_data.get("projects", []),
+                "technicalSkills": parsed_data.get("technicalSkills", []),
+                "softSkills": parsed_data.get("softSkills", []),
+                "certifications": parsed_data.get("certifications", []),
+                "internships": parsed_data.get("internships", []),
+                "achievements": parsed_data.get("achievements", []),
+                "languages": parsed_data.get("languages", []),
+                "portfolioLinks": parsed_data.get("portfolioLinks", []),
+                "publications": parsed_data.get("publications", []),
+                "volunteerExperience": parsed_data.get("volunteerExperience", []),
+                "references": parsed_data.get("references", []),
+                "lastUpdated": datetime.now(timezone.utc).isoformat()
+            }
+            self.db.resume_profiles.update_one(
+                {"resumeId": next_id},
+                {"$set": profile_doc},
+                upsert=True
+            )
+        except Exception as e:
+            log_error("DATABASE", "resume_profiles initialization failed", e)
             
         return next_id
 

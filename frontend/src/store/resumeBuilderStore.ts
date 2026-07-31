@@ -30,10 +30,21 @@ export interface EducationItem {
 export interface ResumeBuilderData {
   personal_info: PersonalInfo;
   summary: string;
+  objective?: string;
   skills: string[];
+  technicalSkills?: string[];
+  softSkills?: string[];
   experience: ExperienceItem[];
   projects: ProjectItem[];
   education: EducationItem[];
+  certifications?: any[];
+  internships?: any[];
+  achievements?: string[];
+  languages?: string[];
+  portfolioLinks?: string[];
+  publications?: any[];
+  volunteerExperience?: any[];
+  references?: any[];
 }
 
 export interface GeneratedVersion {

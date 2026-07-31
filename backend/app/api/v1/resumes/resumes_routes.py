@@ -290,12 +290,84 @@ def create_resume(payload: dict, student: Student = Depends(get_current_student)
 
     return {"success": True, "id": next_id}
 
+def sync_resume_profile(id: int, student_id: int, payload: dict, db: Any):
+    try:
+        from datetime import datetime, timezone
+        profile_doc = {
+            "userId": student_id,
+            "resumeId": id,
+            "personal_info": payload.get("personal_info") or payload.get("personalInfo") or {},
+            "summary": payload.get("summary") or "",
+            "objective": payload.get("objective") or "",
+            "education": payload.get("education") or [],
+            "experience": payload.get("experience") or [],
+            "projects": payload.get("projects") or [],
+            "technicalSkills": payload.get("technicalSkills") or payload.get("skills") or [],
+            "softSkills": payload.get("softSkills") or [],
+            "certifications": payload.get("certifications") or payload.get("certificates") or [],
+            "internships": payload.get("internships") or [],
+            "achievements": payload.get("achievements") or [],
+            "languages": payload.get("languages") or [],
+            "portfolioLinks": payload.get("portfolioLinks") or [],
+            "publications": payload.get("publications") or [],
+            "volunteerExperience": payload.get("volunteerExperience") or [],
+            "references": payload.get("references") or [],
+            "lastUpdated": datetime.now(timezone.utc).isoformat()
+        }
+        db.resume_profiles.update_one(
+            {"resumeId": id},
+            {"$set": profile_doc},
+            upsert=True
+        )
+    except Exception as e:
+        print(f"[sync_resume_profile error] {e}")
+
+@router.get("/profile/{resume_id}")
+def get_resume_profile(resume_id: int, student: Student = Depends(get_current_student), db: Any = Depends(get_db)):
+    verify_ownership(resume_id, student.id, db)
+    profile_doc = db.resume_profiles.find_one({"resumeId": resume_id})
+    if not profile_doc:
+        resume_doc = db.resumes.find_one({"id": resume_id})
+        r_data = resume_doc.get("resume", {}) if resume_doc else {}
+        profile_doc = {
+            "userId": student.id,
+            "resumeId": resume_id,
+            "personal_info": r_data.get("personal_info", {}),
+            "summary": r_data.get("summary", ""),
+            "objective": r_data.get("objective", ""),
+            "education": r_data.get("education", []),
+            "experience": r_data.get("experience", []),
+            "projects": r_data.get("projects", []),
+            "technicalSkills": r_data.get("technicalSkills") or r_data.get("skills") or [],
+            "softSkills": r_data.get("softSkills", []),
+            "certifications": r_data.get("certifications") or r_data.get("certificates") or [],
+            "internships": r_data.get("internships", []),
+            "achievements": r_data.get("achievements", []),
+            "languages": r_data.get("languages", []),
+            "portfolioLinks": r_data.get("portfolioLinks", []),
+            "publications": r_data.get("publications", []),
+            "volunteerExperience": r_data.get("volunteerExperience", []),
+            "references": r_data.get("references", []),
+            "lastUpdated": datetime.utcnow().isoformat()
+        }
+    from app.core.mongodb import MongoModel
+    return MongoModel(profile_doc)
+
+@router.put("/profile/{resume_id}")
+def update_resume_profile(resume_id: int, payload: dict, student: Student = Depends(get_current_student), db: Any = Depends(get_db)):
+    verify_ownership(resume_id, student.id, db)
+    sync_resume_profile(resume_id, student.id, payload, db)
+    db.resumes.update_one(
+        {"id": resume_id},
+        {"$set": {"resume": payload, "updated_at": datetime.utcnow()}}
+    )
+    return {"success": True}
+
 @router.put("/{id}/update")
 def update_resume(id: int, payload: dict, student: Student = Depends(get_current_student), db: Any = Depends(get_db)):
     verify_ownership(id, student.id, db)
     
     # Save the payload exactly as received into the dynamic resume field
-    # Also extract any root-level metadata if sent in payload
     update_fields = {
         "updated_at": datetime.utcnow()
     }
@@ -316,6 +388,7 @@ def update_resume(id: int, payload: dict, student: Student = Depends(get_current
             }
         }
     )
+    sync_resume_profile(id, student.id, payload, db)
     return {"success": True}
 
 @router.delete("/{id}")

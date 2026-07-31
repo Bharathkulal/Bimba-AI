@@ -67,6 +67,18 @@ def setup_indexes():
     db.ai_usage_logs.create_index("task_type")
     db.ai_usage_logs.create_index("created_at")
     
+    # SaaS platform collections
+    print("Indexing SaaS resume & interview collections...")
+    db.resume_uploads.create_index("userId")
+    db.resume_uploads.create_index("resumeId")
+    db.resume_uploads.create_index("checksum")
+    db.resume_extractions.create_index("userId")
+    db.resume_extractions.create_index("resumeId")
+    db.resume_profiles.create_index("userId")
+    db.resume_profiles.create_index("resumeId")
+    db.career_interviews.create_index("userId")
+    db.career_interviews.create_index("resumeId")
+    
     print("\nDatabase indexes setup successfully!")
 
 if __name__ == "__main__":

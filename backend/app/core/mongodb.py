@@ -157,4 +157,15 @@ def create_indexes():
     db.resume_versions.create_index([("created_at", ASCENDING)])
     db.resume_analyses.create_index([("resume_id", ASCENDING)])
     
+    # SaaS platform enhancement collections
+    db.resume_uploads.create_index([("userId", ASCENDING)])
+    db.resume_uploads.create_index([("resumeId", ASCENDING)])
+    db.resume_uploads.create_index([("checksum", ASCENDING)])
+    db.resume_extractions.create_index([("userId", ASCENDING)])
+    db.resume_extractions.create_index([("resumeId", ASCENDING)])
+    db.resume_profiles.create_index([("userId", ASCENDING)])
+    db.resume_profiles.create_index([("resumeId", ASCENDING)])
+    db.career_interviews.create_index([("userId", ASCENDING)])
+    db.career_interviews.create_index([("resumeId", ASCENDING)])
+    
     print("MongoDB indexes created successfully!")
