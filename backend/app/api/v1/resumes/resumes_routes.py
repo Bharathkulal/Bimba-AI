@@ -958,7 +958,9 @@ def get_pdf_export(id: int, student: Student = Depends(get_current_student), db:
     # Log download action
     db.resume_downloads.insert_one({
         "id": get_next_sequence("resume_downloads"),
+        "student_id": student.id,
         "resume_id": id,
+        "resume_name": resume.get("name", "Untitled"),
         "format": "PDF",
         "created_at": datetime.utcnow()
     })
@@ -1017,7 +1019,9 @@ def get_docx_download(id: int, student: Student = Depends(get_current_student), 
     
     db.resume_downloads.insert_one({
         "id": get_next_sequence("resume_downloads"),
+        "student_id": student.id,
         "resume_id": id,
+        "resume_name": resume.get("name", "Untitled"),
         "format": "DOCX",
         "created_at": datetime.utcnow()
     })
@@ -1067,7 +1071,9 @@ def get_txt_download(id: int, student: Student = Depends(get_current_student), d
     
     db.resume_downloads.insert_one({
         "id": get_next_sequence("resume_downloads"),
+        "student_id": student.id,
         "resume_id": id,
+        "resume_name": resume.get("name", "Untitled"),
         "format": "TXT",
         "created_at": datetime.utcnow()
     })

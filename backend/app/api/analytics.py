@@ -198,7 +198,18 @@ def get_dashboard_analytics(student: Student = Depends(get_current_student), db:
             "todayMinutes": today_editing_minutes,
             "longestMinutes": longest_session_minutes
         },
-        "heatmap": heatmap_data
+        "heatmap": heatmap_data,
+        "jobs": {
+            "applications": db.job_applications.count_documents({"user_id": student.id}),
+            "saved": db.saved_jobs.count_documents({"user_id": student.id}),
+            "recommended": db.recommended_jobs.count_documents({}),
+        },
+        "downloads": {
+            "total": db.resume_downloads.count_documents({"student_id": student.id}),
+            "pdf": db.resume_downloads.count_documents({"student_id": student.id, "format": "PDF"}),
+            "docx": db.resume_downloads.count_documents({"student_id": student.id, "format": "DOCX"}),
+            "txt": db.resume_downloads.count_documents({"student_id": student.id, "format": "TXT"}),
+        }
     }
 
 @router.get("/ats")

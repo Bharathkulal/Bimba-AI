@@ -73,26 +73,36 @@ def _extract_years(experience_items: List[Dict[str, Any]]) -> int:
 
 
 def _extract_candidate_profile(resume_analysis: Dict[str, Any], student: Student, keyword: str) -> Dict[str, Any]:
-    ext_data = (resume_analysis or {}).get("extracted_data", {}) or {}
-    skills = _normalize_list(ext_data.get("skills"))
-    technologies = _normalize_list(ext_data.get("technologies"))
+    if not resume_analysis:
+        resume_analysis = {}
+    ext_data = resume_analysis.get("extracted_data") or resume_analysis.get("resume") or resume_analysis
+    
+    raw_skills = ext_data.get("skills") or []
+    skills = []
+    for s in raw_skills:
+        if isinstance(s, dict):
+            skills.append(s.get("name") or "")
+        else:
+            skills.append(str(s))
+            
+    technologies = _normalize_list(ext_data.get("technologies") or ext_data.get("skills_matched") or [])
     experience_items = ext_data.get("experience") or []
-    education = _normalize_list(ext_data.get("education"))
-    target_role = _normalize_text(ext_data.get("target_role") or keyword) or "Software Engineer"
-    location_preference = _normalize_text(ext_data.get("location_preference") or ext_data.get("preferred_location") or student.address or "India")
-    salary_preference = _normalize_text(ext_data.get("salary_preference") or "")
-    industry = _normalize_text(ext_data.get("industry") or ext_data.get("preferred_industry") or "")
+    education = ext_data.get("education") or []
+    
+    target_role = _normalize_text(ext_data.get("target_role") or ext_data.get("personal_info", {}).get("title") or keyword) or "Software Engineer"
+    p_info = ext_data.get("personal_info") or {}
+    location_preference = _normalize_text(ext_data.get("location_preference") or ext_data.get("preferred_location") or p_info.get("address") or student.address or "India")
     experience_years = _extract_years(experience_items if isinstance(experience_items, list) else [])
 
     return {
-        "skills": skills,
+        "skills": [s for s in skills if s],
         "technologies": technologies,
         "experience_years": experience_years,
         "education": education,
         "target_role": target_role,
         "location_preference": location_preference,
-        "salary_preference": salary_preference,
-        "industry": industry,
+        "salary_preference": _normalize_text(ext_data.get("salary_preference") or ""),
+        "industry": _normalize_text(ext_data.get("industry") or ext_data.get("preferred_industry") or ""),
     }
 
 

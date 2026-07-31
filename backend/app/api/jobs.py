@@ -7,6 +7,7 @@ from app.models.student import Student
 from app.models.saved_job import SavedJob, JobApplication
 from app.api.analytics import get_current_student
 from app.services.linkedin_service import linkedin_service
+from app.services.jobs.job_recommendation_service import get_job_recommendations_with_matching
 from app.core.mongodb import MongoModel, get_next_sequence
 from app.schemas.jobs import (
     JobSearchResponse,
@@ -70,6 +71,82 @@ def get_applications(
 ):
     app_docs = list(db.job_applications.find({"user_id": student.id}).sort("application_date", -1))
     return [JobApplication(doc) for doc in app_docs]
+
+@router.get("/recommendations", response_model=JobRecommendationsResponse)
+def get_job_recommendations(
+    resume_id: int = Query(..., description="The resume ID to align job query matching against"),
+    student: Student = Depends(get_current_student),
+    db: Any = Depends(get_db)
+):
+    # Fetch resume details
+    resume = db.resumes.find_one({"id": resume_id, "student_id": student.id})
+    if not resume:
+        raise HTTPException(status_code=404, detail="Resume not found")
+        
+    # Extract details
+    skills = []
+    raw_skills = resume.get("skills") or []
+    for s in raw_skills:
+        if isinstance(s, dict):
+            skills.append(s.get("name") or "")
+        else:
+            skills.append(str(s))
+            
+    summary = resume.get("summary") or resume.get("career_objective") or ""
+    role = resume.get("target_role") or "Software Engineer"
+    
+    jobs = get_job_recommendations_with_matching(
+        db=db,
+        student=student,
+        resume_analysis=resume,
+        keyword=role,
+        location=resume.get("personal_info", {}).get("address") or student.address or "India",
+        limit=10
+    )
+    
+    # Save/cache crawled jobs in MongoDB recommended_jobs collection
+    for j in jobs:
+        db.recommended_jobs.update_one(
+            {"id": j["id"]},
+            {"$set": {**j, "cached_at": datetime.utcnow()}},
+            upsert=True
+        )
+        
+    # Format match breakdown to match JobRecommendationsResponse schema
+    formatted_jobs = []
+    for j in jobs:
+        formatted_jobs.append({
+            "id": j["id"],
+            "title": j["title"],
+            "company": j["company"],
+            "location": j["location"],
+            "logo": j.get("logo"),
+            "salary": j.get("salary") or "Not disclosed",
+            "employment_type": j.get("employment_type") or "Not available",
+            "remote": bool(j.get("remote")),
+            "posted_date": j.get("posted_date") or "Not available",
+            "ai_match_score": j.get("ai_match_score") or 0,
+            "skills_matched": j.get("skills_matched") or j.get("matched_skills") or [],
+            "skills_missing": j.get("skills_missing") or j.get("missing_skills") or [],
+            "apply_url": j.get("apply_url") or j.get("application_url") or "",
+            "match_breakdown": {
+                "why_recommended": [j.get("reason", "Good match based on resume profile")],
+                "missing_skills_learn": [{"name": ms, "courses": f"Learn {ms} online", "importance": "High"} for ms in (j.get("skills_missing") or j.get("missing_skills") or [])]
+            }
+        })
+        
+    return {
+        "jobs": formatted_jobs,
+        "extracted_keywords": {
+            "primary_role": role,
+            "search_query": f"{role} {' '.join(skills[:3])}",
+            "primary_skills": skills[:4],
+            "secondary_skills": skills[4:8],
+            "remote_preference": True,
+            "preferred_location": "India"
+        },
+        "query_used": f"{role} {' '.join(skills[:3])}"
+    }
 
 @router.get("/{id}", response_model=JobDetailResponse)
 def get_job_details(
@@ -218,100 +295,6 @@ def update_application_status(
     
     updated_doc = db.job_applications.find_one({"_id": app_history["_id"]})
     return JobApplication(updated_doc)
-
-@router.get("/recommendations", response_model=JobRecommendationsResponse)
-def get_job_recommendations(
-    resume_id: int = Query(..., description="The resume ID to align job query matching against"),
-    student: Student = Depends(get_current_student),
-    db: Any = Depends(get_db)
-):
-    # Fetch resume details
-    resume = db.resumes.find_one({"id": resume_id, "student_id": student.id})
-    if not resume:
-        raise HTTPException(status_code=404, detail="Resume not found")
-        
-    # Extract details
-    skills = [s.get("name") for s in resume.get("skills", [])]
-    summary = resume.get("summary") or resume.get("career_objective") or ""
-    role = resume.get("target_role") or "Software Engineer"
-    
-    # Use fast local query parsing instead of slow LLM call
-    payload = {
-        "primary_role": role,
-        "search_query": f"{role} {' '.join(skills[:3])}",
-        "primary_skills": skills[:4],
-        "secondary_skills": skills[4:8],
-        "remote_preference": True,
-        "preferred_location": "India"
-    }
-        
-    # Call LinkedIn search API
-    search_results = linkedin_service.search_jobs(
-        student=student,
-        keyword=payload.get("search_query"),
-        location=payload.get("preferred_location"),
-        limit=10
-    )
-    
-    jobs = search_results.get("jobs", [])
-    recommended_jobs = []
-    
-    for job in jobs:
-        # Calculate matching breakdowns
-        job_reqs = job.get("skills_missing", []) + job.get("skills_matched", [])
-        if not job_reqs:
-            job_reqs = ["React", "FastAPI", "MongoDB", "Python"]
-        
-        why = []
-        matched_skills = [s for s in job.get("skills_matched", [])]
-        for s in matched_skills:
-            why.append(f"Matches your {s} skills")
-        if resume.get("projects"):
-            why.append("Matches your project technologies")
-        why.append("ATS score suitable for this role")
-        
-        # Course recommendations for missing skills
-        missing_skills_list = []
-        for missing in job.get("skills_missing", []):
-            missing_skills_list.append({
-                "name": missing,
-                "courses": f"Mastering {missing} on Coursera / Udemy",
-                "importance": "High" if missing in payload.get("primary_skills", []) else "Medium"
-            })
-            
-        recommended_jobs.append({
-            "id": job.get("id"),
-            "title": job.get("title"),
-            "company": job.get("company"),
-            "location": job.get("location"),
-            "logo": job.get("logo"),
-            "salary": job.get("salary") or "Not disclosed",
-            "employment_type": job.get("employment_type") or "Not available",
-            "remote": bool(job.get("remote", False)),
-            "posted_date": job.get("posted_date") or "Not available",
-            "ai_match_score": job.get("ai_match_score") or 0,
-            "skills_matched": job.get("skills_matched", []),
-            "skills_missing": job.get("skills_missing", []),
-            "apply_url": job.get("apply_url") or job.get("application_url") or "",
-            "match_breakdown": {
-                "why_recommended": why[:4],
-                "missing_skills_learn": missing_skills_list[:3]
-            }
-        })
-        
-    # Log recommended jobs action
-    db.activity_logs.insert_one({
-        "id": get_next_sequence("activity_logs"),
-        "student_id": student.id,
-        "activity": f"Jobs Recommended",
-        "created_at": datetime.utcnow()
-    })
-    
-    return {
-        "jobs": recommended_jobs,
-        "extracted_keywords": payload,
-        "query_used": payload.get("search_query")
-    }
 
 from pydantic import BaseModel
 
