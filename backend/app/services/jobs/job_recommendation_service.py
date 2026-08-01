@@ -4,7 +4,7 @@ from typing import Any, Dict, List
 
 from app.models.student import Student
 from app.services.jobs.jsearch_provider import JSearchProvider
-from app.services.jobs.linkedin_provider import LinkedInProvider
+from app.services.jobs.glassdoor_provider import GlassdoorProvider
 
 logger = logging.getLogger("job_recommendation_service")
 
@@ -197,10 +197,10 @@ def get_job_recommendations_with_matching(
 
     if not jobs:
         try:
-            linkedin = LinkedInProvider()
-            jobs = linkedin.search_jobs(student, keyword, location, limit)
+            glassdoor = GlassdoorProvider()
+            jobs = glassdoor.search_jobs(student, keyword, location, limit)
         except Exception as exc:
-            logger.error("LinkedIn provider failed: %s", exc)
+            logger.error("Glassdoor provider failed: %s", exc)
             jobs = []
 
     if not jobs:

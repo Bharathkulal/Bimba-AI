@@ -428,9 +428,22 @@ def manual_job_search_endpoint(
     })
     
     if not analysis_record:
-        from app.services.jobs.linkedin_provider import LinkedInProvider
-        provider = LinkedInProvider()
-        jobs = provider.search_jobs(student, payload.keyword, payload.location, 10)
+        from app.services.jobs.jsearch_provider import JSearchProvider
+        from app.services.jobs.glassdoor_provider import GlassdoorProvider
+        
+        jobs = []
+        try:
+            jsearch = JSearchProvider()
+            jobs = jsearch.search_jobs(student, payload.keyword, payload.location, 10)
+        except Exception:
+            pass
+            
+        if not jobs:
+            try:
+                glassdoor = GlassdoorProvider()
+                jobs = glassdoor.search_jobs(student, payload.keyword, payload.location, 10)
+            except Exception:
+                pass
 
         ranked_jobs = []
         for job in jobs:

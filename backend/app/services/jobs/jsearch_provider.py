@@ -16,7 +16,7 @@ class JSearchProvider(JobProviderInterface):
             logger.warning("JSearch API key is not configured.")
             raise ValueError("JSearch API key is not set")
 
-        url = "https://jsearch.p.rapidapi.com/search"
+        url = "https://jsearch.p.rapidapi.com/search-v2"
         headers = {
             "X-RapidAPI-Key": settings.JSEARCH_API_KEY,
             "X-RapidAPI-Host": settings.JSEARCH_API_HOST,
@@ -29,13 +29,14 @@ class JSearchProvider(JobProviderInterface):
 
         logger.info("Querying JSearch for: %s in %s", keyword, location)
         try:
-            response = requests.get(url, headers=headers, params=params, timeout=8)
+            response = requests.get(url, headers=headers, params=params, timeout=12)
             if response.status_code != 200:
                 logger.error("JSearch API returned %s: %s", response.status_code, response.text)
                 raise RuntimeError(f"JSearch request failed: {response.status_code}")
 
             data = response.json()
-            jobs_list = data.get("data", []) if isinstance(data, dict) else []
+            data_content = data.get("data", {})
+            jobs_list = data_content.get("jobs", []) if isinstance(data_content, dict) else []
             normalized: List[Dict[str, Any]] = []
 
             for job in jobs_list[:limit]:

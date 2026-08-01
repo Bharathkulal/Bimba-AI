@@ -9,7 +9,10 @@ load_dotenv(dotenv_path)
 def test_jsearch():
     print("=== Testing JSearch API ===")
     api_key = os.getenv("JSEARCH_API_KEY")
-    api_host = os.getenv("JSEARCH_API_HOST", "jsearch.p.rapidapi.com")
+    api_host = os.getenv("JSEARCH_API_HOST")
+    
+    print(f"Loaded Host: '{api_host}'")
+    print(f"Loaded Key: '{api_key}'")
     
     if not api_key:
         print("Error: JSEARCH_API_KEY is not set.")
@@ -18,7 +21,7 @@ def test_jsearch():
     print(f"Host: {api_host}")
     print(f"Key (truncated): {api_key[:8]}...{api_key[-4:] if len(api_key) > 4 else ''}")
     
-    url = "https://jsearch.p.rapidapi.com/search"
+    url = "https://jsearch.p.rapidapi.com/search-v2"
     headers = {
         "X-RapidAPI-Key": api_key,
         "X-RapidAPI-Host": api_host,
@@ -34,7 +37,8 @@ def test_jsearch():
         print(f"Status Code: {response.status_code}")
         if response.status_code == 200:
             data = response.json()
-            jobs = data.get("data", [])
+            data_content = data.get("data", {})
+            jobs = data_content.get("jobs", []) if isinstance(data_content, dict) else []
             print(f"Success! Found {len(jobs)} jobs.")
             if jobs:
                 print(f"Sample Job Title: {jobs[0].get('job_title')}")

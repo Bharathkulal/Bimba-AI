@@ -20,6 +20,8 @@ class Settings(BaseSettings):
     JSEARCH_API_HOST: str = os.getenv("JSEARCH_API_HOST", "jsearch.p.rapidapi.com")
     LINKEDIN_API_KEY: str = os.getenv("LINKEDIN_API_KEY", "")
     LINKEDIN_API_HOST: str = os.getenv("LINKEDIN_API_HOST", "linkedin-job-search-api.p.rapidapi.com")
+    GLASSDOOR_API_KEY: str = os.getenv("GLASSDOOR_API_KEY", "")
+    GLASSDOOR_API_HOST: str = os.getenv("GLASSDOOR_API_HOST", "glassdoor-real-time.p.rapidapi.com")
 
     # Security
     SECRET_KEY: str = os.getenv("SECRET_KEY", "super_secret_placement_system_key")
