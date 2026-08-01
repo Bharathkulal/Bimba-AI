@@ -917,25 +917,58 @@ def get_pdf_export(id: int, inline: bool = False, student: Student = Depends(get
 
     story = []
     
-    resume_data = resume.get("resume", {})
-    p_info = resume_data.get("personal_info") or resume_data.get("master") or {}
+    resume_data = get_normalized_resume_dict(resume)
+    p_info = resume_data.get("personal_info") or {}
     
-    name = student.student_name or p_info.get("name") or "Candidate"
+    raw_name = (
+        p_info.get("name") or 
+        p_info.get("candidateName") or 
+        resume_data.get("name") or 
+        resume.get("name") or 
+        student.student_name or 
+        "Candidate"
+    )
+    # Clean AI/Parsed/Optimized prefixes from name to show the actual candidate name
+    name = raw_name
+    for prefix in ["AI Parsed - ", "AI Diagnostic - ", "AI Optimized - ", "AI Enhanced - ", "AI Parsed-", "AI Diagnostic-", "AI Optimized-", "AI Enhanced-"]:
+        name = name.replace(prefix, "")
+        name = name.replace(prefix.upper(), "")
+    name = name.strip()
+
+    if not name or name.lower() in ["resume", "new resume", "untitled"]:
+        name = p_info.get("name") or p_info.get("candidateName") or student.student_name or "Candidate"
+
     contact_parts = []
-    if student.email:
-        contact_parts.append(student.email)
-    elif p_info.get("email"):
-        contact_parts.append(p_info.get("email"))
+    email = (
+        p_info.get("email") or 
+        resume_data.get("email") or 
+        resume.get("email") or 
+        student.email
+    )
+    if email:
+        contact_parts.append(email)
         
-    if p_info.get("phone"):
-        contact_parts.append(p_info.get("phone"))
-    if p_info.get("address"):
-        contact_parts.append(p_info.get("address"))
+    phone = (
+        p_info.get("phone") or 
+        resume_data.get("phone") or 
+        resume.get("phone")
+    )
+    if phone:
+        contact_parts.append(phone)
+        
+    address = (
+        p_info.get("address") or 
+        resume_data.get("address") or 
+        resume.get("address")
+    )
+    if address:
+        contact_parts.append(address)
         
     sub_parts = []
     for link_key in ["linkedin", "github", "portfolio", "website"]:
-        if p_info.get(link_key):
-            sub_parts.append(f"{link_key.capitalize()}: {p_info.get(link_key)}")
+        link_val = p_info.get(link_key) or resume_data.get(link_key) or resume.get(link_key)
+        if link_val:
+            sub_parts.append(f"{link_key.capitalize()}: {link_val}")
         
     story.append(Paragraph(name, title_style))
     story.append(Paragraph(" • ".join(contact_parts) + "<br/>" + " | ".join(sub_parts), subtitle_style))
@@ -956,7 +989,7 @@ def get_pdf_export(id: int, inline: bool = False, student: Student = Depends(get
         
     # Render all other custom and standard sections dynamically
     for section_name, section_value in resume_data.items():
-        if section_name in ["master", "personal_info", "id", "userId", "student_id", "name", "visibility", "template_id", "color_theme", "status", "ats_score", "created_at", "updated_at", "resume"]:
+        if section_name in ["master", "personal_info", "id", "userId", "student_id", "name", "visibility", "template_id", "color_theme", "status", "ats_score", "created_at", "updated_at", "resume", "cloudinary"]:
             continue
             
         if not section_value:
@@ -1059,33 +1092,34 @@ def get_pdf_download(id: int, student: Student = Depends(get_current_student), d
 def get_docx_download(id: int, student: Student = Depends(get_current_student), db: Any = Depends(get_db)):
     from docx import Document
     resume = verify_ownership(id, student.id, db)
+    resume_data = get_normalized_resume_dict(resume)
     
     doc = Document()
-    doc.add_heading(resume.get("name") or "Resume", 0)
+    doc.add_heading(resume_data.get("personal_info", {}).get("name") or "Resume", 0)
     
-    p_info = resume.get("personal_info", {})
+    p_info = resume_data.get("personal_info", {})
     doc.add_paragraph(f"Email: {p_info.get('email', '')} | Phone: {p_info.get('phone', '')}")
     doc.add_paragraph(f"LinkedIn: {p_info.get('linkedin', '')} | GitHub: {p_info.get('github', '')}")
     
     doc.add_heading('Professional Summary', level=1)
-    doc.add_paragraph(resume.get("summary") or resume.get("career_objective") or "")
+    doc.add_paragraph(resume_data.get("summary") or resume_data.get("objective") or "")
     
     doc.add_heading('Experience', level=1)
-    for exp in resume.get("experience", []):
-        doc.add_paragraph(f"{exp.get('role', '')} at {exp.get('company', '')} ({exp.get('duration', '')})")
+    for exp in resume_data.get("experience", []):
+        doc.add_paragraph(f"{exp.get('position', exp.get('role', ''))} at {exp.get('company', '')} ({exp.get('duration', '')})")
         doc.add_paragraph(exp.get('description', ''))
         
     doc.add_heading('Education', level=1)
-    for edu in resume.get("education", []):
-        doc.add_paragraph(f"{edu.get('degree', '')} - {edu.get('institution', '')} ({edu.get('year', '')})")
+    for edu in resume_data.get("education", []):
+        doc.add_paragraph(f"{edu.get('degree', '')} - {edu.get('institution', '')} ({edu.get('passing_year', edu.get('year', ''))})")
         
     doc.add_heading('Projects', level=1)
-    for proj in resume.get("projects", []):
+    for proj in resume_data.get("projects", []):
         doc.add_paragraph(f"{proj.get('title', '')}")
         doc.add_paragraph(proj.get('description', ''))
         
     doc.add_heading('Skills', level=1)
-    doc.add_paragraph(", ".join(resume.get("skills", [])))
+    doc.add_paragraph(", ".join(resume_data.get("skills", [])))
 
     buffer = io.BytesIO()
     doc.save(buffer)
@@ -1503,6 +1537,160 @@ def analyze_resume_endpoint(
     
     return analysis_data
 
+import time
+
+def log_pipeline_stage(stage_name: str, resume_id: int, user_id: int, input_data: dict, output_data: dict = None, error: str = None, elapsed: float = 0.0):
+    metrics = {}
+    if input_data:
+        metrics["input"] = {
+            "experience_count": len(input_data.get("experience", [])),
+            "project_count": len(input_data.get("projects", [])),
+            "education_count": len(input_data.get("education", [])),
+            "skill_count": len(input_data.get("skills", []))
+        }
+    if output_data:
+        metrics["output"] = {
+            "experience_count": len(output_data.get("experience", [])),
+            "project_count": len(output_data.get("projects", [])),
+            "education_count": len(output_data.get("education", [])),
+            "skill_count": len(output_data.get("skills", []))
+        }
+    log_msg = f"\n[PIPELINE STAGE: {stage_name}] | Resume ID: {resume_id} | User ID: {user_id} | Time: {elapsed:.2f}s"
+    if error:
+        log_msg += f" | ERROR: {error}"
+    print(log_msg)
+    print(f"Metrics: {json.dumps(metrics)}")
+    print("=======================================\n")
+
+def get_normalized_resume_dict(resume: dict) -> dict:
+    resume_data = resume.get("resume", {}) or {}
+    if not isinstance(resume_data, dict):
+        resume_data = {}
+        
+    personal_info = resume_data.get("personal_info") or {}
+    if not isinstance(personal_info, dict):
+        personal_info = {}
+        
+    merged_personal = {
+        "name": personal_info.get("name") or resume.get("name") or "",
+        "email": personal_info.get("email") or resume.get("email") or "",
+        "phone": personal_info.get("phone") or resume.get("phone") or "",
+        "address": personal_info.get("address") or resume.get("address") or "",
+        "linkedin": personal_info.get("linkedin") or resume.get("linkedin") or "",
+        "github": personal_info.get("github") or resume.get("github") or "",
+        "portfolio": personal_info.get("portfolio") or resume.get("portfolio") or "",
+    }
+    
+    def get_list(key, fallback_keys=[]):
+        val = resume_data.get(key)
+        if not val or not isinstance(val, list):
+            for fk in fallback_keys:
+                f_val = resume.get(fk)
+                if f_val and isinstance(f_val, list):
+                    return f_val
+            r_val = resume.get(key)
+            if r_val and isinstance(r_val, list):
+                return r_val
+            return []
+        return val
+
+    skills = get_list("skills", ["skills", "technicalSkills"])
+    clean_skills = []
+    for s in skills:
+        if isinstance(s, dict):
+            clean_skills.append(s.get("name") or s.get("skill") or str(s))
+        else:
+            clean_skills.append(str(s))
+
+    normalized = {
+        "personal_info": merged_personal,
+        "summary": resume_data.get("summary") or resume.get("summary") or "",
+        "objective": resume_data.get("objective") or resume.get("career_objective") or "",
+        "education": get_list("education"),
+        "experience": get_list("experience"),
+        "projects": get_list("projects"),
+        "skills": clean_skills,
+        "certifications": get_list("certifications", ["certificates"]),
+        "achievements": get_list("achievements", ["achievements_list"]),
+        "languages": get_list("languages"),
+        "publications": get_list("publications"),
+    }
+    return normalized
+
+def improve_and_validate_resume(db, prompt, resume_id, user_id, original_normalized, roll_number, mode="IMPROVE") -> dict:
+    max_retries = 3
+    current_prompt = prompt
+    last_error = None
+    
+    orig_exp_len = len(original_normalized.get("experience", []))
+    orig_proj_len = len(original_normalized.get("projects", []))
+    orig_edu_len = len(original_normalized.get("education", []))
+    orig_skills_len = len(original_normalized.get("skills", []))
+    
+    for attempt in range(1, max_retries + 1):
+        start_time = time.time()
+        try:
+            raw_response = run_ai_gateway_request(db, current_prompt, f"Resume Studio: {mode} (Attempt {attempt})", roll_number)
+            cleaned = raw_response.strip()
+            if cleaned.startswith("```json"):
+                cleaned = cleaned[7:]
+            if cleaned.endswith("```"):
+                cleaned = cleaned[:-3]
+            
+            improved_json = json.loads(cleaned.strip())
+            
+            if "technicalSkills" in improved_json and not improved_json.get("skills"):
+                improved_json["skills"] = improved_json["technicalSkills"]
+                
+            if not isinstance(improved_json, dict):
+                raise ValueError("AI response is not a JSON object dictionary")
+                
+            if "personal_info" not in improved_json:
+                improved_json["personal_info"] = original_normalized.get("personal_info", {})
+                
+            for list_sec in ["education", "experience", "projects", "skills"]:
+                if list_sec not in improved_json or not isinstance(improved_json[list_sec], list):
+                    improved_json[list_sec] = []
+            
+            imp_exp_len = len(improved_json.get("experience", []))
+            imp_proj_len = len(improved_json.get("projects", []))
+            imp_edu_len = len(improved_json.get("education", []))
+            imp_skills_len = len(improved_json.get("skills", []))
+            
+            if orig_exp_len > 0 and imp_exp_len == 0:
+                raise ValueError(f"AI deleted all experiences ({orig_exp_len} expected)")
+            if orig_proj_len > 0 and imp_proj_len == 0:
+                raise ValueError(f"AI deleted all projects ({orig_proj_len} expected)")
+            if orig_edu_len > 0 and imp_edu_len == 0:
+                raise ValueError(f"AI deleted all education items ({orig_edu_len} expected)")
+                
+            if imp_exp_len < orig_exp_len:
+                raise ValueError(f"Experience count reduced from {orig_exp_len} to {imp_exp_len}")
+            if imp_proj_len < orig_proj_len:
+                raise ValueError(f"Project count reduced from {orig_proj_len} to {imp_proj_len}")
+            if imp_edu_len < orig_edu_len:
+                raise ValueError(f"Education count reduced from {orig_edu_len} to {imp_edu_len}")
+                
+            elapsed = time.time() - start_time
+            log_pipeline_stage(f"{mode}_SUCCESS", resume_id, user_id, original_normalized, improved_json, elapsed=elapsed)
+            return improved_json
+            
+        except Exception as e:
+            elapsed = time.time() - start_time
+            last_error = str(e)
+            log_pipeline_stage(f"{mode}_ATTEMPT_FAIL", resume_id, user_id, original_normalized, error=last_error, elapsed=elapsed)
+            
+            current_prompt = (
+                f"{prompt}\n\n"
+                f"WARNING: Your previous response was rejected because of: {last_error}.\n"
+                f"Please ensure you return ALL original sections: experience ({orig_exp_len} items), "
+                f"projects ({orig_proj_len} items), education ({orig_edu_len} items), and skills. "
+                f"Do not drop any information, just improve descriptions and wording."
+            )
+            
+    log_pipeline_stage(f"{mode}_FALLBACK_TRIGGERED", resume_id, user_id, original_normalized, original_normalized, error=f"Retries exhausted. Last error: {last_error}")
+    return original_normalized
+
 class ImproveRequest(BaseModel):
     improvement_goal: str
 
@@ -1514,75 +1702,107 @@ def improve_resume_endpoint(
     db: Any = Depends(get_db)
 ):
     resume = verify_ownership(id, student.id, db)
-    resume_state = resume.get("resume", {})
     
-    prompt = RESUME_IMPROVE_PROMPT.replace("{improvement_goal}", payload.improvement_goal).replace("{resume_json}", json.dumps(resume_state))
+    # 1. Normalize original state
+    original_normalized = get_normalized_resume_dict(resume)
     
-    try:
-        raw_response = run_ai_gateway_request(db, prompt, f"Resume Studio: IMPROVE", student.roll_number)
-        cleaned = raw_response.strip()
-        if cleaned.startswith("```json"):
-            cleaned = cleaned[7:]
-        if cleaned.endswith("```"):
-            cleaned = cleaned[:-3]
-        improved_json = json.loads(cleaned.strip())
-    except Exception as e:
-        import copy
-        print(f"AI Resume Improvement failed: {str(e)}. Using local heuristic fallback.")
-        improved_json = copy.deepcopy(resume_state)
-        
-        # Heuristic polish for summary
-        if "personal_info" not in improved_json:
-            improved_json["personal_info"] = {}
-        personal_info = improved_json["personal_info"]
-        original_summary = personal_info.get("summary") or "Developer seeking new opportunities."
-        personal_info["summary"] = f"Results-oriented professional with verified tech skills. {original_summary}"
-        
-        # Heuristic polish for experience
-        if "experience" in improved_json and isinstance(improved_json["experience"], list):
-            for exp in improved_json["experience"]:
-                desc = exp.get("description") or "Assisted with tasks."
-                if desc and not desc.startswith("Spearheaded"):
-                    exp["description"] = f"Spearheaded key development modules and collaborated on core architectures. {desc}"
-            
-    db.resume_improvements.insert_one({
-        "id": get_next_sequence("resume_improvements"),
-        "resume_id": id,
-        "improvement_type": payload.improvement_goal,
-        "original_data": json.dumps(resume_state),
-        "improved_data": json.dumps(improved_json)
-    })
-
-    # Save to versions history
+    # 2. Compile prompt with normalized state
+    prompt = RESUME_IMPROVE_PROMPT.replace("{improvement_goal}", payload.improvement_goal).replace("{resume_json}", json.dumps(original_normalized))
+    
+    # 3. Call AI with validation/retry loop
+    improved_json = improve_and_validate_resume(db, prompt, id, student.id, original_normalized, student.roll_number, mode="IMPROVE")
+    
+    # 4. Save to versions history
     last_v_doc = db.resume_versions.find_one(
         {"resume_id": id},
         sort=[("version_number", -1)]
     )
     latest_ver = last_v_doc["version_number"] if last_v_doc else 1
     
-    # Save version
     db.resume_versions.insert_one({
         "id": get_next_sequence("resume_versions"),
         "resume_id": id,
         "version_number": latest_ver + 1,
         "name": f"AI Optimized ({payload.improvement_goal})",
         "data": json.dumps(improved_json),
-        "ats_score": resume.ats_score or 72,
+        "ats_score": resume.get("ats_score") or 72,
         "created_at": datetime.utcnow()
+    })
+    
+    # 5. Format root-level fields for MongoDB document parity
+    formatted_skills = []
+    for skill in improved_json.get("skills", []):
+        if isinstance(skill, dict):
+            name_val = skill.get("name") or skill.get("skill") or ""
+            s_id = skill.get("id") or get_next_sequence("resume_skill")
+        else:
+            name_val = str(skill)
+            s_id = get_next_sequence("resume_skill")
+        formatted_skills.append({"id": s_id, "name": name_val})
+        
+    formatted_experience = []
+    for exp in improved_json.get("experience", []):
+        if not isinstance(exp, dict):
+            continue
+        formatted_experience.append({
+            "id": exp.get("id") or get_next_sequence("resume_experience"),
+            "position": exp.get("position") or exp.get("title") or "",
+            "company": exp.get("company") or "",
+            "duration": exp.get("duration") or exp.get("time_period") or "",
+            "description": exp.get("description") or ""
+        })
+        
+    formatted_education = []
+    for edu in improved_json.get("education", []):
+        if not isinstance(edu, dict):
+            continue
+        formatted_education.append({
+            "id": edu.get("id") or get_next_sequence("resume_education"),
+            "institution": edu.get("institution") or edu.get("school") or "",
+            "degree": edu.get("degree") or "",
+            "passing_year": edu.get("passing_year") or edu.get("year") or None,
+            "cgpa": edu.get("cgpa") or None,
+            "percentage": edu.get("percentage") or None
+        })
+
+    formatted_projects = []
+    for proj in improved_json.get("projects", []):
+        if not isinstance(proj, dict):
+            continue
+        formatted_projects.append({
+            "id": proj.get("id") or get_next_sequence("resume_project"),
+            "title": proj.get("title") or proj.get("name") or "",
+            "technologies": proj.get("technologies") or proj.get("tech_stack") or "",
+            "description": proj.get("description") or ""
+        })
+
+    p_info = improved_json.get("personal_info", {})
+    
+    db.resume_improvements.insert_one({
+        "id": get_next_sequence("resume_improvements"),
+        "resume_id": id,
+        "improvement_type": payload.improvement_goal,
+        "original_data": json.dumps(original_normalized),
+        "improved_data": json.dumps(improved_json)
     })
     
     db.resumes.update_one(
         {"id": id},
         {"$set": {
             "resume": improved_json,
+            "phone": p_info.get("phone", ""),
+            "email": p_info.get("email", ""),
+            "address": p_info.get("address", ""),
+            "linkedin": p_info.get("linkedin", ""),
+            "github": p_info.get("github", ""),
+            "portfolio": p_info.get("portfolio", ""),
+            "education": formatted_education,
+            "experience": formatted_experience,
+            "projects": formatted_projects,
+            "skills": formatted_skills,
             "updated_at": datetime.utcnow()
         }}
     )
-    
-    return {
-        "success": True,
-        "improved": improved_json
-    }
     
     # Log activity
     db.activity_logs.insert_one({
@@ -1592,7 +1812,10 @@ def improve_resume_endpoint(
         "created_at": datetime.utcnow()
     })
     
-    return {"original": resume_state, "improved": improved_json}
+    return {
+        "success": True,
+        "improved": improved_json
+    }
 
 class JDOptimizeRequest(BaseModel):
     job_description: str
@@ -1605,13 +1828,13 @@ def optimize_jd_endpoint(
     db: Any = Depends(get_db)
 ):
     resume = verify_ownership(id, student.id, db)
-    resume_state = resume.get("resume", {})
+    original_normalized = get_normalized_resume_dict(resume)
     
-    prompt = JD_MATCH_PROMPT.replace("{resume_json}", json.dumps(resume_state)).replace("{job_description}", payload.job_description)
-    
+    # 1. Compare JD Match Score
+    match_prompt = JD_MATCH_PROMPT.replace("{resume_json}", json.dumps(original_normalized)).replace("{job_description}", payload.job_description)
     match_data = None
     try:
-        raw_response = run_ai_gateway_request(db, prompt, "Resume Studio: JD MATCH", student.roll_number)
+        raw_response = run_ai_gateway_request(db, match_prompt, "Resume Studio: JD MATCH", student.roll_number)
         cleaned = raw_response.strip()
         if cleaned.startswith("```json"):
             cleaned = cleaned[7:]
@@ -1624,22 +1847,10 @@ def optimize_jd_endpoint(
             detail=f"AI Job Match Service failed: {str(e)}. Please check your AI API configurations."
         )
         
-    opt_prompt = ATS_OPTIMIZATION_PROMPT.replace("{resume_json}", json.dumps(resume_state)).replace("{job_description}", payload.job_description)
-    optimized_resume = None
-    try:
-        raw_opt = run_ai_gateway_request(db, opt_prompt, "Resume Studio: JD OPTIMIZE", student.roll_number)
-        cleaned_opt = raw_opt.strip()
-        if cleaned_opt.startswith("```json"):
-            cleaned_opt = cleaned_opt[7:]
-        if cleaned_opt.endswith("```"):
-            cleaned_opt = cleaned_opt[:-3]
-        optimized_resume = json.loads(cleaned_opt.strip())
-    except Exception as e:
-        raise HTTPException(
-            status_code=status.HTTP_502_BAD_GATEWAY,
-            detail=f"AI Resume JD Wording Optimization Service failed: {str(e)}. Please check your AI API configurations."
-        )
-        
+    # 2. Optimize Wording using validate/retry helper
+    opt_prompt = ATS_OPTIMIZATION_PROMPT.replace("{resume_json}", json.dumps(original_normalized)).replace("{job_description}", payload.job_description)
+    optimized_resume = improve_and_validate_resume(db, opt_prompt, id, student.id, original_normalized, student.roll_number, mode="JD_OPTIMIZE")
+    
     db.jd_optimizations.insert_one({
         "id": get_next_sequence("jd_optimizations"),
         "resume_id": id,
@@ -1666,16 +1877,75 @@ def optimize_jd_endpoint(
         "version_number": latest_ver + 1,
         "name": "Job Optimized",
         "data": json.dumps(optimized_resume),
-        "ats_score": match_data.get("overall_match_score") or resume.ats_score or 72,
+        "ats_score": match_data.get("overall_match_score") or resume.get("ats_score") or 72,
         "created_at": datetime.utcnow()
     })
+    
+    # Format root-level fields for MongoDB document parity
+    formatted_skills = []
+    for skill in optimized_resume.get("skills", []):
+        if isinstance(skill, dict):
+            name_val = skill.get("name") or skill.get("skill") or ""
+            s_id = skill.get("id") or get_next_sequence("resume_skill")
+        else:
+            name_val = str(skill)
+            s_id = get_next_sequence("resume_skill")
+        formatted_skills.append({"id": s_id, "name": name_val})
+        
+    formatted_experience = []
+    for exp in optimized_resume.get("experience", []):
+        if not isinstance(exp, dict):
+            continue
+        formatted_experience.append({
+            "id": exp.get("id") or get_next_sequence("resume_experience"),
+            "position": exp.get("position") or exp.get("title") or "",
+            "company": exp.get("company") or "",
+            "duration": exp.get("duration") or exp.get("time_period") or "",
+            "description": exp.get("description") or ""
+        })
+        
+    formatted_education = []
+    for edu in optimized_resume.get("education", []):
+        if not isinstance(edu, dict):
+            continue
+        formatted_education.append({
+            "id": edu.get("id") or get_next_sequence("resume_education"),
+            "institution": edu.get("institution") or edu.get("school") or "",
+            "degree": edu.get("degree") or "",
+            "passing_year": edu.get("passing_year") or edu.get("year") or None,
+            "cgpa": edu.get("cgpa") or None,
+            "percentage": edu.get("percentage") or None
+        })
+
+    formatted_projects = []
+    for proj in optimized_resume.get("projects", []):
+        if not isinstance(proj, dict):
+            continue
+        formatted_projects.append({
+            "id": proj.get("id") or get_next_sequence("resume_project"),
+            "title": proj.get("title") or proj.get("name") or "",
+            "technologies": proj.get("technologies") or proj.get("tech_stack") or "",
+            "description": proj.get("description") or ""
+        })
+
+    p_info = optimized_resume.get("personal_info", {})
     
     # Update master resume directly with optimized content
     db.resumes.update_one(
         {"id": id},
         {"$set": {
             "resume": optimized_resume,
-            "ats_score": match_data.get("overall_match_score") or resume.ats_score or 72,
+            "phone": p_info.get("phone", ""),
+            "email": p_info.get("email", ""),
+            "address": p_info.get("address", ""),
+            "linkedin": p_info.get("linkedin", ""),
+            "github": p_info.get("github", ""),
+            "portfolio": p_info.get("portfolio", ""),
+            "education": formatted_education,
+            "experience": formatted_experience,
+            "projects": formatted_projects,
+            "skills": formatted_skills,
+            "ats_score": match_data.get("overall_match_score") or resume.get("ats_score") or 72,
             "updated_at": datetime.utcnow()
         }}
     )

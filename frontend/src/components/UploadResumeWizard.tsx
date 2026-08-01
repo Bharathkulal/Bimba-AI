@@ -1529,6 +1529,45 @@ export const UploadResumeWizard: React.FC<UploadResumeWizardProps> = ({
           </AnimatePresence>
         </div>
 
+        {/* Navigation Footer */}
+        {step > 1 && step < 13 && step !== 3 && (
+          <div className={`px-6 py-4 border-t flex items-center justify-between shrink-0 ${
+            isDark ? 'border-white/10 bg-[#1F2937]/30' : 'border-slate-100 bg-slate-50'
+          }`}>
+            <button
+              onClick={() => {
+                if (step === 4) setStep(2);
+                else if (step === 5) setStep(4);
+                else if (step === 6) setStep(5);
+                else if (step === 8) setStep(6);
+                else if (step > 8) setStep(step - 1);
+                else setStep(prev => Math.max(1, prev - 1));
+              }}
+              className="flex items-center gap-1.5 px-4 py-2 text-xs font-bold text-slate-600 dark:text-slate-300 hover:bg-slate-200/50 dark:hover:bg-white/10 rounded-xl cursor-pointer transition-all border border-slate-250 dark:border-white/10 bg-transparent"
+            >
+              <ArrowLeft size={14} /> Back
+            </button>
+            
+            <button
+              onClick={() => {
+                if (step === 2) setStep(4);
+                else if (step === 4) setStep(5);
+                else if (step === 5) setStep(6);
+                else if (step === 6) setStep(8);
+                else if (step === 8) setStep(9);
+                else if (step === 9) setStep(10);
+                else if (step === 10) setStep(11);
+                else if (step === 11) setStep(12);
+                else if (step === 12) setStep(13);
+                else setStep(prev => prev + 1);
+              }}
+              className="flex items-center gap-1.5 px-4 py-2 text-xs font-bold text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-white cursor-pointer transition-all"
+            >
+              Skip Step <ChevronRight size={14} />
+            </button>
+          </div>
+        )}
+
         {/* Modal Section-Editing Overlays (Side Panels) */}
         {editSectionType && (
           <div className="fixed inset-0 bg-black/60 backdrop-blur-md z-[60] flex items-center justify-end p-0">

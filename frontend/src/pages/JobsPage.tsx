@@ -14,8 +14,11 @@ import { apiClient } from '../services/api';
 
 interface Resume {
   id: number;
-  filename: string;
+  name: string;
+  filename?: string;
   status: string;
+  resume_type?: string;
+  target_role?: string;
 }
 
 const useLocalResumeStore = create<{
@@ -25,7 +28,7 @@ const useLocalResumeStore = create<{
   resumes: [],
   fetchResumes: async () => {
     try {
-      const res = await apiClient.get('/api/resume');
+      const res = await apiClient.get('/api/resume-studio/all');
       set({ resumes: res.data });
     } catch (e) {
       console.error(e);
@@ -46,7 +49,7 @@ export const JobsPage: React.FC = () => {
   }, [fetchResumes, clearJobStore]);
 
   // Find latest analyzed or completed resume
-  const activeResume = resumes.find(r => r.status === 'ai_completed' || r.status === 'analyzed') || resumes[0];
+  const activeResume = resumes.find(r => r.status === 'ai_completed' || r.status === 'analyzed') || resumes.find(r => r.status === 'uploaded' || r.status === 'parsed') || resumes[0];
 
   return (
     <div className="container mx-auto px-4 py-8 flex flex-col gap-6 text-left min-h-screen">
