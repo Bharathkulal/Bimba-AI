@@ -746,7 +746,7 @@ export const ResumePage: React.FC = () => {
         >
           <div className="w-full h-[70vh] bg-slate-100 dark:bg-[#1E1E1E] rounded-xl overflow-hidden relative">
             <iframe
-              src={`${API_BASE_URL}/api/resume-studio/${previewResumeId}/pdf${localStorage.getItem('auth_token') ? `?token=${localStorage.getItem('auth_token')}` : ''}`}
+              src={`${API_BASE_URL}/api/resume-studio/${previewResumeId}/pdf?inline=true${localStorage.getItem('auth_token') ? `&token=${localStorage.getItem('auth_token')}` : ''}`}
               className="w-full h-full border-none"
               title="Resume PDF Preview"
             />

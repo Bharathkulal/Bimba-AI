@@ -816,7 +816,7 @@ def resolve_template_color(theme: str) -> colors.HexColor:
     return colors.HexColor('#1E3A8A')
 
 @router.get("/{id}/pdf")
-def get_pdf_export(id: int, student: Student = Depends(get_current_student), db: Any = Depends(get_db)):
+def get_pdf_export(id: int, inline: bool = False, student: Student = Depends(get_current_student), db: Any = Depends(get_db)):
     resume = verify_ownership(id, student.id, db)
     
     # Retrieve nested lists
@@ -1044,15 +1044,16 @@ def get_pdf_export(id: int, student: Student = Depends(get_current_student), db:
         "created_at": datetime.utcnow()
     })
     
+    disposition = "inline" if inline else "attachment"
     return StreamingResponse(
         buffer,
         media_type="application/pdf",
-        headers={"Content-Disposition": f"attachment; filename=bimba_resume_{id}.pdf"}
+        headers={"Content-Disposition": f"{disposition}; filename=bimba_resume_{id}.pdf"}
     )
 
 @router.get("/{id}/download/pdf")
 def get_pdf_download(id: int, student: Student = Depends(get_current_student), db: Any = Depends(get_db)):
-    return get_pdf_export(id, student, db)
+    return get_pdf_export(id, inline=False, student=student, db=db)
 
 @router.get("/{id}/download/docx")
 def get_docx_download(id: int, student: Student = Depends(get_current_student), db: Any = Depends(get_db)):
