@@ -116,12 +116,12 @@ export const Settings: React.FC = () => {
                 onClick={() => setActiveCategory(cat.id as any)}
                 className={`p-4 border rounded-2xl flex items-center gap-3.5 text-left cursor-pointer transition-all ${
                   isActive 
-                    ? 'border-emerald-500 text-emerald-600 dark:text-emerald-400 bg-emerald-55/5 shadow-sm'
-                    : 'bg-white border-slate-200/80 hover:border-slate-350'
+                    ? 'border-slate-950 text-slate-950 dark:border-white dark:text-white bg-slate-50 dark:bg-white/5 shadow-sm font-bold'
+                    : 'bg-white dark:bg-[#1F2937]/75 border-slate-200/80 hover:border-slate-350'
                 }`}
               >
                 <div className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 ${
-                  isActive ? 'bg-emerald-500/15 text-emerald-600' : 'bg-slate-50 text-slate-400'
+                  isActive ? 'bg-slate-950 text-white dark:bg-white dark:text-slate-950' : 'bg-slate-50 dark:bg-white/5 text-slate-400'
                 }`}>
                   <Icon size={18} />
                 </div>

@@ -15,6 +15,7 @@ import { jobsService } from '../services/jobs';
 import type { JobListItem, JobApplication } from '../services/jobs';
 import type { DashboardData, AtsData, ActivityTimelineItem, ResumeAnalyticsItem } from '../services/analytics';
 import { UploadResumeWizard } from '../components/UploadResumeWizard';
+import { apiClient } from '../services/api';
 
 const formatTimeAgo = (dateString?: string) => {
   if (!dateString) return 'Just now';
@@ -331,12 +332,12 @@ export const Dashboard: React.FC = () => {
           <div className="grid grid-cols-2 gap-3">
             <button
               onClick={() => document.getElementById('dashboard-resume-upload-input')?.click()}
-              className="flex flex-col items-center justify-center text-center p-4 border border-slate-100 dark:border-white/5 rounded-2xl hover:border-emerald-500 hover:bg-emerald-50/5 dark:hover:bg-emerald-500/5 transition-all group cursor-pointer"
+              className="flex flex-col items-center justify-center text-center p-4 border border-slate-100 dark:border-white/5 rounded-2xl hover:border-slate-950 dark:hover:border-white hover:bg-slate-50 dark:hover:bg-white/5 transition-all group cursor-pointer"
             >
-              <UploadCloud size={24} className="text-slate-400 group-hover:text-emerald-500 transition-colors" />
+              <UploadCloud size={24} className="text-slate-400 group-hover:text-slate-900 dark:group-hover:text-white transition-colors" />
               <span className="text-xs font-bold text-slate-700 dark:text-slate-300 mt-2">Upload Resume</span>
             </button>
-
+ 
             <button
               onClick={async () => {
                 try {
@@ -351,9 +352,9 @@ export const Dashboard: React.FC = () => {
                   alert("Error creating new resume draft.");
                 }
               }}
-              className="flex flex-col items-center justify-center text-center p-4 border border-slate-100 dark:border-white/5 rounded-2xl hover:border-emerald-500 hover:bg-emerald-50/5 dark:hover:bg-emerald-500/5 transition-all group cursor-pointer"
+              className="flex flex-col items-center justify-center text-center p-4 border border-slate-100 dark:border-white/5 rounded-2xl hover:border-slate-950 dark:hover:border-white hover:bg-slate-50 dark:hover:bg-white/5 transition-all group cursor-pointer"
             >
-              <Plus size={24} className="text-slate-400 group-hover:text-emerald-500 transition-colors" />
+              <Plus size={24} className="text-slate-400 group-hover:text-slate-900 dark:group-hover:text-white transition-colors" />
               <span className="text-xs font-bold text-slate-700 dark:text-slate-300 mt-2">Create Resume</span>
             </button>
 
@@ -365,17 +366,17 @@ export const Dashboard: React.FC = () => {
                   navigate('/resume');
                 }
               }}
-              className="flex flex-col items-center justify-center text-center p-4 border border-slate-100 dark:border-white/5 rounded-2xl hover:border-emerald-500 hover:bg-emerald-50/5 dark:hover:bg-emerald-500/5 transition-all group cursor-pointer"
+              className="flex flex-col items-center justify-center text-center p-4 border border-slate-100 dark:border-white/5 rounded-2xl hover:border-slate-950 dark:hover:border-white hover:bg-slate-50 dark:hover:bg-white/5 transition-all group cursor-pointer"
             >
-              <Sparkles size={24} className="text-slate-400 group-hover:text-emerald-500 transition-colors" />
+              <Sparkles size={24} className="text-slate-400 group-hover:text-slate-900 dark:group-hover:text-white transition-colors" />
               <span className="text-xs font-bold text-slate-700 dark:text-slate-300 mt-2">Optimize Resume</span>
             </button>
 
             <button
               onClick={() => navigate('/jobs')}
-              className="flex flex-col items-center justify-center text-center p-4 border border-slate-100 dark:border-white/5 rounded-2xl hover:border-emerald-500 hover:bg-emerald-50/5 dark:hover:bg-emerald-500/5 transition-all group cursor-pointer"
+              className="flex flex-col items-center justify-center text-center p-4 border border-slate-100 dark:border-white/5 rounded-2xl hover:border-slate-950 dark:hover:border-white hover:bg-slate-50 dark:hover:bg-white/5 transition-all group cursor-pointer"
             >
-              <Briefcase size={24} className="text-slate-400 group-hover:text-emerald-500 transition-colors" />
+              <Briefcase size={24} className="text-slate-400 group-hover:text-slate-900 dark:group-hover:text-white transition-colors" />
               <span className="text-xs font-bold text-slate-700 dark:text-slate-300 mt-2">Find Jobs</span>
             </button>
           </div>
@@ -388,7 +389,7 @@ export const Dashboard: React.FC = () => {
           <h2 className="text-base font-extrabold text-slate-900 dark:text-white">Recommended Jobs</h2>
           <button
             onClick={() => navigate('/jobs')}
-            className="text-xs font-bold text-emerald-500 hover:text-emerald-600 hover:underline flex items-center gap-1 cursor-pointer bg-transparent border-none"
+            className="text-xs font-bold text-slate-900 hover:text-slate-800 dark:text-white dark:hover:text-slate-200 hover:underline flex items-center gap-1 cursor-pointer bg-transparent border-none"
           >
             View All Jobs <ChevronRight size={14} />
           </button>

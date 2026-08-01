@@ -121,7 +121,7 @@ export const AdminLayout: React.FC = () => {
         <div className="flex flex-col gap-6 overflow-hidden">
           {/* Logo */}
           <div className="flex items-center gap-3 px-2 overflow-hidden">
-            <div className="w-8.5 h-8.5 rounded-xl bg-gradient-to-tr from-emerald-600 to-emerald-400 flex items-center justify-center text-white font-black text-lg shadow-lg shrink-0">
+            <div className="w-8.5 h-8.5 rounded-xl bg-slate-900 flex items-center justify-center text-white font-black text-lg shadow shrink-0">
               B
             </div>
             {!isCollapsed && (
@@ -148,13 +148,13 @@ export const AdminLayout: React.FC = () => {
                     }}
                     className={`flex items-center justify-between w-full px-3 py-2.5 rounded-xl transition-all duration-200 relative group cursor-pointer ${
                       isActive 
-                        ? 'bg-emerald-500/10 text-emerald-600 font-bold border-l-4 border-emerald-500 pl-2' 
+                        ? 'bg-slate-900 text-white font-bold border-l-4 border-slate-900 pl-2' 
                         : 'text-slate-400 hover:text-slate-950 hover:bg-slate-50 font-bold'
                     }`}
                   >
                     <div className="flex items-center">
                       <div className="flex items-center shrink-0 justify-center w-5 h-5 mr-3">
-                        <Icon size={16} className={isActive ? 'text-emerald-500' : 'text-slate-400'} />
+                        <Icon size={16} className={isActive ? 'text-white' : 'text-slate-400'} />
                       </div>
                       {!isCollapsed && (
                         <span className="text-xs font-bold tracking-wide whitespace-nowrap">

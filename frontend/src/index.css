@@ -17,16 +17,28 @@
   --color-warning: var(--warning);
   --color-danger: var(--danger);
   
-  --radius-card: 20px;
+  --radius-card: 16px;
 
   /* IMPORTANT: Do NOT remap --color-white. 
      text-white must always be #fff regardless of theme. */
+
+  --color-emerald-50: var(--accent-light);
+  --color-emerald-100: var(--border);
+  --color-emerald-200: var(--border);
+  --color-emerald-300: var(--border);
+  --color-emerald-400: var(--accent);
+  --color-emerald-500: var(--accent);
+  --color-emerald-600: var(--accent);
+  --color-emerald-700: var(--accent-hover);
+  --color-emerald-800: var(--accent-hover);
+  --color-emerald-900: var(--accent-hover);
+  --color-emerald-950: var(--accent-hover);
 
   --font-sans: 'Inter', sans-serif;
 }
 
 :root {
-  --bg-base: #FAFAFA;
+  --bg-base: #F9FAFB;
   --bg-secondary: #F3F4F6;
   --card-bg: #FFFFFF;
   --sidebar-bg: #FFFFFF;
@@ -34,9 +46,9 @@
   --border: #E5E7EB;
   --text-primary: #111827;
   --text-secondary: #6B7280;
-  --accent: #10B981;
-  --accent-hover: #059669;
-  --accent-light: rgba(16, 185, 129, 0.08);
+  --accent: #111827;
+  --accent-hover: #1F2937;
+  --accent-light: rgba(17, 24, 39, 0.05);
   --accent-green: #10B981;
   
   --success: #10B981;
@@ -52,7 +64,7 @@
 }
 
 .dark {
-  --bg-base: #0B1220;
+  --bg-base: #0B0F19;
   --bg-secondary: #111827;
   --card-bg: #1F2937;
   --sidebar-bg: #111827;
@@ -60,9 +72,9 @@
   --border: rgba(255, 255, 255, 0.08);
   --text-primary: #FFFFFF;
   --text-secondary: #D1D5DB;
-  --accent: #34D399;
-  --accent-hover: #10B981;
-  --accent-light: rgba(52, 211, 153, 0.08);
+  --accent: #FFFFFF;
+  --accent-hover: #F3F4F6;
+  --accent-light: rgba(255, 255, 255, 0.06);
   --accent-green: #34D399;
   
   --success: #34D399;
@@ -636,8 +648,8 @@ html:not(.dark) main tr.bg-slate-50\/80 {
   box-shadow: 
     inset 0 0.5px rgba(255, 255, 255, 0.2), 
     inset 0 -1px 2px 0 rgba(0, 0, 0, 0.3),
-    0px 4px 10px -4px rgba(16, 185, 129, calc(0.4 - var(--active, 0) * 0.2)),
-    0 0 0 calc(var(--active, 0) * 2px) rgba(16, 185, 129, 0.2);
+    0px 4px 10px -4px rgba(17, 24, 39, calc(0.4 - var(--active, 0) * 0.2)),
+    0 0 0 calc(var(--active, 0) * 2px) rgba(17, 24, 39, 0.2);
   transition: all var(--transition);
   z-index: 0;
 }

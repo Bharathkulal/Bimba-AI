@@ -81,13 +81,13 @@ export const DashboardLayout: React.FC = () => {
                 size={18} 
                 className={`transition-colors duration-200 ${
                   isActive 
-                    ? 'text-emerald-500' 
+                    ? 'text-slate-900 dark:text-white' 
                     : 'text-slate-400'
                 }`}
               />
               <span className={`text-[9px] mt-1 tracking-wide transition-colors duration-200 ${
                 isActive 
-                  ? 'text-emerald-500 font-extrabold' 
+                  ? 'text-slate-900 dark:text-white font-extrabold' 
                   : 'text-slate-500 font-medium'
               }`}>
                 {item.label}

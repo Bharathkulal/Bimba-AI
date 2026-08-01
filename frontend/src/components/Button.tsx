@@ -27,10 +27,10 @@ export const Button: React.FC<ButtonProps> = ({
   const baseStyles = 'inline-flex items-center justify-center font-semibold tracking-wide rounded-xl transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed';
 
   const variants = {
-    primary: 'bg-gradient-to-r from-emerald-600 to-emerald-500 text-white hover:from-emerald-700 hover:to-emerald-600 focus:ring-emerald-500 shadow-sm shadow-emerald-500/10 hover:shadow-lg hover:shadow-emerald-500/20',
+    primary: 'bg-slate-900 text-white hover:bg-slate-800 dark:bg-white dark:text-slate-900 dark:hover:bg-slate-100 focus:ring-slate-900 shadow-sm',
     secondary: 'bg-white border border-slate-200 text-slate-800 hover:bg-slate-50 hover:border-slate-300 focus:ring-slate-400 shadow-sm',
-    outline: 'border border-slate-200 bg-transparent text-slate-800 hover:bg-slate-50 hover:border-emerald-500 focus:ring-emerald-500',
-    ghost: 'bg-transparent text-slate-600 hover:bg-slate-50 hover:text-slate-900 focus:ring-emerald-500',
+    outline: 'border border-slate-200 bg-transparent text-slate-800 hover:bg-slate-50 hover:border-slate-900 dark:hover:border-white focus:ring-slate-900',
+    ghost: 'bg-transparent text-slate-600 hover:bg-slate-50 hover:text-slate-900 focus:ring-slate-900',
     danger: 'bg-rose-600 text-white hover:bg-rose-700 focus:ring-rose-500 shadow-sm shadow-rose-500/10',
   };
 

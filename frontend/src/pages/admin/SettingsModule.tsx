@@ -61,8 +61,8 @@ export const SettingsModule: React.FC = () => {
   if (isLoading) {
     return (
       <div className="flex flex-col gap-6 w-full max-w-4xl mx-auto animate-pulse text-left">
-        <div className="h-16 bg-[#102117] border border-white/5 rounded-2xl" />
-        <div className="h-96 bg-[#102117] border border-white/5 rounded-2xl" />
+        <div className="h-16 bg-white dark:bg-[#1F2937] border border-slate-200 dark:border-white/5 rounded-2xl" />
+        <div className="h-96 bg-white dark:bg-[#1F2937] border border-slate-200 dark:border-white/5 rounded-2xl" />
       </div>
     );
   }
@@ -74,17 +74,17 @@ export const SettingsModule: React.FC = () => {
       {toast && (
         <div className={`fixed top-6 right-6 z-50 flex items-center gap-3 px-5 py-4 rounded-xl shadow-xl border animate-fadeIn ${
           toast.type === 'success' 
-            ? 'bg-[#102117] border-[#111111]/20 text-[#111111]' 
-            : 'bg-[#1F1116] border-rose-500/20 text-rose-500'
+            ? 'bg-slate-900 border-slate-800 text-white' 
+            : 'bg-rose-950/30 border-rose-500/20 text-rose-500'
         }`}>
-          {toast.type === 'success' ? <CheckCircle2 size={18} /> : <AlertTriangle size={18} />}
+          {toast.type === 'success' ? <CheckCircle2 size={18} className="text-emerald-500" /> : <AlertTriangle size={18} />}
           <span className="text-xs font-semibold">{toast.message}</span>
         </div>
       )}
 
       {/* Header Banner */}
-      <section className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-[#102117] border border-white/5 rounded-2xl p-6 shadow-md relative overflow-hidden">
-        <div className="absolute right-0 top-0 w-80 h-full bg-gradient-to-l -[#111111]/5 to-transparent blur-3xl pointer-events-none" />
+      <section className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-md relative overflow-hidden">
+        <div className="absolute right-0 top-0 w-80 h-full bg-gradient-to-l from-white/5 to-transparent blur-3xl pointer-events-none" />
         <div className="relative z-10 text-left">
           <h1 className="text-xl font-extrabold text-white tracking-tight">System Settings</h1>
           <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider block mt-1">
@@ -117,8 +117,8 @@ export const SettingsModule: React.FC = () => {
                 onClick={() => setActiveSubTab(tab.id as any)}
                 className={`flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-xs font-bold text-left transition-all cursor-pointer ${
                   activeSubTab === tab.id 
-                    ? 'bg-[#111111]/10 text-[#111111]' 
-                    : 'text-slate-400 hover:text-white hover:bg-[#102117]'
+                    ? 'bg-slate-900 text-white dark:bg-white dark:text-slate-900 shadow-sm' 
+                    : 'text-slate-500 hover:text-slate-900 hover:bg-slate-100 dark:text-slate-400 dark:hover:text-white dark:hover:bg-white/5'
                 }`}
               >
                 <Icon size={14} />
@@ -130,21 +130,21 @@ export const SettingsModule: React.FC = () => {
 
         {/* Right Side: Tab Details content */}
         <div className="md:col-span-3">
-          <Card className="p-6 bg-[#13261B] border-white/5">
+          <Card className="p-6 bg-white dark:bg-[#1F2937] border-slate-200 dark:border-white/5 shadow-sm">
             {settings && (
               <form onSubmit={handleSave} className="flex flex-col gap-5">
                 
                 {/* 1. General Identity Tab */}
                 {activeSubTab === 'general' && (
                   <div className="flex flex-col gap-4 animate-fadeIn">
-                    <h3 className="font-extrabold text-sm text-white border-b border-white/5 pb-2 mb-2">University branding</h3>
+                    <h3 className="font-extrabold text-sm text-slate-800 dark:text-white border-b border-slate-100 dark:border-white/5 pb-2 mb-2">University branding</h3>
                     <div>
-                      <label className="text-[10px] font-bold text-slate-450 uppercase block mb-1">College App Name Prefix</label>
+                      <label className="text-[10px] font-bold text-slate-455 uppercase block mb-1">College App Name Prefix</label>
                       <input 
                         type="text"
                         value={settings.app_name}
                         onChange={(e) => setSettings({ ...settings, app_name: e.target.value })}
-                        className="w-full p-2.5 bg-[#102117] border border-white/10 focus:-[#111111]/30 rounded-xl text-xs text-white outline-none font-bold"
+                        className="w-full p-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-white/10 focus:border-slate-900 rounded-xl text-xs text-slate-900 dark:text-white outline-none font-bold"
                         placeholder="e.g. Bimba AI Placement Portal"
                         required
                       />
@@ -157,7 +157,7 @@ export const SettingsModule: React.FC = () => {
                           type="number"
                           value={settings.session_timeout}
                           onChange={(e) => setSettings({ ...settings, session_timeout: parseInt(e.target.value) || 15 })}
-                          className="w-full p-2.5 bg-[#102117] border border-white/10 focus:-[#111111]/30 rounded-xl text-xs text-white outline-none font-bold"
+                          className="w-full p-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-white/10 focus:border-slate-900 rounded-xl text-xs text-slate-900 dark:text-white outline-none font-bold"
                           min={5}
                           max={120}
                           required
@@ -169,21 +169,21 @@ export const SettingsModule: React.FC = () => {
                           type="text"
                           value={settings.smtp_host}
                           onChange={(e) => setSettings({ ...settings, smtp_host: e.target.value })}
-                          className="w-full p-2.5 bg-[#102117] border border-white/10 focus:-[#111111]/30 rounded-xl text-xs text-white outline-none font-bold"
+                          className="w-full p-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-white/10 focus:border-slate-900 rounded-xl text-xs text-slate-900 dark:text-white outline-none font-bold"
                           required
                         />
                       </div>
                     </div>
 
-                    <div className="p-4 bg-white/5 border border-white/5 rounded-2xl flex justify-between items-center mt-3">
+                    <div className="p-4 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-white/5 rounded-2xl flex justify-between items-center mt-3">
                       <div>
-                        <h4 className="text-xs font-bold text-white">Undergraduate Maintenance Mode</h4>
+                        <h4 className="text-xs font-bold text-slate-800 dark:text-white">Undergraduate Maintenance Mode</h4>
                         <p className="text-[9.5px] text-slate-500 mt-1 font-semibold">Toggles public portal availability to run DB overrides.</p>
                       </div>
                       <select
                         value={settings.maintenance_mode ? 'Enabled' : 'Disabled'}
                         onChange={(e) => setSettings({ ...settings, maintenance_mode: e.target.value === 'Enabled' })}
-                        className="bg-[#102117] border border-white/10 rounded-xl px-3 py-1.8 text-xs font-semibold text-slate-200 focus:outline-none cursor-pointer"
+                        className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/10 rounded-xl px-3 py-1.8 text-xs font-semibold text-slate-800 dark:text-slate-200 focus:outline-none cursor-pointer"
                       >
                         <option value="Disabled">Disabled (Live app)</option>
                         <option value="Enabled">Enabled (Maintenance)</option>
@@ -195,27 +195,27 @@ export const SettingsModule: React.FC = () => {
                 {/* 2. Admin Accounts & Roles */}
                 {activeSubTab === 'admins' && (
                   <div className="flex flex-col gap-4 animate-fadeIn">
-                    <h3 className="font-extrabold text-sm text-white border-b border-white/5 pb-2 mb-2">Admin Roles</h3>
+                    <h3 className="font-extrabold text-sm text-slate-800 dark:text-white border-b border-slate-100 dark:border-white/5 pb-2 mb-2">Admin Roles</h3>
                     
-                    <div className="overflow-x-auto rounded-xl border border-white/5">
+                    <div className="overflow-x-auto rounded-xl border border-slate-200 dark:border-white/5">
                       <table className="w-full text-left text-xs font-medium border-collapse bg-white/5">
                         <thead>
-                          <tr className="bg-[#102117] border-b border-white/5 text-slate-400 font-bold uppercase text-[9px] tracking-wide">
+                          <tr className="bg-slate-50 dark:bg-slate-900 border-b border-slate-200 dark:border-white/5 text-slate-600 dark:text-slate-400 font-bold uppercase text-[9px] tracking-wide">
                             <th className="py-2.5 px-4">Username</th>
                             <th className="py-2.5 px-4">Associated Role</th>
                             <th className="py-2.5 px-4">Status</th>
                           </tr>
                         </thead>
-                        <tbody className="divide-y divide-white/5 text-slate-350">
+                        <tbody className="divide-y divide-slate-100 dark:divide-white/5 text-slate-600 dark:text-slate-350">
                           <tr>
-                            <td className="py-3 px-4 font-bold text-white">admin</td>
+                            <td className="py-3 px-4 font-bold text-slate-800 dark:text-white">admin</td>
                             <td className="py-3 px-4">Super Administrator</td>
-                            <td className="py-3 px-4"><span className="-[#111111] font-extrabold text-[10px]">ACTIVE</span></td>
+                            <td className="py-3 px-4"><span className="text-emerald-500 font-extrabold text-[10px]">ACTIVE</span></td>
                           </tr>
                           <tr>
-                            <td className="py-3 px-4 font-bold text-white">placement_officer</td>
+                            <td className="py-3 px-4 font-bold text-slate-800 dark:text-white">placement_officer</td>
                             <td className="py-3 px-4">Placement Head</td>
-                            <td className="py-3 px-4"><span className="-[#111111] font-extrabold text-[10px]">ACTIVE</span></td>
+                            <td className="py-3 px-4"><span className="text-emerald-500 font-extrabold text-[10px]">ACTIVE</span></td>
                           </tr>
                         </tbody>
                       </table>
@@ -226,23 +226,23 @@ export const SettingsModule: React.FC = () => {
                 {/* 3. Security & API Keys */}
                 {activeSubTab === 'security' && (
                   <div className="flex flex-col gap-4 animate-fadeIn">
-                    <h3 className="font-extrabold text-sm text-white border-b border-white/5 pb-2 mb-2">Security Parameters</h3>
+                    <h3 className="font-extrabold text-sm text-slate-800 dark:text-white border-b border-slate-100 dark:border-white/5 pb-2 mb-2">Security Parameters</h3>
                     
                     <div className="flex flex-col gap-3">
-                      <div className="p-3 bg-white/5 rounded-xl border border-white/5 flex justify-between items-center text-xs">
+                      <div className="p-3 bg-slate-50 dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-white/5 flex justify-between items-center text-xs">
                         <div>
-                          <p className="font-bold text-white">Rate Limit Protection</p>
+                          <p className="font-bold text-slate-800 dark:text-white">Rate Limit Protection</p>
                           <p className="text-[9.5px] text-slate-500 mt-0.5">Limit student API operations to 100 requests per minute</p>
                         </div>
-                        <span className="text-[#111111] font-black uppercase text-[10px]">ENABLED</span>
+                        <span className="text-emerald-500 font-black uppercase text-[10px]">ENABLED</span>
                       </div>
                       
-                      <div className="p-3 bg-white/5 rounded-xl border border-white/5 flex justify-between items-center text-xs">
+                      <div className="p-3 bg-slate-50 dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-white/5 flex justify-between items-center text-xs">
                         <div>
-                          <p className="font-bold text-white">JWT Token Signatures</p>
+                          <p className="font-bold text-slate-800 dark:text-white">JWT Token Signatures</p>
                           <p className="text-[9.5px] text-slate-500 mt-0.5">Default HS256 encryption keys rotation</p>
                         </div>
-                        <span className="text-[#111111] font-black uppercase text-[10px]">ACTIVE</span>
+                        <span className="text-emerald-500 font-black uppercase text-[10px]">ACTIVE</span>
                       </div>
                     </div>
                   </div>
@@ -251,8 +251,8 @@ export const SettingsModule: React.FC = () => {
                 {/* 4. Database Backup */}
                 {activeSubTab === 'database' && (
                   <div className="flex flex-col gap-4 animate-fadeIn">
-                    <h3 className="font-extrabold text-sm text-white border-b border-white/5 pb-2 mb-2">System Backups</h3>
-                    <p className="text-xs text-slate-400 leading-normal font-medium">
+                    <h3 className="font-extrabold text-sm text-slate-800 dark:text-white border-b border-slate-100 dark:border-white/5 pb-2 mb-2">System Backups</h3>
+                    <p className="text-xs text-slate-500 dark:text-slate-400 leading-normal font-medium">
                       Compile complete backups of MongoDB databases, local resume studio layouts, and ATS scoring prompt weights.
                     </p>
                     
@@ -261,7 +261,7 @@ export const SettingsModule: React.FC = () => {
                         type="button"
                         onClick={handleBackupTrigger}
                         variant="secondary"
-                        className="border-white/10 -[#111111] flex items-center gap-1.5"
+                        className="border-slate-200 dark:border-white/10 flex items-center gap-1.5"
                       >
                         <Database size={13} /> Trigger Manual Database Backup Snapshot
                       </Button>
@@ -275,7 +275,7 @@ export const SettingsModule: React.FC = () => {
                     type="submit" 
                     disabled={saving} 
                     variant="primary" 
-                    className="w-full font-bold bg-[#111111] hover:bg-[#111111] justify-center mt-4"
+                    className="w-full font-bold justify-center mt-4"
                   >
                     <Save size={13} className="mr-1.5 inline" /> {saving ? 'Saving System Config...' : 'Save Configuration Changes'}
                   </Button>

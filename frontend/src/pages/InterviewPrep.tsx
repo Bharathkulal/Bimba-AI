@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { 
   GraduationCap, Play, MessageSquare, Send, Sparkles, AlertCircle, 
-  ArrowRight, ShieldCheck, Clock, CheckCircle, RotateCcw, BrainCircuit, User
+  ArrowRight, ShieldCheck, Clock, CheckCircle, RotateCcw, BrainCircuit, User, Bot
 } from 'lucide-react';
 import { apiClient } from '../services/api';
 import { useThemeStore } from '../store/themeStore';
@@ -333,7 +333,7 @@ export const InterviewPrep: React.FC = () => {
                 return (
                   <div key={index} className={`flex gap-3 max-w-[85%] ${isAi ? 'self-start text-left' : 'self-end flex-row-reverse text-right'}`}>
                     <div className={`w-8 h-8 rounded-full shrink-0 flex items-center justify-center text-xs font-black ${
-                      isAi ? 'bg-emerald-500/10 text-emerald-500 border border-emerald-500/20' : 'bg-slate-100 dark:bg-white/5 text-slate-500'
+                      isAi ? 'bg-slate-900 text-white dark:bg-white dark:text-slate-900 border border-slate-800' : 'bg-slate-100 dark:bg-white/5 text-slate-500'
                     }`}>
                       {isAi ? <Bot size={16} /> : <User size={16} />}
                     </div>
@@ -341,7 +341,7 @@ export const InterviewPrep: React.FC = () => {
                       <div className={`p-3 rounded-2xl text-xs font-medium leading-relaxed ${
                         isAi 
                           ? 'bg-slate-55/70 dark:bg-white/[0.02] border border-slate-100 dark:border-white/5 text-slate-800 dark:text-slate-100' 
-                          : 'bg-emerald-500 text-white shadow-sm'
+                          : 'bg-slate-900 text-white dark:bg-white dark:text-slate-900 shadow-sm'
                       }`}>
                         {/* Preserve double newline spacing formatting */}
                         {msg.text.split('\n').map((line, lidx) => (
@@ -356,7 +356,7 @@ export const InterviewPrep: React.FC = () => {
 
               {sending && (
                 <div className="flex gap-3 max-w-[85%] self-start text-left">
-                  <div className="w-8 h-8 rounded-full shrink-0 bg-emerald-500/10 text-emerald-500 flex items-center justify-center animate-spin">
+                  <div className="w-8 h-8 rounded-full shrink-0 bg-slate-100 dark:bg-white/5 text-slate-900 dark:text-white flex items-center justify-center animate-spin">
                     <RotateCcw size={16} />
                   </div>
                   <div className="p-3 bg-slate-50/50 dark:bg-white/[0.01] rounded-2xl">

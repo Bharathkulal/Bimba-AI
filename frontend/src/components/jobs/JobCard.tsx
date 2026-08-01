@@ -46,7 +46,7 @@ export const JobCard: React.FC<JobCardProps> = ({ job }) => {
       {/* Upper header */}
       <div className="flex justify-between items-start gap-3">
         <div className="flex items-start gap-3">
-          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-500/10 to-emerald-500/20 text-emerald-600 dark:text-emerald-450 border border-emerald-500/10 flex items-center justify-center shrink-0">
+          <div className="w-10 h-10 rounded-xl bg-slate-100 dark:bg-white/5 text-slate-600 dark:text-slate-400 border border-slate-200/50 dark:border-white/5 flex items-center justify-center shrink-0">
             <Briefcase size={16} />
           </div>
           <div>
@@ -61,15 +61,15 @@ export const JobCard: React.FC<JobCardProps> = ({ job }) => {
 
         <button
           onClick={handleSaveToggle}
-          className="p-1.5 rounded-xl border border-slate-200 dark:border-white/10 hover:bg-slate-50 dark:hover:bg-white/10 text-slate-400 hover:text-emerald-500 transition-colors cursor-pointer"
+          className="p-1.5 rounded-xl border border-slate-200 dark:border-white/10 hover:bg-slate-50 dark:hover:bg-white/10 text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors cursor-pointer"
         >
-          {isSaved ? <BookmarkCheck className="text-emerald-500" size={15} /> : <Bookmark size={15} />}
+          {isSaved ? <BookmarkCheck className="text-slate-900 dark:text-white" size={15} /> : <Bookmark size={15} />}
         </button>
       </div>
 
       {/* Location */}
       <div className="flex items-center gap-1.5 text-[10px] text-slate-450 dark:text-slate-400 font-extrabold -mt-1">
-        <MapPin size={12} className="text-emerald-500" />
+        <MapPin size={12} className="text-slate-450" />
         <span>{job.location || 'Not available'}</span>
       </div>
 
@@ -92,10 +92,10 @@ export const JobCard: React.FC<JobCardProps> = ({ job }) => {
           {/* Matched */}
           {job.matched_skills && job.matched_skills.length > 0 && (
             <div className="flex flex-col gap-1">
-              <span className="font-extrabold uppercase text-emerald-600 dark:text-emerald-400 tracking-wider">Matched Skills</span>
+              <span className="font-extrabold uppercase text-green-600 dark:text-green-400 tracking-wider">Matched Skills</span>
               <div className="flex flex-wrap gap-1 mt-0.5">
                 {job.matched_skills.map((skill, idx) => (
-                  <span key={idx} className="bg-emerald-500/10 text-emerald-600 dark:text-emerald-450 font-extrabold px-1.5 py-0.5 rounded-lg flex items-center gap-0.5">
+                  <span key={idx} className="bg-green-500/10 text-green-600 dark:text-green-450 font-extrabold px-1.5 py-0.5 rounded-lg flex items-center gap-0.5">
                     <Check size={8} /> {skill}
                   </span>
                 ))}

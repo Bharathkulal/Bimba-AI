@@ -409,13 +409,13 @@ export const ResumePage: React.FC = () => {
                         >
                           <div className="flex justify-between items-start gap-4">
                             <div className="flex items-center gap-3">
-                              <div className="w-10 h-10 bg-emerald-50 dark:bg-emerald-950/20 rounded-xl border border-emerald-100 dark:border-emerald-900/30 flex items-center justify-center text-emerald-600">
+                              <div className="w-10 h-10 bg-slate-100 dark:bg-white/5 rounded-xl border border-slate-200 dark:border-white/5 flex items-center justify-center text-slate-600 dark:text-slate-400">
                                 <FileText size={18} />
                               </div>
                               <div>
                                 <h4 className="font-bold text-sm text-slate-800 dark:text-white truncate max-w-[200px]">{res.name}</h4>
                                 <p className="text-[10px] text-slate-400 mt-1 font-semibold">
-                                  Status: <span className="text-emerald-500 font-bold uppercase">{res.status}</span>
+                                  Status: <span className="text-green-500 font-bold uppercase">{res.status}</span>
                                 </p>
                               </div>
                             </div>
@@ -432,7 +432,7 @@ export const ResumePage: React.FC = () => {
                                 onClick={() => {
                                   setActiveAnalysisResumeId(res.id);
                                 }}
-                                className="px-3 py-1.5 bg-emerald-650 hover:bg-emerald-700 text-white font-bold text-[10px] rounded-lg transition-colors cursor-pointer"
+                                className="px-3 py-1.5 bg-slate-900 hover:bg-slate-800 text-white font-bold text-[10px] rounded-lg transition-colors cursor-pointer dark:bg-white dark:text-slate-900 dark:hover:bg-slate-100"
                               >
                                 Analyze Resume
                               </button>
@@ -449,13 +449,13 @@ export const ResumePage: React.FC = () => {
                       );
                     }
                     return (
-                      <Card 
+                       <Card 
                         key={res.id} 
                         className="hover:border-[#E5E7EB] flex flex-col justify-between gap-4 text-left"
                       >
                       <div className="flex justify-between items-start gap-4">
                         <div className="flex items-center gap-3">
-                          <div className="w-10 h-10 bg-slate-50 rounded-xl border border-slate-100 flex items-center justify-center text-emerald-500">
+                          <div className="w-10 h-10 bg-slate-50 dark:bg-white/5 rounded-xl border border-slate-100 dark:border-white/5 flex items-center justify-center text-slate-500">
                             <FileText size={18} />
                           </div>
                           <div>
@@ -465,7 +465,7 @@ export const ResumePage: React.FC = () => {
                         </div>
                         
                         <div className="flex flex-col items-end gap-1 shrink-0">
-                          <span className="bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 text-[10px] font-bold px-2 py-0.5 rounded">
+                          <span className="bg-green-500/10 border border-green-500/20 text-green-600 text-[10px] font-bold px-2 py-0.5 rounded">
                             ATS {res.atsScore}%
                           </span>
                           <span className="text-[9px] text-slate-400 font-bold">Health: {res.completion}%</span>
@@ -475,14 +475,14 @@ export const ResumePage: React.FC = () => {
                       <div className="flex items-center justify-between gap-5 pt-3 border-t border-slate-100 mt-1">
                         <div className="flex items-center gap-1.5 flex-grow">
                           <div className="w-full bg-slate-100 rounded-full h-1.5 overflow-hidden">
-                            <div className="bg-emerald-500 h-full rounded-full transition-all duration-500" style={{ width: `${res.completion}%` }} />
+                            <div className="bg-green-500 h-full rounded-full transition-all duration-500" style={{ width: `${res.completion}%` }} />
                           </div>
                         </div>
 
                         <div className="flex items-center gap-1.5 shrink-0">
                           <button 
                             onClick={() => navigate(`/resume-builder?id=${res.id}`)}
-                            className="w-7.5 h-7.5 rounded-lg bg-white border border-slate-200 flex items-center justify-center text-slate-500 hover:text-emerald-500 hover:border-emerald-500 transition-colors cursor-pointer"
+                            className="w-7.5 h-7.5 rounded-lg bg-white border border-slate-200 flex items-center justify-center text-slate-500 hover:text-slate-900 hover:border-slate-900 dark:hover:text-white dark:hover:border-white transition-colors cursor-pointer"
                             title="Edit"
                           >
                             <Edit3 size={12} />

@@ -77,11 +77,11 @@ export const Sidebar: React.FC<SidebarProps> = ({
               {/* Header inside Sidebar */}
               <div className="flex items-center justify-between p-6 border-b border-slate-100 dark:border-white/5">
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-xl flex items-center justify-center font-black text-xl text-white bg-gradient-to-tr from-emerald-600 to-teal-500 shadow-md shadow-emerald-500/20 shrink-0">
+                  <div className="w-10 h-10 rounded-xl flex items-center justify-center font-black text-xl text-white bg-slate-900 dark:bg-white dark:text-slate-900 shadow-sm shrink-0">
                     B
                   </div>
                   <div>
-                    <h2 className="font-black text-lg tracking-tight leading-none bg-gradient-to-r from-emerald-600 via-teal-500 to-emerald-500 bg-clip-text text-transparent">
+                    <h2 className="font-black text-lg tracking-tight leading-none text-slate-900 dark:text-white">
                       Bimba AI
                     </h2>
                     <span className="text-[10px] font-semibold tracking-wider text-slate-400 uppercase block mt-1">
@@ -114,11 +114,11 @@ export const Sidebar: React.FC<SidebarProps> = ({
                     ? location.pathname === '/dashboard' 
                     : location.pathname.startsWith(item.path);
 
-                  let activeStyle = 'bg-emerald-600 text-white font-semibold shadow-md shadow-emerald-600/20';
-                  let inactiveStyle = 'text-slate-600 hover:text-emerald-600 hover:bg-emerald-50/60 font-medium';
+                  let activeStyle = 'bg-slate-900 text-white font-semibold shadow-sm';
+                  let inactiveStyle = 'text-slate-600 hover:text-slate-900 hover:bg-slate-100 font-medium';
 
                   if (isDark) {
-                    activeStyle = 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 font-semibold shadow-sm shadow-emerald-500/10';
+                    activeStyle = 'bg-white text-slate-900 font-semibold shadow-sm';
                     inactiveStyle = 'text-slate-400 hover:text-white hover:bg-white/5 font-medium';
                   }
 
@@ -126,11 +126,11 @@ export const Sidebar: React.FC<SidebarProps> = ({
                     <button
                       key={item.label}
                       onClick={() => handleNavClick(item.path)}
-                      className={`flex items-center gap-3.5 w-full px-4 py-3 rounded-2xl transition-all duration-200 cursor-pointer text-sm ${
+                      className={`flex items-center gap-3.5 w-full px-4 py-3 rounded-xl transition-all duration-200 cursor-pointer text-sm ${
                         isActive ? activeStyle : inactiveStyle
                       }`}
                     >
-                      <Icon size={20} className={isActive ? (isDark ? 'text-emerald-400' : 'text-white') : ''} />
+                      <Icon size={20} className={isActive ? (isDark ? 'text-slate-900' : 'text-white') : ''} />
                       <span className="font-semibold tracking-wide">{item.label}</span>
                     </button>
                   );
@@ -143,7 +143,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
               <div className={`p-3 rounded-2xl flex items-center gap-3 border ${
                 isDark ? 'bg-white/5 border-white/5' : 'bg-slate-50 border-slate-100'
               }`}>
-                <div className="w-10 h-10 rounded-xl bg-emerald-600 text-white font-black flex items-center justify-center text-sm shadow-sm shrink-0">
+                <div className="w-10 h-10 rounded-xl bg-slate-900 text-white dark:bg-white dark:text-slate-900 font-black flex items-center justify-center text-sm shadow-sm shrink-0">
                   {displayName.charAt(0).toUpperCase()}
                 </div>
                 <div className="overflow-hidden text-left">

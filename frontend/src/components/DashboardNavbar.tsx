@@ -75,24 +75,24 @@ export const DashboardNavbar: React.FC<DashboardNavbarProps> = ({ onToggleSideba
           className={`hidden md:flex p-2.5 rounded-xl transition-all duration-200 cursor-pointer items-center justify-center border ${
             isDark 
               ? 'bg-white/5 border-white/10 text-slate-200 hover:text-white hover:bg-white/10 hover:border-white/20' 
-              : 'bg-slate-50 border-slate-200 text-slate-700 hover:text-emerald-600 hover:bg-emerald-50 hover:border-emerald-200'
+              : 'bg-slate-50 border-slate-200 text-slate-700 hover:text-slate-900 hover:bg-slate-100 hover:border-slate-350'
           }`}
           title="Toggle Navigation Menu"
           aria-label="Toggle Navigation Menu"
         >
           <Menu size={20} />
         </button>
-
+ 
         {/* Integrated Brand Logo */}
         <div 
           onClick={() => navigate('/dashboard')}
           className="flex items-center gap-2.5 cursor-pointer group"
         >
-          <div className="w-9 h-9 rounded-xl flex items-center justify-center font-black text-lg text-white bg-gradient-to-tr from-emerald-600 to-teal-500 shadow-md shadow-emerald-500/20 group-hover:scale-105 transition-transform">
+          <div className="w-9 h-9 rounded-xl flex items-center justify-center font-black text-lg text-white bg-slate-900 dark:bg-white dark:text-slate-900 shadow-sm group-hover:scale-105 transition-transform">
             B
           </div>
           <div className="flex flex-col">
-            <span className="font-black text-lg tracking-tight leading-none bg-gradient-to-r from-emerald-600 via-teal-500 to-emerald-500 bg-clip-text text-transparent">
+            <span className="font-black text-lg tracking-tight leading-none text-slate-900 dark:text-white">
               Bimba AI
             </span>
             <span className="text-[9px] font-bold tracking-widest text-slate-400 dark:text-slate-500 uppercase leading-none mt-0.5">
@@ -101,7 +101,7 @@ export const DashboardNavbar: React.FC<DashboardNavbarProps> = ({ onToggleSideba
           </div>
         </div>
       </div>
-
+ 
       {/* Right Side Options */}
       <div className="flex items-center gap-4">
         {/* Notifications Button */}
@@ -110,35 +110,35 @@ export const DashboardNavbar: React.FC<DashboardNavbarProps> = ({ onToggleSideba
           className={`w-9 h-9 rounded-xl flex items-center justify-center transition-all relative cursor-pointer border ${
             isDark 
               ? 'bg-white/5 border-white/10 text-slate-300 hover:text-white hover:bg-white/10' 
-              : 'bg-slate-50 border-slate-200 text-slate-600 hover:text-emerald-600 hover:bg-emerald-50'
+              : 'bg-slate-50 border-slate-200 text-slate-600 hover:text-slate-900 hover:bg-slate-100'
           }`}
           title="Notifications"
         >
           <Bell size={18} />
           {notificationCount > 0 && (
-            <span className="absolute top-2 right-2 w-2 h-2 rounded-full bg-emerald-500 shadow-sm animate-pulse" />
+            <span className="absolute top-2 right-2 w-2 h-2 rounded-full bg-slate-900 dark:bg-white shadow-sm animate-pulse" />
           )}
         </button>
         
         <div className={`w-[1px] h-5 transition-colors duration-300 ${isDark ? 'bg-white/10' : 'bg-slate-200'}`} />
-
+ 
         {/* User Account Profile with Dropdown (wrapped with dropdownRef) */}
         <div className="relative" ref={dropdownRef}>
           <button 
             onClick={() => setIsDropdownOpen((prev) => !prev)}
             className="flex items-center gap-2.5 pl-1 cursor-pointer focus:outline-none group"
           >
-            <div className="w-9 h-9 rounded-xl bg-emerald-600 text-white font-black flex items-center justify-center text-sm shadow-md shadow-emerald-600/20 group-hover:scale-105 transition-transform">
+            <div className="w-9 h-9 rounded-xl bg-slate-900 text-white dark:bg-white dark:text-slate-900 font-black flex items-center justify-center text-sm shadow group-hover:scale-105 transition-transform">
               {displayName.charAt(0).toUpperCase()}
             </div>
             <div className="hidden lg:block text-left leading-none">
               <h5 className={`font-bold text-xs transition-colors duration-300 ${isDark ? 'text-white' : 'text-slate-800'}`}>{displayName}</h5>
-              <span className="text-[9.5px] font-extrabold text-emerald-600 dark:text-emerald-400 mt-0.5 block tracking-wide uppercase">
+              <span className="text-[9.5px] font-extrabold text-slate-500 mt-0.5 block tracking-wide uppercase">
                 Plus Member
               </span>
             </div>
           </button>
-
+ 
           {/* Profile Dropdown Card */}
           {isDropdownOpen && (
             <div className={`absolute right-0 mt-3 w-56 rounded-2xl shadow-2xl py-2 z-50 border transition-all duration-300 ${
@@ -159,7 +159,7 @@ export const DashboardNavbar: React.FC<DashboardNavbarProps> = ({ onToggleSideba
                   isDark ? 'hover:bg-white/5' : 'hover:bg-slate-50'
                 }`}
               >
-                <User size={15} className="text-emerald-500" />
+                <User size={15} className="text-slate-500" />
                 My Profile
               </button>
               <button
@@ -171,7 +171,7 @@ export const DashboardNavbar: React.FC<DashboardNavbarProps> = ({ onToggleSideba
                   isDark ? 'hover:bg-white/5' : 'hover:bg-slate-50'
                 }`}
               >
-                <Settings size={15} className="text-emerald-500" />
+                <Settings size={15} className="text-slate-500" />
                 Account Settings
               </button>
               <div className="border-t border-slate-100 dark:border-white/5 my-1" />
