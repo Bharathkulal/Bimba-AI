@@ -27,8 +27,8 @@ export const DashboardLayout: React.FC = () => {
 
   return (
     <div 
-      className={`min-h-screen flex flex-col font-sans relative transition-colors duration-300 ${
-        isDark ? 'bg-[#0B132B] text-white' : 'bg-slate-50 text-slate-900'
+      className={`min-h-screen flex flex-col font-sans relative transition-colors duration-300 bg-background ${
+        isDark ? 'text-white' : 'text-slate-900'
       }`}
     >
       {/* Drawer Overlay Sidebar (Controlled by 3-line Hamburger Menu) */}

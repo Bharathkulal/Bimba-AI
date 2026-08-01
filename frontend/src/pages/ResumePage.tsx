@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
   FileText, Plus, Sparkles, UploadCloud, Download, Edit3, Copy, Trash2, 
-  Search, Scan, Brain, CheckCircle2, ChevronRight, Bot, SendHorizontal
+  Search, Scan, Brain, CheckCircle2, ChevronRight, Bot, SendHorizontal, Eye
 } from 'lucide-react';
 import { Card } from '../components/Card';
 import { Button } from '../components/Button';
@@ -47,6 +47,11 @@ export const ResumePage: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [sortBy, setSortBy] = useState<'updated_at' | 'ats_score' | 'name'>('updated_at');
   const [filterBy, setFilterBy] = useState<string>('all');
+  const [currentPage, setCurrentPage] = useState(1);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchQuery, sortBy, filterBy]);
 
   // Optimizer Chat
   const [chatMessages, setChatMessages] = useState<Array<{ sender: string; text: string }>>([]);
@@ -58,6 +63,7 @@ export const ResumePage: React.FC = () => {
   const [wizardFile, setWizardFile] = useState<File | null>(null);
   const [uploadedFile, setUploadedFile] = useState<File | null>(null);
   const [activeAnalysisResumeId, setActiveAnalysisResumeId] = useState<number | null>(null);
+  const [previewResumeId, setPreviewResumeId] = useState<number | null>(null);
   const [modalView, setModalView] = useState<'default' | 'improve' | 'builder'>('default');
   const { theme } = useThemeStore();
   const isDark = theme === 'dark';
@@ -388,8 +394,8 @@ export const ResumePage: React.FC = () => {
                 <div className="col-span-2 text-center py-12 text-slate-400 font-bold text-sm">
                   You have not created any resumes yet. Click "Create From Scratch" or "Upload PDF" to start!
                 </div>
-              ) : (
-                resumes
+              ) : (() => {
+                const filtered = resumes
                   .filter(res => {
                     const matchesSearch = res.name.toLowerCase().includes(searchQuery.toLowerCase());
                     const matchesFilter = filterBy === 'all' || res.status.toLowerCase() === filterBy.toLowerCase();
@@ -399,125 +405,177 @@ export const ResumePage: React.FC = () => {
                     if (sortBy === 'ats_score') return b.atsScore - a.atsScore;
                     if (sortBy === 'name') return a.name.localeCompare(b.name);
                     return b.id - a.id;
-                  })
-                  .map((res) => {
-                    if (res.status === 'uploaded') {
-                      return (
-                        <Card 
-                          key={res.id} 
-                          className="hover:border-emerald-500/30 flex flex-col justify-between gap-4 text-left border-slate-200 dark:border-white/10 dark:bg-[#1F2937]/75 backdrop-blur-md shadow-sm"
+                  });
+
+                const itemsPerPage = 6;
+                const totalPages = Math.ceil(filtered.length / itemsPerPage);
+                const paginated = filtered.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
+
+                return (
+                  <>
+                    {paginated.length === 0 ? (
+                      <div className="col-span-2 text-center py-12 text-slate-400 font-bold text-sm">
+                        No resumes match your filters.
+                      </div>
+                    ) : (
+                      paginated.map((res) => {
+                        if (res.status === 'uploaded') {
+                          return (
+                            <Card 
+                              key={res.id} 
+                              className="hover:border-emerald-500/30 flex flex-col justify-between gap-4 text-left border-slate-200 dark:border-white/10 dark:bg-[#1F2937]/75 backdrop-blur-md shadow-sm"
+                            >
+                              <div className="flex justify-between items-start gap-4">
+                                <div className="flex items-center gap-3">
+                                  <div className="w-10 h-10 bg-slate-100 dark:bg-white/5 rounded-xl border border-slate-200 dark:border-white/5 flex items-center justify-center text-slate-600 dark:text-slate-400">
+                                    <FileText size={18} />
+                                  </div>
+                                  <div>
+                                    <h4 className="font-bold text-sm text-slate-800 dark:text-white truncate max-w-[200px]">{res.name}</h4>
+                                    <p className="text-[10px] text-slate-400 mt-1 font-semibold">
+                                      Status: <span className="text-green-500 font-bold uppercase">{res.status}</span>
+                                    </p>
+                                  </div>
+                                </div>
+                                
+                                <div className="text-right shrink-0">
+                                  <span className="text-[9px] text-slate-450 font-bold">Uploaded: {new Date(res.lastEdited).toLocaleDateString()}</span>
+                                </div>
+                              </div>
+
+                              <div className="flex items-center justify-between gap-5 pt-3 border-t border-slate-100 dark:border-white/5 mt-1">
+                                <span className="text-[10px] text-slate-400 font-medium">Original file stored securely</span>
+                                <div className="flex items-center gap-1.5 shrink-0">
+                                  <button 
+                                    onClick={() => {
+                                      setActiveAnalysisResumeId(res.id);
+                                    }}
+                                    className="px-3 py-1.5 bg-slate-900 hover:bg-slate-800 text-white font-bold text-[10px] rounded-lg transition-colors cursor-pointer dark:bg-white dark:text-slate-900 dark:hover:bg-slate-100"
+                                  >
+                                    Analyze Resume
+                                  </button>
+                                  <button 
+                                    onClick={() => setPreviewResumeId(res.id)}
+                                    className="w-7.5 h-7.5 rounded-lg bg-white dark:bg-white/5 border border-slate-200 dark:border-white/10 flex items-center justify-center text-slate-500 hover:text-emerald-500 hover:border-emerald-500 transition-colors cursor-pointer"
+                                    title="Preview"
+                                  >
+                                    <Eye size={12} />
+                                  </button>
+                                  <button 
+                                    onClick={() => deleteResume(res.id)}
+                                    className="w-7.5 h-7.5 rounded-lg bg-rose-50 dark:bg-rose-950/20 border border-rose-100 dark:border-rose-900/30 flex items-center justify-center text-rose-650 dark:text-rose-450 hover:bg-rose-600 hover:text-white transition-colors cursor-pointer"
+                                    title="Delete"
+                                  >
+                                    <Trash2 size={12} />
+                                  </button>
+                                </div>
+                              </div>
+                            </Card>
+                          );
+                        }
+                        return (
+                          <Card 
+                            key={res.id} 
+                            className="hover:border-[#E5E7EB] flex flex-col justify-between gap-4 text-left"
+                          >
+                            <div className="flex justify-between items-start gap-4">
+                              <div className="flex items-center gap-3">
+                                <div className="w-10 h-10 bg-slate-50 dark:bg-white/5 rounded-xl border border-slate-100 dark:border-white/5 flex items-center justify-center text-slate-500">
+                                  <FileText size={18} />
+                                </div>
+                                <div>
+                                  <h4 className="font-bold text-sm text-slate-800">{res.name}</h4>
+                                  <p className="text-[10px] text-slate-400 mt-1 font-semibold">Template: <span className="capitalize">{res.template}</span> • Status: <span className="font-bold">{res.status}</span></p>
+                                </div>
+                              </div>
+                              
+                              <div className="flex flex-col items-end gap-1 shrink-0">
+                                <span className="bg-green-500/10 border border-green-500/20 text-green-600 text-[10px] font-bold px-2 py-0.5 rounded">
+                                  ATS {res.atsScore}%
+                                </span>
+                                <span className="text-[9px] text-slate-450 font-bold">Health: {res.completion}%</span>
+                              </div>
+                            </div>
+
+                            <div className="flex items-center justify-between gap-5 pt-3 border-t border-slate-100 mt-1">
+                              <div className="flex items-center gap-1.5 flex-grow">
+                                <div className="w-full bg-slate-100 rounded-full h-1.5 overflow-hidden">
+                                  <div className="bg-green-500 h-full rounded-full transition-all duration-500" style={{ width: `${res.completion}%` }} />
+                                </div>
+                              </div>
+
+                              <div className="flex items-center gap-1.5 shrink-0">
+                                <button 
+                                  onClick={() => setPreviewResumeId(res.id)}
+                                  className="w-7.5 h-7.5 rounded-lg bg-white border border-slate-200 flex items-center justify-center text-slate-500 hover:text-[#173404] hover:border-[#173404] transition-colors cursor-pointer"
+                                  title="Preview"
+                                >
+                                  <Eye size={12} />
+                                </button>
+                                <button 
+                                  onClick={() => navigate(`/resume-builder?id=${res.id}`)}
+                                  className="w-7.5 h-7.5 rounded-lg bg-white border border-slate-200 flex items-center justify-center text-slate-500 hover:text-slate-900 hover:border-slate-900 dark:hover:text-white dark:hover:border-white transition-colors cursor-pointer"
+                                  title="Edit"
+                                >
+                                  <Edit3 size={12} />
+                                </button>
+                                <button 
+                                  onClick={async () => {
+                                    await handleTrackAction('download', 'download_pdf', 'PDF');
+                                    const token = localStorage.getItem('auth_token');
+                                    window.open(`${API_BASE_URL}/api/resume-studio/${res.id}/pdf${token ? `?token=${token}` : ''}`, '_blank');
+                                  }}
+                                  className="w-7.5 h-7.5 rounded-lg bg-white border border-slate-200 flex items-center justify-center text-slate-500 hover:text-emerald-500 hover:border-emerald-500 transition-colors cursor-pointer"
+                                  title="Download PDF"
+                                >
+                                  <Download size={12} />
+                                </button>
+                                <button 
+                                  onClick={() => duplicateResume(res.id)}
+                                  className="w-7.5 h-7.5 rounded-lg bg-white border border-slate-200 flex items-center justify-center text-slate-500 hover:text-emerald-500 hover:border-emerald-500 transition-colors cursor-pointer"
+                                  title="Duplicate"
+                                >
+                                  <Copy size={12} />
+                                </button>
+                                <button 
+                                  onClick={() => deleteResume(res.id)}
+                                  className="w-7.5 h-7.5 rounded-lg bg-rose-50 border border-rose-100 flex items-center justify-center text-rose-650 hover:bg-rose-600 hover:text-white transition-colors cursor-pointer"
+                                  title="Delete"
+                                >
+                                  <Trash2 size={12} />
+                                </button>
+                              </div>
+                            </div>
+                          </Card>
+                        );
+                      })
+                    )}
+
+                    {/* Pagination Controls */}
+                    {totalPages > 1 && (
+                      <div className="col-span-2 flex justify-center items-center gap-4 mt-6 border-t border-slate-100 dark:border-white/5 pt-4">
+                        <button
+                          disabled={currentPage === 1}
+                          onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                          className="px-3 py-1.5 rounded-lg border border-[#E4E0D5] text-xs font-semibold hover:bg-slate-50 dark:hover:bg-white/5 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer bg-white dark:bg-[#22241F] text-slate-700 dark:text-white"
                         >
-                          <div className="flex justify-between items-start gap-4">
-                            <div className="flex items-center gap-3">
-                              <div className="w-10 h-10 bg-slate-100 dark:bg-white/5 rounded-xl border border-slate-200 dark:border-white/5 flex items-center justify-center text-slate-600 dark:text-slate-400">
-                                <FileText size={18} />
-                              </div>
-                              <div>
-                                <h4 className="font-bold text-sm text-slate-800 dark:text-white truncate max-w-[200px]">{res.name}</h4>
-                                <p className="text-[10px] text-slate-400 mt-1 font-semibold">
-                                  Status: <span className="text-green-500 font-bold uppercase">{res.status}</span>
-                                </p>
-                              </div>
-                            </div>
-                            
-                            <div className="text-right shrink-0">
-                              <span className="text-[9px] text-slate-450 font-bold">Uploaded: {new Date(res.lastEdited).toLocaleDateString()}</span>
-                            </div>
-                          </div>
-
-                          <div className="flex items-center justify-between gap-5 pt-3 border-t border-slate-100 dark:border-white/5 mt-1">
-                            <span className="text-[10px] text-slate-400 font-medium">Original file stored securely</span>
-                            <div className="flex items-center gap-1.5 shrink-0">
-                              <button 
-                                onClick={() => {
-                                  setActiveAnalysisResumeId(res.id);
-                                }}
-                                className="px-3 py-1.5 bg-slate-900 hover:bg-slate-800 text-white font-bold text-[10px] rounded-lg transition-colors cursor-pointer dark:bg-white dark:text-slate-900 dark:hover:bg-slate-100"
-                              >
-                                Analyze Resume
-                              </button>
-                              <button 
-                                onClick={() => deleteResume(res.id)}
-                                className="w-7.5 h-7.5 rounded-lg bg-rose-50 dark:bg-rose-950/20 border border-rose-100 dark:border-rose-900/30 flex items-center justify-center text-rose-650 dark:text-rose-450 hover:bg-rose-600 hover:text-white transition-colors cursor-pointer"
-                                title="Delete"
-                              >
-                                <Trash2 size={12} />
-                              </button>
-                            </div>
-                          </div>
-                        </Card>
-                      );
-                    }
-                    return (
-                       <Card 
-                        key={res.id} 
-                        className="hover:border-[#E5E7EB] flex flex-col justify-between gap-4 text-left"
-                      >
-                      <div className="flex justify-between items-start gap-4">
-                        <div className="flex items-center gap-3">
-                          <div className="w-10 h-10 bg-slate-50 dark:bg-white/5 rounded-xl border border-slate-100 dark:border-white/5 flex items-center justify-center text-slate-500">
-                            <FileText size={18} />
-                          </div>
-                          <div>
-                            <h4 className="font-bold text-sm text-slate-800">{res.name}</h4>
-                            <p className="text-[10px] text-slate-400 mt-1 font-semibold">Template: <span className="capitalize">{res.template}</span> • Status: <span className="font-bold">{res.status}</span></p>
-                          </div>
-                        </div>
-                        
-                        <div className="flex flex-col items-end gap-1 shrink-0">
-                          <span className="bg-green-500/10 border border-green-500/20 text-green-600 text-[10px] font-bold px-2 py-0.5 rounded">
-                            ATS {res.atsScore}%
-                          </span>
-                          <span className="text-[9px] text-slate-400 font-bold">Health: {res.completion}%</span>
-                        </div>
+                          Previous
+                        </button>
+                        <span className="text-xs font-bold text-slate-500 dark:text-[#A19E95]">
+                          Page {currentPage} of {totalPages}
+                        </span>
+                        <button
+                          disabled={currentPage === totalPages}
+                          onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                          className="px-3 py-1.5 rounded-lg border border-[#E4E0D5] text-xs font-semibold hover:bg-slate-50 dark:hover:bg-white/5 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer bg-white dark:bg-[#22241F] text-slate-700 dark:text-white"
+                        >
+                          Next
+                        </button>
                       </div>
-
-                      <div className="flex items-center justify-between gap-5 pt-3 border-t border-slate-100 mt-1">
-                        <div className="flex items-center gap-1.5 flex-grow">
-                          <div className="w-full bg-slate-100 rounded-full h-1.5 overflow-hidden">
-                            <div className="bg-green-500 h-full rounded-full transition-all duration-500" style={{ width: `${res.completion}%` }} />
-                          </div>
-                        </div>
-
-                        <div className="flex items-center gap-1.5 shrink-0">
-                          <button 
-                            onClick={() => navigate(`/resume-builder?id=${res.id}`)}
-                            className="w-7.5 h-7.5 rounded-lg bg-white border border-slate-200 flex items-center justify-center text-slate-500 hover:text-slate-900 hover:border-slate-900 dark:hover:text-white dark:hover:border-white transition-colors cursor-pointer"
-                            title="Edit"
-                          >
-                            <Edit3 size={12} />
-                          </button>
-                          <button 
-                            onClick={async () => {
-                              await handleTrackAction('download', 'download_pdf', 'PDF');
-                              const token = localStorage.getItem('auth_token');
-                              window.open(`${API_BASE_URL}/api/resume-studio/${res.id}/pdf${token ? `?token=${token}` : ''}`, '_blank');
-                            }}
-                            className="w-7.5 h-7.5 rounded-lg bg-white border border-slate-200 flex items-center justify-center text-slate-500 hover:text-emerald-500 hover:border-emerald-500 transition-colors cursor-pointer"
-                            title="Download PDF"
-                          >
-                            <Download size={12} />
-                          </button>
-                          <button 
-                            onClick={() => duplicateResume(res.id)}
-                            className="w-7.5 h-7.5 rounded-lg bg-white border border-slate-200 flex items-center justify-center text-slate-500 hover:text-emerald-500 hover:border-emerald-500 transition-colors cursor-pointer"
-                            title="Duplicate"
-                          >
-                            <Copy size={12} />
-                          </button>
-                          <button 
-                            onClick={() => deleteResume(res.id)}
-                            className="w-7.5 h-7.5 rounded-lg bg-rose-50 border border-rose-100 flex items-center justify-center text-rose-600 hover:bg-rose-600 hover:text-white transition-colors cursor-pointer"
-                            title="Delete"
-                          >
-                            <Trash2 size={12} />
-                          </button>
-                        </div>
-                      </div>
-                    </Card>
-                  );
-                })
-              )}
+                    )}
+                  </>
+                );
+              })()}
             </div>
           </div>
         )}
@@ -677,6 +735,24 @@ export const ResumePage: React.FC = () => {
           </Modal>
         );
       })()}
+
+      {/* Resume Preview Modal */}
+      {previewResumeId !== null && (
+        <Modal
+          isOpen={previewResumeId !== null}
+          onClose={() => setPreviewResumeId(null)}
+          title="Resume Document Preview"
+          size="xl"
+        >
+          <div className="w-full h-[70vh] bg-slate-100 dark:bg-[#1E1E1E] rounded-xl overflow-hidden relative">
+            <iframe
+              src={`${API_BASE_URL}/api/resume-studio/${previewResumeId}/pdf${localStorage.getItem('auth_token') ? `?token=${localStorage.getItem('auth_token')}` : ''}`}
+              className="w-full h-full border-none"
+              title="Resume PDF Preview"
+            />
+          </div>
+        </Modal>
+      )}
     </div>
   );
 };

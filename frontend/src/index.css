@@ -14,8 +14,10 @@
   --color-text-secondary: var(--text-secondary);
   --color-primary: var(--accent);
   --color-success: var(--success);
+  --color-success-bg: var(--success-bg);
   --color-warning: var(--warning);
   --color-danger: var(--danger);
+  --color-highlight: var(--highlight);
   
   --radius-card: 16px;
 
@@ -38,20 +40,22 @@
 }
 
 :root {
-  --bg-base: #F9FAFB;
-  --bg-secondary: #F3F4F6;
+  --bg-base: #F7F4EE;
+  --bg-secondary: #FFFFFF;
   --card-bg: #FFFFFF;
   --sidebar-bg: #FFFFFF;
   --navbar-bg: #FFFFFF;
-  --border: #E5E7EB;
-  --text-primary: #111827;
-  --text-secondary: #6B7280;
-  --accent: #111827;
-  --accent-hover: #1F2937;
-  --accent-light: rgba(17, 24, 39, 0.05);
-  --accent-green: #10B981;
+  --border: #E4E0D5;
+  --text-primary: #2C2C2A;
+  --text-secondary: #5B5B52;
+  --accent: #173404;
+  --accent-hover: #265209;
+  --accent-light: #EAF3DE;
+  --accent-green: #173404;
+  --highlight: #C86A3D;
   
-  --success: #10B981;
+  --success: #173404;
+  --success-bg: #EAF3DE;
   --warning: #F59E0B;
   --danger: #EF4444;
   --input-bg: #FFFFFF;
@@ -59,34 +63,36 @@
   --dropdown-bg: #FFFFFF;
   
   --glass-card-bg: rgba(255, 255, 255, 0.75);
-  --glass-card-border: rgba(229, 231, 235, 0.5);
-  --glass-card-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.03);
+  --glass-card-border: rgba(228, 224, 213, 0.5);
+  --glass-card-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.02);
 }
 
 .dark {
-  --bg-base: #0B0F19;
-  --bg-secondary: #111827;
-  --card-bg: #1F2937;
-  --sidebar-bg: #111827;
-  --navbar-bg: #111827;
-  --border: rgba(255, 255, 255, 0.08);
-  --text-primary: #FFFFFF;
-  --text-secondary: #D1D5DB;
-  --accent: #FFFFFF;
-  --accent-hover: #F3F4F6;
-  --accent-light: rgba(255, 255, 255, 0.06);
-  --accent-green: #34D399;
+  --bg-base: #191A16;
+  --bg-secondary: #22241F;
+  --card-bg: #22241F;
+  --sidebar-bg: #22241F;
+  --navbar-bg: #22241F;
+  --border: #32352F;
+  --text-primary: #F7F4EE;
+  --text-secondary: #A19E95;
+  --accent: #97C459;
+  --accent-hover: #AADB6D;
+  --accent-light: rgba(151, 196, 89, 0.1);
+  --accent-green: #97C459;
+  --highlight: #E08553;
   
-  --success: #34D399;
+  --success: #97C459;
+  --success-bg: #223A12;
   --warning: #F59E0B;
   --danger: #EF4444;
-  --input-bg: #1F2937;
-  --modal-bg: #1F2937;
-  --dropdown-bg: #1F2937;
+  --input-bg: #22241F;
+  --modal-bg: #22241F;
+  --dropdown-bg: #22241F;
   
-  --glass-card-bg: rgba(31, 41, 55, 0.75);
-  --glass-card-border: rgba(255, 255, 255, 0.08);
-  --glass-card-shadow: 0 10px 40px rgba(0, 0, 0, 0.35);
+  --glass-card-bg: rgba(34, 36, 31, 0.75);
+  --glass-card-border: rgba(50, 53, 47, 0.5);
+  --glass-card-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
 }
 
 html, body, button, input, select, textarea, span, p, h1, h2, h3, h4, h5, h6 {
