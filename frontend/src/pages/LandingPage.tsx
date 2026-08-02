@@ -2,7 +2,8 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { motion, useInView } from 'framer-motion';
 import { 
-  Sparkles, HelpCircle, ArrowRight, Star 
+  Sparkles, HelpCircle, ArrowRight, Star,
+  Upload, Briefcase, FileText, ChevronRight, TrendingUp, CreditCard, Users
 } from 'lucide-react';
 import { Button } from '../components/Button';
 import { Card } from '../components/Card';
@@ -97,18 +98,21 @@ export const LandingPage: React.FC = () => {
             variants={childVariants}
             className="flex flex-col gap-6"
           >
+            <div className="inline-flex items-center gap-1.5 self-start px-3 py-1 bg-emerald-50 text-emerald-700 rounded-full text-[10px] font-extrabold uppercase tracking-wider mb-2 border border-emerald-100">
+              <Sparkles size={11} className="text-emerald-600 animate-pulse" /> AI Powered Career Accelerator
+            </div>
 
-            <DisplayHeading size="hero" as="h1" className="!my-0">
-              Your <span className="text-slate-900 dark:text-white">professional AI resume</span>, ready in minutes
+            <DisplayHeading size="hero" as="h1" className="!my-0 text-slate-900">
+              Your perfect resume, <span className="text-emerald-700">powered by AI.</span>
             </DisplayHeading>
 
             <p className="text-base md:text-lg text-slate-500 leading-relaxed max-w-lg">
-              Our AI resume builder saves your time with smart content suggestions and impactful summaries. Get hired faster, stress-free!
+              Create ATS-optimized resumes, get AI suggestions, discover matching jobs and apply with confidence. All in one smart platform.
             </p>
 
             <div className="flex flex-wrap items-center gap-4 mt-2">
               <Link to="/login" className="btn-uiverse-wrapper">
-                <button className="btn-uiverse">
+                <button className="btn-uiverse bg-[#101010] hover:bg-slate-900">
                   <svg className="btn-uiverse-svg" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
                     <path
                       strokeLinecap="round"
@@ -119,27 +123,47 @@ export const LandingPage: React.FC = () => {
                   <span>Create AI Resume Now</span>
                 </button>
               </Link>
-              <a href="#templates">
-                <Button variant="outline" size="lg" className="font-semibold border-slate-250 hover:bg-slate-50">
-                  Improve My Resume
+              <Link to="/login">
+                <Button variant="outline" size="lg" className="font-semibold border-slate-250 hover:bg-slate-50 flex items-center gap-2">
+                  <Upload size={16} /> Upload Resume
                 </Button>
-              </a>
+              </Link>
             </div>
 
             {/* Placement stats */}
-            <div className="flex items-center gap-8 mt-6 pt-6 border-t border-slate-100">
-              <div>
-                <span className="bg-[#F8F8F8] -[#111111] text-xs font-bold px-2 py-1 rounded-md">
-                  <AnimatedNumber value={48} suffix="%" />
-                </span>
-                <p className="text-xs text-slate-400 font-medium mt-2">more likely to get hired</p>
+            <div className="grid grid-cols-3 gap-6 mt-6 pt-6 border-t border-slate-100 text-left">
+              <div className="flex items-start gap-2.5">
+                <div className="w-8 h-8 rounded-full bg-emerald-50 flex items-center justify-center text-emerald-600 flex-shrink-0">
+                  <TrendingUp size={14} />
+                </div>
+                <div>
+                  <span className="text-slate-800 text-sm font-extrabold block leading-tight">
+                    <AnimatedNumber value={48} suffix="%" />
+                  </span>
+                  <p className="text-[10px] text-slate-450 mt-1 font-bold">More likely to get hired</p>
+                </div>
               </div>
-              <div className="w-px h-10 bg-slate-200" />
-              <div>
-                <span className="bg-amber-100 text-amber-700 text-xs font-bold px-2 py-1 rounded-md">
-                  <AnimatedNumber value={12} suffix="%" />
-                </span>
-                <p className="text-xs text-slate-400 font-medium mt-2">better pay with your next job</p>
+              <div className="flex items-start gap-2.5">
+                <div className="w-8 h-8 rounded-full bg-amber-50 flex items-center justify-center text-amber-600 flex-shrink-0">
+                  <CreditCard size={14} />
+                </div>
+                <div>
+                  <span className="text-slate-800 text-sm font-extrabold block leading-tight">
+                    <AnimatedNumber value={12} suffix="%" />
+                  </span>
+                  <p className="text-[10px] text-slate-450 mt-1 font-bold">Better pay with your next job</p>
+                </div>
+              </div>
+              <div className="flex items-start gap-2.5">
+                <div className="w-8 h-8 rounded-full bg-blue-50 flex items-center justify-center text-blue-600 flex-shrink-0">
+                  <Users size={14} />
+                </div>
+                <div>
+                  <span className="text-slate-800 text-sm font-extrabold block leading-tight">
+                    <AnimatedNumber value={50} suffix="K+" />
+                  </span>
+                  <p className="text-[10px] text-slate-450 mt-1 font-bold">Resumes optimized this month</p>
+                </div>
               </div>
             </div>
           </motion.div>
@@ -149,64 +173,144 @@ export const LandingPage: React.FC = () => {
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ duration: 0.8 }}
-            className="relative flex justify-center lg:justify-end"
+            className="relative flex flex-col items-center justify-center w-full max-w-[640px] mx-auto scale-90 sm:scale-100 z-10"
           >
-            {/* Main Interactive Resume Graphic */}
-            <motion.div 
-              variants={floatingVariants}
-              animate="animate"
-              className="relative w-full max-w-[430px] bg-white rounded-[24px] shadow-2xl p-6 border border-slate-150 relative z-10 flex flex-col gap-5"
-            >
-              {/* Header */}
-              <div className="text-center border-b border-slate-100 pb-4">
-                <h3 className="font-extrabold text-slate-800 text-base">Samantha Williams</h3>
-                <p className="text-[10px] text-slate-400 font-medium mt-0.5">New York, NY • samantha@example.com</p>
+            {/* Floating Badges Row (Above) */}
+            <div className="flex gap-4 mb-6 w-full justify-between z-20">
+              {/* Card 1: ATS Score */}
+              <div className="bg-white rounded-xl shadow-lg border border-slate-100 p-3.5 flex items-center gap-3 flex-1">
+                <div className="text-left">
+                  <span className="text-[10px] text-slate-400 font-bold block uppercase">ATS Score</span>
+                  <span className="text-lg font-extrabold text-slate-800">94</span>
+                  <span className="text-xs text-slate-400">/100</span>
+                  <span className="text-[9px] text-emerald-600 font-bold block mt-0.5">Excellent Match</span>
+                </div>
+                <div className="relative w-9 h-9 flex items-center justify-center ml-auto flex-shrink-0">
+                  <svg className="w-full h-full transform -rotate-90">
+                    <circle cx="18" cy="18" r="14" stroke="#F1F5F9" strokeWidth="3" fill="transparent" />
+                    <circle cx="18" cy="18" r="14" stroke="#10B981" strokeWidth="3" fill="transparent" strokeDasharray="88" strokeDashoffset="10" />
+                  </svg>
+                </div>
               </div>
+              {/* Card 2: Keyword Match */}
+              <div className="bg-white rounded-xl shadow-lg border border-slate-100 p-3.5 flex flex-col justify-between flex-1">
+                <div className="flex justify-between items-center w-full">
+                  <span className="text-[10px] text-slate-400 font-bold uppercase">Keyword Match</span>
+                  <span className="text-sm font-extrabold text-slate-800">92%</span>
+                </div>
+                <div className="w-full bg-slate-100 rounded-full h-1.5 mt-2">
+                  <div className="bg-emerald-500 h-1.5 rounded-full" style={{ width: '92%' }}></div>
+                </div>
+                <span className="text-[9px] text-slate-400 font-bold mt-1.5">Top Keywords Found</span>
+              </div>
+              {/* Card 3: Job Matches */}
+              <div className="bg-white rounded-xl shadow-lg border border-slate-100 p-3.5 flex items-center gap-3 flex-1">
+                <div className="text-left">
+                  <span className="text-[10px] text-slate-400 font-bold block uppercase">Job Matches</span>
+                  <span className="text-lg font-extrabold text-slate-800">48</span>
+                  <span className="text-[9px] text-emerald-600 font-bold block mt-0.5">High Match Jobs</span>
+                </div>
+                <div className="w-8 h-8 rounded-full bg-emerald-50 flex items-center justify-center ml-auto text-emerald-600 flex-shrink-0">
+                  <Briefcase size={14} />
+                </div>
+              </div>
+            </div>
 
-              {/* Summary Block */}
-              <div className="flex flex-col gap-1.5">
-                <h4 className="text-[9px] uppercase tracking-wider font-extrabold text-slate-400">Summary</h4>
-                <div className="h-0.5 bg-slate-200 rounded" />
-                <div className="h-10 bg-slate-50 rounded-lg p-2.5 relative border border-slate-100/60">
-                  <div className="h-2 bg-slate-200 rounded w-11/12 mb-1.5" />
-                  <div className="h-2 bg-slate-150 rounded w-4/5" />
+            {/* Main Layout Row (AI Suggestions + Resume + Matching Jobs) */}
+            <div className="flex gap-4 w-full items-stretch justify-center relative">
+              {/* Left Card: AI Suggestions */}
+              <div className="bg-white rounded-2xl shadow-xl border border-slate-150 p-4 w-[180px] flex flex-col gap-3.5 text-left z-20 self-center">
+                <span className="text-[10px] text-slate-800 font-extrabold uppercase tracking-wide">AI Suggestions</span>
+                <div className="flex flex-col gap-2.5">
+                  {[
+                    { title: 'Improve Summary', desc: 'Make your summary more impactful' },
+                    { title: 'Add Keywords', desc: '3 important keywords added' },
+                    { title: 'Enhance Skills', desc: 'Skills section optimized' },
+                    { title: 'Strong Action Verbs', desc: '12 strong verbs added' }
+                  ].map((s, i) => (
+                    <div key={i} className="flex gap-2 items-start text-[9px]">
+                      <div className="w-3.5 h-3.5 rounded-full bg-emerald-50 border border-emerald-100 flex items-center justify-center text-emerald-600 mt-0.5 flex-shrink-0">
+                        ✓
+                      </div>
+                      <div>
+                        <span className="font-bold text-slate-700 block leading-tight">{s.title}</span>
+                        <span className="text-slate-400 leading-tight block mt-0.5">{s.desc}</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                <div className="text-[9px] font-bold text-emerald-600 hover:text-emerald-700 cursor-pointer border-t border-slate-50 pt-2 mt-1">
+                  View All Suggestions →
                 </div>
               </div>
 
-              {/* Experience Block */}
-              <div className="flex flex-col gap-1.5 relative">
-                <h4 className="text-[9px] uppercase tracking-wider font-extrabold text-slate-400">Experience</h4>
-                <div className="h-0.5 bg-slate-200 rounded" />
-                <div className="h-16 bg-slate-50 rounded-lg p-3 relative border border-slate-100/60 flex flex-col gap-2">
-                  <div className="flex justify-between items-center">
-                    <div className="h-2 bg-slate-350 rounded w-1/3" />
-                    <div className="h-2 bg-slate-200 rounded w-1/6" />
+              {/* Center Card: Resume Preview */}
+              <div className="bg-white rounded-2xl shadow-2xl border border-slate-150 p-6 flex-1 flex flex-col gap-5 text-center min-w-[240px] z-10">
+                <div className="border-b border-slate-100 pb-3">
+                  <h3 className="font-extrabold text-slate-800 text-sm">Samantha Williams</h3>
+                  <p className="text-[9px] text-slate-400 mt-0.5">New York, NY • samantha@example.com • (123) 456-7890</p>
+                </div>
+
+                {/* Summary */}
+                <div className="flex flex-col gap-1 text-left">
+                  <span className="text-[8px] font-bold text-emerald-700 uppercase tracking-wider">Professional Summary</span>
+                  <div className="flex flex-col gap-1">
+                    <div className="h-1.5 bg-slate-100 rounded w-full" />
+                    <div className="h-1.5 bg-slate-100 rounded w-11/12" />
+                    <div className="h-1.5 bg-slate-100 rounded w-4/5" />
                   </div>
-                  <div className="h-2 bg-slate-200 rounded w-1/2" />
-                  <div className="h-1.5 bg-slate-150 rounded w-11/12" />
                 </div>
 
-                {/* Floating "Generate with AI" button on resume */}
-                <div className="absolute bottom-2 left-1/2 -translate-x-1/2 z-20">
-                  <button className="-[#111111] hover:-[#111111] text-white font-bold text-[9px] px-3.5 py-1.5 rounded-full shadow-md flex items-center gap-1.5 transition-smooth uppercase tracking-wider cursor-pointer">
-                    <Sparkles size={9} /> Generate with AI
-                  </button>
+                {/* Experience */}
+                <div className="flex flex-col gap-1 text-left">
+                  <span className="text-[8px] font-bold text-emerald-700 uppercase tracking-wider">Experience</span>
+                  <div className="flex flex-col gap-2">
+                    <div className="flex flex-col gap-1">
+                      <div className="h-1.5 bg-slate-200 rounded w-1/3" />
+                      <div className="h-1 bg-slate-100 rounded w-3/4" />
+                      <div className="h-1 bg-slate-100 rounded w-11/12" />
+                    </div>
+                    <div className="flex flex-col gap-1">
+                      <div className="h-1.5 bg-slate-200 rounded w-1/4" />
+                      <div className="h-1 bg-slate-100 rounded w-4/5" />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Education */}
+                <div className="flex flex-col gap-1 text-left">
+                  <span className="text-[8px] font-bold text-emerald-700 uppercase tracking-wider">Education</span>
+                  <div className="h-1.5 bg-slate-100 rounded w-1/2" />
                 </div>
               </div>
 
-              {/* Floating Tooltip pointing to summary */}
-              <div className="absolute top-16 -left-12 z-20 w-44 bg-white/95 backdrop-blur rounded-xl shadow-lg border border-slate-100 p-2 text-[9px] text-slate-500 leading-relaxed">
-                <span className="font-extrabold text-slate-800 block mb-0.5">Summary Idea</span>
-                Marketing specialist with 2+ years of experience in digital marketing...
-                <div className="absolute top-4 -right-1 w-2 h-2 rotate-45 bg-white border-t border-r border-slate-100" />
-              </div>
-            </motion.div>
-
-            {/* Decorative character looking at resume */}
-            <div className="absolute bottom-[-20px] right-[-20px] z-20 w-24 h-24 overflow-hidden pointer-events-none hidden md:block">
-              {/* Simple avatar representation */}
-              <div className="w-12 h-12 rounded-full bg-blue-500 border-2 border-white shadow absolute bottom-4 right-4 flex items-center justify-center text-white font-bold text-lg">
-                AI
+              {/* Right Card: Matching Jobs */}
+              <div className="bg-white rounded-2xl shadow-xl border border-slate-150 p-4 w-[180px] flex flex-col gap-3 text-left z-20 self-center">
+                <div className="flex justify-between items-center border-b border-slate-50 pb-2">
+                  <span className="text-[10px] text-slate-800 font-extrabold uppercase tracking-wide">Matching Jobs</span>
+                  <span className="text-[8px] font-bold text-slate-400">View all</span>
+                </div>
+                <div className="flex flex-col gap-3">
+                  {[
+                    { title: 'Marketing Specialist', comp: 'Google', loc: 'New York, NY' },
+                    { title: 'Digital Marketing Manager', comp: 'Microsoft', loc: 'Remote' },
+                    { title: 'Marketing Analyst', comp: 'Amazon', loc: 'Seattle, WA' }
+                  ].map((j, i) => (
+                    <div key={i} className="flex gap-2.5 items-center text-[9px]">
+                      <div className="w-6 h-6 rounded-lg bg-slate-50 border border-slate-100 flex items-center justify-center font-bold text-xs flex-shrink-0 text-slate-700">
+                        {j.comp[0]}
+                      </div>
+                      <div>
+                        <span className="font-bold text-slate-700 block leading-tight">{j.title}</span>
+                        <span className="text-slate-400 block mt-0.5 leading-none">{j.comp} • {j.loc}</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                <div className="text-[9px] font-bold text-slate-600 hover:text-slate-800 cursor-pointer border-t border-slate-50 pt-2.5 mt-1 flex items-center justify-between">
+                  <span>See 45 more matches</span>
+                  <span>→</span>
+                </div>
               </div>
             </div>
 
@@ -226,17 +330,45 @@ export const LandingPage: React.FC = () => {
       >
         <div className="max-w-7xl mx-auto px-6 text-center">
           <motion.p variants={childVariants} className="text-xs uppercase font-extrabold tracking-wider text-slate-400 mb-6">
-            Our customers have been hired at:
+            TRUSTED BY PROFESSIONALS AT
           </motion.p>
           <motion.div variants={childVariants} className="flex flex-wrap items-center justify-center gap-8 md:gap-16 opacity-60">
-            {['Google', 'DHL', 'Booking.com', 'Spotify', 'Facebook', 'Amazon'].map((brand) => (
-              <span key={brand} className="text-slate-600 font-bold text-lg tracking-tight select-none">
+            {['Google', 'Microsoft', 'Amazon', 'DHL', 'Spotify', 'Facebook'].map((brand) => (
+              <span key={brand} className="text-slate-700 font-extrabold text-lg tracking-tight select-none">
                 {brand}
               </span>
             ))}
           </motion.div>
         </div>
       </motion.section>
+
+      {/* How Bimba AI Works Timeline */}
+      <div className="max-w-4xl mx-auto px-6 mt-12 mb-16 text-center animate-fadeIn">
+        <span className="text-[10px] uppercase font-extrabold tracking-widest text-slate-400 block mb-4">How Bimba AI Works</span>
+        <div className="bg-white border border-slate-100 rounded-2xl p-6 shadow-md flex flex-col md:flex-row items-center justify-between gap-6">
+          {[
+            { step: '1', title: 'Upload Resume', desc: 'Upload your current resume', icon: Upload, color: 'bg-emerald-50 text-emerald-600 border-emerald-100' },
+            { step: '2', title: 'AI Optimization', desc: 'AI analyzes and optimizes content', icon: Sparkles, color: 'bg-emerald-50 text-emerald-600 border-emerald-100' },
+            { step: '3', title: 'ATS Score', desc: 'Get your ATS score and suggestions', icon: FileText, color: 'bg-emerald-50 text-emerald-600 border-emerald-100' },
+            { step: '4', title: 'Get Hired', desc: 'Apply to matched jobs with confidence', icon: Briefcase, color: 'bg-emerald-50 text-emerald-600 border-emerald-100' }
+          ].map((item, idx) => (
+            <React.Fragment key={idx}>
+              <div className="flex items-center gap-3 text-left">
+                <div className={`w-10 h-10 rounded-xl border flex items-center justify-center flex-shrink-0 ${item.color}`}>
+                  <item.icon size={18} />
+                </div>
+                <div>
+                  <h4 className="text-xs font-extrabold text-slate-800">{item.step}. {item.title}</h4>
+                  <p className="text-[10px] text-slate-400 mt-0.5 leading-tight">{item.desc}</p>
+                </div>
+              </div>
+              {idx < 3 && (
+                <div className="hidden md:block text-slate-300 font-bold">→</div>
+              )}
+            </React.Fragment>
+          ))}
+        </div>
+      </div>
 
       {/* 3. 3-STEP TIMELINE SECTION */}
       <motion.section 
@@ -328,13 +460,7 @@ export const LandingPage: React.FC = () => {
       <TemplateShowcase />
 
       {/* 5. TESTIMONIAL / TRUST SECTION */}
-      <motion.section 
-        variants={sectionVariants}
-        initial="hidden"
-        whileInView="show"
-        viewport={{ once: true, margin: "-100px" }}
-        className="py-24 bg-slate-50 relative z-10 border-b border-slate-100"
-      >
+      <section className="py-24 bg-slate-50 relative z-10 border-b border-slate-100">
         <div className="max-w-7xl mx-auto px-6">
           <SectionTitle 
             title="Learn why people choose our AI-powered resumes" 
@@ -345,21 +471,21 @@ export const LandingPage: React.FC = () => {
           <div className="grid grid-cols-1 lg:grid-cols-4 gap-8 items-center mt-12">
             
             {/* Rating Widget */}
-            <motion.div variants={childVariants} className="lg:col-span-1 flex flex-col items-center lg:items-start text-center lg:text-left bg-white p-6 rounded-[20px] border border-slate-150 shadow-sm gap-4">
+            <div className="lg:col-span-1 flex flex-col items-center lg:items-start text-center lg:text-left bg-white p-6 rounded-[20px] border border-slate-150 shadow-sm gap-4">
               <span className="text-slate-800 font-extrabold text-3xl">4.5 out of 5</span>
-              <div className="flex items-center gap-1 -[#111111]">
+              <div className="flex items-center gap-1 text-amber-500">
                 {[1, 2, 3, 4, 5].map((st) => (
-                  <Star key={st} size={18} className="-[#111111]" />
+                  <Star key={st} size={18} className="text-amber-500 fill-amber-500" />
                 ))}
               </div>
-              <div className="flex items-center gap-1.5 text-slate-700 font-bold text-sm">
-                <span className="-[#111111]">★</span> Trustpilot
+              <div className="flex items-center gap-1.5 text-slate-750 font-bold text-sm">
+                <span className="text-amber-500">★</span> Trustpilot
               </div>
               <p className="text-[11px] text-slate-400">based on 3,112 reviews</p>
-            </motion.div>
+            </div>
 
             {/* Testimonial slider / list */}
-            <motion.div variants={childVariants} className="lg:col-span-3 grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="lg:col-span-3 grid grid-cols-1 md:grid-cols-3 gap-6">
               {[
                 { name: 'Sarah Thompson', time: 'about 1 day ago', text: 'Bimba AI made it sooo easy. Like many others here, I had no idea how to write my resume at all. The AI suggestions were spot-on!' },
                 { name: 'Jason Miller', time: 'about 1 day ago', text: 'Landed several interviews! I created my resume in 10 minutes and got two callbacks the same week. Super easy!' },
@@ -367,9 +493,9 @@ export const LandingPage: React.FC = () => {
               ].map((rev, idx) => (
                 <Card key={idx} className="flex flex-col justify-between gap-5 p-5 bg-white border border-slate-150 shadow-sm h-full hover:-translate-y-1 transition-all duration-250 hover:shadow-md">
                   <div>
-                    <div className="flex items-center gap-0.5 -[#111111] mb-3">
+                    <div className="flex items-center gap-0.5 text-amber-500 mb-3">
                       {[1, 2, 3, 4, 5].map((st) => (
-                        <Star key={st} size={10} className="-[#111111]" />
+                        <Star key={st} size={10} className="text-amber-500 fill-amber-500" />
                       ))}
                     </div>
                     <p className="text-xs text-slate-600 leading-relaxed font-medium">"{rev.text}"</p>
@@ -380,11 +506,11 @@ export const LandingPage: React.FC = () => {
                   </div>
                 </Card>
               ))}
-            </motion.div>
+            </div>
 
           </div>
         </div>
-      </motion.section>
+      </section>
 
       {/* 6. WHY USE BIMBA AI FEATURE CARDS */}
       <motion.section 

@@ -3,7 +3,7 @@ import { Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { 
   Home, FileText, Briefcase, Building, 
-  User, Settings 
+  User, Settings, Clock
 } from 'lucide-react';
 import { Sidebar } from '../components/Sidebar';
 import { DashboardNavbar } from '../components/DashboardNavbar';
@@ -23,6 +23,14 @@ export const DashboardLayout: React.FC = () => {
     { label: 'Companies', path: '/companies', icon: Building },
     { label: 'Profile', path: '/profile', icon: User },
     { label: 'Settings', path: '/settings', icon: Settings },
+  ];
+
+  const mobileMenuItems = [
+    { label: 'Home', path: '/dashboard', icon: Home },
+    { label: 'Resume', path: '/resume', icon: FileText },
+    { label: 'Jobs', path: '/jobs', icon: Briefcase },
+    { label: 'Applications', path: '/jobs/applications', icon: Clock },
+    { label: 'Profile', path: '/profile', icon: User },
   ];
 
   return (
@@ -65,7 +73,7 @@ export const DashboardLayout: React.FC = () => {
           ? 'bg-[#0F172A]/95 border-white/10' 
           : 'bg-white/95 border-slate-200'
       }`}>
-        {menuItems.map((item) => {
+        {mobileMenuItems.map((item) => {
           const Icon = item.icon;
           const isActive = item.path === '/dashboard' 
             ? location.pathname === '/dashboard' 
