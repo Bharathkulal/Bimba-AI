@@ -187,7 +187,7 @@ export const Dashboard: React.FC = () => {
       />
 
       {/* HEADER SECTION */}
-      <header className="flex flex-col md:flex-row justify-between items-start md:items-end gap-6 pt-20 pb-8 border-b border-[#E4E0D5]/30 dark:border-white/5 max-w-4xl">
+      <header className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 pt-20 pb-8 border-b border-[#E4E0D5]/30 dark:border-white/5 w-full">
         <div className="flex-1">
           <DisplayHeading size="hero" as="h1" className="md:whitespace-nowrap">
             {greeting}, <span className="text-[#173404] dark:text-[#97C459]">{displayName}.</span>
