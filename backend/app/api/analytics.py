@@ -33,6 +33,24 @@ def get_current_student(request: Request, token: str = Depends(oauth2_scheme), d
         
     student_doc = db.students.find_one({"roll_number": roll_number})
     if not student_doc:
+        admin_doc = db.admin_users.find_one({"username": roll_number})
+        if admin_doc:
+            return Student({
+                "id": 9999,
+                "roll_number": "ADMIN",
+                "student_name": "Administrator",
+                "full_name": "Administrator",
+                "email": admin_doc.get("email", "admin@bimba.ai"),
+                "status": "Active",
+                "skills": ["Python", "FastAPI", "MongoDB", "React", "TypeScript", "Tailwind CSS"],
+                "experience_years": 5,
+                "education": ["Master of Technology"],
+                "target_role": "Software Engineer",
+                "technologies": ["Python", "FastAPI", "MongoDB", "React", "TypeScript", "Tailwind CSS"],
+                "location_preference": "Remote",
+                "salary_preference": "₹15L - ₹20L",
+                "industry": "Software"
+            })
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Student not found",

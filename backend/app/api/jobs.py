@@ -714,3 +714,67 @@ def record_follow_up(
     return {"success": True}
 
 
+@router.post("/sync")
+def sync_jobs(student: Student = Depends(get_current_student), db: Any = Depends(get_db)):
+    try:
+        # Trigger a cache lookup or search initialization to load job cache
+        linkedin_service.search_jobs(student=student, keyword="Software Engineer", location="India", limit=15)
+        return {"success": True, "message": "Jobs sync completed successfully."}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to sync jobs: {str(e)}")
+
+
+companies_router = APIRouter(prefix="/companies", tags=["Companies Module"])
+
+@companies_router.get("")
+def get_companies(db: Any = Depends(get_db)):
+    return [
+        {
+            "id": "vercel",
+            "name": "Vercel",
+            "industry": "Software & Technology",
+            "location": "San Francisco, CA",
+            "website": "vercel.com",
+            "jobs_count": 4,
+            "status": "Active"
+        },
+        {
+            "id": "openai",
+            "name": "OpenAI",
+            "industry": "Artificial Intelligence",
+            "location": "San Francisco, CA",
+            "website": "openai.com",
+            "jobs_count": 5,
+            "status": "Active"
+        },
+        {
+            "id": "stripe",
+            "name": "Stripe",
+            "industry": "Fintech & Payments",
+            "location": "San Francisco, CA",
+            "website": "stripe.com",
+            "jobs_count": 3,
+            "status": "Active"
+        },
+        {
+            "id": "linear",
+            "name": "Linear",
+            "industry": "Productivity Software",
+            "location": "Remote",
+            "website": "linear.app",
+            "jobs_count": 2,
+            "status": "Active"
+        },
+        {
+            "id": "supabase",
+            "name": "Supabase",
+            "industry": "Database Infrastructure",
+            "location": "Singapore / Remote",
+            "website": "supabase.com",
+            "jobs_count": 3,
+            "status": "Active"
+        }
+    ]
+
+
+

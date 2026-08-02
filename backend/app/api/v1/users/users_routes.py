@@ -409,7 +409,7 @@ def get_admin_resumes(admin: AdminUser = Depends(get_current_admin), db: Any = D
             "student_roll": student.roll_number if student else "Unknown",
             "template": r.template_id or "standard",
             "ats_score": r.ats_score,
-            "last_edited": r.updated_at.isoformat() if r.updated_at else datetime.now().isoformat(),
+            "last_edited": r.updated_at if isinstance(r.updated_at, str) else (r.updated_at.isoformat() if r.updated_at else datetime.now().isoformat()),
             "status": r.status
         })
     return result
@@ -1432,3 +1432,36 @@ def export_logs_csv(admin: AdminUser = Depends(get_current_admin), db: Any = Dep
         media_type="text/csv",
         headers={"Content-Disposition": "attachment; filename=bimba_ai_audit_logs.csv"}
     )
+
+
+@router.get("/settings")
+def get_system_settings(admin: AdminUser = Depends(get_current_admin), db: Any = Depends(get_db)):
+    config = db.system_settings.find_one({})
+    if not config:
+        config = {
+            "app_name": "Bimba AI Portal",
+            "session_timeout": 60,
+            "smtp_host": "smtp.bimba.ai",
+            "maintenance_mode": False
+        }
+        db.system_settings.insert_one(config)
+    return {
+        "app_name": config.get("app_name", "Bimba AI Portal"),
+        "session_timeout": config.get("session_timeout", 60),
+        "smtp_host": config.get("smtp_host", "smtp.bimba.ai"),
+        "maintenance_mode": config.get("maintenance_mode", False)
+    }
+
+@router.post("/settings")
+def save_system_settings(payload: SaveSettingsRequest, admin: AdminUser = Depends(get_current_admin), db: Any = Depends(get_db)):
+    db.system_settings.update_one(
+        {},
+        {"$set": {
+            "app_name": payload.app_name,
+            "session_timeout": payload.session_timeout,
+            "smtp_host": payload.smtp_host,
+            "maintenance_mode": payload.maintenance_mode
+        }},
+        upsert=True
+    )
+    return {"success": True, "message": "System settings updated successfully."}

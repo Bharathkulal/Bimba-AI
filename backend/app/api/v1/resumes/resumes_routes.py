@@ -93,7 +93,7 @@ def get_student_resumes(student: Student = Depends(get_current_student), db: Any
             "target_role": r.get("target_role") or "Software Engineer",
             "status": r.get("status") or "Draft",
             "ats_score": r.get("ats_score") or 72,
-            "updated_at": r.updated_at.isoformat() if r.updated_at else datetime.utcnow().isoformat(),
+            "updated_at": r.updated_at if isinstance(r.updated_at, str) else (r.updated_at.isoformat() if r.updated_at else datetime.utcnow().isoformat()),
             "visibility": r.get("visibility") or "Private",
             "downloads_count": downloads
         })
@@ -126,7 +126,7 @@ def get_resume_detail(id: int, student: Student = Depends(get_current_student), 
         "visibility": resume.get("visibility") or "Private",
         "template_id": resume.get("template_id") or "celestial",
         "color_theme": resume.get("color_theme") or "blue",
-        "updated_at": resume.updated_at.isoformat() if resume.updated_at else datetime.utcnow().isoformat(),
+        "updated_at": resume.updated_at if isinstance(resume.updated_at, str) else (resume.updated_at.isoformat() if resume.updated_at else datetime.utcnow().isoformat()),
         "ats": ats,
         "career_readiness": readiness
     }
@@ -158,7 +158,7 @@ def get_resume_detail(id: int, student: Student = Depends(get_current_student), 
             "portfolio": resume.get("portfolio") or "",
             "website": resume.get("website") or "",
             "summary": resume.get("summary") or "",
-            "updated_at": resume.updated_at.isoformat() if resume.updated_at else datetime.utcnow().isoformat()
+            "updated_at": resume.updated_at if isinstance(resume.updated_at, str) else (resume.updated_at.isoformat() if resume.updated_at else datetime.utcnow().isoformat())
         }
     return response
 
