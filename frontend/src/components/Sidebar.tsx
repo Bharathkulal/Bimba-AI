@@ -81,7 +81,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                     B
                   </div>
                   <div>
-                    <h2 className="font-black text-lg tracking-tight leading-none text-slate-900 dark:text-white">
+                    <h2 className="font-display text-xl tracking-tight leading-none text-slate-900 dark:text-white" style={{ fontWeight: 100 }}>
                       Bimba AI
                     </h2>
                     <span className="text-[10px] font-semibold tracking-wider text-slate-400 uppercase block mt-1">

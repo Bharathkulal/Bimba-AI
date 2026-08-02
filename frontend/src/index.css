@@ -1,5 +1,13 @@
 @import "tailwindcss";
 
+@font-face {
+  font-family: 'Bogue Slab Thin';
+  src: url('/fonts/BogueSlab-Thin.woff2') format('woff2');
+  font-weight: 100;
+  font-style: normal;
+  font-display: swap;
+}
+
 /* Force Tailwind CSS v4 class-based dark mode selector strategy */
 @variant dark (&:where(.dark, .dark *));
 
@@ -37,6 +45,7 @@
   --color-emerald-950: var(--accent-hover);
 
   --font-sans: 'Inter', sans-serif;
+  --font-display: 'Bogue Slab Thin', Georgia, serif;
 }
 
 :root {
@@ -96,7 +105,7 @@
 }
 
 html, body, button, input, select, textarea, span, p, h1, h2, h3, h4, h5, h6 {
-  font-family: 'Inter', sans-serif !important;
+  font-family: 'Inter', sans-serif;
 }
 
 html, body {

@@ -54,7 +54,7 @@ export const Navbar: React.FC = () => {
           <div className="w-8 h-8 rounded-lg bg-slate-900 flex items-center justify-center text-white font-extrabold text-lg shadow">
             B
           </div>
-          <span className="font-extrabold text-slate-900 text-xl tracking-tight">Bimba AI</span>
+          <span className="font-display text-slate-900 text-2xl tracking-tight" style={{ fontWeight: 100 }}>Bimba AI</span>
         </Link>
 
         {/* Desktop Nav Links */}

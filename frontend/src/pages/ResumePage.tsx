@@ -13,6 +13,7 @@ import { apiClient, API_BASE_URL } from '../services/api';
 import { analyticsService } from '../services/analytics';
 import type { ResumeAnalyticsItem, AtsData } from '../services/analytics';
 import { TemplateShowcase } from '../components/TemplateShowcase';
+import { DisplayHeading } from '../components/DisplayHeading';
 import { UploadResumeWizard } from '../components/UploadResumeWizard';
 import { CareerCopilotChat } from '../components/CareerCopilotChat';
 import { Modal } from '../components/Modal';
@@ -216,9 +217,9 @@ export const ResumePage: React.FC = () => {
       <section className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white border border-slate-200/80 rounded-2xl p-6 shadow-sm relative overflow-hidden">
         <div className="absolute right-0 top-0 w-80 h-full bg-gradient-to-l from-emerald-500/5 to-transparent blur-3xl pointer-events-none" />
         <div className="relative z-10 text-left">
-          <h1 className="text-3xl font-extrabold text-slate-900 tracking-tight">
-            My Resume
-          </h1>
+          <DisplayHeading size="page" as="h1">
+            Build Your Resume
+          </DisplayHeading>
           <p className="text-sm text-slate-500 mt-1 font-medium">
             Build, template, parse, and optimize your resumes using advanced ATS scoring.
           </p>

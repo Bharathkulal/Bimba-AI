@@ -92,7 +92,7 @@ export const DashboardNavbar: React.FC<DashboardNavbarProps> = ({ onToggleSideba
             B
           </div>
           <div className="flex flex-col">
-            <span className="font-black text-lg tracking-tight leading-none text-slate-900 dark:text-white">
+            <span className="font-display text-xl tracking-tight leading-none text-slate-900 dark:text-white" style={{ fontWeight: 100 }}>
               Bimba AI
             </span>
             <span className="text-[9px] font-bold tracking-widest text-slate-400 dark:text-slate-500 uppercase leading-none mt-0.5">

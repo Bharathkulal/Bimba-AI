@@ -16,6 +16,7 @@ import type { JobListItem, JobApplication } from '../services/jobs';
 import type { DashboardData, AtsData, ActivityTimelineItem, ResumeAnalyticsItem } from '../services/analytics';
 import { UploadResumeWizard } from '../components/UploadResumeWizard';
 import { apiClient } from '../services/api';
+import { DisplayHeading } from '../components/DisplayHeading';
 
 const formatTimeAgo = (dateString?: string) => {
   if (!dateString) return 'Just now';
@@ -50,6 +51,14 @@ export const Dashboard: React.FC = () => {
     return name.charAt(0).toUpperCase() + name.slice(1).trim();
   };
   const displayName = getDisplayName();
+
+  const getGreeting = () => {
+    const hour = new Date().getHours();
+    if (hour < 12) return 'Good Morning';
+    if (hour < 18) return 'Good Afternoon';
+    return 'Good Evening';
+  };
+  const greeting = getGreeting();
 
   // Core Data States
   const [isLoading, setIsLoading] = useState(true);
@@ -178,19 +187,19 @@ export const Dashboard: React.FC = () => {
       />
 
       {/* HEADER SECTION */}
-      <header className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-        <div>
-          <h1 className="text-3xl font-extrabold tracking-tight text-slate-900 dark:text-white flex items-center gap-2">
-            Good morning, {displayName} 👋
-          </h1>
-          <p className="text-sm text-[#5B5B52] dark:text-[#A19E95] mt-1 font-medium">
-            Here's your career progress.
+      <header className="flex flex-col md:flex-row justify-between items-start md:items-end gap-6 pt-20 pb-8 border-b border-[#E4E0D5]/30 dark:border-white/5 max-w-4xl">
+        <div className="flex-1">
+          <DisplayHeading size="hero" as="h1" className="md:whitespace-nowrap">
+            {greeting}, <span className="text-[#173404] dark:text-[#97C459]">{displayName}.</span>
+          </DisplayHeading>
+          <p className="text-base text-[#5B5B52] dark:text-[#A19E95] mt-4 font-normal leading-relaxed">
+            Let's build something exceptional today.
           </p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 shrink-0">
           <button
             onClick={() => document.getElementById('dashboard-resume-upload-input')?.click()}
-            className="flex items-center gap-2 px-4 py-2 text-xs font-bold bg-[#C86A3D] dark:bg-[#E08553] text-white hover:opacity-95 rounded-xl shadow-md transition-all cursor-pointer border-none"
+            className="flex items-center gap-2 px-5 py-2.5 text-xs font-bold bg-[#C86A3D] dark:bg-[#E08553] text-white hover:opacity-95 rounded-xl shadow-md transition-all cursor-pointer border-none"
           >
             <UploadCloud size={14} /> Upload Resume
           </button>

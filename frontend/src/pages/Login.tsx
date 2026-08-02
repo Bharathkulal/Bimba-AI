@@ -8,6 +8,7 @@ import { Input } from '../components/Input';
 import { Button } from '../components/Button';
 import { useUserStore } from '../store/userStore';
 import { apiClient } from '../services/api';
+import { DisplayHeading } from '../components/DisplayHeading';
 import { CheckCircle, ShieldAlert, Sparkles, KeyRound, Mail, ArrowRight, Copy, Check, ArrowLeft, HelpCircle } from 'lucide-react';
 
 // Validation Schemas
@@ -194,7 +195,7 @@ export const Login: React.FC = () => {
             <div className="w-14 h-14 rounded-2xl bg-gradient-to-tr from-blue-600 to-indigo-600 flex items-center justify-center text-white shadow-lg shadow-blue-500/10 mx-auto mb-4">
               <Sparkles size={28} />
             </div>
-            <h1 className="text-2xl font-extrabold text-slate-900 tracking-tight leading-tight">Bimba AI</h1>
+            <h1 className="font-display text-3xl text-slate-900 tracking-tight leading-tight" style={{ fontWeight: 100 }}>Bimba AI</h1>
             <p className="text-xs text-slate-400 font-bold uppercase tracking-wider mt-1.5">Student Placement Portal</p>
           </div>
 
@@ -210,7 +211,7 @@ export const Login: React.FC = () => {
           {mode === 'login' && (
             <div>
               <div className="text-center mb-6">
-                <h2 className="text-xl font-bold text-slate-900">Welcome Back</h2>
+                <DisplayHeading size="section" as="h2" className="text-slate-900">Welcome Back</DisplayHeading>
                 <p className="text-xs text-slate-500 mt-1">Access your academic placements & optimized resumes</p>
               </div>
 

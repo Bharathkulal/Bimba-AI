@@ -1,4 +1,5 @@
 import React from 'react';
+import { DisplayHeading } from './DisplayHeading';
 
 interface PageHeaderProps {
   title: string;
@@ -14,9 +15,9 @@ export const PageHeader: React.FC<PageHeaderProps> = ({
   return (
     <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-8">
       <div>
-        <h1 className="text-3xl font-extrabold text-slate-900 tracking-tight !my-0">
+        <DisplayHeading size="page" as="h1" className="!my-0">
           {title}
-        </h1>
+        </DisplayHeading>
         {description && (
           <p className="text-slate-500 text-sm mt-1">{description}</p>
         )}

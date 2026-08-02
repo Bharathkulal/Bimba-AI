@@ -7,6 +7,7 @@ import {
 import { Card } from '../components/Card';
 import { Button } from '../components/Button';
 import { StatsCard } from '../components/StatsCard';
+import { DisplayHeading } from '../components/DisplayHeading';
 
 interface CompanyData {
   id: string;
@@ -144,9 +145,9 @@ export const Companies: React.FC = () => {
       <section className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white border border-slate-200/80 rounded-2xl p-6 shadow-sm relative overflow-hidden">
         <div className="absolute right-0 top-0 w-80 h-full bg-gradient-to-l -[#111111]/5 to-transparent blur-3xl pointer-events-none" />
         <div className="relative z-10 text-left">
-          <h1 className="text-3xl font-extrabold text-slate-900 tracking-tight">
-            Company Explorer
-          </h1>
+          <DisplayHeading size="page" as="h1">
+            Explore Top Companies
+          </DisplayHeading>
           <p className="text-sm text-slate-500 mt-1 font-medium">
             Explore premium hiring companies, read ratings & reviews, and search open positions.
           </p>

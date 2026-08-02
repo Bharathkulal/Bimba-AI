@@ -8,6 +8,7 @@ import { Button } from '../components/Button';
 import { Card } from '../components/Card';
 import { SectionTitle } from '../components/SectionTitle';
 import { TemplateShowcase } from '../components/TemplateShowcase';
+import { DisplayHeading } from '../components/DisplayHeading';
 
 const AnimatedNumber: React.FC<{ value: number; suffix?: string; duration?: number }> = ({ value, suffix = '', duration = 1200 }) => {
   const [count, setCount] = useState(0);
@@ -105,9 +106,9 @@ export const LandingPage: React.FC = () => {
               <span><AnimatedNumber value={48827} duration={1500} /> resumes created today</span>
             </div>
 
-            <h1 className="text-4xl md:text-6xl font-extrabold text-slate-800 tracking-tight leading-[1.1] !my-0">
-              Your <span className="-[#111111]">professional AI resume</span>, ready in minutes
-            </h1>
+            <DisplayHeading size="hero" as="h1" className="!my-0">
+              Your <span className="text-slate-900 dark:text-white">professional AI resume</span>, ready in minutes
+            </DisplayHeading>
 
             <p className="text-base md:text-lg text-slate-500 leading-relaxed max-w-lg">
               Our AI resume builder saves your time with smart content suggestions and impactful summaries. Get hired faster, stress-free!
