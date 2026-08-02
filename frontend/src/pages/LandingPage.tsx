@@ -97,14 +97,6 @@ export const LandingPage: React.FC = () => {
             variants={childVariants}
             className="flex flex-col gap-6"
           >
-            {/* Resumes created today indicator */}
-            <div className="flex items-center gap-2 self-start bg-[#F8F8F8] border border-[#E5E7EB]/60 rounded-full px-3.5 py-1.5 text-xs font-semibold -[#111111] shadow-sm">
-              <span className="relative flex h-2 w-2">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full -[#111111] opacity-75"></span>
-                <span className="relative inline-flex rounded-full h-2 w-2 -[#111111]"></span>
-              </span>
-              <span><AnimatedNumber value={48827} duration={1500} /> resumes created today</span>
-            </div>
 
             <DisplayHeading size="hero" as="h1" className="!my-0">
               Your <span className="text-slate-900 dark:text-white">professional AI resume</span>, ready in minutes
