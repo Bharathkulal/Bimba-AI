@@ -17,6 +17,8 @@ export const PlacementDashboard: React.FC = () => {
   const [stats, setStats] = useState<PlacementDashboardData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [syncing, setSyncing] = useState(false);
+  const [aiSummary, setAiSummary] = useState<string | null>(null);
+  const [aiLoading, setAiLoading] = useState(false);
 
   const fetchStats = async () => {
     try {
@@ -64,8 +66,7 @@ export const PlacementDashboard: React.FC = () => {
     { label: 'Offers Made', value: stats?.offersMade ?? 0, icon: Award, description: 'Shortlists and selections' }
   ];
 
-  const [aiSummary, setAiSummary] = useState<string | null>(null);
-  const [aiLoading, setAiLoading] = useState(false);
+
 
   const fetchAiSummary = async () => {
     try {

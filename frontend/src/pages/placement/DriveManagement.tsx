@@ -1,3 +1,4 @@
+import React, { useState, useEffect } from 'react';
 import { Briefcase, Plus, Search, Calendar, MapPin, Edit, Trash2, Award, ClipboardList, Sparkles } from 'lucide-react';
 import { Card } from '../../components/Card';
 import { Button } from '../../components/Button';

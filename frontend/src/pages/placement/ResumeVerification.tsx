@@ -1,3 +1,4 @@
+import React, { useState, useEffect } from 'react';
 import { FileText, Check, X, Search, MessageSquare, AlertCircle, Sparkles } from 'lucide-react';
 import { Card } from '../../components/Card';
 import { Button } from '../../components/Button';
