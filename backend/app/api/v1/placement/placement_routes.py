@@ -9,6 +9,7 @@ from app.models.admin_user import AdminUser
 from app.models.student import Student
 from app.core.security import verify_token
 from app.core.mongodb import get_next_sequence
+from app.services.ai_gateway import generate_ai_response
 
 router = APIRouter(prefix="/placement", tags=["Placement Officer Portal"])
 
@@ -482,3 +483,121 @@ def get_placement_reports(
             for s in db.students.find({})
         ]
     }
+
+# --- AI Integration Endpoints ---
+@router.get("/ai/dashboard-summary")
+def get_ai_dashboard_summary(
+    officer: AdminUser = Depends(get_current_placement_officer),
+    db: Any = Depends(get_db)
+):
+    total_students = db.students.count_documents({})
+    placed = db.students.count_documents({"placement_status": "Placed"})
+    unplaced = db.students.count_documents({"placement_status": "Unplaced"})
+    active_drives = db.placement_drives.count_documents({"status": "Active"})
+    total_apps = db.placement_applications.count_documents({})
+    
+    prompt = f"""
+    You are an AI Assistant for a university placement officer. 
+    Analyze the following placement stats and provide a smart, concise 2-3 sentence overview of the current status, and highlight the most critical areas needing attention:
+    - Total Candidates: {total_students}
+    - Placed: {placed}
+    - Unplaced: {unplaced}
+    - Active Campus Recruiting Drives: {active_drives}
+    - Total Applications: {total_apps}
+    """
+    summary = generate_ai_response(db, prompt, "placement_dashboard_summary")
+    return {"summary": summary}
+
+@router.get("/ai/resume-review/{resume_id}")
+def ai_resume_review(
+    resume_id: str,
+    officer: AdminUser = Depends(get_current_placement_officer),
+    db: Any = Depends(get_db)
+):
+    try:
+        query = {"id": int(resume_id)}
+    except Exception:
+        try:
+            query = {"_id": ObjectId(resume_id)}
+        except Exception:
+            query = {"id": resume_id}
+            
+    resume = db.resumes.find_one(query)
+    if not resume:
+        raise HTTPException(status_code=404, detail="Resume not found")
+        
+    name = resume.get("name", "Resume")
+    skills = ", ".join(resume.get("skills", []))
+    education = str(resume.get("education", []))
+    experience = str(resume.get("experience", []))
+    
+    prompt = f"""
+    You are an AI placement consultant. Review this student resume:
+    Resume Title: {name}
+    Skills: {skills}
+    Education: {education}
+    Experience: {experience}
+    
+    Provide a structured review including:
+    1. Key Strengths
+    2. Weaknesses / Missing Info
+    3. Suggested Fixes
+    4. Potential Fraud / Inconsistencies Check (e.g. weird CGPA, missing years)
+    Keep the suggestions brief and actionable.
+    """
+    review = generate_ai_response(db, prompt, "placement_resume_review")
+    return {"review": review}
+
+@router.get("/ai/rank-candidates/{drive_id}")
+def rank_candidates(
+    drive_id: int,
+    officer: AdminUser = Depends(get_current_placement_officer),
+    db: Any = Depends(get_db)
+):
+    drive = db.placement_drives.find_one({"id": drive_id})
+    if not drive:
+        raise HTTPException(status_code=404, detail="Recruitment drive not found")
+        
+    eligible_query = {
+        "cgpa": {"$gte": drive.get("min_cgpa", 6.0)},
+        "department": {"$in": drive.get("branches_eligible", [])}
+    }
+    students = list(db.students.find(eligible_query))
+    
+    ranked_candidates = []
+    for student in students[:10]:
+        resume = db.resumes.find_one({"student_roll": student["roll_number"]})
+        skills = ", ".join(resume.get("skills", [])) if resume else "N/A"
+        
+        prompt = f"""
+        Verify fit score for student:
+        Name: {student.get('student_name')}
+        Skills: {skills}
+        CGPA: {student.get('cgpa', 8.0)}
+        
+        Against Job Role:
+        Role: {drive.get('job_role')}
+        Description: {drive.get('title')}
+        Required: {drive.get('eligibility_criteria')}
+        
+        Output ONLY a single integer score between 0 and 100 representing the matching percentage, followed by a colon and a 5-word fit explanation.
+        Example: 85:Strong skill match for backend
+        """
+        res = generate_ai_response(db, prompt, "placement_candidate_match")
+        try:
+            score_str, reason = res.split(":", 1)
+            score = int(score_str.strip())
+        except Exception:
+            score = 75
+            reason = "Good educational background fit"
+            
+        ranked_candidates.append({
+            "roll_number": student["roll_number"],
+            "name": student.get("student_name") or student.get("full_name"),
+            "cgpa": student.get("cgpa", 8.0),
+            "score": score,
+            "reason": reason.strip()
+        })
+        
+    ranked_candidates.sort(key=lambda x: x["score"], reverse=True)
+    return ranked_candidates

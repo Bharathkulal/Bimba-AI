@@ -64,6 +64,22 @@ export const PlacementDashboard: React.FC = () => {
     { label: 'Offers Made', value: stats?.offersMade ?? 0, icon: Award, description: 'Shortlists and selections' }
   ];
 
+  const [aiSummary, setAiSummary] = useState<string | null>(null);
+  const [aiLoading, setAiLoading] = useState(false);
+
+  const fetchAiSummary = async () => {
+    try {
+      setAiLoading(true);
+      const res = await placementService.getAiDashboardSummary();
+      setAiSummary(res.summary);
+    } catch (err) {
+      console.error(err);
+      setAiSummary("Failed to fetch AI Insights. Please ensure API keys are configured.");
+    } finally {
+      setAiLoading(false);
+    }
+  };
+
   return (
     <div className="flex flex-col gap-6 w-full text-left animate-fadeIn">
       {/* Header */}
@@ -75,15 +91,39 @@ export const PlacementDashboard: React.FC = () => {
           </p>
         </div>
 
-        <button
-          onClick={handleSync}
-          disabled={syncing}
-          className="flex items-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold transition-all shadow-md shadow-emerald-250/20 cursor-pointer disabled:opacity-50"
-        >
-          <RefreshCw size={13} className={syncing ? 'animate-spin' : ''} />
-          {syncing ? 'Syncing...' : 'Sync Data'}
-        </button>
+        <div className="flex items-center gap-3">
+          <button
+            onClick={fetchAiSummary}
+            disabled={aiLoading}
+            className="flex items-center gap-1.5 px-4 py-2 border border-emerald-500/30 bg-emerald-500/5 text-emerald-600 dark:text-emerald-400 rounded-xl text-xs font-bold transition-all hover:bg-emerald-500/10 cursor-pointer disabled:opacity-50"
+          >
+            <Sparkles size={13} className={aiLoading ? 'animate-pulse' : ''} />
+            {aiLoading ? 'Generating...' : 'AI Insights'}
+          </button>
+
+          <button
+            onClick={handleSync}
+            disabled={syncing}
+            className="flex items-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold transition-all shadow-md shadow-emerald-250/20 cursor-pointer disabled:opacity-50"
+          >
+            <RefreshCw size={13} className={syncing ? 'animate-spin' : ''} />
+            {syncing ? 'Syncing...' : 'Sync Data'}
+          </button>
+        </div>
       </div>
+
+      {/* AI Summary Section */}
+      {aiSummary && (
+        <Card className="border border-emerald-500/20 bg-emerald-500/5 dark:bg-emerald-500/5 text-slate-800 dark:text-emerald-100 p-4.5 rounded-2xl flex items-start gap-3 animate-fadeIn">
+          <Sparkles className="text-emerald-500 shrink-0 mt-0.5" size={16} />
+          <div className="text-xs leading-relaxed font-semibold">
+            <span className="text-[9.5px] font-black text-emerald-600 dark:text-emerald-400 uppercase tracking-wider block mb-1">
+              AI Smart Summary
+            </span>
+            {aiSummary}
+          </div>
+        </Card>
+      )}
 
       {/* KPI Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">

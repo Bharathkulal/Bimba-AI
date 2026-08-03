@@ -1,5 +1,4 @@
-import React, { useState, useEffect } from 'react';
-import { FileText, Check, X, Search, MessageSquare, AlertCircle } from 'lucide-react';
+import { FileText, Check, X, Search, MessageSquare, AlertCircle, Sparkles } from 'lucide-react';
 import { Card } from '../../components/Card';
 import { Button } from '../../components/Button';
 import { Modal } from '../../components/Modal';
@@ -17,6 +16,7 @@ export const ResumeVerification: React.FC = () => {
   const [selectedResume, setSelectedResume] = useState<VerificationResume | null>(null);
   const [actionType, setActionType] = useState<'Approved' | 'Rejected'>('Approved');
   const [feedback, setFeedback] = useState('');
+  const [aiLoading, setAiLoading] = useState(false);
 
   const fetchResumes = async () => {
     try {
@@ -52,6 +52,20 @@ export const ResumeVerification: React.FC = () => {
     } catch (err) {
       console.error(err);
       alert("Failed to submit verification.");
+    }
+  };
+
+  const handleAiReview = async () => {
+    if (!selectedResume) return;
+    try {
+      setAiLoading(true);
+      const res = await placementService.getAiResumeReview(selectedResume.id);
+      setFeedback(res.review);
+    } catch (err) {
+      console.error(err);
+      alert("Failed to generate AI Resume Review.");
+    } finally {
+      setAiLoading(false);
     }
   };
 
@@ -155,7 +169,7 @@ export const ResumeVerification: React.FC = () => {
                         </button>
                         <button
                           onClick={() => openVerifyModal(resume, 'Rejected')}
-                          className="p-1.5 border border-rose-100 dark:border-rose-500/10 text-rose-650 hover:bg-rose-50 dark:hover:bg-rose-550/10 rounded-lg cursor-pointer transition-all"
+                          className="p-1.5 border border-rose-100 dark:border-rose-500/10 text-rose-655 hover:bg-rose-50 dark:hover:bg-rose-550/10 rounded-lg cursor-pointer transition-all"
                           title="Reject Resume"
                         >
                           <X size={14} />
@@ -192,7 +206,7 @@ export const ResumeVerification: React.FC = () => {
                 <p className="font-bold text-slate-800 dark:text-slate-200">
                   {actionType === 'Approved' ? 'Confirm Approval' : 'Confirm Rejection'} for {selectedResume.student_name}
                 </p>
-                <p className="text-slate-450 mt-1">
+                <p className="text-slate-455 mt-1">
                   {actionType === 'Approved' 
                     ? 'Approving means the resume is verified for placement officer records and active drive applications.' 
                     : 'Rejection sends a notification request to the student to update and resubmit their resume.'}
@@ -201,14 +215,25 @@ export const ResumeVerification: React.FC = () => {
             </div>
 
             <div>
-              <label className="text-[10px] font-black text-slate-450 uppercase tracking-wider block mb-1.5">
-                Verification Feedback / Comments
-              </label>
+              <div className="flex justify-between items-center mb-1.5">
+                <label className="text-[10px] font-black text-slate-450 uppercase tracking-wider block">
+                  Verification Feedback / Comments
+                </label>
+                <button
+                  type="button"
+                  onClick={handleAiReview}
+                  disabled={aiLoading}
+                  className="flex items-center gap-1 text-[10px] text-emerald-500 hover:text-emerald-600 font-bold disabled:opacity-50 cursor-pointer"
+                >
+                  <Sparkles size={11} className={aiLoading ? 'animate-pulse' : ''} />
+                  {aiLoading ? 'Analyzing...' : 'AI Auto Review'}
+                </button>
+              </div>
               <textarea
                 placeholder="e.g. Grammar correction in Experience section required, or Verified successfully."
                 value={feedback}
                 onChange={(e) => setFeedback(e.target.value)}
-                className="w-full p-2.5 border border-slate-200 dark:border-white/10 rounded-xl bg-transparent text-xs outline-none focus:border-emerald-500 text-slate-655 dark:text-slate-350 min-h-[85px]"
+                className="w-full p-2.5 border border-slate-200 dark:border-white/10 rounded-xl bg-transparent text-xs outline-none focus:border-emerald-500 text-slate-655 dark:text-slate-350 min-h-[140px]"
               />
             </div>
 

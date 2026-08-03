@@ -186,5 +186,20 @@ export const placementService = {
   getReports: async (): Promise<PlacementReportData> => {
     const res = await apiClient.get<PlacementReportData>('/api/placement/reports');
     return res.data;
+  },
+
+  getAiDashboardSummary: async (): Promise<{ summary: string }> => {
+    const res = await apiClient.get<{ summary: string }>('/api/placement/ai/dashboard-summary');
+    return res.data;
+  },
+
+  getAiResumeReview: async (resumeId: number | string): Promise<{ review: string }> => {
+    const res = await apiClient.get<{ review: string }>(`/api/placement/ai/resume-review/${resumeId}`);
+    return res.data;
+  },
+
+  getAiRankCandidates: async (driveId: number): Promise<Array<{ roll_number: string; name: string; cgpa: number; score: number; reason: string }>> => {
+    const res = await apiClient.get<Array<{ roll_number: string; name: string; cgpa: number; score: number; reason: string }>>(`/api/placement/ai/rank-candidates/${driveId}`);
+    return res.data;
   }
 };

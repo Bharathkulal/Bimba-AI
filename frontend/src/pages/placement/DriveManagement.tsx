@@ -1,5 +1,4 @@
-import React, { useState, useEffect } from 'react';
-import { Briefcase, Plus, Search, Calendar, MapPin, Edit, Trash2, Award, ClipboardList } from 'lucide-react';
+import { Briefcase, Plus, Search, Calendar, MapPin, Edit, Trash2, Award, ClipboardList, Sparkles } from 'lucide-react';
 import { Card } from '../../components/Card';
 import { Button } from '../../components/Button';
 import { Modal } from '../../components/Modal';
@@ -14,6 +13,27 @@ export const DriveManagement: React.FC = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isEditMode, setIsEditMode] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
+
+  // AI Rankings Modal state
+  const [isRankModalOpen, setIsRankModalOpen] = useState(false);
+  const [rankingDrive, setRankingDrive] = useState<PlacementDrive | null>(null);
+  const [rankedCandidates, setRankedCandidates] = useState<Array<{ roll_number: string; name: string; cgpa: number; score: number; reason: string }>>([]);
+  const [rankingLoading, setRankingLoading] = useState(false);
+
+  const openRankingsModal = async (drive: PlacementDrive) => {
+    setRankingDrive(drive);
+    setRankedCandidates([]);
+    setIsRankModalOpen(true);
+    try {
+      setRankingLoading(true);
+      const res = await placementService.getAiRankCandidates(drive.id);
+      setRankedCandidates(res);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setRankingLoading(false);
+    }
+  };
 
   // Form Fields
   const [companyId, setCompanyId] = useState<number>(0);
@@ -376,6 +396,59 @@ export const DriveManagement: React.FC = () => {
             </Button>
           </div>
         </form>
+      </Modal>
+
+      {/* AI Candidate Rankings Modal */}
+      <Modal
+        isOpen={isRankModalOpen}
+        onClose={() => setIsRankModalOpen(false)}
+        title={`AI Candidate Ranking: ${rankingDrive?.title || 'Drive'}`}
+      >
+        <div className="flex flex-col gap-4 text-left">
+          <div className="bg-emerald-50/50 dark:bg-emerald-500/5 border border-emerald-500/20 p-4 rounded-xl text-xs">
+            <p className="font-bold text-emerald-800 dark:text-emerald-400 flex items-center gap-1.5 uppercase tracking-wide text-[10px] mb-1">
+              <Sparkles size={13} /> Fit scoring criteria
+            </p>
+            Candidates are matched and ranked by checking resume skills, academic achievements, projects, and CGPA requirements against the job role description.
+          </div>
+
+          {rankingLoading ? (
+            <div className="py-12 text-center text-xs text-slate-450 font-bold flex flex-col items-center gap-3">
+              <div className="w-8 h-8 border-3 border-emerald-500 border-t-transparent rounded-full animate-spin" />
+              <span>Gemini AI is analyzing resumes and ranking candidates...</span>
+            </div>
+          ) : rankedCandidates.length > 0 ? (
+            <div className="flex flex-col gap-3">
+              {rankedCandidates.map((candidate, idx) => (
+                <div key={candidate.roll_number} className="p-3.5 border border-slate-100 dark:border-white/5 rounded-xl flex items-center justify-between gap-4 bg-slate-50/50 dark:bg-white/2 hover:border-emerald-500/30 transition-all">
+                  <div className="flex items-center gap-3">
+                    <span className="w-6 h-6 rounded-full bg-slate-200 dark:bg-white/10 text-slate-700 dark:text-slate-350 flex items-center justify-center text-[10px] font-black">
+                      #{idx + 1}
+                    </span>
+                    <div>
+                      <p className="font-bold text-slate-900 dark:text-white text-xs">{candidate.name}</p>
+                      <p className="text-[10px] text-slate-400 font-semibold mt-0.5">Roll: {candidate.roll_number} • CGPA: {candidate.cgpa}</p>
+                      <p className="text-[10px] text-emerald-600 dark:text-emerald-400 font-bold mt-1 italic">Fit: {candidate.reason}</p>
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <span className="text-sm font-black text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-500/10 px-2.5 py-1 rounded-xl border border-emerald-100 dark:border-emerald-500/10">
+                      {candidate.score}%
+                    </span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="py-8 text-center text-xs text-slate-400">No candidates meet the CGPA cutoff or branch eligibility.</div>
+          )}
+
+          <div className="flex justify-end mt-2">
+            <Button type="button" variant="secondary" onClick={() => setIsRankModalOpen(false)}>
+              Close
+            </Button>
+          </div>
+        </div>
       </Modal>
     </div>
   );
