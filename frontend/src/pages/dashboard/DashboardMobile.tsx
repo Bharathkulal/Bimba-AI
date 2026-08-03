@@ -119,6 +119,7 @@ export const DashboardMobile: React.FC = () => {
   const [uploadProgress, setUploadProgress] = useState('');
   const [showWizard, setShowWizard] = useState(false);
   const [wizardFile, setWizardFile] = useState<File | null>(null);
+  const [wizardInitialStep, setWizardInitialStep] = useState<number>(2);
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -311,7 +312,10 @@ export const DashboardMobile: React.FC = () => {
         <h2 className="text-sm font-extrabold text-slate-900 dark:text-white px-1">Quick Actions</h2>
         <div className="grid grid-cols-2 gap-3 w-full">
           <button
-            onClick={() => document.getElementById('dashboard-resume-upload-input')?.click()}
+            onClick={() => {
+              setWizardInitialStep(2);
+              setShowWizard(true);
+            }}
             className="flex flex-col items-center justify-center gap-2 p-5 bg-white dark:bg-[#1E293B] border border-slate-200 dark:border-white/5 rounded-2xl shadow-sm min-h-[96px] cursor-pointer"
           >
             <UploadCloud size={20} className="text-slate-700 dark:text-[#97C459]" />
@@ -339,15 +343,18 @@ export const DashboardMobile: React.FC = () => {
       
       {showWizard && (
         <UploadResumeWizard 
+          initialStep={wizardInitialStep}
           initialFile={wizardFile}
           onClose={() => {
             setShowWizard(false);
             setWizardFile(null);
+            setWizardInitialStep(2);
             fetchDashboardOverview();
           }}
           onSuccess={() => {
             setShowWizard(false);
             setWizardFile(null);
+            setWizardInitialStep(2);
             fetchDashboardOverview();
           }}
           isDark={isDark}

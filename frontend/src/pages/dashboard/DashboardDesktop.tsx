@@ -135,6 +135,7 @@ export const DashboardDesktop: React.FC = () => {
   const [uploadProgress, setUploadProgress] = useState('');
   const [showWizard, setShowWizard] = useState(false);
   const [wizardFile, setWizardFile] = useState<File | null>(null);
+  const [wizardInitialStep, setWizardInitialStep] = useState<number>(2);
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -198,7 +199,10 @@ export const DashboardDesktop: React.FC = () => {
         </div>
         <div className="flex items-center gap-2 shrink-0">
           <button
-            onClick={() => document.getElementById('dashboard-resume-upload-input')?.click()}
+            onClick={() => {
+              setWizardInitialStep(2);
+              setShowWizard(true);
+            }}
             className="flex items-center gap-2 px-5 py-2.5 text-xs font-bold bg-[#C86A3D] dark:bg-[#E08553] text-white hover:opacity-95 rounded-xl shadow-md transition-all cursor-pointer border-none"
           >
             <UploadCloud size={14} /> Upload Resume
@@ -455,15 +459,18 @@ export const DashboardDesktop: React.FC = () => {
 
       {showWizard && (
         <UploadResumeWizard 
+          initialStep={wizardInitialStep}
           initialFile={wizardFile}
           onClose={() => {
             setShowWizard(false);
             setWizardFile(null);
+            setWizardInitialStep(2);
             fetchDashboardOverview();
           }}
           onSuccess={() => {
             setShowWizard(false);
             setWizardFile(null);
+            setWizardInitialStep(2);
             fetchDashboardOverview();
           }}
           isDark={isDark}

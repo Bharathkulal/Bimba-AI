@@ -18,6 +18,7 @@ interface UploadResumeWizardProps {
   onSuccess: (resumeId: number) => void;
   isDark: boolean;
   initialFile?: File | null;
+  initialStep?: number;
 }
 
 interface ChatMessage {
@@ -29,10 +30,11 @@ export const UploadResumeWizard: React.FC<UploadResumeWizardProps> = ({
   onClose,
   onSuccess,
   isDark,
-  initialFile = null
+  initialFile = null,
+  initialStep = 1
 }) => {
   // 12-Step flow controller
-  const [step, setStep] = useState<number>(1);
+  const [step, setStep] = useState<number>(initialStep || (initialFile ? 2 : 1));
   const [file, setFile] = useState<File | null>(initialFile);
   
   // Real DB Data Models

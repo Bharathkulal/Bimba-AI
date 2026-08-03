@@ -327,20 +327,32 @@ def generate_job_recommendations_endpoint(
         "student_id": student.id
     })
     
-    if not analysis_record or analysis_record.get("status") != "ai_completed":
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="AI analysis has not been executed yet. Please run analysis first."
-        )
-
-    # 2. Extract profile details to query jobs
-    ext_data = analysis_record.get("extracted_data", {})
-    skills = ext_data.get("skills", [])
-    target_role = ext_data.get("target_role") or "Software Engineer"
+    # Extract profile details to query jobs with auto-fallback to top-level resume document
+    if analysis_record and analysis_record.get("extracted_data"):
+        ext_data = analysis_record.get("extracted_data", {})
+        skills = ext_data.get("skills", [])
+        target_role = ext_data.get("target_role") or resume_doc.get("target_role") or "Software Engineer"
+    else:
+        raw_skills = resume_doc.get("skills") or resume_doc.get("technicalSkills") or []
+        skills = []
+        for s in raw_skills:
+            if isinstance(s, dict):
+                skills.append(s.get("name") or "")
+            else:
+                skills.append(str(s))
+        target_role = resume_doc.get("target_role") or resume_doc.get("master", {}).get("target_role") or "Software Engineer"
+        analysis_record = {
+            "resume_id": resume_id,
+            "student_id": student.id,
+            "extracted_data": {
+                "skills": skills,
+                "target_role": target_role
+            }
+        }
     
     # Generate search query
     query = target_role
-    if skills:
+    if skills and len(skills) > 0:
         query = f"{target_role} {skills[0]}"
 
     # 3. Call recommendation service
