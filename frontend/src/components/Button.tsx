@@ -19,12 +19,12 @@ export const Button: React.FC<ButtonProps> = ({
   ...props
 }) => {
   const sizes = {
-    sm: 'px-3 py-1.5 text-xs',
-    md: 'px-5 py-2.5 text-sm',
-    lg: 'px-6 py-3 text-base',
+    sm: 'h-9 px-3.5 text-xs font-semibold rounded-lg',
+    md: 'h-10 px-5 text-xs md:text-sm font-semibold rounded-xl',
+    lg: 'h-11 px-6 text-sm md:text-base font-semibold rounded-xl',
   };
 
-  const baseStyles = 'inline-flex items-center justify-center font-semibold tracking-wide rounded-xl transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed';
+  const baseStyles = 'inline-flex items-center justify-center font-semibold tracking-normal transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed leading-none shrink-0';
 
   const variants = {
     primary: 'bg-slate-900 text-white hover:bg-slate-800 dark:bg-white dark:text-slate-900 dark:hover:bg-slate-100 focus:ring-slate-900 shadow-sm',
