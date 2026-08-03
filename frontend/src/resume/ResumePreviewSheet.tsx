@@ -1,5 +1,7 @@
 import React from 'react';
 import { TemplateRegistry } from '../components/resume/templates';
+import { useResumeBuilderStore } from '../store/resumeBuilderStore';
+import { TemplateRenderer } from '../components/ResumeRenderer/TemplateRenderer';
 
 interface ResumePreviewSheetProps {
   personalInfo: any;
@@ -23,10 +25,7 @@ export const ResumePreviewSheet: React.FC<ResumePreviewSheetProps> = ({
   skillList = [],
   templateId = 'harvard'
 }) => {
-  // Normalize layout properties to fit TemplateRegistry formats
-  const mappedTemplateId = ['harvard', 'jakes', 'stanford', 'microsoft', 'reactive', 'novoresume', 'flowcv', 'indeed'].includes(templateId) 
-    ? templateId 
-    : 'harvard';
+  const { templatesList } = useResumeBuilderStore();
 
   const normalizedData = {
     personal_info: {
@@ -55,6 +54,25 @@ export const ResumePreviewSheet: React.FC<ResumePreviewSheetProps> = ({
     }))
   };
 
+  // Check if this is a custom dynamic JSON-based template from MongoDB
+  const customTemplate = templatesList.find(t => t.slug === templateId);
+
+  if (customTemplate && (customTemplate.sections || customTemplate.layout)) {
+    return (
+      <div className="w-full bg-white text-slate-800">
+        <TemplateRenderer 
+          templateJson={customTemplate} 
+          resumeData={normalizedData} 
+        />
+      </div>
+    );
+  }
+
+  // Fallback to standard registry templates
+  const mappedTemplateId = ['harvard', 'jakes', 'stanford', 'microsoft', 'reactive', 'novoresume', 'flowcv', 'indeed'].includes(templateId) 
+    ? templateId 
+    : 'harvard';
+
   const TemplateComponent = TemplateRegistry[mappedTemplateId] || TemplateRegistry.harvard;
 
   return (
@@ -67,5 +85,6 @@ export const ResumePreviewSheet: React.FC<ResumePreviewSheetProps> = ({
     </div>
   );
 };
+
 
 export default ResumePreviewSheet;

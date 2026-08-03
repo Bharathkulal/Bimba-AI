@@ -6,9 +6,9 @@ import {
   Settings, ExternalLink, RefreshCw, Archive, 
   Clock
 } from 'lucide-react';
+import type { NotificationItem } from '../../services/notifications';
 import { useNotificationStore } from '../../store/notificationStore';
 import { useThemeStore } from '../../store/themeStore';
-import { NotificationItem } from '../../services/notifications';
 
 // --- Category Helpers ---
 const CATEGORIES = [

@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, ExternalLink } from 'lucide-react';
-import { useNotificationStore, ToastMessage } from '../../store/notificationStore';
+import { useNotificationStore } from '../../store/notificationStore';
+import type { ToastMessage } from '../../store/notificationStore';
 import { getCategoryIcon } from './NotificationDropdown';
 
 interface IndividualToastProps {

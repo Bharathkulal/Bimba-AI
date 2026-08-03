@@ -64,7 +64,8 @@ interface ResumeBuilderState {
   loading: boolean;
   generating: boolean;
   errors: string | null;
-  
+  templatesList: any[];
+  fetchTemplates: () => Promise<void>;
   fetchBuilderData: (resumeId: number) => Promise<void>;
   updateResumeData: (updater: (prev: ResumeBuilderData) => ResumeBuilderData) => void;
   saveResumeData: () => Promise<void>;
@@ -83,6 +84,16 @@ export const useResumeBuilderStore = create<ResumeBuilderState>((set, get) => ({
   loading: false,
   generating: false,
   errors: null,
+  templatesList: [],
+
+  fetchTemplates: async () => {
+    try {
+      const response = await apiClient.get('/api/resume-studio/templates');
+      set({ templatesList: response.data || [] });
+    } catch (err) {
+      console.error('Failed to fetch templates:', err);
+    }
+  },
 
   fetchBuilderData: async (resumeId: number) => {
     set({ loading: true, errors: null, resumeId });

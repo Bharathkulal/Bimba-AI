@@ -60,7 +60,9 @@ export const ResumeModule: React.FC = () => {
   const navigate = useNavigate();
   
   // Tabs: 'resumes' | 'templates'
-  const [activeTab, setActiveTab] = useState<'resumes' | 'templates'>('resumes');
+  const [activeTab, setActiveTab] = useState<'resumes' | 'templates'>(
+    window.location.pathname.includes('/templates') ? 'templates' : 'resumes'
+  );
 
   const [resumes, setResumes] = useState<AdminResumeData[]>([]);
   const [templates, setTemplates] = useState<any[]>([]);

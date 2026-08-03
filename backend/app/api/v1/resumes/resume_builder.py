@@ -186,7 +186,7 @@ async def generate_resume_pdf_endpoint(
         
     # 2. Build PDF binary content in memory
     try:
-        pdf_bytes = build_pdf_story(payload.resume_data, payload.template)
+        pdf_bytes = build_pdf_story(payload.resume_data, payload.template, db)
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,

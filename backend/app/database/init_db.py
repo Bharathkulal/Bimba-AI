@@ -357,12 +357,13 @@ def init_db():
             print("Seeded student accounts.")
 
         # 7. Seed Default Resume Templates
+        # 7. Seed Default Resume Templates
         db.resume_templates.delete_many({})
         templates_list = [
             {
                 "id": 1,
-                "slug": "reverse_chronological",
-                "name": "Reverse-Chronological (Classic)",
+                "slug": "minimal-ats",
+                "name": "Minimal ATS",
                 "category": "Classic",
                 "ats_rating": 100,
                 "popularity": 150,
@@ -371,171 +372,144 @@ def init_db():
                 "is_active": True,
                 "is_premium": False,
                 "is_ats_optimized": True,
-                "description": "Standard standard classic timeline structure focusing on linear work progression.",
-                "best_for": ["steady work history", "most users"],
-                "section_order": ["header", "summary", "skills", "experience", "education", "certifications"],
-                "section_rules": {
-                    "header": { "fields": ["name", "phone", "email", "linkedin", "location"] },
-                    "summary": { "max_lines": 3 },
-                    "skills": { "format": "comma_separated" },
-                    "experience": { "bullet_style": "action_verb_metric", "min_bullets": 2, "max_bullets": 5 },
-                    "education": { "fields": ["degree", "institution", "location", "grad_date"] },
-                    "certifications": { "optional": True }
+                "description": "Clean, single-column design optimised for screen readers and ATS applications.",
+                "layout": "single-column",
+                "colors": {
+                    "primary": "#111827",
+                    "secondary": "#4B5563",
+                    "divider": "#E5E7EB"
                 },
-                "formatting_constraints": {
-                    "columns": 1,
-                    "tables_allowed": False,
-                    "images_allowed": False,
-                    "font": "Arial|Calibri|Georgia",
-                    "font_size_pt": [10, 12],
-                    "date_format": "MM/YYYY",
-                    "bullet_char": "•"
+                "fonts": {
+                    "heading": "Helvetica-Bold",
+                    "body": "Helvetica"
                 },
-                "html_content": "<div class='theme-slate font-sans'>Reverse-Chronological Layout</div>",
-                "reportlab_code": '{"margins": [40, 40, 40, 40], "primary_color": "#0F172A"}'
+                "spacing": 16,
+                "page": {
+                    "size": "A4",
+                    "margin": "32px",
+                    "background": "white"
+                },
+                "sections": [
+                    { "type": "profile", "title": "Profile", "visible": True, "fontSize": 14, "spacing": 12 },
+                    { "type": "experience", "title": "Professional Experience", "visible": True, "fontSize": 14, "spacing": 16 },
+                    { "type": "education", "title": "Education", "visible": True, "fontSize": 14, "spacing": 14 },
+                    { "type": "skills", "title": "Technical Skills", "visible": True, "fontSize": 14, "spacing": 12, "columns": 2 },
+                    { "type": "projects", "title": "Projects", "visible": True, "fontSize": 14, "spacing": 14 },
+                    { "type": "certifications", "title": "Certifications", "visible": True, "fontSize": 14, "spacing": 12 }
+                ]
             },
             {
                 "id": 2,
-                "slug": "functional_skills_based",
-                "name": "Functional (Skills-Based)",
-                "category": "Skills Focus",
+                "slug": "rachelle-beaudry",
+                "name": "Rachelle Beaudry (Two Column)",
+                "category": "Modern",
                 "ats_rating": 98,
-                "popularity": 120,
+                "popularity": 140,
                 "color_theme": "blue",
                 "is_enabled": True,
                 "is_active": True,
                 "is_premium": False,
                 "is_ats_optimized": True,
-                "description": "Accents key skill clusters over chronological timeline. Best for career changers.",
-                "best_for": ["career changers", "employment gaps"],
-                "section_order": ["header", "summary", "skills", "experience", "education"],
-                "section_rules": {
-                    "header": { "fields": ["name", "phone", "email", "linkedin", "location"] },
-                    "summary": { "max_lines": 4 },
-                    "skills": { "format": "categorized_groups", "max_groups": 4 },
-                    "experience": { "bullet_style": "brief_summary", "min_bullets": 1, "max_bullets": 3 },
-                    "education": { "fields": ["degree", "institution", "location", "grad_date"] }
+                "description": "Dynamic two-column template separating core content from side highlights.",
+                "layout": "two-column",
+                "colors": {
+                    "primary": "#1D4ED8",
+                    "secondary": "#4B5563",
+                    "divider": "#CBD5E1"
                 },
-                "formatting_constraints": {
-                    "columns": 1,
-                    "tables_allowed": False,
-                    "images_allowed": False,
-                    "font": "Arial|Georgia",
-                    "font_size_pt": [10, 11],
-                    "date_format": "YYYY",
-                    "bullet_char": "•"
+                "fonts": {
+                    "heading": "Helvetica-Bold",
+                    "body": "Helvetica"
                 },
-                "html_content": "<div class='theme-blue font-sans'>Functional Layout</div>",
-                "reportlab_code": '{"margins": [40, 40, 40, 40], "primary_color": "#1E3A8A"}'
+                "spacing": 16,
+                "page": {
+                    "size": "A4",
+                    "margin": "24px",
+                    "background": "white"
+                },
+                "sections": [
+                    { "type": "profile", "title": "Profile", "visible": True, "fontSize": 14, "spacing": 12 },
+                    { "type": "experience", "title": "Work Experience", "visible": True, "fontSize": 14, "spacing": 16 },
+                    { "type": "education", "title": "Educational Background", "visible": True, "fontSize": 14, "spacing": 14 },
+                    { "type": "skills", "title": "Technical Skills", "visible": True, "fontSize": 14, "spacing": 12, "columns": 1 },
+                    { "type": "certifications", "title": "Certification", "visible": True, "fontSize": 14, "spacing": 12 }
+                ]
             },
             {
                 "id": 3,
-                "slug": "combination_hybrid",
-                "name": "Combination (Hybrid)",
-                "category": "Balanced",
+                "slug": "morgan-maxwell",
+                "name": "Morgan Maxwell (Corporate)",
+                "category": "Corporate",
                 "ats_rating": 99,
-                "popularity": 130,
-                "color_theme": "emerald",
-                "is_enabled": True,
-                "is_active": True,
-                "is_premium": False,
-                "is_ats_optimized": True,
-                "description": "Blends categorized technical skill sets with traditional reverse chronological timeline.",
-                "best_for": ["diverse experience", "highlighting skills + timeline"],
-                "section_order": ["header", "summary", "skills", "experience", "education", "projects"],
-                "section_rules": {
-                    "header": { "fields": ["name", "phone", "email", "linkedin", "location"] },
-                    "summary": { "max_lines": 3 },
-                    "skills": { "format": "comma_separated" },
-                    "experience": { "bullet_style": "action_verb_metric", "min_bullets": 2, "max_bullets": 4 },
-                    "education": { "fields": ["degree", "institution", "location", "grad_date"] },
-                    "projects": { "bullet_style": "action_verb_metric", "min_bullets": 1, "max_bullets": 3 }
-                },
-                "formatting_constraints": {
-                    "columns": 1,
-                    "tables_allowed": False,
-                    "images_allowed": False,
-                    "font": "Calibri|Georgia",
-                    "font_size_pt": [10, 12],
-                    "date_format": "MM/YYYY",
-                    "bullet_char": "•"
-                },
-                "html_content": "<div class='theme-emerald font-sans'>Combination Layout</div>",
-                "reportlab_code": '{"margins": [35, 35, 35, 35], "primary_color": "#059669"}'
-            },
-            {
-                "id": 4,
-                "slug": "minimalist_entry_level",
-                "name": "Minimalist (Entry-Level)",
-                "category": "Minimalist",
-                "ats_rating": 100,
-                "popularity": 140,
+                "popularity": 135,
                 "color_theme": "slate",
                 "is_enabled": True,
                 "is_active": True,
                 "is_premium": False,
                 "is_ats_optimized": True,
-                "description": "Clean, spacious format focusing heavily on education and projects. Ideal for fresh graduates.",
-                "best_for": ["students", "recent grads"],
-                "section_order": ["header", "summary", "education", "experience", "skills", "certifications"],
-                "section_rules": {
-                    "header": { "fields": ["name", "phone", "email", "linkedin", "location"] },
-                    "summary": { "max_lines": 2 },
-                    "education": { "fields": ["degree", "institution", "location", "grad_date", "gpa"] },
-                    "experience": { "bullet_style": "action_verb_metric", "min_bullets": 2, "max_bullets": 3 },
-                    "skills": { "format": "comma_separated" },
-                    "certifications": { "optional": True }
+                "description": "Elegant, centered layout utilizing serif fonts for editorial and branding specialists.",
+                "layout": "single-column",
+                "colors": {
+                    "primary": "#27272A",
+                    "secondary": "#71717A",
+                    "divider": "#E4E4E7"
                 },
-                "formatting_constraints": {
-                    "columns": 1,
-                    "tables_allowed": False,
-                    "images_allowed": False,
-                    "font": "Arial|Calibri",
-                    "font_size_pt": [10.5, 11.5],
-                    "date_format": "MM/YYYY",
-                    "bullet_char": "•"
+                "fonts": {
+                    "heading": "Times-Bold",
+                    "body": "Times-Roman"
                 },
-                "html_content": "<div class='theme-slate font-sans'>Minimalist Entry Layout</div>",
-                "reportlab_code": '{"margins": [40, 40, 40, 40], "primary_color": "#475569"}'
+                "spacing": 16,
+                "page": {
+                    "size": "A4",
+                    "margin": "36px",
+                    "background": "white"
+                },
+                "sections": [
+                    { "type": "profile", "title": "Profile Summary", "visible": True, "fontSize": 13, "spacing": 12 },
+                    { "type": "experience", "title": "Professional Experience", "visible": True, "fontSize": 13, "spacing": 16 },
+                    { "type": "education", "title": "Education & Credentials", "visible": True, "fontSize": 13, "spacing": 14 },
+                    { "type": "skills", "title": "Core Skills", "visible": True, "fontSize": 13, "spacing": 12, "columns": 1 }
+                ]
             },
             {
-                "id": 5,
-                "slug": "executive_technical",
-                "name": "Executive / Technical",
-                "category": "Technical",
+                "id": 4,
+                "slug": "olivia-sanchez",
+                "name": "Olivia Sanchez (Executive)",
+                "category": "Executive",
                 "ats_rating": 99,
-                "popularity": 110,
+                "popularity": 125,
                 "color_theme": "indigo",
                 "is_enabled": True,
                 "is_active": True,
                 "is_premium": True,
                 "is_ats_optimized": True,
-                "description": "High density, keyword-rich format optimized for engineering managers and executives.",
-                "best_for": ["senior leaders", "engineers"],
-                "section_order": ["header", "summary", "skills", "experience", "education", "publications"],
-                "section_rules": {
-                    "header": { "fields": ["name", "phone", "email", "linkedin", "location"] },
-                    "summary": { "max_lines": 4 },
-                    "skills": { "format": "categorized_groups", "max_groups": 6 },
-                    "experience": { "bullet_style": "action_verb_metric", "min_bullets": 3, "max_bullets": 6 },
-                    "education": { "fields": ["degree", "institution", "location", "grad_date"] },
-                    "publications": { "optional": True }
+                "description": "Centered executive layout with gray headers and a balanced grid representation.",
+                "layout": "single-column",
+                "colors": {
+                    "primary": "#0F172A",
+                    "secondary": "#64748B",
+                    "divider": "#E2E8F0"
                 },
-                "formatting_constraints": {
-                    "columns": 1,
-                    "tables_allowed": False,
-                    "images_allowed": False,
-                    "font": "Arial|Calibri|Georgia",
-                    "font_size_pt": [10, 11],
-                    "date_format": "MM/YYYY",
-                    "bullet_char": "•"
+                "fonts": {
+                    "heading": "Helvetica-Bold",
+                    "body": "Helvetica"
                 },
-                "html_content": "<div class='theme-indigo font-sans'>Executive Layout</div>",
-                "reportlab_code": '{"margins": [35, 35, 35, 35], "primary_color": "#4F46E5"}'
+                "spacing": 16,
+                "page": {
+                    "size": "A4",
+                    "margin": "28px",
+                    "background": "white"
+                },
+                "sections": [
+                    { "type": "profile", "title": "Executive Summary", "visible": True, "fontSize": 14, "spacing": 12 },
+                    { "type": "experience", "title": "Professional History", "visible": True, "fontSize": 14, "spacing": 16 },
+                    { "type": "education", "title": "Academic background", "visible": True, "fontSize": 14, "spacing": 14 },
+                    { "type": "skills", "title": "Expertise & Skills", "visible": True, "fontSize": 14, "spacing": 12, "columns": 3 }
+                ]
             }
         ]
         db.resume_templates.insert_many(templates_list)
-        db.counters.update_one({"_id": "resume_templates"}, {"$set": {"seq": 5}}, upsert=True)
+        db.counters.update_one({"_id": "resume_templates"}, {"$set": {"seq": 4}}, upsert=True)
         print(f"Seeded {len(templates_list)} resume templates.")
             
         print("Successfully initialized and seeded MongoDB database!")

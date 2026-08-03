@@ -1,10 +1,14 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { useResumeBuilderStore } from '../../store/resumeBuilderStore';
 import { templateMetadata } from './templates';
-import { Check, ShieldCheck, Sparkles, Award } from 'lucide-react';
+import { Check, ShieldCheck, Sparkles } from 'lucide-react';
 
 export const TemplateSelector: React.FC = () => {
-  const { selectedTemplate, setSelectedTemplate } = useResumeBuilderStore();
+  const { selectedTemplate, setSelectedTemplate, templatesList, fetchTemplates } = useResumeBuilderStore();
+
+  useEffect(() => {
+    fetchTemplates();
+  }, [fetchTemplates]);
 
   const getCompatibilityScore = (id: string) => {
     switch (id) {
@@ -20,6 +24,19 @@ export const TemplateSelector: React.FC = () => {
     }
   };
 
+  // Combine static metadata with any MongoDB templates
+  const allTemplates = [
+    ...templateMetadata,
+    ...templatesList
+      .filter(t => !templateMetadata.some(staticTpl => staticTpl.id === t.slug))
+      .map(t => ({
+        id: t.slug,
+        name: t.name,
+        audience: t.category + ' Format',
+        popular: t.popularity > 120
+      }))
+  ];
+
   return (
     <div className="flex flex-col gap-4 text-left">
       <div className="border-b border-slate-200 pb-2.5">
@@ -30,7 +47,7 @@ export const TemplateSelector: React.FC = () => {
       </div>
 
       <div className="grid grid-cols-1 gap-3 max-h-[72vh] overflow-y-auto pr-1">
-        {templateMetadata.map((tpl) => {
+        {allTemplates.map((tpl) => {
           const isActive = selectedTemplate === tpl.id;
           const score = getCompatibilityScore(tpl.id);
           
@@ -78,3 +95,4 @@ export const TemplateSelector: React.FC = () => {
 };
 
 export default TemplateSelector;
+

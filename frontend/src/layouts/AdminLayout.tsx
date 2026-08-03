@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Home, Users, FileText, Cpu, GraduationCap, Megaphone, 
   Settings, LogOut, ChevronDown, Search, RefreshCw, Bell, ChevronRight,
-  Briefcase, Building2, BarChart3
+  Briefcase, Building2, BarChart3, Sparkles
 } from 'lucide-react';
 import { adminService } from '../services/admin';
 import { AdminCommandPalette } from '../components/AdminCommandPalette';
@@ -82,6 +82,7 @@ export const AdminLayout: React.FC = () => {
     { label: 'Dashboard', path: '/admin/dashboard', icon: Home },
     { label: 'Users', path: '/admin/users', icon: Users },
     { label: 'Resumes', path: '/admin/resumes', icon: FileText },
+    { label: 'Resume Templates', path: '/admin/templates', icon: Sparkles },
     { label: 'Jobs', path: '/admin/jobs', icon: Briefcase },
     { label: 'Companies', path: '/admin/companies', icon: Building2 },
     { label: 'AI Center', path: '/admin/ai', icon: Cpu },

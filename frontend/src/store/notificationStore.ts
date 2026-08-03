@@ -1,5 +1,6 @@
 import { create } from 'zustand';
-import { notificationsService, NotificationItem } from '../services/notifications';
+import { notificationsService } from '../services/notifications';
+import type { NotificationItem } from '../services/notifications';
 import { API_BASE_URL } from '../services/api';
 
 export interface ToastMessage {
