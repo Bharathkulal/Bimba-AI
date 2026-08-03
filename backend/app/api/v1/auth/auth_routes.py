@@ -409,5 +409,251 @@ def get_me(token: str = Depends(oauth2_scheme), db: Any = Depends(get_db)):
         "dob": student.dob,
         "phone": student.phone,
         "is_active": student.is_active,
-        "last_login": student.last_login.isoformat() if student.last_login else None
+        "last_login": student.last_login.isoformat() if student.last_login else None,
+        "gender": student_doc.get("gender"),
+        "address": student_doc.get("address"),
+        "bio": student_doc.get("bio"),
+        "linkedin": student_doc.get("linkedin"),
+        "github": student_doc.get("github"),
+        "portfolio_website": student_doc.get("portfolio_website"),
+        "skills": student_doc.get("skills"),
+        "languages": student_doc.get("languages"),
+        "career_objective": student_doc.get("career_objective"),
+        "profile_photo": student_doc.get("profile_photo"),
+        # New Placement Profile Fields
+        "city": student_doc.get("city"),
+        "state": student_doc.get("state"),
+        "country": student_doc.get("country"),
+        "college_name": student_doc.get("college_name"),
+        "course": student_doc.get("course"),
+        "graduation_year": student_doc.get("graduation_year"),
+        "cgpa": student_doc.get("cgpa"),
+        "current_backlogs": student_doc.get("current_backlogs"),
+        "tenth_percentage": student_doc.get("tenth_percentage"),
+        "twelfth_percentage": student_doc.get("twelfth_percentage"),
+        "diploma_percentage": student_doc.get("diploma_percentage"),
+        "technical_skills": student_doc.get("technical_skills"),
+        "soft_skills": student_doc.get("soft_skills"),
+        "frameworks": student_doc.get("frameworks"),
+        "databases": student_doc.get("databases"),
+        "tools": student_doc.get("tools"),
+        "projects": student_doc.get("projects", []),
+        "certifications": student_doc.get("certifications", []),
+        "experience": student_doc.get("experience", []),
+        "preferred_role": student_doc.get("preferred_role"),
+        "preferred_location": student_doc.get("preferred_location"),
+        "expected_salary": student_doc.get("expected_salary"),
+        "willing_to_relocate": student_doc.get("willing_to_relocate"),
+        "preferred_company_type": student_doc.get("preferred_company_type"),
+        "leet_code": student_doc.get("leet_code"),
+        "hacker_rank": student_doc.get("hacker_rank"),
+        "code_chef": student_doc.get("code_chef")
     }
+
+class UploadPhotoRequest(BaseModel):
+    photo: str
+
+@router.post("/profile/upload-photo")
+def upload_profile_photo(payload: UploadPhotoRequest, token: str = Depends(oauth2_scheme), db: Any = Depends(get_db)):
+    if not token:
+        raise HTTPException(status_code=401, detail="Not authenticated")
+    roll_number = verify_token(token)
+    if not roll_number:
+        raise HTTPException(status_code=401, detail="Invalid token")
+        
+    db.students.update_one(
+        {"roll_number": roll_number},
+        {"$set": {"profile_photo": payload.photo}}
+    )
+    return {"success": True, "message": "Photo updated successfully"}
+
+@router.put("/profile/update")
+def update_profile(payload: dict, token: str = Depends(oauth2_scheme), db: Any = Depends(get_db)):
+    if not token:
+        raise HTTPException(status_code=401, detail="Not authenticated")
+    roll_number = verify_token(token)
+    if not roll_number:
+        raise HTTPException(status_code=401, detail="Invalid token")
+        
+    # We update the student document directly with whatever fields are provided in the payload
+    allowed_fields = [
+        "student_name", "full_name", "email", "phone", "dob", "gender", "address", "bio",
+        "linkedin", "github", "portfolio_website", "skills", "languages", "career_objective",
+        "city", "state", "country", "college_name", "course", "graduation_year",
+        "cgpa", "current_backlogs", "tenth_percentage", "twelfth_percentage", "diploma_percentage",
+        "technical_skills", "soft_skills", "frameworks", "databases", "tools",
+        "projects", "certifications", "experience", "preferred_role", "preferred_location",
+        "expected_salary", "willing_to_relocate", "preferred_company_type",
+        "leet_code", "hacker_rank", "code_chef"
+    ]
+    
+    update_data = {}
+    for key, val in payload.items():
+        if key in allowed_fields:
+            update_data[key] = val
+            
+    if "student_name" in update_data:
+        update_data["full_name"] = update_data["student_name"]
+            
+    if update_data:
+        db.students.update_one(
+            {"roll_number": roll_number},
+            {"$set": update_data}
+        )
+        
+    return {"success": True, "message": "Profile updated successfully"}
+
+@router.get("/profile/readiness")
+def get_placement_readiness(token: str = Depends(oauth2_scheme), db: Any = Depends(get_db)):
+    if not token:
+        raise HTTPException(status_code=401, detail="Not authenticated")
+    roll_number = verify_token(token)
+    if not roll_number:
+        raise HTTPException(status_code=401, detail="Invalid token")
+        
+    student = db.students.find_one({"roll_number": roll_number})
+    if not student:
+        raise HTTPException(status_code=404, detail="Student not found")
+        
+    # 1. Profile Completion
+    fields = [
+        student.get("student_name"), student.get("email"), student.get("phone"),
+        student.get("city"), student.get("state"), student.get("country"),
+        student.get("college_name"), student.get("department"), student.get("course"),
+        student.get("semester"), student.get("graduation_year"), student.get("cgpa"),
+        student.get("tenth_percentage"), student.get("twelfth_percentage"),
+        student.get("preferred_role"), student.get("github"), student.get("linkedin")
+    ]
+    completed_fields = len([f for f in fields if f and str(f).strip() != ""])
+    completion_score = (completed_fields / len(fields)) * 100
+    
+    # 2. Resume & ATS
+    resume = db.resumes.find_one({"student_roll": roll_number})
+    ats_score = resume.get("ats_score", 65) if resume else 50
+    verification_status = resume.get("verification_status", "Pending") if resume else "Pending"
+    
+    # 3. Skills
+    skills_list = student.get("technical_skills") or []
+    if isinstance(skills_list, str):
+        skills_list = [s.strip() for s in skills_list.split(",") if s.strip()]
+    skills_score = min(len(skills_list) * 3, 15)
+    
+    # 4. Projects
+    projects = student.get("projects") or []
+    projects_score = min(len(projects) * 7.5, 15)
+    
+    # 5. Certifications & Experience
+    certs = student.get("certifications") or []
+    exp = student.get("experience") or []
+    exp_score = min((len(certs) * 3) + (len(exp) * 5), 10)
+    
+    # 6. CGPA
+    cgpa = float(student.get("cgpa") or 6.5)
+    cgpa_score = 10 if cgpa >= 8.5 else (8 if cgpa >= 7.5 else (6 if cgpa >= 6.5 else 4))
+    
+    total_score = int(
+        (completion_score * 0.20) +
+        (ats_score * 0.30) +
+        skills_score +
+        projects_score +
+        exp_score +
+        cgpa_score
+    )
+    
+    if total_score >= 85:
+        status_label = "Placement Ready"
+    elif total_score >= 65:
+        status_label = "Almost Ready"
+    else:
+        status_label = "Needs Improvement"
+        
+    # AI generated suggestions
+    from app.services.ai_gateway import generate_ai_response
+    prompt = f"""
+    You are an AI placement mentor. Analyze the following student details:
+    Name: {student.get('student_name')}
+    CGPA: {cgpa}
+    Current Backlogs: {student.get('current_backlogs', 0)}
+    Skills Count: {len(skills_list)}
+    Projects Count: {len(projects)}
+    ATS Score: {ats_score}
+    Verification Status: {verification_status}
+    Total Readiness Score: {total_score}% ({status_label})
+    
+    Provide 3 concise, bullet-pointed, actionable suggestions on how they can improve their placement readiness (e.g. build more projects, improve resume score, learn more skills, etc.).
+    """
+    suggestions = generate_ai_response(db, prompt, "placement_readiness_mentor")
+    
+    return {
+        "readiness_score": total_score,
+        "status": status_label,
+        "completion_rate": int(completion_score),
+        "ats_score": ats_score,
+        "verification_status": verification_status,
+        "suggestions": suggestions
+    }
+
+class ApplyDriveRequest(BaseModel):
+    drive_id: int
+
+@router.post("/placement/apply")
+def student_apply_drive(payload: ApplyDriveRequest, token: str = Depends(oauth2_scheme), db: Any = Depends(get_db)):
+    if not token:
+        raise HTTPException(status_code=401, detail="Not authenticated")
+    roll_number = verify_token(token)
+    if not roll_number:
+        raise HTTPException(status_code=401, detail="Invalid token")
+        
+    student = db.students.find_one({"roll_number": roll_number})
+    if not student:
+        raise HTTPException(status_code=404, detail="Student not found")
+        
+    drive = db.placement_drives.find_one({"id": payload.drive_id})
+    if not drive:
+        raise HTTPException(status_code=404, detail="Campus recruitment drive not found")
+        
+    existing_app = db.placement_applications.find_one({
+        "drive_id": payload.drive_id,
+        "student_id": student["id"]
+    })
+    if existing_app:
+        raise HTTPException(status_code=400, detail="You have already applied for this campus drive.")
+        
+    match_doc = db.drive_eligibility_matches.find_one({
+        "drive_id": payload.drive_id,
+        "student_id": student["id"]
+    })
+    match_score = match_doc.get("match_score", 70) if match_doc else 70
+    
+    resume = db.resumes.find_one({"student_roll": roll_number})
+    ats_score = resume.get("ats_score", 65) if resume else 65
+    
+    app_id = get_next_sequence("placement_applications")
+    db.placement_applications.insert_one({
+        "id": app_id,
+        "drive_id": payload.drive_id,
+        "student_id": student["id"],
+        "student_name": student.get("student_name") or student.get("full_name"),
+        "student_roll": student["roll_number"],
+        "company_name": drive.get("company_name"),
+        "job_role": drive.get("job_role"),
+        "salary_package": drive.get("salary_package"),
+        "status": "Applied",
+        "applied_at": datetime.utcnow(),
+        "ats_score": ats_score,
+        "match_score": match_score,
+        "timeline": [
+            {
+                "status": "Applied",
+                "message": "Application submitted successfully.",
+                "timestamp": datetime.utcnow()
+            }
+        ]
+    })
+    
+    db.notifications.update_many(
+        {"student_id": student["id"], "details.drive_id": payload.drive_id},
+        {"$set": {"is_read": True}}
+    )
+    
+    return {"success": True, "message": "Application submitted successfully", "application_id": app_id}

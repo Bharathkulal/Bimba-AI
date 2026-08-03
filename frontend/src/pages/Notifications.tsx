@@ -1,11 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { 
   Bell, Award, FileText, CheckCircle, ShieldAlert, 
-  Trash2, Eye, MailOpen, AlertCircle, Megaphone, Search, Filter 
+  Trash2, Eye, MailOpen, AlertCircle, Megaphone, Search, Filter, Sparkles
 } from 'lucide-react';
 import { PageHeader } from '../components/PageHeader';
 import { Card } from '../components/Card';
 import { Button } from '../components/Button';
+import { Modal } from '../components/Modal';
+import { useUserStore } from '../store/userStore';
 import { adminService } from '../services/admin';
 
 interface NotificationItem {
@@ -15,6 +17,16 @@ interface NotificationItem {
   message: string;
   is_read: boolean;
   created_at: string;
+  details?: {
+    drive_id: number;
+    company: string;
+    role: string;
+    package: string;
+    location: string;
+    deadline: string;
+    match_score: number;
+    reason: string;
+  };
 }
 
 interface AnnouncementItem {
@@ -36,6 +48,14 @@ export const Notifications: React.FC = () => {
   const [notifSearch, setNotifSearch] = useState('');
   const [notifFilter, setNotifFilter] = useState('');
   
+  const user = useUserStore((state) => state.user);
+
+  // Accept & Apply Modal states
+  const [isApplyModalOpen, setIsApplyModalOpen] = useState(false);
+  const [selectedNotif, setSelectedNotif] = useState<NotificationItem | null>(null);
+  const [applyLoading, setApplyLoading] = useState(false);
+  const [toastMessage, setToastMessage] = useState<string | null>(null);
+
   // Announcements state
   const [announcements, setAnnouncements] = useState<AnnouncementItem[]>([]);
   const [annSearch, setAnnSearch] = useState('');
@@ -43,6 +63,24 @@ export const Notifications: React.FC = () => {
   // Status indicators
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  const handleConfirmApply = async () => {
+    if (!selectedNotif || !selectedNotif.details) return;
+    try {
+      setApplyLoading(true);
+      await adminService.apiClient.post('/api/auth/placement/apply', {
+        drive_id: selectedNotif.details.drive_id
+      });
+      setToastMessage("Application submitted successfully!");
+      setIsApplyModalOpen(false);
+      fetchData();
+      setTimeout(() => setToastMessage(null), 3000);
+    } catch (err: any) {
+      alert(err.response?.data?.detail || "Failed to submit application.");
+    } finally {
+      setApplyLoading(false);
+    }
+  };
 
   const fetchData = async () => {
     setIsLoading(true);
@@ -248,12 +286,46 @@ export const Notifications: React.FC = () => {
                           {!n.is_read && <span className="w-1.5 h-1.5 rounded-full bg-red-500" />}
                         </div>
                         <h4 className="text-xs font-bold text-slate-800 mt-1">{n.message}</h4>
+                        {n.type === 'Placement Eligible' && n.details && (
+                          <div className="mt-3 p-3 bg-slate-50 dark:bg-white/2 border border-slate-100 dark:border-white/5 rounded-xl text-[11px] text-slate-655 dark:text-slate-350 flex flex-col gap-2 max-w-lg">
+                            <div className="grid grid-cols-2 gap-2 text-xs font-bold">
+                              <div>Role: <span className="text-slate-800 dark:text-white">{n.details.role}</span></div>
+                              <div>Package: <span className="text-slate-850 dark:text-white">{n.details.package}</span></div>
+                              <div>Location: <span className="text-slate-800 dark:text-white">{n.details.location}</span></div>
+                              <div>Deadline: <span className="text-slate-800 dark:text-white">{n.details.deadline}</span></div>
+                            </div>
+                            <div className="mt-1 flex items-center gap-1 text-[10px] text-emerald-600 dark:text-emerald-400 font-extrabold uppercase">
+                              <Sparkles size={11} /> AI Selection Fit Score: {n.details.match_score}%
+                            </div>
+                            <p className="italic text-slate-500 font-medium">Why AI: {n.details.reason}</p>
+                            
+                            {!n.is_read && (
+                              <div className="flex gap-2.5 mt-2">
+                                <button
+                                  onClick={() => {
+                                    setSelectedNotif(n);
+                                    setIsApplyModalOpen(true);
+                                  }}
+                                  className="px-3.5 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-[10px] font-bold cursor-pointer transition-all shadow-md shadow-emerald-500/10"
+                                >
+                                  Accept & Apply
+                                </button>
+                                <button
+                                  onClick={() => handleMarkAsRead(n.id)}
+                                  className="px-3.5 py-1.5 border border-slate-200 dark:border-white/10 text-slate-500 hover:text-slate-800 rounded-xl text-[10px] font-bold cursor-pointer transition-all bg-white dark:bg-transparent"
+                                >
+                                  Not Interested
+                                </button>
+                              </div>
+                            )}
+                          </div>
+                        )}
                         <span className="text-[9px] font-extrabold text-slate-400 block mt-1.5">{dateText}</span>
                       </div>
                     </div>
 
                     <div className="flex items-center gap-2">
-                      {!n.is_read && (
+                      {!n.is_read && n.type !== 'Placement Eligible' && (
                         <button 
                           onClick={() => handleMarkAsRead(n.id)}
                           className="p-2 rounded-lg bg-slate-50 border border-slate-200 text-slate-500 hover:text-slate-800 cursor-pointer"
@@ -278,7 +350,7 @@ export const Notifications: React.FC = () => {
         <div className="flex flex-col gap-6">
           {/* Announcements controls */}
           <div className="relative max-w-md">
-            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-450" size={15} />
+            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-455" size={15} />
             <input
               type="text"
               placeholder="Search announcements..."
@@ -288,58 +360,88 @@ export const Notifications: React.FC = () => {
             />
           </div>
 
-          {/* Announcements list */}
-          {isLoading ? (
-            <div className="flex flex-col gap-3">
-              {[1, 2].map(i => (
-                <div key={i} className="h-32 bg-slate-100/60 rounded-2xl animate-pulse" />
-              ))}
-            </div>
-          ) : announcements.length === 0 ? (
-            <Card className="flex flex-col items-center justify-center p-12 text-center text-slate-400">
-              <Megaphone size={36} className="text-slate-300 mb-3" />
-              <h4 className="text-sm font-extrabold text-slate-800">No Announcements</h4>
-              <p className="text-xs text-slate-500 mt-1 max-w-sm">
-                Administration has not published any announcements targeting your department or semester group yet.
-              </p>
-            </Card>
-          ) : (
-            <div className="flex flex-col gap-4">
-              {announcements.map((a) => {
-                const dateText = new Date(a.created_at).toLocaleDateString(undefined, { 
-                  year: 'numeric', month: 'short', day: 'numeric' 
-                });
-                return (
-                  <Card 
-                    key={a.id} 
-                    className={`p-6 text-left border relative overflow-hidden bg-white shadow-sm flex flex-col gap-3 ${
-                      a.pinned ? 'border-amber-250 shadow-amber-500/5' : 'border-slate-200/60'
-                    }`}
-                  >
-                    {a.pinned && (
-                      <div className="absolute top-0 right-0 bg-amber-500 text-white font-extrabold text-[8px] uppercase tracking-wider px-3.5 py-1 rounded-bl-xl shadow-sm">
-                        Pinned Post
-                      </div>
-                    )}
-                    
-                    <div className="flex flex-col gap-1">
-                      <div className="flex items-center gap-2">
-                        <span className="text-[9px] font-extrabold text-blue-600 uppercase bg-blue-50 border border-blue-100 px-2 py-0.5 rounded">
-                          {a.target_audience}
-                        </span>
-                        <span className="text-[9px] font-black text-slate-400">{dateText}</span>
-                      </div>
-                      <h3 className="text-sm font-extrabold text-slate-900 mt-1">{a.title}</h3>
+          <div className="flex flex-col gap-4">
+            {announcements.filter(a => a.title.toLowerCase().includes(annSearch.toLowerCase()) || a.content.toLowerCase().includes(annSearch.toLowerCase())).map((a) => {
+              const dateText = new Date(a.created_at).toLocaleDateString(undefined, { 
+                month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' 
+              });
+              return (
+                <Card 
+                  key={a.id} 
+                  className={`p-6 text-left border relative overflow-hidden bg-white shadow-sm flex flex-col gap-3 ${
+                    a.pinned ? 'border-amber-250 shadow-amber-500/5' : 'border-slate-200/60'
+                  }`}
+                >
+                  {a.pinned && (
+                    <div className="absolute top-0 right-0 bg-amber-500 text-white font-extrabold text-[8px] uppercase tracking-wider px-3.5 py-1 rounded-bl-xl shadow-sm">
+                      Pinned Post
                     </div>
+                  )}
+                  
+                  <div className="flex flex-col gap-1">
+                    <div className="flex items-center gap-2">
+                      <span className="text-[9px] font-extrabold text-blue-600 uppercase bg-blue-50 border border-blue-100 px-2 py-0.5 rounded">
+                        {a.target_audience}
+                      </span>
+                      <span className="text-[9px] font-black text-slate-400">{dateText}</span>
+                    </div>
+                    <h3 className="text-sm font-extrabold text-slate-900 mt-1">{a.title}</h3>
+                  </div>
 
-                    <p className="text-xs text-slate-650 leading-relaxed border-t border-slate-100 pt-3">
-                      {a.content}
-                    </p>
-                  </Card>
-                );
-              })}
+                  <p className="text-xs text-slate-650 leading-relaxed border-t border-slate-100 pt-3">
+                    {a.content}
+                  </p>
+                </Card>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* Accept & Apply Application Review Modal */}
+      {selectedNotif && selectedNotif.details && (
+        <Modal
+          isOpen={isApplyModalOpen}
+          onClose={() => setIsApplyModalOpen(false)}
+          title={`Review Application: ${selectedNotif.details.company} (${selectedNotif.details.role})`}
+        >
+          <div className="flex flex-col gap-4 text-left text-xs font-semibold leading-relaxed">
+            <div className="bg-emerald-50/50 dark:bg-emerald-500/5 border border-emerald-500/10 p-3.5 rounded-xl">
+              <p className="font-bold text-emerald-800 dark:text-emerald-400 text-xs mb-1 uppercase tracking-wider">Application Review Details</p>
+              Your master placement profile will be submitted to the recruitment drive automatically. Please verify the academic data below before confirming.
             </div>
-          )}
+
+            <div className="grid grid-cols-2 gap-3.5 p-3.5 border border-slate-100 dark:border-white/5 rounded-xl bg-slate-50/40">
+              <div>Name: <strong className="text-slate-800 dark:text-white">{user?.student_name}</strong></div>
+              <div>Roll Number: <strong className="text-slate-800 dark:text-white">{user?.roll_number}</strong></div>
+              <div>Course/Dept: <strong className="text-slate-800 dark:text-white">{(user as any)?.course || 'B.Tech'} - {user?.department}</strong></div>
+              <div>CGPA: <strong className="text-slate-800 dark:text-white">{(user as any)?.cgpa || '8.5'}</strong></div>
+              <div className="col-span-2">Technical Skills: <strong className="text-slate-800 dark:text-white">{(user as any)?.technical_skills || (user as any)?.skills || 'N/A'}</strong></div>
+            </div>
+
+            <div className="flex justify-end gap-3 mt-4">
+              <Button type="button" variant="secondary" onClick={() => setIsApplyModalOpen(false)}>
+                Cancel
+              </Button>
+              <Button 
+                type="button" 
+                variant="primary" 
+                className="bg-emerald-600 hover:bg-emerald-700"
+                onClick={handleConfirmApply}
+                disabled={applyLoading}
+              >
+                {applyLoading ? 'Submitting...' : 'Confirm & Apply'}
+              </Button>
+            </div>
+          </div>
+        </Modal>
+      )}
+
+      {/* Global Toast Success banner */}
+      {toastMessage && (
+        <div className="fixed bottom-6 right-6 bg-slate-900/95 text-white border border-slate-750 px-4.5 py-3 rounded-2xl shadow-xl flex items-center gap-2.5 z-55 animate-slideUp text-xs font-semibold">
+          <CheckCircle size={15} className="text-emerald-500 shrink-0" />
+          <span>{toastMessage}</span>
         </div>
       )}
     </div>

@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, status, Request
+from fastapi import APIRouter, Depends, HTTPException, status, Request, BackgroundTasks
 from pydantic import BaseModel, Field
 from typing import List, Optional, Any
 from datetime import datetime, timezone
@@ -265,9 +265,106 @@ def list_drives(
             d["_id"] = str(d["_id"])
     return drives
 
+def evaluate_and_notify_eligible_students(drive_id: int, db: Any):
+    drive = db.placement_drives.find_one({"id": drive_id})
+    if not drive:
+        return
+        
+    eligible_branches = drive.get("branches_eligible", [])
+    min_cgpa = float(drive.get("min_cgpa") or 0.0)
+    
+    # Query matching branches & CGPA
+    query = {
+        "cgpa": {"$gte": min_cgpa},
+        "department": {"$in": eligible_branches}
+    }
+    students = list(db.students.find(query))
+    
+    for student in students:
+        resume = db.resumes.find_one({"student_roll": student["roll_number"]})
+        resume_skills = ", ".join(resume.get("skills", [])) if resume else "N/A"
+        ats_score = resume.get("ats_score", 65) if resume else 65
+        
+        prompt = f"""
+        Evaluate student eligibility for job:
+        Job Title: {drive.get('title')}
+        Role: {drive.get('job_role')}
+        Package: {drive.get('salary_package')}
+        Description: {drive.get('eligibility_criteria')}
+        
+        Student details:
+        Name: {student.get('student_name')}
+        CGPA: {student.get('cgpa')}
+        Skills: {resume_skills}
+        Preferred Role: {student.get('preferred_role', 'SDE')}
+        
+        Classify the candidate suitability and provide:
+        - Fit Category (Highly Recommended, Recommended, Eligible, Borderline, Not Eligible)
+        - Match Score (integer from 0 to 100)
+        - Reason (1-sentence explanation of why they were selected or borderline)
+        
+        Output format:
+        Fit Category | Match Score | Reason
+        Example:
+        Highly Recommended | 92 | Exceptional skills match and strong academic background.
+        """
+        ai_res = generate_ai_response(db, prompt, "placement_eligibility_engine")
+        
+        try:
+            parts = [x.strip() for x in ai_res.split("|")]
+            if len(parts) >= 3:
+                cat, score_str, reason = parts[0], parts[1], parts[2]
+                score = int(score_str)
+            else:
+                cat = "Eligible"
+                score = 75
+                reason = "Candidate matches minimum CGPA and department eligibility."
+        except Exception:
+            cat = "Eligible"
+            score = 75
+            reason = "Candidate matches minimum CGPA and department eligibility."
+            
+        if cat != "Not Eligible":
+            db.drive_eligibility_matches.update_one(
+                {"drive_id": drive_id, "student_id": student["id"]},
+                {"$set": {
+                    "drive_id": drive_id,
+                    "student_id": student["id"],
+                    "roll_number": student["roll_number"],
+                    "name": student.get("student_name") or student.get("full_name"),
+                    "match_score": score,
+                    "classification": cat,
+                    "reason": reason,
+                    "evaluated_at": datetime.utcnow()
+                }},
+                upsert=True
+            )
+            
+            # Smart notification
+            db.notifications.insert_one({
+                "id": get_next_sequence("notifications"),
+                "student_id": student["id"],
+                "type": "Placement Eligible",
+                "message": f"You are eligible for the {drive.get('company_name', 'Campus')} {drive.get('job_role')} Campus Drive.",
+                "category": "placement",
+                "is_read": False,
+                "details": {
+                    "drive_id": drive_id,
+                    "company": drive.get("company_name"),
+                    "role": drive.get("job_role"),
+                    "package": drive.get("salary_package"),
+                    "location": drive.get("location"),
+                    "deadline": str(drive.get("application_deadline", "N/A")),
+                    "match_score": score,
+                    "reason": reason
+                },
+                "created_at": datetime.utcnow()
+            })
+
 @router.post("/drives")
 def create_drive(
     payload: DriveSchema,
+    background_tasks: BackgroundTasks,
     officer: AdminUser = Depends(get_current_placement_officer),
     db: Any = Depends(get_db)
 ):
@@ -276,12 +373,18 @@ def create_drive(
     drive_doc["id"] = next_id
     drive_doc["created_at"] = datetime.utcnow()
     db.placement_drives.insert_one(drive_doc)
+    
+    # Run AI eligibility engine in background
+    if drive_doc.get("status") in ("Active", "Published"):
+        background_tasks.add_task(evaluate_and_notify_eligible_students, next_id, db)
+        
     return {"success": True, "id": next_id}
 
 @router.put("/drives/{id}")
 def update_drive(
     id: int,
     payload: DriveEditSchema,
+    background_tasks: BackgroundTasks,
     officer: AdminUser = Depends(get_current_placement_officer),
     db: Any = Depends(get_db)
 ):
@@ -292,6 +395,11 @@ def update_drive(
     update_data = {k: v for k, v in payload.dict().items() if v is not None}
     if update_data:
         db.placement_drives.update_one({"id": id}, {"$set": update_data})
+        
+    # Run AI eligibility engine in background
+    status_val = update_data.get("status")
+    if status_val in ("Active", "Published"):
+        background_tasks.add_task(evaluate_and_notify_eligible_students, id, db)
         
     return {"success": True, "message": "Campus drive updated successfully."}
 
