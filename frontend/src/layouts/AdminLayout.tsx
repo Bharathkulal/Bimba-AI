@@ -25,7 +25,8 @@ export const AdminLayout: React.FC = () => {
   // Authentication check
   useEffect(() => {
     const token = localStorage.getItem('admin_token');
-    if (!token) {
+    const role = localStorage.getItem('admin_role');
+    if (!token || role === 'placement_officer') {
       navigate('/admin/login');
     }
   }, [navigate, location]);

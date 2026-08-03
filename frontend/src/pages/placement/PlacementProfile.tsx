@@ -3,7 +3,7 @@ import { User, Mail, Lock, CheckCircle, ShieldAlert } from 'lucide-react';
 import { Card } from '../../components/Card';
 import { Input } from '../../components/Input';
 import { Button } from '../../components/Button';
-import { adminService } from '../../services/api';
+import { apiClient } from '../../services/api';
 
 export const PlacementProfile: React.FC = () => {
   const [username, setUsername] = useState('placement');
@@ -34,7 +34,7 @@ export const PlacementProfile: React.FC = () => {
 
     try {
       // Since placement officer is part of admin system, we can update via change-password
-      await adminService.post('/api/auth/change-password', {
+      await apiClient.post('/api/auth/change-password', {
         current_password: currentPassword,
         new_password: newPassword,
         confirm_password: confirmPassword

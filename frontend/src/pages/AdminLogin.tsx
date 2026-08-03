@@ -166,7 +166,7 @@ export const AdminLogin: React.FC = () => {
 
           <div className="flex flex-col gap-2.5 text-xs font-medium">
             <div className="flex items-center justify-between">
-              <span>Username: <strong>admin</strong> (or <strong>placement</strong>)</span>
+              <span>Username: <strong>admin</strong></span>
               <button
                 onClick={() => copyToClipboard('admin', setCopiedUser)}
                 className="p-1.5 rounded-lg bg-slate-50 border border-slate-250 text-slate-500 hover:text-slate-800 transition-colors cursor-pointer flex items-center gap-1 text-[10px]"
@@ -176,7 +176,7 @@ export const AdminLogin: React.FC = () => {
               </button>
             </div>
             <div className="flex items-center justify-between">
-              <span>Password: <strong>admin</strong> (or <strong>placement</strong>)</span>
+              <span>Password: <strong>admin</strong></span>
               <button
                 onClick={() => copyToClipboard('admin', setCopiedPass)}
                 className="p-1.5 rounded-lg bg-slate-50 border border-slate-250 text-slate-500 hover:text-slate-800 transition-colors cursor-pointer flex items-center gap-1 text-[10px]"

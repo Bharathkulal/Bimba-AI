@@ -25,8 +25,11 @@ export const apiClient = axios.create({
 // Request Interceptor (e.g. for injecting Auth Tokens in the future)
 apiClient.interceptors.request.use(
   (config) => {
-    const isAdminRequest = config.url?.includes('/admin') || window.location.pathname.startsWith('/admin');
-    const token = isAdminRequest 
+    const isStaffRequest = config.url?.includes('/admin') || 
+                           config.url?.includes('/placement') || 
+                           window.location.pathname.startsWith('/admin') || 
+                           window.location.pathname.startsWith('/placement');
+    const token = isStaffRequest 
       ? (localStorage.getItem('admin_token') || localStorage.getItem('auth_token'))
       : (localStorage.getItem('auth_token') || localStorage.getItem('admin_token'));
       
@@ -50,10 +53,19 @@ apiClient.interceptors.response.use(
       if (error.config && error.config.url && error.config.url.includes('/login')) {
         return Promise.reject(error);
       }
-      const isAdminRequest = error.config.url?.includes('/admin') || window.location.pathname.startsWith('/admin');
-      if (isAdminRequest) {
+      const isStaffRequest = error.config.url?.includes('/admin') || 
+                             error.config.url?.includes('/placement') || 
+                             window.location.pathname.startsWith('/admin') || 
+                             window.location.pathname.startsWith('/placement');
+      if (isStaffRequest) {
         localStorage.removeItem('admin_token');
-        window.location.href = '/admin/login';
+        localStorage.removeItem('admin_role');
+        const isPlacement = error.config.url?.includes('/placement') || window.location.pathname.startsWith('/placement');
+        if (isPlacement) {
+          window.location.href = '/placement/login';
+        } else {
+          window.location.href = '/admin/login';
+        }
       } else {
         localStorage.removeItem('auth_token');
         window.location.href = '/login';

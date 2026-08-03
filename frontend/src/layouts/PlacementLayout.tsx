@@ -20,7 +20,7 @@ export const PlacementLayout: React.FC = () => {
     const token = localStorage.getItem('admin_token');
     const role = localStorage.getItem('admin_role');
     if (!token || role !== 'placement_officer') {
-      navigate('/admin/login');
+      navigate('/placement/login');
     }
   }, [navigate, location]);
 
@@ -40,7 +40,7 @@ export const PlacementLayout: React.FC = () => {
   const handleLogout = () => {
     adminService.logout();
     localStorage.removeItem('admin_role');
-    navigate('/admin/login');
+    navigate('/placement/login');
   };
 
   const breadcrumbs = location.pathname.split('/').filter(Boolean);

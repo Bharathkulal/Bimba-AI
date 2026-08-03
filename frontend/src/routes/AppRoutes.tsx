@@ -62,6 +62,7 @@ const AnnouncementsManagement = lazy(() => import('../pages/placement/Announceme
 const ReportsManagement = lazy(() => import('../pages/placement/ReportsManagement').then(module => ({ default: module.ReportsManagement })));
 const PlacementProfile = lazy(() => import('../pages/placement/PlacementProfile').then(module => ({ default: module.PlacementProfile })));
 const PlacementSettings = lazy(() => import('../pages/placement/PlacementSettings').then(module => ({ default: module.PlacementSettings })));
+const PlacementLogin = lazy(() => import('../pages/PlacementLogin').then(module => ({ default: module.PlacementLogin })));
 
 // Route Guards
 const ProtectedRoute: React.FC = () => {
@@ -122,15 +123,25 @@ const PlacementProtectedRoute: React.FC = () => {
   const adminToken = localStorage.getItem('admin_token');
   const adminRole = localStorage.getItem('admin_role');
   if (!adminToken || adminRole !== 'placement_officer') {
-    return <Navigate to="/admin/login" replace />;
+    return <Navigate to="/placement/login" replace />;
   }
   return <Outlet />;
 };
 
 const AdminGuestRoute: React.FC = () => {
   const adminToken = localStorage.getItem('admin_token');
-  if (adminToken) {
+  const adminRole = localStorage.getItem('admin_role');
+  if (adminToken && adminRole !== 'placement_officer') {
     return <Navigate to="/admin/dashboard" replace />;
+  }
+  return <Outlet />;
+};
+
+const PlacementGuestRoute: React.FC = () => {
+  const adminToken = localStorage.getItem('admin_token');
+  const adminRole = localStorage.getItem('admin_role');
+  if (adminToken && adminRole === 'placement_officer') {
+    return <Navigate to="/placement" replace />;
   }
   return <Outlet />;
 };
@@ -176,6 +187,11 @@ export const AppRoutes: React.FC = () => {
           {/* Admin Portal Layout */}
           <Route element={<AdminGuestRoute />}>
             <Route path="/admin/login" element={<AdminLogin />} />
+          </Route>
+          
+          {/* Placement Login Layout */}
+          <Route element={<PlacementGuestRoute />}>
+            <Route path="/placement/login" element={<PlacementLogin />} />
           </Route>
           
           <Route element={<AdminProtectedRoute />}>
