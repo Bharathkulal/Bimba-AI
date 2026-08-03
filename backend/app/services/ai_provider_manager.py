@@ -10,10 +10,10 @@ from app.core.logging_service import log_stage, log_error
 class AIProviderManager:
     def __init__(self, db: Any = None):
         self.db = db
-        # Configured fallback priority order
+        # Configured fallback priority order matching user preference for Groq AI
         self.priority_order = [
+            {"provider_name": "Groq", "slug": "groq", "env_key": "GROQ_API_KEY", "default_model": "llama-3.3-70b-versatile"},
             {"provider_name": "Gemini", "slug": "gemini", "env_key": "GEMINI_API_KEY", "default_model": "gemini-2.0-flash"},
-            {"provider_name": "Groq", "slug": "groq", "env_key": "GROQ_API_KEY", "default_model": "llama-3.3-70b"},
             {"provider_name": "OpenRouter", "slug": "openrouter", "env_key": "OPENROUTER_API_KEY", "default_model": "deepseek/deepseek-chat"}
         ]
 

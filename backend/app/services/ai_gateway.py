@@ -86,11 +86,10 @@ def generate_ai_response(db: Any, prompt: str, task_type: str) -> str:
         except Exception as e:
             logger.warning(f"Failed to fetch enabled providers from database: {str(e)}")
             
-    if not priority_order:
-        # Default fallback priority order matching database initialization
+        # Default fallback priority order matching user preference for Groq AI
         priority_order = [
-            {"name": "Gemini", "slug": "gemini", "timeout": ai_timeout, "retry_attempts": retry_attempts if auto_retry else 1, "fallback_enabled": True},
             {"name": "Groq", "slug": "groq", "timeout": ai_timeout, "retry_attempts": retry_attempts if auto_retry else 1, "fallback_enabled": True},
+            {"name": "Gemini", "slug": "gemini", "timeout": ai_timeout, "retry_attempts": retry_attempts if auto_retry else 1, "fallback_enabled": True},
             {"name": "OpenRouter", "slug": "openrouter", "timeout": ai_timeout, "retry_attempts": retry_attempts if auto_retry else 1, "fallback_enabled": True}
         ]
 

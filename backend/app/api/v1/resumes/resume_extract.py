@@ -127,20 +127,7 @@ def analyze_resume_endpoint(
             detail="Resume extraction data not found. Please extract text first."
         )
 
-    # 1.5 Caching Check: Return existing analysis if already completed
-    if "ai_analysis" in analysis_record and analysis_record.get("status") == "ai_completed":
-        ai_res = analysis_record["ai_analysis"]
-        return {
-            "success": True,
-            "message": "Resume analysis retrieved from cache",
-            "analysis": {
-                "overall_score": ai_res["overall_score"],
-                "ats_score": ai_res["ats_score"],
-                "strengths": ai_res["strengths"],
-                "weaknesses": ai_res["weaknesses"],
-                "suggestions": ai_res["improvement_suggestions"]
-            }
-        }
+    # 1.5 Always perform fresh Groq AI analysis on updated resume data (bypassing stale cache)
 
     # 2. Call AI Analyzer service
     try:
