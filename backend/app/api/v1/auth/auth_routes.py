@@ -128,7 +128,8 @@ oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/auth/login", auto_error=Fals
 
 @router.post("/login")
 def login(payload: LoginRequest, request: Request, db: Any = Depends(get_db)):
-    student_doc = db.students.find_one({"roll_number": payload.roll_number})
+    clean_roll_number = payload.roll_number.strip().upper()
+    student_doc = db.students.find_one({"roll_number": clean_roll_number})
     
     if not student_doc:
         raise HTTPException(

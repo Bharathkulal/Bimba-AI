@@ -5,7 +5,7 @@ import re
 import os
 import uuid
 from datetime import datetime, timezone
-from typing import List, Optional, Any
+from typing import List, Optional, Any, Dict
 from fastapi import APIRouter, Depends, HTTPException, status, Query, Request, UploadFile, File
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
@@ -497,21 +497,6 @@ def archive_resume(id: int, student: Student = Depends(get_current_student), db:
 
 # --- SUB-SECTIONS ENDPOINTS ---
 
-
-@router.post("/{id}/education")
-def add_education(id: int, payload: EducationSchema, student: Student = Depends(get_current_student), db: Any = Depends(get_db)):
-    verify_ownership(id, student.id, db)
-    next_edu_id = get_next_sequence("resume_education")
-    
-    new_edu = {"id": next_edu_id, **payload.model_dump()}
-    db.resumes.update_one(
-        {"id": id},
-        {
-            "$push": {"education": new_edu},
-            "$set": {"updated_at": datetime.utcnow()}
-        }
-    )
-    return {"success": True}
 
 # Helper function to append item to dynamic list in resume
 def dynamic_add_item(id: int, sec_key: str, payload: dict, seq_name: str, db: Any):
