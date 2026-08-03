@@ -321,26 +321,192 @@ export const LandingPage: React.FC = () => {
       </section>
 
       {/* 2. LOGO TRUST BAR */}
-      <motion.section 
-        variants={sectionVariants}
-        initial="hidden"
-        whileInView="show"
-        viewport={{ once: true, margin: "-50px" }}
-        className="py-8 bg-slate-50 border-y border-slate-100"
-      >
-        <div className="max-w-7xl mx-auto px-6 text-center">
-          <motion.p variants={childVariants} className="text-xs uppercase font-extrabold tracking-wider text-slate-400 mb-6">
+      <section className="py-[70px] bg-white relative overflow-hidden select-none">
+        <style dangerouslySetInnerHTML={{__html: `
+          @keyframes marquee-right {
+            0% { transform: translate3d(-50%, 0, 0); }
+            100% { transform: translate3d(0, 0, 0); }
+          }
+          .marquee-wrap {
+            mask-image: linear-gradient(to right, transparent, rgba(0,0,0,1) 15%, rgba(0,0,0,1) 85%, transparent);
+            -webkit-mask-image: linear-gradient(to right, transparent, rgba(0,0,0,1) 15%, rgba(0,0,0,1) 85%, transparent);
+          }
+          .marquee-track {
+            display: flex;
+            width: max-content;
+            animation: marquee-right 30s linear infinite;
+            will-change: transform;
+          }
+          .marquee-wrap:hover .marquee-track {
+            animation-play-state: paused;
+          }
+          .marquee-item {
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            opacity: 0.45;
+          }
+          .marquee-item:hover {
+            transform: scale(1.05);
+            opacity: 0.95;
+            color: #059669; /* Emerald accent */
+          }
+        `}} />
+
+        {/* Subtle radial gradient background */}
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(240,253,250,0.4)_0%,transparent_70%)] pointer-events-none" />
+
+        <div className="max-w-7xl mx-auto px-6 text-center relative z-10">
+          <p className="text-[10px] uppercase font-extrabold tracking-[0.25em] text-slate-400 mb-8">
             TRUSTED BY PROFESSIONALS AT
-          </motion.p>
-          <motion.div variants={childVariants} className="flex flex-wrap items-center justify-center gap-8 md:gap-16 opacity-60">
-            {['Google', 'Microsoft', 'Amazon', 'DHL', 'Spotify', 'Facebook'].map((brand) => (
-              <span key={brand} className="text-slate-700 font-extrabold text-lg tracking-tight select-none">
-                {brand}
-              </span>
-            ))}
-          </motion.div>
+          </p>
+          
+          <div className="marquee-wrap overflow-hidden w-full py-4">
+            <div className="marquee-track flex gap-12 items-center">
+              {/* Duplicated list of 25 companies for seamless looping */}
+              {(() => {
+                const list = [
+                { name: 'Google', icon: (
+                  <svg className="w-5 h-5 shrink-0" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M12.24 10.285V13.4h6.887c-.275 1.565-1.88 4.604-6.887 4.604-4.33 0-7.866-3.577-7.866-8s3.536-8 7.866-8c2.46 0 4.105 1.025 5.047 1.926l2.427-2.334C18.155 1.096 15.42 0 12.24 0 5.58 0 0 5.37 0 12s5.58 12 12.24 12c6.96 0 11.57-4.89 11.57-11.79 0-.79-.085-1.4-.19-1.925H12.24z"/>
+                  </svg>
+                )},
+                { name: 'Microsoft', icon: (
+                  <svg className="w-5 h-5 shrink-0" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M0 0h11.2v11.2H0zm12.8 0H24v11.2H12.8zM0 12.8h11.2V24H0zm12.8 0H24V24H12.8z"/>
+                  </svg>
+                )},
+                { name: 'Amazon', icon: (
+                  <svg className="w-5 h-5 shrink-0" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M15.93 17.09c-.93.68-2.3 1.11-3.69 1.11-2.4 0-4.57-1.34-5.06-3.83-.07-.36.14-.52.41-.36.75.46 2.05.82 3.26.82 2.16 0 4.18-.9 4.88-2.61.12-.29.35-.11.27.18-.32 1.34-.84 3.73-.07 4.69zm7.32.96c-.34-.41-.75-.82-1.16-1.2-.41-.38-.85-.75-1.3-1.13-.38-.32-.22-.53.17-.38 1.48.58 3.51 1.71 3.97 2.36.41.58.17 1.03-.48.96-.86-.1-2.2-.48-3.4-.89-.38-.13-.32-.38.07-.48 1.02-.26 2.05-.29 2.13-.32zm-12.78.29C5.46 14.54 3.82 11.16 3.82 7.74c0-3.52 1.71-6.17 4.79-6.17.65 0 1.27.1 1.88.32.2.07.26.26.1.42-.92.88-1.57 2.21-1.57 3.89 0 3.22 2.35 5.82 5.51 5.82 1.14 0 2.18-.32 2.92-.85.2-.13.36 0 .23.23-.98 1.63-2.67 3.32-4.59 4.33-.29.15-.49.03-.62-.16z"/>
+                  </svg>
+                )},
+                { name: 'Apple', icon: (
+                  <svg className="w-5 h-5 shrink-0" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.81-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M15.97 4.17c.66-.81 1.11-1.93.99-3.06-.96.04-2.13.64-2.82 1.45-.6.69-1.12 1.84-.98 2.94.1.08.31.08.31.08.97 0 2.05-.6 2.5-1.41z"/>
+                  </svg>
+                )},
+                { name: 'Meta', icon: (
+                  <svg className="w-5 h-5 shrink-0" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M22.846 11.236c-.407-1.025-1.196-1.933-2.222-2.557a5.952 5.952 0 0 0-3.036-.826c-1.393 0-2.652.487-3.585 1.343l-.974.9-.974-.9c-.933-.856-2.192-1.343-3.585-1.343-.883 0-1.727.202-2.502.585a6.002 6.002 0 0 0-2.756 2.798c-.443.992-.53 2.08-.246 3.065a5.95 5.95 0 0 0 2.222 2.557 5.952 5.952 0 0 0 3.036.826c1.393 0 2.652-.487 3.585-1.343l.974-.9.974.9c.933.856 2.192 1.343 3.585 1.343.883 0 1.727-.202 2.502-.585a6.002 6.002 0 0 0 2.756-2.798c.443-.992.53-2.08.246-3.065zm-15.36 4.305c-.655 0-1.282-.243-1.764-.683a2.38 2.38 0 0 1-.77-1.802 2.38 2.38 0 0 1 .77-1.803c.482-.44.11-.683.764-.683.655 0 1.282.243 1.764.683.483.44.77 1.05.77 1.803 0 .753-.287 1.363-.77 1.802a2.404 2.404 0 0 1-1.764.683zm9.028-2.485c0-.753.287-1.363.77-1.803.482-.44 1.11-.683 1.764-.683.655 0 1.282.243 1.764.683.483.44.77 1.05.77 1.803 0 .753-.287 1.363-.77 1.802a2.404 2.404 0 0 1-1.764.683c-.655 0-1.282-.243-1.764-.683a2.38 2.38 0 0 1-.77-1.802z"/>
+                  </svg>
+                )},
+                { name: 'Netflix', icon: (
+                  <svg className="w-5 h-5 shrink-0" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M5.562 0H8.38l6.059 16.326L20.497 0h2.818v24H20.497V7.674l-6.058 16.326H11.62L5.562 7.674V24H2.744V0h2.818z" transform="scale(0.8) translate(3, 3)" />
+                  </svg>
+                )},
+                { name: 'Spotify', icon: (
+                  <svg className="w-5 h-5 shrink-0" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M12 0C5.372 0 0 5.372 0 12s5.372 12 12 12 12-5.372 12-12S18.628 0 12 0zm5.49 17.3c-.22.36-.68.48-1.04.26-2.88-1.76-6.5-2.16-10.78-1.18-.41.09-.82-.16-.92-.57-.1-.41.16-.82.57-.92 4.69-1.07 8.7-1.61 11.9 1.35.37.23.49.7.27 1.06zm1.47-3.26c-.28.45-.87.6-1.32.32-3.3-2.03-8.33-2.61-12.23-1.43-.51.15-1.04-.14-1.2-.66-.15-.51.14-1.04.66-1.2 4.46-1.35 10-1.7 13.78.63.45.28.6.87.31 1.34zm.13-3.37C15.17 8.35 8.71 8.14 4.97 9.27c-.58.18-1.2-.16-1.38-.74-.18-.58.16-1.2.74-1.38 4.29-1.3 11.43-1.06 16.03 1.67.52.31.7.99.39 1.51-.31.53-.99.7-1.51.39z"/>
+                  </svg>
+                )},
+                { name: 'Adobe', icon: (
+                  <svg className="w-5 h-5 shrink-0" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M13.966 2H22v20h-8.034zM9.52 2H2v20h7.52zm2.25 7.641L17.275 22h-3.385l-1.92-4.949H8.563z"/>
+                  </svg>
+                )},
+                { name: 'IBM', icon: (
+                  <svg className="w-5 h-5 shrink-0" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M0 2h24v2H0zm0 3.43h24v2H0zm0 3.43h24v2H0zm0 3.43h24v2H0zm0 3.43h24v2H0zm0 3.43h24v2H0zm0 3.43h24v2H0zm0 3.43h24v2H0z"/>
+                  </svg>
+                )},
+                { name: 'Intel', icon: (
+                  <svg className="w-5 h-5 shrink-0" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M24 6.75H0v10.5h24V6.75zM1.5 15.75V8.25h21v7.5h-21z"/>
+                  </svg>
+                )},
+                { name: 'NVIDIA', icon: (
+                  <svg className="w-5 h-5 shrink-0" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M11.996 0A12 12 0 0 0 0 12a12 12 0 0 0 12 12c.16 0 .31-.02.47-.02v-3.79c-.16.02-.31.04-.47.04A8.25 8.25 0 0 1 3.75 12c0-3.31 1.95-6.17 4.79-7.46l.54.91c-2.42.91-4.14 3.25-4.14 6.01a6.75 6.75 0 0 0 6.75 6.75c.1 0 .21 0 .31-.01v-3.07c-.1 0-.2.01-.31.01a3.75 3.75 0 0 1-3.75-3.75c0-1.48.86-2.76 2.11-3.37l.45.76c-.9.37-1.53 1.27-1.53 2.31a2.25 2.25 0 0 0 2.25 2.25c.16 0 .31-.02.47-.04V6.47c-.16.02-.31.03-.47.03A5.25 5.25 0 0 1 6.75 12c0-2.31 1.5-4.28 3.58-4.99l.5.83c-1.63.48-2.83 1.98-2.83 3.76a3.75 3.75 0 0 0 3.75 3.75c.08 0 .16 0 .24-.01v-6.91a8.25 8.25 0 0 0-1.74 3.16l-.54-.91c.71-1.74 2.18-3.04 3.99-3.52v-2A11.95 11.95 0 0 0 12 0z"/>
+                  </svg>
+                )},
+                { name: 'Oracle', icon: (
+                  <svg className="w-5 h-5 shrink-0" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M12 4a8 8 0 1 0 0 16 8 8 0 0 0 0-16zm0 13a5 5 0 1 1 0-10 5 5 0 0 1 0 10z"/>
+                  </svg>
+                )},
+                { name: 'Salesforce', icon: (
+                  <svg className="w-5 h-5 shrink-0" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M17.75 10c0-.83-.67-1.5-1.5-1.5-.08 0-.17.01-.25.02C15.34 6.73 13.56 5.5 11.5 5.5S7.66 6.73 7 8.52c-.08-.01-.17-.02-.25-.02-1.24 0-2.25 1.01-2.25 2.25 0 .21.03.41.09.6C3.12 11.89 2 13.56 2 15.5c0 2.48 2.02 4.5 4.5 4.5h11.25c2.35 0 4.25-1.9 4.25-4.25 0-2.07-1.48-3.79-3.46-4.17.07-.18.11-.37.11-.58z"/>
+                  </svg>
+                )},
+                { name: 'LinkedIn', icon: (
+                  <svg className="w-5 h-5 shrink-0" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/>
+                  </svg>
+                )},
+                { name: 'Uber', icon: (
+                  <svg className="w-5 h-5 shrink-0" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M12 0C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.373 12-12S18.627 0 12 0zm0 18c-3.313 0-6-2.687-6-6s2.687-6 6-6 6 2.687 6 6-2.687 6-6 6z"/>
+                  </svg>
+                )},
+                { name: 'Airbnb', icon: (
+                  <svg className="w-5 h-5 shrink-0" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M12 0a6 6 0 0 0-6 6c0 3.313 6 12 6 12s6-8.687 6-12a6 6 0 0 0-6-6zm0 8.25a2.25 2.25 0 1 1 0-4.5 2.25 2.25 0 0 1 0 4.5z"/>
+                  </svg>
+                )},
+                { name: 'PayPal', icon: (
+                  <svg className="w-5 h-5 shrink-0" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M20.07 7.02c0-3.84-2.82-5.52-6.52-5.52H6.38c-.46 0-.85.34-.9.8L2.73 19.38c-.06.39.24.74.63.74h4.15l1.09-6.93h.08l2.97-1.1c4.54-1.25 8.42-3.13 8.42-8.07z"/>
+                  </svg>
+                )},
+                { name: 'Deloitte', icon: (
+                  <svg className="w-5 h-5 shrink-0" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M2 2h20v20H2zM12 12a3 3 0 1 0 0-6 3 3 0 0 0 0 6zm0 6a3 3 0 1 0 0-6 3 3 0 0 0 0 6z"/>
+                  </svg>
+                )},
+                { name: 'Accenture', icon: (
+                  <svg className="w-5 h-5 shrink-0" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M18.78 12L3 3v18z"/>
+                  </svg>
+                )},
+                { name: 'Cisco', icon: (
+                  <svg className="w-5 h-5 shrink-0" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M3 14h2v8H3zm4-4h2v12H7zm4-4h2v16h-2zm4 4h2v12h-2zm4 4h2v8h-2z"/>
+                  </svg>
+                )},
+                { name: 'Samsung', icon: (
+                  <svg className="w-5 h-5 shrink-0" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M12 2C6.477 2 2 6.477 2 12s4.477 10 10 10 10-4.477 10-10S17.523 2 12 2zm1 14h-2v-2h2v2zm0-4h-2V7h2v5z"/>
+                  </svg>
+                )},
+                { name: 'Tesla', icon: (
+                  <svg className="w-5 h-5 shrink-0" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M12 2L2 6v4l10-2 10 2V6zM2 18v4l10-2 10 2v-4l-10-2z"/>
+                  </svg>
+                )},
+                { name: 'DHL', icon: (
+                  <svg className="w-5 h-5 shrink-0" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M2 6h20v2H2zm0 5h20v2H2zm0 5h20v2H2zm0 5h20v2H2z" />
+                  </svg>
+                )},
+                { name: 'Atlassian', icon: (
+                  <svg className="w-5 h-5 shrink-0" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M11.986 0L1.758 10.228a1.69 1.69 0 0 0 0 2.391l10.228 10.228a1.69 1.69 0 0 0 2.391 0l10.228-10.228a1.69 1.69 0 0 0 0-2.391L14.377.001a1.69 1.69 0 0 0-2.391 0z"/>
+                  </svg>
+                )},
+                { name: 'GitHub', icon: (
+                  <svg className="w-5 h-5 shrink-0" viewBox="0 0 24 24" fill="currentColor">
+                    <path fillRule="evenodd" clipRule="evenodd" d="M12 2C6.477 2 2 6.477 2 12c0 4.42 2.865 8.166 6.839 9.489.5.092.682-.217.682-.482 0-.237-.008-.866-.013-1.7-2.782.603-3.369-1.34-3.369-1.34-.454-1.156-1.11-1.464-1.11-1.464-.908-.62.069-.608.069-.608 1.003.07 1.531 1.03 1.531 1.03.892 1.529 2.341 1.087 2.91.831.092-.646.35-1.086.636-1.336-2.22-.253-4.555-1.11-4.555-4.943 0-1.091.39-1.984 1.029-2.683-.103-.253-.446-1.27.098-2.647 0 0 .84-.269 2.75 1.025A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.294 2.747-1.025 2.747-1.025.546 1.377.203 2.394.1 2.647.64.699 1.028 1.592 1.028 2.683 0 3.842-2.339 4.687-4.566 4.935.359.309.678.919.678 1.852 0 1.336-.012 2.415-.012 2.743 0 .267.18.577.688.479C19.138 20.162 22 16.418 22 12c0-5.523-4.477-10-10-10z"/>
+                  </svg>
+                )}
+                ];
+                return [...list, ...list].map((company, index) => (
+                  <div 
+                    key={`${company.name}-${index}`} 
+                    className="marquee-item flex items-center gap-2.5 text-xs font-bold text-slate-700 dark:text-slate-350 cursor-pointer"
+                  >
+                    <div className="text-slate-600 dark:text-slate-400">
+                      {company.icon}
+                    </div>
+                    <span>{company.name}</span>
+                    <span className="w-1.5 h-1.5 rounded-full bg-slate-300 dark:bg-white/10 mx-2" />
+                  </div>
+                ));
+              })()}
+            </div>
+          </div>
         </div>
-      </motion.section>
+      </section>
 
       {/* How Bimba AI Works Timeline */}
       <div className="max-w-4xl mx-auto px-6 mt-12 mb-16 text-center animate-fadeIn">
