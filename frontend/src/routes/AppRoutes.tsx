@@ -32,7 +32,6 @@ const Companies = lazy(() => import('../pages/Companies').then(module => ({ defa
 
 // Modular Admin Pages
 const AdminDashboardOverview = lazy(() => import('../pages/admin/AdminDashboardOverview').then(module => ({ default: module.AdminDashboardOverview })));
-const UsersModule = lazy(() => import('../pages/admin/UsersModule').then(module => ({ default: module.UsersModule })));
 const StudentsModule = lazy(() => import('../pages/admin/StudentsModule').then(module => ({ default: module.StudentsModule })));
 const ResumeModule = lazy(() => import('../pages/admin/ResumeModule').then(module => ({ default: module.ResumeModule })));
 const DatasetsModule = lazy(() => import('../pages/admin/DatasetsModule').then(module => ({ default: module.DatasetsModule })));
@@ -197,7 +196,6 @@ export const AppRoutes: React.FC = () => {
           <Route element={<AdminProtectedRoute />}>
             <Route element={<AdminLayout />}>
                <Route path="/admin/dashboard" element={<AdminDashboardOverview />} />
-              <Route path="/admin/users" element={<UsersModule />} />
               <Route path="/admin/students" element={<StudentsModule />} />
               <Route path="/admin/resumes" element={<ResumeModule />} />
               <Route path="/admin/datasets" element={<DatasetsModule />} />

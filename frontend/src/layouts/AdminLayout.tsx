@@ -80,7 +80,7 @@ export const AdminLayout: React.FC = () => {
   // Core Admin Sidebar modules
   const menuGroups = [
     { label: 'Dashboard', path: '/admin/dashboard', icon: Home },
-    { label: 'Users', path: '/admin/users', icon: Users },
+    { label: 'Students', path: '/admin/students', icon: GraduationCap },
     { label: 'Resumes', path: '/admin/resumes', icon: FileText },
     { label: 'Resume Templates', path: '/admin/templates', icon: Sparkles },
     { label: 'Jobs', path: '/admin/jobs', icon: Briefcase },

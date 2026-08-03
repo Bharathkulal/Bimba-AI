@@ -1,5 +1,15 @@
 import { apiClient } from './api';
 
+
+export interface StudentStatsData {
+  total: number;
+  active: number;
+  inactive: number;
+  with_resume: number;
+  without_resume: number;
+  logged_in_today: number;
+}
+
 export interface AdminDashboardData {
   totalUsers: number;
   todaySignups: number;
@@ -216,6 +226,30 @@ export const adminService = {
     const res = await apiClient.post<{ success: boolean; status: string }>(`/api/admin/students/${rollNumber}/toggle-status`);
     return res.data;
   },
+
+  getStudentStats: async (): Promise<StudentStatsData> => {
+    const res = await apiClient.get<StudentStatsData>('/api/admin/students/stats');
+    return res.data;
+  },
+
+  searchStudents: async (query: string): Promise<AdminUserData[]> => {
+    const res = await apiClient.get<AdminUserData[]>(`/api/admin/students/search?q=${encodeURIComponent(query)}`);
+    return res.data;
+  },
+
+  bulkActionStudents: async (rollNumbers: string[], action: string): Promise<void> => {
+    await apiClient.post('/api/admin/students/bulk', { roll_numbers: rollNumbers, action });
+  },
+
+  importStudents: async (file: File): Promise<any> => {
+    const formData = new FormData();
+    formData.append('file', file);
+    const res = await apiClient.post('/api/admin/students/import', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' }
+    });
+    return res.data;
+  },
+
 
   getResumes: async (): Promise<AdminResumeData[]> => {
     const res = await apiClient.get<AdminResumeData[]>('/api/admin/resumes');

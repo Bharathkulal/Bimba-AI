@@ -1,449 +1,322 @@
-import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useState, useEffect, useRef } from 'react';
 import { 
-  Search, UserPlus, Edit, Trash2, Key, ToggleLeft, ToggleRight, 
-  CheckCircle2, AlertTriangle, Phone, Mail, User, BookOpen, Layers, 
-  Download, FileText, ChevronLeft, ChevronRight, X, Sparkles, Filter
+  Search, UserPlus, Edit, Trash2, Key, Filter, Download, 
+  Upload, FileText, ChevronLeft, ChevronRight, CheckCircle2, 
+  AlertCircle, UploadCloud, X, RefreshCw
 } from 'lucide-react';
 import { adminService } from '../../services/admin';
-import type { AdminUserData } from '../../services/admin';
-import { Modal } from '../../components/Modal';
-import { Input } from '../../components/Input';
+import type { AdminUserData, StudentStatsData } from '../../services/admin';
 import { Button } from '../../components/Button';
-import { Card } from '../../components/Card';
 
 export const StudentsModule: React.FC = () => {
-  const navigate = useNavigate();
-  const [users, setUsers] = useState<AdminUserData[]>([]);
-  const [searchQuery, setSearchQuery] = useState('');
+  const [students, setStudents] = useState<AdminUserData[]>([]);
+  const [stats, setStats] = useState<StudentStatsData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [searchQuery, setSearchQuery] = useState('');
   
-  // Advanced filters
-  const [deptFilter, setDeptFilter] = useState('All');
-  const [placementFilter, setPlacementFilter] = useState('All');
+  // Selection & Bulk
+  const [selectedRolls, setSelectedRolls] = useState<Set<string>>(new Set());
   
-  // Modals state
-  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
-  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
-  const [selectedStudent, setSelectedStudent] = useState<AdminUserData | null>(null);
-  const [isProfilePanelOpen, setIsProfilePanelOpen] = useState(false);
-
   // Pagination
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 8;
-
-  // Form states
+  
+  // Modals
+  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [isImportModalOpen, setIsImportModalOpen] = useState(false);
+  
+  // Forms
   const [formData, setFormData] = useState({
-    roll_number: '',
-    student_name: '',
-    email: '',
-    dob: '',
-    phone: '',
-    department: 'BCA',
-    semester: 3,
-    status: 'Active',
+    roll_number: '', student_name: '', email: '', dob: '', 
+    password: '', phone: '', department: 'BCA', semester: 3, section: 'A'
   });
+  
+  const [importFile, setImportFile] = useState<File | null>(null);
+  const [importStatus, setImportStatus] = useState<{status: 'idle'|'uploading'|'done'|'error', msg: string}>({status: 'idle', msg: ''});
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
-
-  const showToast = (message: string, type: 'success' | 'error') => {
-    setToast({ message, type });
-    setTimeout(() => setToast(null), 4000);
-  };
-
-  const fetchAll = async () => {
+  const fetchData = async () => {
     try {
       setIsLoading(true);
-      const data = await adminService.getUsers();
-      setUsers(data);
+      const [statsData, studentsData] = await Promise.all([
+        adminService.getStudentStats(),
+        adminService.getUsers() // getting all students
+      ]);
+      setStats(statsData);
+      setStudents(studentsData);
     } catch (err) {
-      console.error("Failed to query students directory:", err);
-      showToast("Failed to fetch students list.", "error");
+      console.error("Failed to load students data", err);
     } finally {
       setIsLoading(false);
     }
   };
 
   useEffect(() => {
-    fetchAll();
+    fetchData();
   }, []);
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({
-      ...prev,
-      [name]: name === 'semester' ? parseInt(value) : value
-    }));
-  };
-
-  const openAddModal = () => {
-    setFormData({
-      roll_number: '',
-      student_name: '',
-      email: '',
-      dob: '',
-      phone: '',
-      department: 'BCA',
-      semester: 3,
-      status: 'Active',
-    });
-    setIsAddModalOpen(true);
-  };
-
-  const openEditModal = (student: AdminUserData) => {
-    setSelectedStudent(student);
-    setFormData({
-      roll_number: student.roll_number,
-      student_name: student.student_name || student.full_name || '',
-      email: student.email,
-      dob: student.dob,
-      phone: student.phone || '',
-      department: student.department,
-      semester: student.semester,
-      status: student.status,
-    });
-    setIsEditModalOpen(true);
-  };
-
-  const handleAddStudent = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!formData.roll_number.trim() || !formData.student_name.trim() || !formData.email.trim() || !formData.dob.trim()) {
-      showToast("Please fill in all required fields.", "error");
-      return;
+  const handleSearch = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const q = e.target.value;
+    setSearchQuery(q);
+    if (q.length > 2) {
+      try {
+        const res = await adminService.searchStudents(q);
+        setStudents(res);
+      } catch (err) {
+        console.error(err);
+      }
+    } else if (q.length === 0) {
+      fetchData();
     }
+  };
 
+  const handleSelectAll = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.checked) {
+      setSelectedRolls(new Set(currentItems.map(s => s.roll_number)));
+    } else {
+      setSelectedRolls(new Set());
+    }
+  };
+
+  const handleSelectOne = (roll: string) => {
+    const next = new Set(selectedRolls);
+    if (next.has(roll)) next.delete(roll);
+    else next.add(roll);
+    setSelectedRolls(next);
+  };
+
+  const executeBulkAction = async (action: string) => {
+    if (selectedRolls.size === 0) return;
+    if (!window.confirm(`Are you sure you want to ${action} ${selectedRolls.size} students?`)) return;
+    try {
+      await adminService.bulkActionStudents(Array.from(selectedRolls), action);
+      setSelectedRolls(new Set());
+      fetchData();
+    } catch (err) {
+      alert(`Failed to execute bulk action: ${action}`);
+    }
+  };
+
+  const handleAddSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
     try {
       await adminService.createStudent(formData);
-      showToast("Student created successfully!", "success");
       setIsAddModalOpen(false);
-      fetchAll();
+      fetchData();
     } catch (err: any) {
-      showToast(err.response?.data?.detail || "Failed to create student.", "error");
+      alert(err?.response?.data?.detail || "Failed to add student.");
     }
   };
 
-  const handleEditStudent = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!formData.student_name.trim() || !formData.email.trim() || !formData.dob.trim()) {
-      showToast("Please fill in all required fields.", "error");
-      return;
-    }
-
+  const handleImportSubmit = async () => {
+    if (!importFile) return;
+    setImportStatus({ status: 'uploading', msg: 'Importing students...' });
     try {
-      await adminService.updateStudent(formData.roll_number, formData);
-      showToast("Student details updated successfully.", "success");
-      setIsEditModalOpen(false);
-      fetchAll();
+      const res = await adminService.importStudents(importFile);
+      setImportStatus({ status: 'done', msg: res.message });
+      setTimeout(() => {
+        setIsImportModalOpen(false);
+        setImportFile(null);
+        setImportStatus({ status: 'idle', msg: '' });
+        fetchData();
+      }, 2000);
     } catch (err: any) {
-      showToast(err.response?.data?.detail || "Failed to update student.", "error");
+      setImportStatus({ status: 'error', msg: err?.response?.data?.detail || 'Import failed.' });
     }
   };
 
-  const handleDeleteStudent = async (rollNumber: string) => {
-    if (!window.confirm(`Are you sure you want to permanently delete student ${rollNumber}?`)) {
-      return;
-    }
+  const handleExport = () => {
+    window.open('/api/admin/students/export?format=csv', '_blank');
+  };
 
-    try {
-      await adminService.deleteStudent(rollNumber);
-      showToast("Student deleted successfully.", "success");
-      fetchAll();
-    } catch (err: any) {
-      showToast(err.response?.data?.detail || "Failed to delete student.", "error");
+  const handleDownloadTemplate = () => {
+    window.open('/api/admin/students/template', '_blank');
+  };
+
+  const handleDelete = async (roll: string) => {
+    if (window.confirm(`Delete student ${roll}?`)) {
+      await adminService.deleteStudent(roll);
+      fetchData();
+    }
+  };
+  
+  const handleToggleStatus = async (roll: string) => {
+    await adminService.toggleStudentStatus(roll);
+    fetchData();
+  };
+
+  const handleResetPassword = async (roll: string) => {
+    if (window.confirm(`Reset password for ${roll} to their Date of Birth?`)) {
+      await adminService.resetStudentPassword(roll);
+      alert('Password reset successfully.');
     }
   };
 
-  const handleResetPassword = async (rollNumber: string) => {
-    if (!window.confirm(`Reset password for student ${rollNumber} to DOB?`)) {
-      return;
-    }
-
-    try {
-      await adminService.resetStudentPassword(rollNumber);
-      showToast("Password reset to Date of Birth successfully.", "success");
-    } catch (err: any) {
-      showToast(err.response?.data?.detail || "Failed to reset password.", "error");
-    }
-  };
-
-  const handleToggleStatus = async (rollNumber: string) => {
-    try {
-      const res = await adminService.toggleStudentStatus(rollNumber);
-      showToast(`Student status updated to ${res.status}.`, "success");
-      fetchAll();
-    } catch (err: any) {
-      showToast(err.response?.data?.detail || "Failed to change status.", "error");
-    }
-  };
-
-  const handleExportCSV = () => {
-    showToast("Student database exported to Bimba_Students_List.csv successfully!", "success");
-  };
-
-  // Filters application
-  const filteredUsers = users
-    .filter(u => {
-      const query = searchQuery.toLowerCase();
-      return (
-        u.roll_number.toLowerCase().includes(query) ||
-        u.student_name.toLowerCase().includes(query) ||
-        u.email.toLowerCase().includes(query)
-      );
-    })
-    .filter(u => deptFilter === 'All' || u.department === deptFilter)
-    .filter(u => {
-      if (placementFilter === 'All') return true;
-      const score = u.id % 3; // mock placement status
-      const status = score === 0 ? 'Placed' : score === 1 ? 'Unplaced' : 'In-Process';
-      return status === placementFilter;
-    });
-
-  // Pagination calculation
+  // Pagination logic
   const indexOfLastItem = currentPage * itemsPerPage;
   const indexOfFirstItem = indexOfLastItem - itemsPerPage;
-  const currentItems = filteredUsers.slice(indexOfFirstItem, indexOfLastItem);
-  const totalPages = Math.ceil(filteredUsers.length / itemsPerPage);
+  const currentItems = students.slice(indexOfFirstItem, indexOfLastItem);
+  const totalPages = Math.ceil(students.length / itemsPerPage);
+
+  // Helper for generating avatar initials
+  const getInitials = (name: string) => {
+    return name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase() || 'ST';
+  };
+
+  if (isLoading && !students.length) {
+    return (
+      <div className="flex flex-col gap-6 w-full animate-pulse text-left">
+        <div className="h-28 bg-[#102117] rounded-2xl" />
+        <div className="h-64 bg-[#102117] rounded-2xl" />
+      </div>
+    );
+  }
 
   return (
-    <div className="flex flex-col gap-6 w-full text-left animate-fadeIn font-sans relative max-w-7xl mx-auto">
+    <div className="flex flex-col gap-6 text-left">
       
-      {/* Toast Alert */}
-      {toast && (
-        <div className={`fixed top-6 right-6 z-50 flex items-center gap-3 px-5 py-4 rounded-xl shadow-xl border animate-fadeIn ${
-          toast.type === 'success' 
-            ? 'bg-[#102117] border-[#111111]/20 text-[#111111]' 
-            : 'bg-[#1F1116] border-rose-500/20 text-rose-500'
-        }`}>
-          {toast.type === 'success' ? <CheckCircle2 size={18} /> : <AlertTriangle size={18} />}
-          <span className="text-xs font-semibold">{toast.message}</span>
+      {/* Header & Stats Dashboard */}
+      <div className="bg-[#102117] border border-white/5 rounded-3xl p-6 shadow-sm">
+        <div className="flex flex-col md:flex-row justify-between md:items-center gap-4 mb-8 border-b border-white/5 pb-4">
+          <div>
+            <h1 className="text-xl font-bold text-white">Student Management</h1>
+            <p className="text-xs text-slate-400 mt-1">Manage all student accounts, imports, and credentials.</p>
+          </div>
+          <div className="flex gap-2">
+            <Button variant="outline" size="sm" onClick={handleDownloadTemplate} className="text-xs border-white/10 hover:bg-white/5">
+              <FileText size={14} className="mr-2" /> Template
+            </Button>
+            <Button variant="outline" size="sm" onClick={handleExport} className="text-xs border-white/10 hover:bg-white/5">
+              <Download size={14} className="mr-2" /> Export
+            </Button>
+            <Button variant="outline" size="sm" onClick={() => setIsImportModalOpen(true)} className="text-xs border-white/10 hover:bg-white/5">
+              <Upload size={14} className="mr-2" /> Import
+            </Button>
+            <Button size="sm" onClick={() => setIsAddModalOpen(true)} className="text-xs bg-white text-black hover:bg-slate-200">
+              <UserPlus size={14} className="mr-2" /> Add Student
+            </Button>
+          </div>
         </div>
-      )}
 
-      {/* Header Banner */}
-      <section className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-[#102117] border border-white/5 rounded-2xl p-6 shadow-md relative overflow-hidden">
-        <div className="absolute right-0 top-0 w-80 h-full bg-gradient-to-l -[#111111]/5 to-transparent blur-3xl pointer-events-none" />
-        <div className="relative z-10 text-left">
-          <h1 className="text-xl font-extrabold text-white tracking-tight">Students Directory</h1>
-          <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider block mt-1">
-            Manage academic profiles, USNs, and placement readiness flags.
-          </p>
-        </div>
-        <div className="flex gap-2 shrink-0 relative z-10">
-          <Button 
-            onClick={handleExportCSV}
-            variant="secondary" 
-            size="sm"
-            className="flex items-center gap-1.5 border-white/10"
-          >
-            <Download size={14} /> Export CSV
-          </Button>
-          <Button 
-            onClick={openAddModal}
-            variant="primary" 
-            size="sm"
-            className="flex items-center gap-1.5"
-          >
-            <UserPlus size={15} /> Add Student
-          </Button>
-        </div>
-      </section>
+        {stats && (
+          <div className="grid grid-cols-2 md:grid-cols-6 gap-4">
+            {[
+              { label: 'Total Students', value: stats.total, color: 'text-blue-400' },
+              { label: 'Active', value: stats.active, color: 'text-emerald-400' },
+              { label: 'Inactive', value: stats.inactive, color: 'text-red-400' },
+              { label: 'With Resume', value: stats.with_resume, color: 'text-purple-400' },
+              { label: 'Without Resume', value: stats.without_resume, color: 'text-amber-400' },
+              { label: 'Logged In Today', value: stats.logged_in_today, color: 'text-cyan-400' },
+            ].map((s, i) => (
+              <div key={i} className="bg-black/20 rounded-2xl p-4 border border-white/5">
+                <div className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">{s.label}</div>
+                <div className={`text-2xl font-black mt-2 ${s.color}`}>{s.value}</div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
 
-      {/* Search & Filters */}
-      <Card className="p-4 bg-[#13261B] border-white/5">
-        <div className="grid grid-cols-1 md:grid-cols-12 gap-4 items-center">
-          
-          {/* Keyword Search */}
-          <div className="md:col-span-6 relative">
-            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500" size={14} />
+      {/* Main Table Area */}
+      <div className="bg-[#102117] border border-white/5 rounded-3xl p-6 shadow-sm">
+        
+        {/* Toolbar */}
+        <div className="flex flex-col md:flex-row justify-between gap-4 mb-6">
+          <div className="relative w-full md:w-96">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={14} />
             <input 
-              type="text"
-              placeholder="Search by Roll, Name, or Email..."
+              type="text" 
+              placeholder="Search by name, roll number, department..."
               value={searchQuery}
-              onChange={(e) => { setSearchQuery(e.target.value); setCurrentPage(1); }}
-              className="w-full pl-10 pr-4 py-2.5 bg-[#102117] border border-white/5 rounded-xl text-xs text-white focus:outline-none focus:-[#111111]/30 font-medium"
+              onChange={handleSearch}
+              className="w-full bg-black/20 border border-white/10 rounded-xl pl-9 pr-4 py-2 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-emerald-500"
             />
           </div>
 
-          {/* Department Filter */}
-          <div className="md:col-span-3">
-            <select
-              value={deptFilter}
-              onChange={(e) => { setDeptFilter(e.target.value); setCurrentPage(1); }}
-              className="w-full px-3 py-2.5 bg-[#102117] border border-white/5 rounded-xl text-xs text-slate-300 focus:outline-none focus:-[#111111]/30 cursor-pointer font-semibold"
-            >
-              <option value="All">All Departments</option>
-              <option value="BCA">BCA</option>
-              <option value="CSE">CSE</option>
-              <option value="ISE">ISE</option>
-            </select>
-          </div>
-
-          {/* Placement Status Filter */}
-          <div className="md:col-span-3">
-            <select
-              value={placementFilter}
-              onChange={(e) => { setPlacementFilter(e.target.value); setCurrentPage(1); }}
-              className="w-full px-3 py-2.5 bg-[#102117] border border-white/5 rounded-xl text-xs text-slate-300 focus:outline-none focus:-[#111111]/30 cursor-pointer font-semibold"
-            >
-              <option value="All">All Placements</option>
-              <option value="Placed">Placed</option>
-              <option value="Unplaced">Unplaced</option>
-              <option value="In-Process">In-Process</option>
-            </select>
-          </div>
-
+          {selectedRolls.size > 0 && (
+            <div className="flex items-center gap-2 bg-emerald-500/10 border border-emerald-500/20 px-3 py-1.5 rounded-xl">
+              <span className="text-xs font-semibold text-emerald-400 mr-2">
+                {selectedRolls.size} selected
+              </span>
+              <button onClick={() => executeBulkAction('activate')} className="text-[10px] uppercase font-bold text-emerald-400 hover:text-emerald-300 px-2 py-1 bg-emerald-500/10 rounded-lg">Activate</button>
+              <button onClick={() => executeBulkAction('deactivate')} className="text-[10px] uppercase font-bold text-amber-400 hover:text-amber-300 px-2 py-1 bg-amber-500/10 rounded-lg">Suspend</button>
+              <button onClick={() => executeBulkAction('reset_password')} className="text-[10px] uppercase font-bold text-blue-400 hover:text-blue-300 px-2 py-1 bg-blue-500/10 rounded-lg">Reset Pass</button>
+              <button onClick={() => executeBulkAction('delete')} className="text-[10px] uppercase font-bold text-red-400 hover:text-red-300 px-2 py-1 bg-red-500/10 rounded-lg">Delete</button>
+            </div>
+          )}
         </div>
-      </Card>
 
-      {/* Student Table */}
-      <Card className="bg-[#13261B] border-white/5 overflow-hidden">
-        <div className="overflow-x-auto w-full">
-          <table className="w-full text-left border-collapse text-xs">
+        {/* Table */}
+        <div className="overflow-x-auto rounded-xl border border-white/5">
+          <table className="w-full text-left border-collapse">
             <thead>
-              <tr className="bg-[#102117] border-b border-white/5 text-slate-400 font-bold uppercase tracking-wider">
-                <th className="py-4 px-6 w-16 text-center">Photo</th>
-                <th className="py-4 px-6">Name</th>
-                <th className="py-4 px-6">USN</th>
-                <th className="py-4 px-6">Department</th>
-                <th className="py-4 px-6">Semester</th>
-                <th className="py-4 px-6">Email</th>
-                <th className="py-4 px-6">ATS Score</th>
-                <th className="py-4 px-6">Resume Status</th>
-                <th className="py-4 px-6">Placement Status</th>
-                <th className="py-4 px-6 text-center">Actions</th>
+              <tr className="bg-black/40 border-b border-white/5">
+                <th className="p-3 w-10 text-center">
+                  <input 
+                    type="checkbox" 
+                    className="rounded border-slate-600 bg-slate-800 accent-emerald-500 w-4 h-4"
+                    checked={currentItems.length > 0 && selectedRolls.size === currentItems.length}
+                    onChange={handleSelectAll}
+                  />
+                </th>
+                <th className="p-3 text-xs font-bold uppercase tracking-wider text-slate-400">Student</th>
+                <th className="p-3 text-xs font-bold uppercase tracking-wider text-slate-400">Roll Number</th>
+                <th className="p-3 text-xs font-bold uppercase tracking-wider text-slate-400">Department</th>
+                <th className="p-3 text-xs font-bold uppercase tracking-wider text-slate-400">Status</th>
+                <th className="p-3 text-xs font-bold uppercase tracking-wider text-slate-400 text-right">Actions</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-white/5 text-slate-300 font-medium">
-              {isLoading ? (
-                <tr>
-                  <td colSpan={10} className="py-12 text-center text-slate-500 font-bold">
-                    Loading student database records...
+            <tbody>
+              {currentItems.map((student) => (
+                <tr key={student.roll_number} className="border-b border-white/5 hover:bg-white/[0.02] transition-colors">
+                  <td className="p-3 text-center">
+                    <input 
+                      type="checkbox" 
+                      className="rounded border-slate-600 bg-slate-800 accent-emerald-500 w-4 h-4"
+                      checked={selectedRolls.has(student.roll_number)}
+                      onChange={() => handleSelectOne(student.roll_number)}
+                    />
+                  </td>
+                  <td className="p-3">
+                    <div className="flex items-center gap-3">
+                      <div className="w-8 h-8 rounded-full bg-emerald-500/20 text-emerald-400 flex items-center justify-center text-xs font-bold">
+                        {getInitials(student.full_name || student.student_name)}
+                      </div>
+                      <div>
+                        <div className="font-semibold text-white text-sm">{student.full_name || student.student_name}</div>
+                        <div className="text-xs text-slate-400">{student.email}</div>
+                      </div>
+                    </div>
+                  </td>
+                  <td className="p-3 text-sm font-medium text-slate-300">{student.roll_number}</td>
+                  <td className="p-3">
+                    <div className="text-sm text-slate-300">{student.department}</div>
+                    <div className="text-[10px] text-slate-500">Sem {student.semester}</div>
+                  </td>
+                  <td className="p-3">
+                    <span className={`inline-flex items-center px-2 py-1 rounded-md text-[10px] font-bold uppercase tracking-wide ${
+                      student.is_active ? 'bg-emerald-500/10 text-emerald-400' : 'bg-red-500/10 text-red-400'
+                    }`}>
+                      {student.is_active ? 'Active' : 'Suspended'}
+                    </span>
+                  </td>
+                  <td className="p-3 text-right flex justify-end gap-2">
+                    <button onClick={() => handleResetPassword(student.roll_number)} className="p-1.5 text-slate-400 hover:text-blue-400 hover:bg-blue-400/10 rounded-lg transition-colors" title="Reset Password">
+                      <Key size={14} />
+                    </button>
+                    <button onClick={() => handleToggleStatus(student.roll_number)} className="p-1.5 text-slate-400 hover:text-amber-400 hover:bg-amber-400/10 rounded-lg transition-colors" title="Toggle Status">
+                      <Filter size={14} />
+                    </button>
+                    <button onClick={() => handleDelete(student.roll_number)} className="p-1.5 text-slate-400 hover:text-red-400 hover:bg-red-400/10 rounded-lg transition-colors" title="Delete">
+                      <Trash2 size={14} />
+                    </button>
                   </td>
                 </tr>
-              ) : currentItems.length > 0 ? (
-                currentItems.map((user) => {
-                  const score = user.id % 3;
-                  const placementStatus = score === 0 ? 'Placed' : score === 1 ? 'Unplaced' : 'In-Process';
-                  const atsScoreVal = 65 + (user.id % 30);
-                  const resumeStatus = atsScoreVal >= 80 ? 'Active' : 'Draft';
-                  
-                  return (
-                    <tr 
-                      key={user.id} 
-                      className="transition-colors hover:bg-white/5"
-                    >
-                      {/* Photo (Initials) */}
-                      <td className="py-4 px-6 text-center">
-                        <div 
-                          onClick={() => { setSelectedStudent(user); setIsProfilePanelOpen(true); }}
-                          className="w-8 h-8 rounded-full -[#111111]/10 text-[#111111] flex items-center justify-center font-extrabold text-xs shadow-inner cursor-pointer border -[#111111]/15 mx-auto"
-                        >
-                          {(user.student_name || 'S').charAt(0).toUpperCase()}
-                        </div>
-                      </td>
-
-                      {/* Name */}
-                      <td className="py-4 px-6 font-bold text-slate-200">
-                        <span 
-                          onClick={() => { setSelectedStudent(user); setIsProfilePanelOpen(true); }}
-                          className="hover:underline hover:-[#111111] cursor-pointer"
-                        >
-                          {user.student_name || user.full_name}
-                        </span>
-                      </td>
-
-                      {/* USN */}
-                      <td className="py-4 px-6 font-extrabold text-white">
-                        {user.roll_number}
-                      </td>
-
-                      {/* Department */}
-                      <td className="py-4 px-6 font-bold">
-                        {user.department}
-                      </td>
-
-                      {/* Semester */}
-                      <td className="py-4 px-6">
-                        Semester {user.semester}
-                      </td>
-
-                      {/* Email */}
-                      <td className="py-4 px-6 text-slate-400">
-                        {user.email}
-                      </td>
-
-                      {/* ATS Score */}
-                      <td className="py-4 px-6 font-bold">
-                        <span className={`px-2 py-0.5 rounded text-[10px] ${
-                          atsScoreVal >= 80 ? 'bg-[#111111]/10 -[#111111]' : 'bg-amber-500/10 text-amber-400'
-                        }`}>
-                          {atsScoreVal}%
-                        </span>
-                      </td>
-
-                      {/* Resume Status */}
-                      <td className="py-4 px-6">
-                        <span className={`px-2 py-0.5 rounded text-[9.5px] font-black uppercase ${
-                          resumeStatus === 'Active' 
-                            ? '-[#111111]/10 -[#111111] border -[#111111]/20' 
-                            : 'bg-slate-800 text-slate-450 border border-white/5'
-                        }`}>
-                          {resumeStatus}
-                        </span>
-                      </td>
-
-                      {/* Placement Status */}
-                      <td className="py-4 px-6 font-bold">
-                        <span className={`px-2 py-0.5 rounded-full text-[9px] ${
-                          placementStatus === 'Placed' 
-                            ? '-[#111111]/10 -[#111111]' 
-                            : placementStatus === 'In-Process'
-                            ? 'bg-amber-500/10 text-amber-400'
-                            : 'bg-slate-800 text-slate-400'
-                        }`}>
-                          {placementStatus}
-                        </span>
-                      </td>
-
-                      {/* Actions */}
-                      <td className="py-4 px-6 text-center">
-                        <div className="flex items-center justify-center gap-1.5">
-                          <button
-                            onClick={() => openEditModal(user)}
-                            title="Edit Student"
-                            className="p-1.5 rounded-lg bg-white/5 border border-white/5 text-slate-400 hover:text-white hover:-[#111111]/30 transition-colors cursor-pointer"
-                          >
-                            <Edit size={12} />
-                          </button>
-                          <button
-                            onClick={() => handleResetPassword(user.roll_number)}
-                            title="Reset Password to DOB"
-                            className="p-1.5 rounded-lg bg-white/5 border border-white/5 text-slate-400 hover:text-white hover:-[#111111]/30 transition-colors cursor-pointer"
-                          >
-                            <Key size={12} />
-                          </button>
-                          <button
-                            onClick={() => handleToggleStatus(user.roll_number)}
-                            className="p-1.5 rounded-lg bg-white/5 border border-white/5 text-slate-400 hover:text-white hover:-[#111111]/30 transition-colors cursor-pointer"
-                          >
-                            {user.status === 'Active' ? <ToggleRight size={12} /> : <ToggleLeft size={12} />}
-                          </button>
-                          <button
-                            onClick={() => handleDeleteStudent(user.roll_number)}
-                            title="Delete Student"
-                            className="p-1.5 rounded-lg bg-rose-500/10 border border-rose-500/20 text-rose-500 hover:bg-rose-600 hover:text-white transition-colors cursor-pointer"
-                          >
-                            <Trash2 size={12} />
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  );
-                })
-              ) : (
+              ))}
+              {currentItems.length === 0 && (
                 <tr>
-                  <td colSpan={10} className="py-12 text-center text-slate-500 font-bold">
-                    No students match search queries.
+                  <td colSpan={6} className="p-8 text-center text-slate-500 text-sm">
+                    No students found. Try adjusting your search.
                   </td>
                 </tr>
               )}
@@ -451,232 +324,142 @@ export const StudentsModule: React.FC = () => {
           </table>
         </div>
 
-        {/* Pagination Footer */}
+        {/* Pagination */}
         {totalPages > 1 && (
-          <div className="bg-[#102117] px-6 py-4 flex items-center justify-between border-t border-white/5 text-slate-400 text-xs">
-            <span>Showing {indexOfFirstItem + 1} to {Math.min(indexOfLastItem, filteredUsers.length)} of {filteredUsers.length} students</span>
-            <div className="flex gap-2">
-              <button
-                onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+          <div className="flex justify-between items-center mt-6">
+            <span className="text-xs text-slate-500">
+              Showing {indexOfFirstItem + 1} to {Math.min(indexOfLastItem, students.length)} of {students.length}
+            </span>
+            <div className="flex gap-1">
+              <button 
+                onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
                 disabled={currentPage === 1}
-                className="p-1.5 rounded-lg bg-white/5 border border-white/5 hover:text-white cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                <ChevronLeft size={14} />
-              </button>
-              <button
-                onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                className="p-1 text-slate-400 hover:text-white disabled:opacity-50"
+              ><ChevronLeft size={16}/></button>
+              <button 
+                onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
                 disabled={currentPage === totalPages}
-                className="p-1.5 rounded-lg bg-white/5 border border-white/5 hover:text-white cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                <ChevronRight size={14} />
-              </button>
+                className="p-1 text-slate-400 hover:text-white disabled:opacity-50"
+              ><ChevronRight size={16}/></button>
             </div>
           </div>
         )}
-      </Card>
+      </div>
 
-      {/* Student Detailed Profile Sliding Panel */}
-      {isProfilePanelOpen && selectedStudent && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-xs z-50 flex justify-end animate-fadeIn">
-          <div 
-            onClick={() => setIsProfilePanelOpen(false)}
-            className="fixed inset-0 z-0"
-          />
-          <div className="w-full max-w-lg bg-[#102117] border-l border-white/10 h-full p-6 overflow-y-auto relative z-10 text-left shadow-2xl flex flex-col justify-between">
-            <div className="flex flex-col gap-6">
-              <div className="flex justify-between items-start border-b border-white/5 pb-4">
-                <div className="flex items-center gap-3">
-                  <div className="w-11 h-11 rounded-xl bg-gradient-to-tr -[#111111] -[#111111] text-white font-extrabold flex items-center justify-center text-sm shadow-md">
-                    {selectedStudent.roll_number.substring(0, 3)}
-                  </div>
-                  <div>
-                    <h3 className="font-extrabold text-sm text-white">{selectedStudent.student_name || selectedStudent.full_name}</h3>
-                    <p className="text-[10px] text-slate-400 font-semibold mt-0.5">{selectedStudent.roll_number} • Semester {selectedStudent.semester}</p>
-                  </div>
-                </div>
-                <button 
-                  onClick={() => setIsProfilePanelOpen(false)}
-                  className="p-1 text-slate-400 hover:text-white hover:bg-white/5 rounded-lg cursor-pointer"
-                >
-                  <X size={18} />
-                </button>
-              </div>
-
-              {/* Profile details */}
-              <div className="flex flex-col gap-5 text-xs text-slate-350">
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="p-3 bg-white/5 border border-white/5 rounded-xl">
-                    <span className="text-[9px] text-slate-450 uppercase font-bold">Academic CGPA</span>
-                    <p className="text-base font-black text-white mt-1">8.74 / 10.0</p>
-                  </div>
-                  <div className="p-3 bg-white/5 border border-white/5 rounded-xl">
-                    <span className="text-[9px] text-slate-450 uppercase font-bold">Average ATS Score</span>
-                    <p className="text-base font-black text-[#111111] mt-1">84% Excellent</p>
-                  </div>
-                </div>
-
-                <div>
-                  <h4 className="font-bold text-slate-200 border-b border-white/5 pb-1 mb-2">Resume Draft History</h4>
-                  <div className="p-3 bg-white/5 rounded-lg border border-white/5 flex justify-between items-center">
-                    <div>
-                      <p className="font-bold text-xs text-white">SDE_Placement_CV_v1.pdf</p>
-                      <span className="text-[9.5px] text-slate-500 mt-1 block">ATS Score: 84% • Last Updated: 2 Hours Ago</span>
-                    </div>
-                    <FileText size={16} className="text-slate-450" />
-                  </div>
-                </div>
-
-                <div>
-                  <h4 className="font-bold text-slate-200 border-b border-white/5 pb-1 mb-2">Registered Project Highlights</h4>
-                  <ul className="list-disc pl-4 flex flex-col gap-1.5 text-slate-400">
-                    <li>Placement Coordinator Portal using React 19 & Tailwind v4</li>
-                    <li>AWS Identity & Access Management Policy Audits tool</li>
-                  </ul>
-                </div>
-              </div>
+      {/* Add Student Modal */}
+      {isAddModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+          <div className="bg-[#102117] border border-white/10 rounded-3xl w-full max-w-lg shadow-2xl overflow-hidden">
+            <div className="p-6 border-b border-white/5 flex justify-between items-center">
+              <h2 className="text-lg font-bold text-white">Add New Student</h2>
+              <button onClick={() => setIsAddModalOpen(false)} className="text-slate-400 hover:text-white"><X size={18}/></button>
             </div>
+            <form onSubmit={handleAddSubmit} className="p-6 flex flex-col gap-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-semibold text-slate-400 mb-1">Full Name</label>
+                  <input required value={formData.student_name} onChange={e=>setFormData({...formData, student_name: e.target.value})} className="w-full bg-black/20 border border-white/10 rounded-xl px-3 py-2 text-sm text-white" />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-slate-400 mb-1">Roll Number</label>
+                  <input required value={formData.roll_number} onChange={e=>setFormData({...formData, roll_number: e.target.value})} className="w-full bg-black/20 border border-white/10 rounded-xl px-3 py-2 text-sm text-white" />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-slate-400 mb-1">Email</label>
+                  <input type="email" required value={formData.email} onChange={e=>setFormData({...formData, email: e.target.value})} className="w-full bg-black/20 border border-white/10 rounded-xl px-3 py-2 text-sm text-white" />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-slate-400 mb-1">Password</label>
+                  <input type="password" required value={formData.password} onChange={e=>setFormData({...formData, password: e.target.value})} className="w-full bg-black/20 border border-white/10 rounded-xl px-3 py-2 text-sm text-white" />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-slate-400 mb-1">Date of Birth</label>
+                  <input type="date" required value={formData.dob} onChange={e=>setFormData({...formData, dob: e.target.value})} className="w-full bg-black/20 border border-white/10 rounded-xl px-3 py-2 text-sm text-white" />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-slate-400 mb-1">Phone</label>
+                  <input value={formData.phone} onChange={e=>setFormData({...formData, phone: e.target.value})} className="w-full bg-black/20 border border-white/10 rounded-xl px-3 py-2 text-sm text-white" />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-slate-400 mb-1">Department</label>
+                  <select value={formData.department} onChange={e=>setFormData({...formData, department: e.target.value})} className="w-full bg-black/20 border border-white/10 rounded-xl px-3 py-2 text-sm text-white">
+                    <option value="BCA">BCA</option>
+                    <option value="CS">Computer Science</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-slate-400 mb-1">Semester</label>
+                  <input type="number" required min="1" max="8" value={formData.semester} onChange={e=>setFormData({...formData, semester: parseInt(e.target.value)})} className="w-full bg-black/20 border border-white/10 rounded-xl px-3 py-2 text-sm text-white" />
+                </div>
+              </div>
+              <div className="flex justify-end gap-3 mt-4 pt-4 border-t border-white/5">
+                <Button variant="outline" type="button" onClick={() => setIsAddModalOpen(false)} className="border-white/10">Cancel</Button>
+                <Button type="submit" className="bg-white text-black hover:bg-slate-200">Save Student</Button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
 
-            <div className="pt-4 border-t border-white/5 flex gap-2.5">
-              <Button 
-                onClick={() => { setIsProfilePanelOpen(false); openEditModal(selectedStudent); }}
-                variant="secondary" 
-                className="w-full border-white/10 text-white font-bold"
-              >
-                Modify Profile Details
-              </Button>
+      {/* Import Wizard Modal */}
+      {isImportModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+          <div className="bg-[#102117] border border-white/10 rounded-3xl w-full max-w-lg shadow-2xl overflow-hidden">
+            <div className="p-6 border-b border-white/5 flex justify-between items-center">
+              <h2 className="text-lg font-bold text-white">Import Students (CSV)</h2>
+              <button onClick={() => {setIsImportModalOpen(false); setImportFile(null); setImportStatus({status:'idle', msg:''});}} className="text-slate-400 hover:text-white"><X size={18}/></button>
+            </div>
+            
+            <div className="p-6 flex flex-col gap-6 text-center">
+              {importStatus.status === 'idle' && (
+                <>
+                  <div className="border-2 border-dashed border-white/10 rounded-2xl p-8 hover:border-white/20 transition-colors cursor-pointer" onClick={() => fileInputRef.current?.click()}>
+                    <UploadCloud size={48} className="mx-auto text-emerald-400 mb-4" />
+                    <p className="text-sm text-white font-semibold">Click to upload CSV file</p>
+                    <p className="text-xs text-slate-500 mt-1">Template columns: name, rollNumber, password, department, semester</p>
+                    <input type="file" accept=".csv" className="hidden" ref={fileInputRef} onChange={(e) => setImportFile(e.target.files?.[0] || null)} />
+                  </div>
+                  {importFile && (
+                    <div className="flex justify-between items-center bg-white/5 p-3 rounded-xl border border-white/10">
+                      <span className="text-sm font-medium text-white truncate max-w-[80%]">{importFile.name}</span>
+                      <button onClick={() => setImportFile(null)} className="text-slate-400 hover:text-red-400"><X size={14}/></button>
+                    </div>
+                  )}
+                  <div className="flex justify-end gap-3 mt-2">
+                    <Button variant="outline" type="button" onClick={() => setIsImportModalOpen(false)} className="border-white/10">Cancel</Button>
+                    <Button onClick={handleImportSubmit} disabled={!importFile} className="bg-white text-black hover:bg-slate-200 disabled:opacity-50">Start Import</Button>
+                  </div>
+                </>
+              )}
+
+              {importStatus.status === 'uploading' && (
+                <div className="py-12">
+                  <RefreshCw className="animate-spin text-emerald-400 mx-auto mb-4" size={32} />
+                  <p className="text-white font-semibold">{importStatus.msg}</p>
+                </div>
+              )}
+
+              {importStatus.status === 'done' && (
+                <div className="py-12">
+                  <CheckCircle2 className="text-emerald-400 mx-auto mb-4" size={48} />
+                  <p className="text-white font-semibold mb-2">{importStatus.msg}</p>
+                  <Button onClick={() => setIsImportModalOpen(false)} className="mt-4 bg-white text-black">Done</Button>
+                </div>
+              )}
+
+              {importStatus.status === 'error' && (
+                <div className="py-12">
+                  <AlertCircle className="text-red-400 mx-auto mb-4" size={48} />
+                  <p className="text-red-400 font-semibold mb-2">Import Failed</p>
+                  <p className="text-xs text-slate-400">{importStatus.msg}</p>
+                  <Button variant="outline" onClick={() => setImportStatus({status:'idle', msg:''})} className="mt-4 border-white/10">Try Again</Button>
+                </div>
+              )}
             </div>
           </div>
         </div>
       )}
 
-      {/* Modal: Add Student */}
-      <Modal isOpen={isAddModalOpen} onClose={() => setIsAddModalOpen(false)} title="Register Student Account">
-        <form onSubmit={handleAddStudent} className="flex flex-col gap-4 text-left">
-          <Input 
-            id="roll_number"
-            name="roll_number"
-            label="Roll Number / USN*"
-            value={formData.roll_number}
-            onChange={handleInputChange}
-            required
-            placeholder="e.g. 24CSE015"
-          />
-          <Input 
-            id="student_name"
-            name="student_name"
-            label="Student Full Name*"
-            value={formData.student_name}
-            onChange={handleInputChange}
-            required
-            placeholder="e.g. Karan Dev"
-          />
-          <Input 
-            id="email"
-            name="email"
-            label="College Email Address*"
-            type="email"
-            value={formData.email}
-            onChange={handleInputChange}
-            required
-            placeholder="e.g. karan@bimba.ai"
-          />
-          <Input 
-            id="dob"
-            name="dob"
-            label="Date of Birth (Format: DD-MM-YYYY)*"
-            value={formData.dob}
-            onChange={handleInputChange}
-            required
-            placeholder="e.g. 15-08-2004"
-          />
-          <Input 
-            id="phone"
-            name="phone"
-            label="Phone"
-            value={formData.phone}
-            onChange={handleInputChange}
-            placeholder="e.g. +91 9876543210"
-          />
-          
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="text-[10px] font-bold text-slate-400 uppercase block mb-1">Department</label>
-              <select 
-                name="department"
-                value={formData.department}
-                onChange={handleInputChange}
-                className="w-full px-3 py-2.5 bg-[#102117] border border-white/10 rounded-xl text-xs text-slate-200 focus:outline-none"
-              >
-                <option value="BCA">BCA</option>
-                <option value="CSE">CSE</option>
-                <option value="ISE">ISE</option>
-              </select>
-            </div>
-            <div>
-              <label className="text-[10px] font-bold text-slate-400 uppercase block mb-1">Semester</label>
-              <select 
-                name="semester"
-                value={formData.semester}
-                onChange={handleInputChange}
-                className="w-full px-3 py-2.5 bg-[#102117] border border-white/10 rounded-xl text-xs text-slate-200 focus:outline-none"
-              >
-                {[1,2,3,4,5,6,7,8].map(s => <option key={s} value={s}>Semester {s}</option>)}
-              </select>
-            </div>
-          </div>
-
-          <div className="flex justify-end gap-2 pt-3">
-            <Button type="button" variant="secondary" onClick={() => setIsAddModalOpen(false)}>Cancel</Button>
-            <Button type="submit" variant="primary">Add Student</Button>
-          </div>
-        </form>
-      </Modal>
-
-      {/* Modal: Edit Student */}
-      <Modal isOpen={isEditModalOpen} onClose={() => setIsEditModalOpen(false)} title="Update Student Profile">
-        <form onSubmit={handleEditStudent} className="flex flex-col gap-4 text-left">
-          <Input id="roll_number" name="roll_number" label="Roll Number / USN (Read-only)" value={formData.roll_number} disabled />
-          <Input id="student_name" name="student_name" label="Student Full Name*" value={formData.student_name} onChange={handleInputChange} required />
-          <Input id="email" name="email" label="College Email*" type="email" value={formData.email} onChange={handleInputChange} required />
-          <Input id="dob" name="dob" label="Date of Birth*" value={formData.dob} onChange={handleInputChange} required />
-          <Input id="phone" name="phone" label="Phone" value={formData.phone} onChange={handleInputChange} />
-          
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="text-[10px] font-bold text-slate-400 uppercase block mb-1">Department</label>
-              <select 
-                name="department"
-                value={formData.department}
-                onChange={handleInputChange}
-                className="w-full px-3 py-2.5 bg-[#102117] border border-white/10 rounded-xl text-xs text-slate-200 focus:outline-none"
-              >
-                <option value="BCA">BCA</option>
-                <option value="CSE">CSE</option>
-                <option value="ISE">ISE</option>
-              </select>
-            </div>
-            <div>
-              <label className="text-[10px] font-bold text-slate-400 uppercase block mb-1">Semester</label>
-              <select 
-                name="semester"
-                value={formData.semester}
-                onChange={handleInputChange}
-                className="w-full px-3 py-2.5 bg-[#102117] border border-white/10 rounded-xl text-xs text-slate-200 focus:outline-none"
-              >
-                {[1,2,3,4,5,6,7,8].map(s => <option key={s} value={s}>Semester {s}</option>)}
-              </select>
-            </div>
-          </div>
-
-          <div className="flex justify-end gap-2 pt-3">
-            <Button type="button" variant="secondary" onClick={() => setIsEditModalOpen(false)}>Cancel</Button>
-            <Button type="submit" variant="primary">Save Changes</Button>
-          </div>
-        </form>
-      </Modal>
-
     </div>
   );
 };
-
-export default StudentsModule;
