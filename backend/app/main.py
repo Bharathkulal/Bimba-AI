@@ -26,6 +26,7 @@ from app.api.jobs import router as jobs_router, companies_router
 from app.api.v1.files.files_routes import router as files_router, cloudinary_router
 from app.api.v1.resumes.resume_extract import router as resume_extract_router
 from app.api.v1.resumes.resume_builder import router as resume_builder_router
+from app.api.v1.placement.placement_routes import router as placement_router
 from app.database.init_db import init_db
 
 app = FastAPI(
@@ -63,6 +64,7 @@ app.include_router(files_router, prefix=settings.API_V1_STR)
 app.include_router(cloudinary_router, prefix=settings.API_V1_STR)
 app.include_router(resume_extract_router, prefix=settings.API_V1_STR)
 app.include_router(resume_builder_router, prefix=settings.API_V1_STR)
+app.include_router(placement_router, prefix=settings.API_V1_STR)
 
 # Expose health check at root-level "/health" - db refresh reload
 app.include_router(health_router)

@@ -7,6 +7,7 @@ import { apiClient } from '../services/api';
 import { DefaultLayout } from '../layouts/DefaultLayout';
 import { DashboardLayout } from '../layouts/DashboardLayout';
 import { AdminLayout } from '../layouts/AdminLayout';
+import { PlacementLayout } from '../layouts/PlacementLayout';
 
 // Lazy Loaded Pages
 const LandingPage = lazy(() => import('../pages/LandingPage').then(module => ({ default: module.LandingPage })));
@@ -49,6 +50,18 @@ const SettingsModule = lazy(() => import('../pages/admin/SettingsModule').then(m
 const AiGatewayModule = lazy(() => import('../pages/admin/AiGatewayModule').then(module => ({ default: module.AiGatewayModule })));
 const JobsModule = lazy(() => import('../pages/admin/JobsModule').then(module => ({ default: module.JobsModule })));
 const CompaniesModule = lazy(() => import('../pages/admin/CompaniesModule').then(module => ({ default: module.CompaniesModule })));
+
+// Placement Pages
+const PlacementDashboard = lazy(() => import('../pages/placement/PlacementDashboard').then(module => ({ default: module.PlacementDashboard })));
+const StudentManagement = lazy(() => import('../pages/placement/StudentManagement').then(module => ({ default: module.StudentManagement })));
+const DriveManagement = lazy(() => import('../pages/placement/DriveManagement').then(module => ({ default: module.DriveManagement })));
+const CompanyManagement = lazy(() => import('../pages/placement/CompanyManagement').then(module => ({ default: module.CompanyManagement })));
+const ResumeVerification = lazy(() => import('../pages/placement/ResumeVerification').then(module => ({ default: module.ResumeVerification })));
+const ApplicationsManagement = lazy(() => import('../pages/placement/ApplicationsManagement').then(module => ({ default: module.ApplicationsManagement })));
+const AnnouncementsManagement = lazy(() => import('../pages/placement/AnnouncementsManagement').then(module => ({ default: module.AnnouncementsManagement })));
+const ReportsManagement = lazy(() => import('../pages/placement/ReportsManagement').then(module => ({ default: module.ReportsManagement })));
+const PlacementProfile = lazy(() => import('../pages/placement/PlacementProfile').then(module => ({ default: module.PlacementProfile })));
+const PlacementSettings = lazy(() => import('../pages/placement/PlacementSettings').then(module => ({ default: module.PlacementSettings })));
 
 // Route Guards
 const ProtectedRoute: React.FC = () => {
@@ -98,7 +111,17 @@ const GuestRoute: React.FC = () => {
 
 const AdminProtectedRoute: React.FC = () => {
   const adminToken = localStorage.getItem('admin_token');
-  if (!adminToken) {
+  const adminRole = localStorage.getItem('admin_role');
+  if (!adminToken || adminRole === 'placement_officer') {
+    return <Navigate to="/admin/login" replace />;
+  }
+  return <Outlet />;
+};
+
+const PlacementProtectedRoute: React.FC = () => {
+  const adminToken = localStorage.getItem('admin_token');
+  const adminRole = localStorage.getItem('admin_role');
+  if (!adminToken || adminRole !== 'placement_officer') {
     return <Navigate to="/admin/login" replace />;
   }
   return <Outlet />;
@@ -179,6 +202,22 @@ export const AppRoutes: React.FC = () => {
               <Route path="/admin/settings" element={<SettingsModule />} />
               <Route path="/admin/jobs" element={<JobsModule />} />
               <Route path="/admin/companies" element={<CompaniesModule />} />
+            </Route>
+          </Route>
+
+          {/* Placement Portal Layout */}
+          <Route element={<PlacementProtectedRoute />}>
+            <Route element={<PlacementLayout />}>
+              <Route path="/placement" element={<PlacementDashboard />} />
+              <Route path="/placement/students" element={<StudentManagement />} />
+              <Route path="/placement/drives" element={<DriveManagement />} />
+              <Route path="/placement/companies" element={<CompanyManagement />} />
+              <Route path="/placement/resume-verification" element={<ResumeVerification />} />
+              <Route path="/placement/applications" element={<ApplicationsManagement />} />
+              <Route path="/placement/announcements" element={<AnnouncementsManagement />} />
+              <Route path="/placement/reports" element={<ReportsManagement />} />
+              <Route path="/placement/profile" element={<PlacementProfile />} />
+              <Route path="/placement/settings" element={<PlacementSettings />} />
             </Route>
           </Route>
 

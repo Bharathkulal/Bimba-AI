@@ -406,7 +406,7 @@ export const LandingPage: React.FC = () => {
               </div>
 
               {/* Bottom tag */}
-              <div className="mt-4 bg-primary text-white text-[10px] font-bold py-2 px-4 rounded-xl text-center shadow-sm">
+              <div className="mt-4 bg-primary text-[10px] font-bold py-2 px-4 rounded-xl text-center shadow-sm" style={{ color: '#ffffff' }}>
                 Create your Job Winning resume 2x faster
               </div>
             </Card>
@@ -539,7 +539,7 @@ export const LandingPage: React.FC = () => {
                       <div className="h-1.5 bg-slate-100 rounded w-full" />
                       <div className="h-1.5 bg-slate-100 rounded w-5/6" />
                     </div>
-                    <span className="absolute bottom-1 right-2 bg-primary text-white text-[7px] px-2 py-0.5 rounded-full uppercase tracking-wider font-extrabold flex items-center gap-0.5 shadow">
+                    <span className="absolute bottom-1 right-2 bg-primary text-[7px] px-2 py-0.5 rounded-full uppercase tracking-wider font-extrabold flex items-center gap-0.5 shadow" style={{ color: '#ffffff' }}>
                       <Sparkles size={6} /> Generate
                     </span>
                   </div>

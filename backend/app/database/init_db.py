@@ -31,10 +31,34 @@ def init_db():
                     "is_active": True,
                     "force_logout": False,
                     "created_at": datetime.now(timezone.utc)
+                },
+                {
+                    "id": 3,
+                    "username": "placement",
+                    "email": "placement@bimba.ai",
+                    "password_hash": get_password_hash("placement"),
+                    "role": "placement_officer",
+                    "is_active": True,
+                    "force_logout": False,
+                    "created_at": datetime.now(timezone.utc)
                 }
             ])
-            db.counters.update_one({"_id": "admin_users"}, {"$set": {"seq": 2}}, upsert=True)
+            db.counters.update_one({"_id": "admin_users"}, {"$set": {"seq": 3}}, upsert=True)
             print("Seeded admin users.")
+            
+        if db.admin_users.count_documents({"username": "placement"}) == 0:
+            db.admin_users.insert_one({
+                "id": 3,
+                "username": "placement",
+                "email": "placement@bimba.ai",
+                "password_hash": get_password_hash("placement"),
+                "role": "placement_officer",
+                "is_active": True,
+                "force_logout": False,
+                "created_at": datetime.now(timezone.utc)
+            })
+            db.counters.update_one({"_id": "admin_users"}, {"$set": {"seq": 3}}, upsert=True)
+            print("Seeded placement officer user.")
 
         # 2. Seed Departments
         if db.departments.count_documents({}) == 0:

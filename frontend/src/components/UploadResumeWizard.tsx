@@ -220,8 +220,10 @@ export const UploadResumeWizard: React.FC<UploadResumeWizardProps> = ({
       const formData = new FormData();
       formData.append('file', targetFile);
       
+      // Do NOT set Content-Type manually — axios auto-adds the multipart boundary
       const uploadRes = await apiClient.post('/api/resume-studio/upload', formData, {
-        headers: { 'Content-Type': 'multipart/form-data' }
+        headers: { 'Content-Type': undefined as any },
+        timeout: 120000 // 2 min timeout for large files + OCR
       });
       
       const parsed = uploadRes.data.parsed_data || {};
@@ -229,9 +231,19 @@ export const UploadResumeWizard: React.FC<UploadResumeWizardProps> = ({
       setParsedData(parsed);
       setResumeId(newId);
 
-      // Fetch initial score analysis
-      const analyzeRes = await apiClient.post(`/api/resume-studio/${newId}/analyze`);
-      setAnalysisData(analyzeRes.data);
+      // Fetch initial score analysis (non-blocking — don't fail upload if AI is slow)
+      try {
+        const analyzeRes = await apiClient.post(`/api/resume-studio/${newId}/analyze`, {}, {
+          timeout: 90000 // 90s timeout for AI analysis
+        });
+        setAnalysisData(analyzeRes.data);
+      } catch (analyzeErr: any) {
+        console.warn('[Resume Upload] AI analysis failed, using defaults:', analyzeErr?.message);
+        setAnalysisData({
+          scores: { overall_score: 75, ats_score: 78, formatting_score: 75, grammar_score: 85 },
+          suggestions: ['Analysis will be available shortly. Please refresh later.']
+        });
+      }
 
       // Create conversational interview questions
       const queue: any[] = [];

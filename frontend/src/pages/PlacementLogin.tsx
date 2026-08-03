@@ -1,10 +1,10 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Cpu, Lock, User, AlertCircle, Eye, EyeOff, Sparkles, Copy, Check } from 'lucide-react';
+import { Briefcase, Lock, User, AlertCircle, Eye, EyeOff, Sparkles, Copy, Check } from 'lucide-react';
 import { Button } from '../components/Button';
 import { adminService } from '../services/admin';
 
-export const AdminLogin: React.FC = () => {
+export const PlacementLogin: React.FC = () => {
   const navigate = useNavigate();
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
@@ -29,13 +29,15 @@ export const AdminLogin: React.FC = () => {
       const res = await adminService.login(username, password);
       if (res.success) {
         const role = (res as any).role || 'admin';
-        if (role === 'placement_officer') {
+        
+        if (role !== 'placement_officer') {
           adminService.logout();
-          setError("Access denied: Please use the Placement Officer Login page.");
+          setError("Access denied: Please use the Administrator Login page.");
           return;
         }
+
         localStorage.setItem('admin_role', role);
-        navigate('/admin/dashboard');
+        navigate('/placement');
       } else {
         setError("Invalid username or password.");
       }
@@ -81,16 +83,16 @@ export const AdminLogin: React.FC = () => {
   return (
     <div className="min-h-screen flex flex-col items-center justify-center font-sans px-6 relative overflow-hidden bg-slate-50">
       {/* Decorative blurred background shapes */}
-      <div className="absolute top-[-20%] left-[-20%] w-[60%] h-[60%] rounded-full bg-blue-500/5 blur-[120px] pointer-events-none" />
-      <div className="absolute bottom-[-20%] right-[-20%] w-[55%] h-[55%] rounded-full bg-indigo-500/5 blur-[120px] pointer-events-none" />
+      <div className="absolute top-[-20%] left-[-20%] w-[60%] h-[60%] rounded-full bg-emerald-500/5 blur-[120px] pointer-events-none" />
+      <div className="absolute bottom-[-20%] right-[-20%] w-[55%] h-[55%] rounded-full bg-teal-500/5 blur-[120px] pointer-events-none" />
 
       <div className="w-full max-w-md bg-white border border-slate-200/60 rounded-3xl p-8 shadow-xl shadow-slate-100/50 relative z-10">
         <div className="flex flex-col items-center text-center mb-8">
-          <div className="w-14 h-14 rounded-2xl bg-gradient-to-tr from-blue-600 to-indigo-600 flex items-center justify-center text-white shadow-lg shadow-blue-500/10 mb-4.5">
-            <Cpu size={28} />
+          <div className="w-14 h-14 rounded-2xl bg-gradient-to-tr from-emerald-600 to-teal-650 flex items-center justify-center text-white shadow-lg shadow-emerald-500/10 mb-4.5">
+            <Briefcase size={28} />
           </div>
-          <h1 className="text-2xl font-extrabold text-slate-900 tracking-tight">SaaS Console Login</h1>
-          <p className="text-slate-450 text-xs mt-1.5 font-bold uppercase tracking-wider">Bimba AI Administrators</p>
+          <h1 className="text-2xl font-extrabold text-slate-900 tracking-tight">Placement Console Login</h1>
+          <p className="text-slate-450 text-xs mt-1.5 font-bold uppercase tracking-wider">Bimba AI Placement Officers</p>
         </div>
 
         {error && (
@@ -109,10 +111,11 @@ export const AdminLogin: React.FC = () => {
               <User className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
               <input
                 type="text"
-                placeholder="Enter admin username..."
+                placeholder="placement"
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
-                className="w-full pl-11 pr-4 py-3 rounded-xl bg-slate-50 border border-slate-200/80 focus:border-blue-500 focus:outline-none text-xs text-slate-700 placeholder:text-slate-450 font-medium transition-smooth"
+                className="w-full pl-11 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl text-xs font-semibold text-slate-800 outline-none focus:bg-white focus:border-emerald-500 transition-all placeholder:text-slate-350"
+                required
               />
             </div>
           </div>
@@ -125,15 +128,16 @@ export const AdminLogin: React.FC = () => {
               <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
               <input
                 type={showPassword ? "text" : "password"}
-                placeholder="Enter admin password..."
+                placeholder="••••••••"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="w-full pl-11 pr-10 py-3 rounded-xl bg-slate-50 border border-slate-200/80 focus:border-blue-500 focus:outline-none text-xs text-slate-700 placeholder:text-slate-450 font-medium transition-smooth"
+                className="w-full pl-11 pr-12 py-3 bg-slate-50 border border-slate-200 rounded-2xl text-xs font-semibold text-slate-800 outline-none focus:bg-white focus:border-emerald-500 transition-all placeholder:text-slate-350"
+                required
               />
               <button
                 type="button"
                 onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-650 transition-colors cursor-pointer flex items-center justify-center"
+                className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition-colors cursor-pointer"
               >
                 {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
               </button>
@@ -145,7 +149,7 @@ export const AdminLogin: React.FC = () => {
             disabled={isSubmitting}
             variant="primary"
             size="lg"
-            className="bg-blue-600 hover:bg-blue-700 shadow-md shadow-blue-500/10 font-bold mt-3"
+            className="bg-emerald-600 hover:bg-emerald-700 shadow-md shadow-emerald-500/10 font-bold mt-3"
           >
             {isSubmitting ? "Authenticating..." : "Login to Console"}
           </Button>
@@ -156,32 +160,32 @@ export const AdminLogin: React.FC = () => {
       <div className="w-full max-w-md mt-6 relative z-10 text-left">
         <div className="bg-white border border-slate-200/80 rounded-2xl p-5 text-slate-650 shadow-sm">
           <div className="flex items-center justify-between mb-3 border-b border-slate-100 pb-2">
-            <span className="text-xs font-bold text-blue-600 flex items-center gap-1.5 uppercase tracking-wider">
+            <span className="text-xs font-bold text-emerald-600 flex items-center gap-1.5 uppercase tracking-wider">
               <Sparkles size={14} /> Dev Testing Credentials
             </span>
-            <span className="text-[10px] bg-blue-50 text-blue-600 font-extrabold px-2 py-0.5 rounded border border-blue-100 uppercase">
-              Admin
+            <span className="text-[10px] bg-emerald-50 text-emerald-600 font-extrabold px-2 py-0.5 rounded border border-emerald-100 uppercase">
+              Placement
             </span>
           </div>
 
           <div className="flex flex-col gap-2.5 text-xs font-medium">
             <div className="flex items-center justify-between">
-              <span>Username: <strong>admin</strong> (or <strong>placement</strong>)</span>
+              <span>Username: <strong>placement</strong></span>
               <button
-                onClick={() => copyToClipboard('admin', setCopiedUser)}
+                onClick={() => copyToClipboard('placement', setCopiedUser)}
                 className="p-1.5 rounded-lg bg-slate-50 border border-slate-250 text-slate-500 hover:text-slate-800 transition-colors cursor-pointer flex items-center gap-1 text-[10px]"
               >
-                {copiedUser ? <Check size={12} className="-[#111111]" /> : <Copy size={12} />}
+                {copiedUser ? <Check size={12} className="text-slate-900" /> : <Copy size={12} />}
                 <span>{copiedUser ? 'Copied' : 'Copy'}</span>
               </button>
             </div>
             <div className="flex items-center justify-between">
-              <span>Password: <strong>admin</strong> (or <strong>placement</strong>)</span>
+              <span>Password: <strong>placement</strong></span>
               <button
-                onClick={() => copyToClipboard('admin', setCopiedPass)}
+                onClick={() => copyToClipboard('placement', setCopiedPass)}
                 className="p-1.5 rounded-lg bg-slate-50 border border-slate-250 text-slate-500 hover:text-slate-800 transition-colors cursor-pointer flex items-center gap-1 text-[10px]"
               >
-                {copiedPass ? <Check size={12} className="-[#111111]" /> : <Copy size={12} />}
+                {copiedPass ? <Check size={12} className="text-slate-900" /> : <Copy size={12} />}
                 <span>{copiedPass ? 'Copied' : 'Copy'}</span>
               </button>
             </div>
@@ -192,4 +196,4 @@ export const AdminLogin: React.FC = () => {
   );
 };
 
-export default AdminLogin;
+export default PlacementLogin;

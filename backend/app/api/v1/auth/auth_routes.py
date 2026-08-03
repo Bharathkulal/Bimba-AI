@@ -116,6 +116,9 @@ def get_current_admin(request: Request, db: Any = Depends(get_db)) -> AdminUser:
     if not admin.is_active:
         raise HTTPException(status_code=401, detail="Admin account is disabled")
         
+    if admin.role == "placement_officer":
+        raise HTTPException(status_code=403, detail="Forbidden: Placement officers do not have administrative access.")
+        
     return admin
 
 from fastapi.security import OAuth2PasswordBearer
