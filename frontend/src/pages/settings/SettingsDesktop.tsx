@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { PageHeader } from '../../components/PageHeader';
 import { Card } from '../../components/Card';
 import { Button } from '../../components/Button';
@@ -13,6 +13,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { useUserStore as useStore } from '../../store/userStore';
 import { apiClient } from '../../services/api';
+import { notificationsService, NotificationSettings } from '../../services/notifications';
 
 const changePasswordSchema = z.object({
   current_password: z.string().min(1, { message: 'Current password is required' }),
@@ -30,6 +31,41 @@ export const SettingsDesktop: React.FC = () => {
   const [activeCategory, setActiveCategory] = useState<'notifications' | 'security' | 'api' | 'danger'>('notifications');
   const [isLoading, setIsLoading] = useState(false);
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
+
+  const [notificationSettings, setNotificationSettings] = useState<NotificationSettings>({
+    resumeUpdates: true,
+    jobs: true,
+    placement: true,
+    aiSuggestions: true,
+    interviewAlerts: true,
+    announcements: true,
+    emailNotifications: true,
+    pushNotifications: true,
+    desktopNotifications: true
+  });
+
+  useEffect(() => {
+    const loadSettings = async () => {
+      try {
+        const s = await notificationsService.getSettings();
+        setNotificationSettings(s);
+      } catch (err) {
+        console.error("Error loading notification settings:", err);
+      }
+    };
+    loadSettings();
+  }, []);
+
+  const handleToggleSetting = async (key: keyof NotificationSettings) => {
+    const updated = { ...notificationSettings, [key]: !notificationSettings[key] };
+    setNotificationSettings(updated);
+    try {
+      await notificationsService.updateSettings(updated);
+      showToast("Notification preferences updated.", "success");
+    } catch (err) {
+      showToast("Failed to update preferences.", "error");
+    }
+  };
 
   // RapidAPI config state
   const [rapidApiKey, setRapidApiKey] = useState('********************************');
@@ -144,27 +180,55 @@ export const SettingsDesktop: React.FC = () => {
               <div className="flex flex-col gap-5 text-left">
                 <div className="border-b border-slate-100 pb-3">
                   <h3 className="text-sm font-extrabold text-slate-800 uppercase tracking-wider">Notification Preferences</h3>
-                  <p className="text-[10px] text-slate-400 mt-1 font-semibold">Choose how and when you receive career alerts.</p>
+                  <p className="text-[10px] text-slate-400 mt-1 font-semibold">Choose how and when you receive career alerts. Changes are saved to your account instantly.</p>
                 </div>
 
                 <div className="flex flex-col gap-4">
-                  {[
-                    { id: 'jobs', label: 'New Recommended Jobs', desc: 'Alert me immediately when a high score match is found' },
-                    { id: 'resume', label: 'ATS Analysis Complete', desc: 'Send notification when uploader parsing analysis finishes' },
-                    { id: 'admin', label: 'Academic Placement Bulletins', desc: 'Receive campus recruitment alerts and announcements' }
-                  ].map((notif) => (
-                    <div key={notif.id} className="flex items-start justify-between p-4 border border-slate-150 rounded-xl">
+                  {([
+                    { key: 'resumeUpdates' as const, label: 'Resume Updates', desc: 'ATS analysis complete, resume improvements, and skill suggestions' },
+                    { key: 'jobs' as const, label: 'Job Recommendations', desc: 'New matching jobs, application deadlines, and interview invitations' },
+                    { key: 'placement' as const, label: 'Campus Placement', desc: 'New campus drives, company visits, eligibility updates' },
+                    { key: 'aiSuggestions' as const, label: 'AI Copilot Suggestions', desc: 'AI-powered career tips, resume improvements, and skill recommendations' },
+                    { key: 'interviewAlerts' as const, label: 'Interview Alerts', desc: 'Mock interview availability, upcoming interviews, and preparation reminders' },
+                    { key: 'announcements' as const, label: 'Announcements', desc: 'Placement officer bulletins and academic notices' },
+                  ]).map((notif) => (
+                    <div key={notif.key} className="flex items-start justify-between p-4 border border-slate-150 rounded-xl">
                       <div className="text-left pr-4">
                         <p className="font-bold text-xs text-slate-800 leading-tight">{notif.label}</p>
                         <p className="text-[10px] text-slate-450 mt-1 font-semibold leading-relaxed">{notif.desc}</p>
                       </div>
                       <input 
                         type="checkbox" 
-                        defaultChecked 
+                        checked={notificationSettings[notif.key]}
+                        onChange={() => handleToggleSetting(notif.key)}
                         className="w-4 h-4 rounded text-emerald-500 accent-emerald-500 focus:ring-emerald-500 border-slate-300 mt-0.5 cursor-pointer"
                       />
                     </div>
                   ))}
+                </div>
+
+                <div className="border-t border-slate-100 pt-4">
+                  <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3">Delivery Channels</h4>
+                  <div className="flex flex-col gap-3">
+                    {([
+                      { key: 'emailNotifications' as const, label: 'Email Notifications', desc: 'Receive digest emails for important alerts' },
+                      { key: 'pushNotifications' as const, label: 'Push Notifications', desc: 'Browser push notifications for real-time alerts' },
+                      { key: 'desktopNotifications' as const, label: 'Desktop Notifications', desc: 'System-level desktop notification popups' },
+                    ]).map((channel) => (
+                      <div key={channel.key} className="flex items-start justify-between p-4 border border-slate-150 rounded-xl">
+                        <div className="text-left pr-4">
+                          <p className="font-bold text-xs text-slate-800 leading-tight">{channel.label}</p>
+                          <p className="text-[10px] text-slate-450 mt-1 font-semibold leading-relaxed">{channel.desc}</p>
+                        </div>
+                        <input 
+                          type="checkbox" 
+                          checked={notificationSettings[channel.key]}
+                          onChange={() => handleToggleSetting(channel.key)}
+                          className="w-4 h-4 rounded text-emerald-500 accent-emerald-500 focus:ring-emerald-500 border-slate-300 mt-0.5 cursor-pointer"
+                        />
+                      </div>
+                    ))}
+                  </div>
                 </div>
               </div>
             )}

@@ -8,6 +8,7 @@ import {
 import { Sidebar } from '../components/Sidebar';
 import { DashboardNavbar } from '../components/DashboardNavbar';
 import { useThemeStore } from '../store/themeStore';
+import { NotificationToastContainer } from '../components/notifications/NotificationToast';
 
 export const DashboardLayout: React.FC = () => {
   const location = useLocation();
@@ -66,6 +67,9 @@ export const DashboardLayout: React.FC = () => {
           </motion.div>
         </main>
       </div>
+
+      {/* Notification Toasts (fixed bottom-right) */}
+      <NotificationToastContainer />
 
       {/* Mobile Bottom Navigation Tab Bar */}
       <nav className={`md:hidden fixed bottom-0 left-0 right-0 backdrop-blur-xl border-t py-2 px-3 flex items-center justify-around z-30 shadow-2xl transition-colors duration-300 ${

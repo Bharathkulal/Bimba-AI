@@ -3,6 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import { Bell, User, Settings, LogOut, Menu } from 'lucide-react';
 import { useUserStore } from '../store/userStore';
 import { useThemeStore } from '../store/themeStore';
+import { useNotificationStore } from '../store/notificationStore';
+import { NotificationDropdown } from './notifications/NotificationDropdown';
 import { apiClient } from '../services/api';
 
 interface DashboardNavbarProps {
@@ -13,11 +15,16 @@ export const DashboardNavbar: React.FC<DashboardNavbarProps> = ({ onToggleSideba
   const navigate = useNavigate();
   const logout = useUserStore((state) => state.logout);
   const user = useUserStore((state) => state.user);
+  const token = useUserStore((state) => state.token);
   const { theme } = useThemeStore();
   const isDark = theme === 'dark';
-  const [notificationCount, setNotificationCount] = useState(0);
+  
+  const { unreadCount, fetchUnreadCount, initWebSocket } = useNotificationStore();
+  
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const [isNotifOpen, setIsNotifOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const notifBellRef = useRef<HTMLDivElement>(null);
 
   const getDisplayName = () => {
     if (!user) return 'Student';
@@ -28,21 +35,26 @@ export const DashboardNavbar: React.FC<DashboardNavbarProps> = ({ onToggleSideba
   };
   const displayName = getDisplayName();
 
+  // Fetch unread count on mount and init WebSocket
   useEffect(() => {
-    const fetchNotifications = async () => {
-      try {
-        const notifRes = await apiClient.get('/api/analytics/notifications');
-        setNotificationCount(notifRes.data.unread_count || 0);
-      } catch (err) {
-        console.error("Error loading notification count:", err);
-      }
-    };
     if (user) {
-      fetchNotifications();
+      fetchUnreadCount();
     }
+    if (token) {
+      initWebSocket(token);
+    }
+  }, [user, token]);
+
+  // Poll unread count every 30 seconds as backup to WebSocket
+  useEffect(() => {
+    if (!user) return;
+    const interval = setInterval(() => {
+      fetchUnreadCount();
+    }, 30000);
+    return () => clearInterval(interval);
   }, [user]);
 
-  // Robust Outside Click Handler to close Profile Dropdown when user clicks anywhere outside
+  // Robust Outside Click Handler to close Profile Dropdown
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent | TouchEvent) => {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
@@ -61,15 +73,20 @@ export const DashboardNavbar: React.FC<DashboardNavbarProps> = ({ onToggleSideba
     };
   }, [isDropdownOpen]);
 
+  const formatBadge = (count: number) => {
+    if (count <= 0) return null;
+    if (count > 99) return '99+';
+    return String(count);
+  };
+
   return (
     <header className={`h-16 w-full flex items-center justify-between px-4 md:px-8 sticky top-0 z-30 shadow-sm border-b transition-colors duration-300 ${
       isDark 
         ? 'bg-[#0F172A]/90 backdrop-blur-xl border-white/10 text-white shadow-black/20' 
         : 'bg-white/90 backdrop-blur-md border-slate-200/80 text-slate-900 shadow-slate-100'
     }`}>
-      {/* Left Section: 3-line Hamburger Menu Toggle + Brand Logo */}
+      {/* Left Section: Hamburger Menu Toggle + Brand Logo */}
       <div className="flex items-center gap-3">
-        {/* 3-line Hamburger Menu Toggle Button (Desktop/Tablet Only) */}
         <button
           onClick={onToggleSidebar}
           className={`hidden md:flex p-2.5 rounded-xl transition-all duration-200 cursor-pointer items-center justify-center border ${
@@ -83,7 +100,6 @@ export const DashboardNavbar: React.FC<DashboardNavbarProps> = ({ onToggleSideba
           <Menu size={20} />
         </button>
  
-        {/* Integrated Brand Logo */}
         <div 
           onClick={() => navigate('/dashboard')}
           className="flex items-center gap-2.5 cursor-pointer group"
@@ -104,25 +120,35 @@ export const DashboardNavbar: React.FC<DashboardNavbarProps> = ({ onToggleSideba
  
       {/* Right Side Options */}
       <div className="flex items-center gap-4">
-        {/* Notifications Button */}
-        <button 
-          onClick={() => navigate('/notifications')}
-          className={`w-9 h-9 rounded-xl flex items-center justify-center transition-all relative cursor-pointer border ${
-            isDark 
-              ? 'bg-white/5 border-white/10 text-slate-300 hover:text-white hover:bg-white/10' 
-              : 'bg-slate-50 border-slate-200 text-slate-600 hover:text-slate-900 hover:bg-slate-100'
-          }`}
-          title="Notifications"
-        >
-          <Bell size={18} />
-          {notificationCount > 0 && (
-            <span className="absolute top-2 right-2 w-2 h-2 rounded-full bg-slate-900 dark:bg-white shadow-sm animate-pulse" />
-          )}
-        </button>
+        {/* Notifications Bell with Floating Dropdown */}
+        <div className="relative" ref={notifBellRef}>
+          <button 
+            onClick={() => setIsNotifOpen((prev) => !prev)}
+            className={`w-9 h-9 rounded-xl flex items-center justify-center transition-all relative cursor-pointer border ${
+              isDark 
+                ? 'bg-white/5 border-white/10 text-slate-300 hover:text-white hover:bg-white/10' 
+                : 'bg-slate-50 border-slate-200 text-slate-600 hover:text-slate-900 hover:bg-slate-100'
+            } ${isNotifOpen ? (isDark ? 'bg-white/10 border-white/20 text-white' : 'bg-slate-100 border-slate-300 text-slate-900') : ''}`}
+            title="Notifications"
+            aria-label="Open notification panel"
+          >
+            <Bell size={18} />
+            {unreadCount > 0 && (
+              <span className="absolute -top-1.5 -right-1.5 min-w-[18px] h-[18px] px-1 rounded-full bg-rose-500 text-white text-[9px] font-black flex items-center justify-center shadow-md shadow-rose-500/30 animate-pulse">
+                {formatBadge(unreadCount)}
+              </span>
+            )}
+          </button>
+          
+          <NotificationDropdown 
+            isOpen={isNotifOpen} 
+            onClose={() => setIsNotifOpen(false)} 
+          />
+        </div>
         
         <div className={`w-[1px] h-5 transition-colors duration-300 ${isDark ? 'bg-white/10' : 'bg-slate-200'}`} />
  
-        {/* User Account Profile with Dropdown (wrapped with dropdownRef) */}
+        {/* User Account Profile with Dropdown */}
         <div className="relative" ref={dropdownRef}>
           <button 
             onClick={() => setIsDropdownOpen((prev) => !prev)}
@@ -139,7 +165,6 @@ export const DashboardNavbar: React.FC<DashboardNavbarProps> = ({ onToggleSideba
             </div>
           </button>
  
-          {/* Profile Dropdown Card */}
           {isDropdownOpen && (
             <div className={`absolute right-0 mt-3 w-56 rounded-2xl shadow-2xl py-2 z-50 border transition-all duration-300 ${
               isDark 

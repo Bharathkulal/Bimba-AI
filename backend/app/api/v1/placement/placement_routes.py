@@ -109,7 +109,7 @@ def get_dashboard_metrics(
     offers_made = db.placement_applications.count_documents({"status": "Offered"})
     
     # Placed vs Unplaced branch breakdown
-    branches = ["CS", "BCA", "ECE", "MECH", "CIVIL"]
+    branches = ["BCOM", "BBA", "BCA"]
     branch_breakdown = {}
     for branch in branches:
         placed = db.students.count_documents({"department": branch, "placement_status": "Placed"})

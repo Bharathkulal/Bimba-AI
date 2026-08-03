@@ -1,450 +1,239 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { 
-  Bell, Award, FileText, CheckCircle, ShieldAlert, 
-  Trash2, Eye, MailOpen, AlertCircle, Megaphone, Search, Filter, Sparkles
+  Bell, Check, Trash, Search, Shield, Pin, X, Eye, 
+  Settings, ExternalLink, RefreshCw, Archive, Megaphone, 
+  Clock, AlertTriangle, FileText, CheckCircle2, Inbox, 
+  Trash2, ArchiveRestore, SlidersHorizontal, ArrowUpDown
 } from 'lucide-react';
 import { PageHeader } from '../components/PageHeader';
 import { Card } from '../components/Card';
 import { Button } from '../components/Button';
-import { Modal } from '../components/Modal';
-import { useUserStore } from '../store/userStore';
-import { adminService } from '../services/admin';
+import { useNotificationStore } from '../store/notificationStore';
+import { useThemeStore } from '../store/themeStore';
+import { 
+  getCategoryIcon, getPriorityClass, timeAgo, 
+  NotificationCard, NotificationSkeleton, NotificationEmpty 
+} from '../components/notifications/NotificationDropdown';
 
-interface NotificationItem {
-  id: number;
-  category: string;
-  type: string;
-  message: string;
-  is_read: boolean;
-  created_at: string;
-  details?: {
-    drive_id: number;
-    company: string;
-    role: string;
-    package: string;
-    location: string;
-    deadline: string;
-    match_score: number;
-    reason: string;
-  };
-}
-
-interface AnnouncementItem {
-  id: number;
-  title: string;
-  content: string;
-  target_audience: string;
-  target_value?: string;
-  pinned: boolean;
-  created_at: string;
-}
+const PAGE_TABS = [
+  { value: 'All', label: 'All Notifications' },
+  { value: 'Unread', label: 'Unread' },
+  { value: 'Pinned', label: 'Pinned' },
+  { value: 'Archived', label: 'Archived' },
+  { value: 'Resume', label: 'Resume' },
+  { value: 'Jobs', label: 'Jobs' },
+  { value: 'Placement', label: 'Placement' },
+  { value: 'Interview', label: 'Interview' },
+  { value: 'AI', label: 'AI suggestions' },
+  { value: 'System', label: 'System' }
+];
 
 export const Notifications: React.FC = () => {
-  const [activeTab, setActiveTab] = useState<'notifications' | 'announcements'>('notifications');
-  
-  // Notifications state
-  const [notifications, setNotifications] = useState<NotificationItem[]>([]);
-  const [unreadCount, setUnreadCount] = useState(0);
-  const [notifSearch, setNotifSearch] = useState('');
-  const [notifFilter, setNotifFilter] = useState('');
-  
-  const user = useUserStore((state) => state.user);
+  const navigate = useNavigate();
+  const { 
+    notifications, fetchNotifications, loading, 
+    markRead, markAllRead, deleteNotification, 
+    archiveNotification, pinNotification 
+  } = useNotificationStore();
+  const { theme } = useThemeStore();
+  const isDark = theme === 'dark';
 
-  // Accept & Apply Modal states
-  const [isApplyModalOpen, setIsApplyModalOpen] = useState(false);
-  const [selectedNotif, setSelectedNotif] = useState<NotificationItem | null>(null);
-  const [applyLoading, setApplyLoading] = useState(false);
-  const [toastMessage, setToastMessage] = useState<string | null>(null);
-
-  // Announcements state
-  const [announcements, setAnnouncements] = useState<AnnouncementItem[]>([]);
-  const [annSearch, setAnnSearch] = useState('');
-
-  // Status indicators
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
-  const handleConfirmApply = async () => {
-    if (!selectedNotif || !selectedNotif.details) return;
-    try {
-      setApplyLoading(true);
-      await adminService.apiClient.post('/api/auth/placement/apply', {
-        drive_id: selectedNotif.details.drive_id
-      });
-      setToastMessage("Application submitted successfully!");
-      setIsApplyModalOpen(false);
-      fetchData();
-      setTimeout(() => setToastMessage(null), 3000);
-    } catch (err: any) {
-      alert(err.response?.data?.detail || "Failed to submit application.");
-    } finally {
-      setApplyLoading(false);
-    }
-  };
-
-  const fetchData = async () => {
-    setIsLoading(true);
-    setError(null);
-    try {
-      // Fetch Notifications
-      const notifRes = await adminService.apiClient.get('/api/analytics/notifications', {
-        params: {
-          category: notifFilter || undefined,
-          search: notifSearch || undefined
-        }
-      });
-      setNotifications(notifRes.data.notifications || []);
-      setUnreadCount(notifRes.data.unread_count || 0);
-
-      // Fetch Announcements
-      const annRes = await adminService.apiClient.get('/api/analytics/announcements', {
-        params: {
-          search: annSearch || undefined
-        }
-      });
-      setAnnouncements(annRes.data || []);
-    } catch (err) {
-      setError('Failed to fetch communications feed.');
-    } finally {
-      setIsLoading(false);
-    }
-  };
+  const [search, setSearch] = useState('');
+  const [activeTab, setActiveTab] = useState('All');
+  const [sortBy, setSortBy] = useState<'newest' | 'oldest' | 'priority'>('newest');
 
   useEffect(() => {
-    fetchData();
-  }, [notifSearch, notifFilter, annSearch]);
+    // If viewing archived, fetch archived notifications
+    fetchNotifications({
+      archived_only: activeTab === 'Archived'
+    });
+  }, [activeTab]);
 
-  // Mark notification as read
-  const handleMarkAsRead = async (id: number) => {
-    try {
-      await adminService.apiClient.put(`/api/analytics/notifications/${id}/read`);
-      setNotifications(prev => prev.map(n => n.id === id ? { ...n, is_read: true } : n));
-      setUnreadCount(prev => Math.max(0, prev - 1));
-    } catch (err) {
-      console.error(err);
-    }
+  const handleRefresh = () => {
+    fetchNotifications({
+      archived_only: activeTab === 'Archived'
+    });
   };
 
-  // Mark all notifications as read
-  const handleMarkAllRead = async () => {
-    try {
-      await adminService.apiClient.put('/api/analytics/notifications/read-all');
-      setNotifications(prev => prev.map(n => ({ ...n, is_read: true })));
-      setUnreadCount(0);
-    } catch (err) {
-      console.error(err);
-    }
+  // Mark all read
+  const handleMarkAllRead = () => {
+    markAllRead();
   };
 
-  // Delete notification
-  const handleDeleteNotif = async (id: number) => {
-    try {
-      const target = notifications.find(n => n.id === id);
-      await adminService.apiClient.delete(`/api/analytics/notifications/${id}`);
-      setNotifications(prev => prev.filter(n => n.id !== id));
-      if (target && !target.is_read) {
-        setUnreadCount(prev => Math.max(0, prev - 1));
+  // Delete all shown notifications
+  const handleDeleteAll = async () => {
+    if (window.confirm("Are you sure you want to delete all notifications on this list?")) {
+      for (const n of filtered) {
+        await deleteNotification(n.id);
       }
-    } catch (err) {
-      console.error(err);
     }
   };
 
-  // Helper: get category colors & icons
-  const getCategoryDetails = (cat: string) => {
-    switch (cat) {
-      case 'Resume':
-        return { icon: FileText, color: 'text-blue-600 bg-blue-50 border-blue-100' };
-      case 'Profile':
-        return { icon: CheckCircle, color: '-[#111111] bg-[#F8F8F8] border-[#E5E7EB]' };
-      case 'Certificates':
-        return { icon: Award, color: 'text-amber-600 bg-amber-50 border-amber-100' };
-      case 'System':
-        return { icon: ShieldAlert, color: 'text-rose-600 bg-rose-50 border-rose-100' };
-      default:
-        return { icon: Bell, color: 'text-slate-600 bg-slate-50 border-slate-100' };
+  // Filter & Sort
+  const filtered = notifications.filter((n) => {
+    const matchesSearch = n.title.toLowerCase().includes(search.toLowerCase()) || 
+                          n.description.toLowerCase().includes(search.toLowerCase()) ||
+                          n.type.toLowerCase().includes(search.toLowerCase());
+
+    if (activeTab === 'All') return matchesSearch;
+    if (activeTab === 'Unread') return !n.isRead && matchesSearch;
+    if (activeTab === 'Pinned') return n.isPinned && matchesSearch;
+    if (activeTab === 'Archived') return n.isArchived && matchesSearch;
+    return n.type.toLowerCase() === activeTab.toLowerCase() && matchesSearch;
+  }).sort((a, b) => {
+    if (sortBy === 'newest') {
+      return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
     }
-  };
+    if (sortBy === 'oldest') {
+      return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
+    }
+    if (sortBy === 'priority') {
+      const priorityMap: Record<string, number> = { critical: 4, high: 3, medium: 2, low: 1 };
+      const pA = priorityMap[a.priority.toLowerCase()] || 0;
+      const pB = priorityMap[b.priority.toLowerCase()] || 0;
+      return pB - pA;
+    }
+    return 0;
+  });
 
   return (
-    <div className="flex flex-col gap-8 pb-12 font-sans selection:bg-blue-500/15">
-      <PageHeader
-        title="Notifications & Announcements"
-        description="Stay updated with placement news, resume analysis updates, and administrative posts."
-      />
+    <div className="flex flex-col gap-6 w-full text-left font-sans animate-fadeIn">
+      {/* Header */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div>
+          <h2 className="text-xl font-extrabold tracking-tight">Notification Center</h2>
+          <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider mt-1">
+            View alerts, campus drives, and Copilot suggestions
+          </p>
+        </div>
 
-      {/* Tabs list */}
-      <div className="flex gap-4 border-b border-slate-200 pb-3">
-        <button
-          onClick={() => setActiveTab('notifications')}
-          className={`px-5 py-2.5 rounded-xl text-xs font-bold transition-all duration-200 relative ${
-            activeTab === 'notifications' 
-              ? 'text-blue-600 bg-blue-50/50' 
-              : 'text-slate-500 hover:text-slate-800'
-          }`}
-        >
-          Notifications Feed {unreadCount > 0 && <span className="ml-1.5 px-2 py-0.5 rounded-full bg-red-500 text-white text-[9px] font-black">{unreadCount}</span>}
-        </button>
-
-        <button
-          onClick={() => setActiveTab('announcements')}
-          className={`px-5 py-2.5 rounded-xl text-xs font-bold transition-all duration-200 ${
-            activeTab === 'announcements' 
-              ? 'text-blue-600 bg-blue-50/50' 
-              : 'text-slate-500 hover:text-slate-800'
-          }`}
-        >
-          College Announcements {announcements.length > 0 && <span className="ml-1.5 px-2 py-0.5 rounded-full bg-slate-100 text-slate-700 text-[9px] font-black">{announcements.length}</span>}
-        </button>
+        <div className="flex gap-2.5">
+          <Button 
+            onClick={handleMarkAllRead} 
+            variant="outline" 
+            size="sm" 
+            className="font-bold text-xs flex items-center gap-1.5 border-slate-200"
+          >
+            <CheckCircle2 size={13} /> Mark All Read
+          </Button>
+          <Button 
+            onClick={handleDeleteAll} 
+            variant="secondary" 
+            size="sm" 
+            className="font-bold text-xs flex items-center gap-1.5 hover:bg-rose-50 hover:text-rose-600 dark:hover:bg-rose-950/20"
+          >
+            <Trash2 size={13} /> Clear All
+          </Button>
+          <Button 
+            onClick={handleRefresh} 
+            variant="secondary" 
+            size="sm" 
+            className="font-bold text-xs flex items-center gap-1.5"
+          >
+            <RefreshCw size={13} /> Refresh
+          </Button>
+        </div>
       </div>
 
-      {error && (
-        <div className="p-4 rounded-xl bg-red-50 border border-red-200 text-xs font-semibold text-red-700">
-          {error}
-        </div>
-      )}
-
-      {activeTab === 'notifications' ? (
-        <div className="flex flex-col gap-6">
-          {/* Notifications controls */}
-          <div className="flex flex-wrap gap-4 items-center justify-between">
-            <div className="flex items-center gap-3 w-full md:w-auto">
-              <div className="relative flex-grow md:w-80">
-                <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-450" size={15} />
-                <input
-                  type="text"
-                  placeholder="Search notifications..."
-                  value={notifSearch}
-                  onChange={(e) => setNotifSearch(e.target.value)}
-                  className="w-full pl-9 pr-4 py-2 rounded-xl bg-white border border-slate-200 focus:outline-none text-xs text-slate-700"
-                />
-              </div>
-
-              <div className="relative">
-                <select
-                  value={notifFilter}
-                  onChange={(e) => setNotifFilter(e.target.value)}
-                  className="pl-3 pr-8 py-2 rounded-xl bg-white border border-slate-200 text-xs font-bold text-slate-650 focus:outline-none appearance-none cursor-pointer"
-                >
-                  <option value="">All Categories</option>
-                  <option value="Resume">Resume</option>
-                  <option value="Profile">Profile</option>
-                  <option value="Certificates">Certificates</option>
-                  <option value="System">System</option>
-                </select>
-                <Filter className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" size={12} />
-              </div>
-            </div>
-
-            {unreadCount > 0 && (
-              <Button onClick={handleMarkAllRead} variant="outline" size="sm" className="font-bold border-slate-250 hover:bg-slate-50 text-xs">
-                Mark All Read
-              </Button>
-            )}
-          </div>
-
-          {/* Notifications feed list */}
-          {isLoading ? (
-            <div className="flex flex-col gap-3">
-              {[1, 2, 3].map(i => (
-                <div key={i} className="h-20 bg-slate-100/60 rounded-2xl animate-pulse" />
-              ))}
-            </div>
-          ) : notifications.length === 0 ? (
-            <Card className="flex flex-col items-center justify-center p-12 text-center text-slate-400">
-              <AlertCircle size={36} className="text-slate-300 mb-3" />
-              <h4 className="text-sm font-extrabold text-slate-800">Inbox is empty</h4>
-              <p className="text-xs text-slate-500 mt-1 max-w-sm">
-                You do not have any placement or resume alerts in your notifications inbox.
-              </p>
-            </Card>
-          ) : (
-            <div className="flex flex-col gap-3">
-              {notifications.map((n) => {
-                const { icon: Icon, color } = getCategoryDetails(n.category);
-                const dateText = new Date(n.created_at).toLocaleDateString(undefined, { 
-                  month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' 
-                });
-                return (
-                  <div 
-                    key={n.id} 
-                    className={`flex items-start justify-between p-4.5 rounded-2xl border transition-all duration-150 ${
-                      n.is_read 
-                        ? 'bg-white border-slate-200/50 opacity-75' 
-                        : 'bg-blue-50/20 border-blue-200 shadow-sm shadow-blue-500/5'
-                    }`}
-                  >
-                    <div className="flex gap-4">
-                      {/* Icon */}
-                      <div className={`w-10 h-10 rounded-xl ${color} flex items-center justify-center border shrink-0`}>
-                        <Icon size={16} />
-                      </div>
-                      
-                      <div className="text-left">
-                        <div className="flex items-center gap-2">
-                          <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">{n.category}</span>
-                          {!n.is_read && <span className="w-1.5 h-1.5 rounded-full bg-red-500" />}
-                        </div>
-                        <h4 className="text-xs font-bold text-slate-800 mt-1">{n.message}</h4>
-                        {n.type === 'Placement Eligible' && n.details && (
-                          <div className="mt-3 p-3 bg-slate-50 dark:bg-white/2 border border-slate-100 dark:border-white/5 rounded-xl text-[11px] text-slate-655 dark:text-slate-350 flex flex-col gap-2 max-w-lg">
-                            <div className="grid grid-cols-2 gap-2 text-xs font-bold">
-                              <div>Role: <span className="text-slate-800 dark:text-white">{n.details.role}</span></div>
-                              <div>Package: <span className="text-slate-850 dark:text-white">{n.details.package}</span></div>
-                              <div>Location: <span className="text-slate-800 dark:text-white">{n.details.location}</span></div>
-                              <div>Deadline: <span className="text-slate-800 dark:text-white">{n.details.deadline}</span></div>
-                            </div>
-                            <div className="mt-1 flex items-center gap-1 text-[10px] text-emerald-600 dark:text-emerald-400 font-extrabold uppercase">
-                              <Sparkles size={11} /> AI Selection Fit Score: {n.details.match_score}%
-                            </div>
-                            <p className="italic text-slate-500 font-medium">Why AI: {n.details.reason}</p>
-                            
-                            {!n.is_read && (
-                              <div className="flex gap-2.5 mt-2">
-                                <button
-                                  onClick={() => {
-                                    setSelectedNotif(n);
-                                    setIsApplyModalOpen(true);
-                                  }}
-                                  className="px-3.5 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-[10px] font-bold cursor-pointer transition-all shadow-md shadow-emerald-500/10"
-                                >
-                                  Accept & Apply
-                                </button>
-                                <button
-                                  onClick={() => handleMarkAsRead(n.id)}
-                                  className="px-3.5 py-1.5 border border-slate-200 dark:border-white/10 text-slate-500 hover:text-slate-800 rounded-xl text-[10px] font-bold cursor-pointer transition-all bg-white dark:bg-transparent"
-                                >
-                                  Not Interested
-                                </button>
-                              </div>
-                            )}
-                          </div>
-                        )}
-                        <span className="text-[9px] font-extrabold text-slate-400 block mt-1.5">{dateText}</span>
-                      </div>
-                    </div>
-
-                    <div className="flex items-center gap-2">
-                      {!n.is_read && n.type !== 'Placement Eligible' && (
-                        <button 
-                          onClick={() => handleMarkAsRead(n.id)}
-                          className="p-2 rounded-lg bg-slate-50 border border-slate-200 text-slate-500 hover:text-slate-800 cursor-pointer"
-                        >
-                          <Eye size={12} />
-                        </button>
-                      )}
-                      <button 
-                        onClick={() => handleDeleteNotif(n.id)}
-                        className="p-2 rounded-lg bg-slate-50 border border-slate-200 text-red-550 hover:bg-red-50 hover:border-red-200 cursor-pointer"
-                      >
-                        <Trash2 size={12} />
-                      </button>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          )}
-        </div>
-      ) : (
-        <div className="flex flex-col gap-6">
-          {/* Announcements controls */}
-          <div className="relative max-w-md">
-            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-455" size={15} />
-            <input
-              type="text"
-              placeholder="Search announcements..."
-              value={annSearch}
-              onChange={(e) => setAnnSearch(e.target.value)}
-              className="w-full pl-9 pr-4 py-2 rounded-xl bg-white border border-slate-200 focus:outline-none text-xs text-slate-700"
-            />
-          </div>
-
-          <div className="flex flex-col gap-4">
-            {announcements.filter(a => a.title.toLowerCase().includes(annSearch.toLowerCase()) || a.content.toLowerCase().includes(annSearch.toLowerCase())).map((a) => {
-              const dateText = new Date(a.created_at).toLocaleDateString(undefined, { 
-                month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' 
-              });
-              return (
-                <Card 
-                  key={a.id} 
-                  className={`p-6 text-left border relative overflow-hidden bg-white shadow-sm flex flex-col gap-3 ${
-                    a.pinned ? 'border-amber-250 shadow-amber-500/5' : 'border-slate-200/60'
+      <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 items-start">
+        {/* Left Filters column */}
+        <div className="lg:col-span-1 flex flex-col gap-4">
+          <Card className="p-4 flex flex-col gap-2">
+            <h5 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 px-1">Categories</h5>
+            <div className="flex flex-col gap-1">
+              {PAGE_TABS.map((tab) => (
+                <button
+                  key={tab.value}
+                  onClick={() => setActiveTab(tab.value)}
+                  className={`w-full text-left px-3.5 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center justify-between ${
+                    activeTab === tab.value 
+                      ? 'bg-emerald-600 text-white shadow-md shadow-emerald-500/10' 
+                      : 'text-slate-600 dark:text-slate-350 hover:bg-slate-50 dark:hover:bg-white/5'
                   }`}
                 >
-                  {a.pinned && (
-                    <div className="absolute top-0 right-0 bg-amber-500 text-white font-extrabold text-[8px] uppercase tracking-wider px-3.5 py-1 rounded-bl-xl shadow-sm">
-                      Pinned Post
-                    </div>
+                  <span>{tab.label}</span>
+                  {tab.value === 'Unread' && notifications.filter(n => !n.isRead).length > 0 && (
+                    <span className={`px-1.5 py-0.5 rounded-full text-[9px] font-black ${activeTab === 'Unread' ? 'bg-white text-emerald-600' : 'bg-slate-100 dark:bg-white/10 text-slate-700 dark:text-slate-300'}`}>
+                      {notifications.filter(n => !n.isRead).length}
+                    </span>
                   )}
-                  
-                  <div className="flex flex-col gap-1">
-                    <div className="flex items-center gap-2">
-                      <span className="text-[9px] font-extrabold text-blue-600 uppercase bg-blue-50 border border-blue-100 px-2 py-0.5 rounded">
-                        {a.target_audience}
-                      </span>
-                      <span className="text-[9px] font-black text-slate-400">{dateText}</span>
-                    </div>
-                    <h3 className="text-sm font-extrabold text-slate-900 mt-1">{a.title}</h3>
-                  </div>
-
-                  <p className="text-xs text-slate-650 leading-relaxed border-t border-slate-100 pt-3">
-                    {a.content}
-                  </p>
-                </Card>
-              );
-            })}
-          </div>
+                </button>
+              ))}
+            </div>
+          </Card>
         </div>
-      )}
 
-      {/* Accept & Apply Application Review Modal */}
-      {selectedNotif && selectedNotif.details && (
-        <Modal
-          isOpen={isApplyModalOpen}
-          onClose={() => setIsApplyModalOpen(false)}
-          title={`Review Application: ${selectedNotif.details.company} (${selectedNotif.details.role})`}
-        >
-          <div className="flex flex-col gap-4 text-left text-xs font-semibold leading-relaxed">
-            <div className="bg-emerald-50/50 dark:bg-emerald-500/5 border border-emerald-500/10 p-3.5 rounded-xl">
-              <p className="font-bold text-emerald-800 dark:text-emerald-400 text-xs mb-1 uppercase tracking-wider">Application Review Details</p>
-              Your master placement profile will be submitted to the recruitment drive automatically. Please verify the academic data below before confirming.
+        {/* Right Search & List column */}
+        <div className="lg:col-span-3 flex flex-col gap-4">
+          {/* Controls Bar */}
+          <Card className="p-4 flex flex-col sm:flex-row gap-4 items-center justify-between">
+            {/* Search Input */}
+            <div className="relative w-full sm:w-80">
+              <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" size={14} />
+              <input
+                type="text"
+                placeholder="Search notifications..."
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                className="w-full pl-9 pr-4 py-2 border border-slate-200 dark:border-white/10 bg-slate-50/50 dark:bg-white/2 rounded-xl text-xs focus:outline-none focus:border-emerald-500"
+              />
             </div>
 
-            <div className="grid grid-cols-2 gap-3.5 p-3.5 border border-slate-100 dark:border-white/5 rounded-xl bg-slate-50/40">
-              <div>Name: <strong className="text-slate-800 dark:text-white">{user?.student_name}</strong></div>
-              <div>Roll Number: <strong className="text-slate-800 dark:text-white">{user?.roll_number}</strong></div>
-              <div>Course/Dept: <strong className="text-slate-800 dark:text-white">{(user as any)?.course || 'B.Tech'} - {user?.department}</strong></div>
-              <div>CGPA: <strong className="text-slate-800 dark:text-white">{(user as any)?.cgpa || '8.5'}</strong></div>
-              <div className="col-span-2">Technical Skills: <strong className="text-slate-800 dark:text-white">{(user as any)?.technical_skills || (user as any)?.skills || 'N/A'}</strong></div>
-            </div>
-
-            <div className="flex justify-end gap-3 mt-4">
-              <Button type="button" variant="secondary" onClick={() => setIsApplyModalOpen(false)}>
-                Cancel
-              </Button>
-              <Button 
-                type="button" 
-                variant="primary" 
-                className="bg-emerald-600 hover:bg-emerald-700"
-                onClick={handleConfirmApply}
-                disabled={applyLoading}
+            {/* Sorting */}
+            <div className="flex items-center gap-3 w-full sm:w-auto justify-end">
+              <span className="text-[10px] font-extrabold text-slate-400 uppercase tracking-wide flex items-center gap-1.5">
+                <ArrowUpDown size={12} /> Sort by
+              </span>
+              <select
+                value={sortBy}
+                onChange={(e: any) => setSortBy(e.target.value)}
+                className="px-3 py-1.5 border border-slate-200 dark:border-white/10 bg-white dark:bg-slate-900 rounded-xl text-xs font-bold text-slate-655 focus:outline-none cursor-pointer"
               >
-                {applyLoading ? 'Submitting...' : 'Confirm & Apply'}
-              </Button>
+                <option value="newest">Newest First</option>
+                <option value="oldest">Oldest First</option>
+                <option value="priority">Priority Level</option>
+              </select>
             </div>
-          </div>
-        </Modal>
-      )}
+          </Card>
 
-      {/* Global Toast Success banner */}
-      {toastMessage && (
-        <div className="fixed bottom-6 right-6 bg-slate-900/95 text-white border border-slate-750 px-4.5 py-3 rounded-2xl shadow-xl flex items-center gap-2.5 z-55 animate-slideUp text-xs font-semibold">
-          <CheckCircle size={15} className="text-emerald-500 shrink-0" />
-          <span>{toastMessage}</span>
+          {/* List display */}
+          <div className="flex flex-col gap-3.5">
+            {loading ? (
+              <NotificationSkeleton />
+            ) : filtered.length === 0 ? (
+              <Card className="flex flex-col items-center justify-center p-16 text-center text-slate-450">
+                <Inbox size={42} className="text-slate-300 dark:text-slate-600 mb-4 animate-pulse" />
+                <h4 className="text-sm font-extrabold text-slate-800 dark:text-white">Nothing in this category</h4>
+                <p className="text-xs text-slate-500 mt-1 max-w-sm">
+                  You don't have any alerts matching this category. Feel free to refresh the feeds.
+                </p>
+                <button 
+                  onClick={handleRefresh}
+                  className="mt-5 px-5 py-2 border border-slate-200 hover:bg-slate-50 rounded-xl text-xs font-bold transition-all cursor-pointer bg-white dark:bg-transparent text-slate-700 dark:text-slate-300"
+                >
+                  Refresh Feed
+                </button>
+              </Card>
+            ) : (
+              <div className="grid grid-cols-1 gap-3.5">
+                {filtered.map((item) => (
+                  <NotificationCard
+                    key={item.id}
+                    item={item}
+                    onRead={markRead}
+                    onArchive={archiveNotification}
+                    onPin={pinNotification}
+                    onDelete={deleteNotification}
+                  />
+                ))}
+              </div>
+            )}
+          </div>
         </div>
-      )}
+      </div>
     </div>
   );
 };
+
 export default Notifications;
