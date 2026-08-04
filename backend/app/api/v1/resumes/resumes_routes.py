@@ -657,8 +657,20 @@ def log_ai_event(resume_id: int, action: str, prompt: str, response: str, db: An
 def ai_generate_summary(id: int, payload: AISummaryRequest, student: Student = Depends(get_current_student), db: Any = Depends(get_db)):
     verify_ownership(id, student.id, db)
     
-    summary = f"Highly motivated {payload.role} with a strong foundation in {', '.join(payload.skills)}. Proven skills in building scalable software systems and solving complex algorithms. Passionate about leveraging cutting-edge web technologies to deliver robust and premium client applications."
-    log_ai_event(id, "summary", f"Generate summary for {payload.role}", summary, db)
+    role_str = payload.role or "Software Engineer"
+    skills_str = ", ".join(payload.skills) if payload.skills else "Full Stack Development, Python, JavaScript"
+    prompt = (
+        f"You are an expert resume writer and technical recruiter. Write a compelling, 95%+ ATS-friendly 3-sentence professional summary for a candidate targeting the role of '{role_str}'. "
+        f"Key technical skills: {skills_str}. "
+        f"Return ONLY the professional summary text. Do not wrap in quotes or markdown."
+    )
+    try:
+        from app.services.ai_gateway import generate_ai_response
+        summary = generate_ai_response(db, prompt, "Resume Studio: SUMMARY_GENERATE").strip().strip('"')
+    except Exception as e:
+        summary = f"Results-driven {role_str} proficient in {skills_str}. Proven track record of architecting scalable software solutions, optimizing technical workflows, and delivering high-performance applications."
+
+    log_ai_event(id, "summary", f"Generate summary for {role_str}", summary, db)
     
     return {"summary": summary}
 

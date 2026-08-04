@@ -24,6 +24,11 @@ class AIProviderManager:
         if not api_key:
             env_key = provider_info.get("env_key")
             if env_key:
+                try:
+                    import dotenv
+                    dotenv.load_dotenv(override=True)
+                except Exception:
+                    pass
                 api_key = os.getenv(env_key, "").strip()
         
         if not api_key:

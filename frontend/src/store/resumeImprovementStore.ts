@@ -8,6 +8,9 @@ export interface ImprovementItem {
 }
 
 export interface ResumeImprovementsData {
+  target_ats_score?: number;
+  ats_score_before?: number;
+  overall_improvement_summary?: string;
   summary: ImprovementItem;
   projects: ImprovementItem[];
   experience: ImprovementItem[];
@@ -18,15 +21,17 @@ export interface ResumeImprovementsData {
 interface ResumeImprovementState {
   improvements: ResumeImprovementsData | null;
   loading: boolean;
+  applying: boolean;
   error: string | null;
   fetchImprovements: (resumeId: number) => Promise<void>;
-  applyImprovement: (section: 'summary' | 'projects' | 'experience', index?: number) => void;
+  applyAllImprovements: (resumeId: number) => Promise<boolean>;
   clearImprovements: () => void;
 }
 
-export const useResumeImprovementStore = create<ResumeImprovementState>((set) => ({
+export const useResumeImprovementStore = create<ResumeImprovementState>((set, get) => ({
   improvements: null,
   loading: false,
+  applying: false,
   error: null,
   
   fetchImprovements: async (resumeId: number) => {
@@ -44,20 +49,21 @@ export const useResumeImprovementStore = create<ResumeImprovementState>((set) =>
     }
   },
 
-  applyImprovement: (section, index) => {
-    set((state) => {
-      if (!state.improvements) return {};
-      
-      // Real implementation would send a request to update the resume contents in DB.
-      // Here we just mark it as applied in frontend or clear it.
-      logger.info(`Applied improvement for section: ${section} at index: ${index}`);
-      return {};
-    });
+  applyAllImprovements: async (resumeId: number) => {
+    set({ applying: true, error: null });
+    try {
+      const currentImprovements = get().improvements;
+      const response = await apiClient.post(`/api/resume/apply-improvements/${resumeId}`, {
+        improvements: currentImprovements
+      });
+      set({ applying: false });
+      return response.data.success || false;
+    } catch (err: any) {
+      const msg = err.response?.data?.detail || err.message || 'Error applying improvements';
+      set({ error: msg, applying: false });
+      return false;
+    }
   },
   
-  clearImprovements: () => set({ improvements: null, error: null, loading: false }),
+  clearImprovements: () => set({ improvements: null, error: null, loading: false, applying: false }),
 }));
-
-const logger = {
-  info: (msg: string) => console.log(`[useResumeImprovementStore] ${msg}`)
-};

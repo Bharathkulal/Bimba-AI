@@ -12,6 +12,11 @@ def call_groq(prompt: str, api_key: str = None, timeout: int = 12) -> Dict[str, 
     Tries high-speed Groq Llama 3 models with fallback.
     """
     if not api_key:
+        try:
+            import dotenv
+            dotenv.load_dotenv(override=True)
+        except Exception:
+            pass
         api_key = os.getenv("GROQ_API_KEY", "").strip()
     
     if not api_key or api_key.lower() in ["development_key", "your_groq_api_key", "change_me"]:

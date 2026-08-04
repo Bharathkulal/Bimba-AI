@@ -12,6 +12,7 @@ import { jobsService, type JobListItem } from '../services/jobs';
 import { Button } from './Button';
 import { Card } from './Card';
 import { ResumeBuilder } from './resume/ResumeBuilder';
+import { ResumeImprovement } from './resume/ResumeImprovement';
 
 interface UploadResumeWizardProps {
   onClose: () => void;
@@ -84,7 +85,53 @@ export const UploadResumeWizard: React.FC<UploadResumeWizardProps> = ({
   const [customSections, setCustomSections] = useState<any[]>([]);
   const [editingCards, setEditingCards] = useState<{ [key: string]: boolean }>({});
   const [isAnalyzing, setIsAnalyzing] = useState<boolean>(false);
+  const [isGeneratingSummary, setIsGeneratingSummary] = useState<boolean>(false);
   const [activeStep6Tab, setActiveStep6Tab] = useState<'all' | 'projects' | 'certifications' | 'custom'>('all');
+
+  const handleGenerateSummary = async () => {
+    setIsGeneratingSummary(true);
+    try {
+      let targetId = resumeId;
+      if (!targetId) {
+        targetId = await saveResumeToDb(parsedData);
+      }
+
+      const role = parsedData.personal_info?.title || parsedData.target_role || 'Software Engineer';
+      const rawSkills = parsedData.technicalSkills || parsedData.skills || ['Full Stack Development', 'Software Engineering'];
+      const skillsList = Array.isArray(rawSkills) 
+        ? rawSkills.map(s => typeof s === 'string' ? s : (s.name || String(s))) 
+        : [String(rawSkills)];
+
+      if (targetId) {
+        const res = await apiClient.post(`/api/resume-studio/${targetId}/ai/generate-summary`, {
+          role,
+          skills: skillsList,
+          experience: parsedData.experience?.length ? `${parsedData.experience.length} work experience entries` : 'Fresher'
+        });
+        if (res.data && res.data.summary) {
+          const updated = { ...parsedData, summary: res.data.summary };
+          setParsedData(updated);
+          await saveResumeToDb(updated);
+          setIsGeneratingSummary(false);
+          return;
+        }
+      }
+
+      const fallbackSummary = `Results-driven ${role} proficient in ${skillsList.slice(0, 4).join(', ')}. Proven track record of architecting scalable applications, optimizing technical performance, and delivering robust software solutions.`;
+      const updated = { ...parsedData, summary: fallbackSummary };
+      setParsedData(updated);
+      if (targetId) {
+        await saveResumeToDb(updated);
+      }
+    } catch (err) {
+      console.error("Error generating summary with AI:", err);
+      const role = parsedData.personal_info?.title || 'Software Engineer';
+      const fallbackSummary = `Results-driven ${role} with strong problem-solving skills and hands-on experience building web systems. Dedicated to applying modern engineering methodologies to deliver high-quality products.`;
+      setParsedData(prev => ({ ...prev, summary: fallbackSummary }));
+    } finally {
+      setIsGeneratingSummary(false);
+    }
+  };
 
   const toggleEditCard = (cardKey: string) => {
     setEditingCards(prev => {
@@ -335,7 +382,8 @@ export const UploadResumeWizard: React.FC<UploadResumeWizardProps> = ({
       setApiCompleted(true);
     } catch (e: any) {
       console.error(e);
-      alert('Ingestion failed: ' + (e.response?.data?.detail || 'FastAPI server connection error.'));
+      const serverMsg = e.response?.data?.error || e.response?.data?.details || e.response?.data?.detail || e.message || 'FastAPI server connection error.';
+      alert('Ingestion failed: ' + serverMsg);
       setFile(null);
       setStep(1);
     }
@@ -431,7 +479,7 @@ export const UploadResumeWizard: React.FC<UploadResumeWizardProps> = ({
     };
     try {
       await apiClient.put(`/api/resume-studio/profile/${targetId}`, payload);
-      await apiClient.put(`/api/resume/${targetId}/update`, payload);
+      await apiClient.put(`/api/resume-studio/${targetId}/update`, payload);
     } catch (err) {
       console.error("Error saving resume profile:", err);
     }
@@ -540,15 +588,12 @@ export const UploadResumeWizard: React.FC<UploadResumeWizardProps> = ({
       } else {
         setAnalysisData(evaluateClientSideHeuristics(parsedData));
       }
-      
-      await new Promise(res => setTimeout(res, 600));
-      setStep(nextStep);
     } catch (err) {
       console.error("Error analyzing resume heuristics via Groq AI:", err);
       setAnalysisData(evaluateClientSideHeuristics(parsedData));
-      setStep(nextStep);
     } finally {
       setIsAnalyzing(false);
+      setStep(nextStep);
     }
   };
 
@@ -845,20 +890,54 @@ export const UploadResumeWizard: React.FC<UploadResumeWizardProps> = ({
                   </Card>
 
                   {/* 2. Professional Summary Card */}
-                  <Card className="p-5 flex flex-col gap-3">
+                  <Card className="p-5 flex flex-col gap-3 border-slate-200 dark:border-white/10">
                     <div className="flex justify-between items-center border-b pb-2">
-                      <span className="text-xs font-bold text-emerald-500 uppercase">Professional Summary</span>
-                      <button 
-                        onClick={() => toggleEditCard('summary')} 
-                        className="text-[10px] font-bold text-slate-400 hover:text-emerald-500 cursor-pointer flex items-center gap-1"
-                      >
-                        {editingCards['summary'] ? <><Save size={11} className="text-emerald-500"/> Save</> : <><FileEdit size={11}/> Edit</>}
-                      </button>
+                      <span className="text-xs font-bold text-emerald-500 uppercase flex items-center gap-1.5">
+                        <Sparkles size={13} /> Professional Summary
+                      </span>
+                      <div className="flex items-center gap-2">
+                        <button
+                          onClick={handleGenerateSummary}
+                          disabled={isGeneratingSummary}
+                          className="text-[10px] font-bold text-emerald-500 hover:text-emerald-600 cursor-pointer flex items-center gap-1 bg-emerald-500/10 px-2 py-0.5 rounded-md border border-emerald-500/20"
+                        >
+                          {isGeneratingSummary ? <RefreshCw size={11} className="animate-spin text-emerald-500" /> : <Sparkles size={11} />}
+                          {parsedData.summary ? 'Re-generate AI Summary' : 'Auto-Generate AI Summary'}
+                        </button>
+                        <button 
+                          onClick={() => toggleEditCard('summary')} 
+                          className="text-[10px] font-bold text-slate-400 hover:text-emerald-500 cursor-pointer flex items-center gap-1"
+                        >
+                          {editingCards['summary'] ? <><Save size={11} className="text-emerald-500"/> Save</> : <><FileEdit size={11}/> Edit</>}
+                        </button>
+                      </div>
                     </div>
                     {editingCards['summary'] ? (
                       <textarea rows={4} value={parsedData.summary || ''} onChange={(e) => handleUpdateScalarField('summary', e.target.value)} className="w-full p-2 border border-slate-200 dark:border-white/10 rounded bg-white dark:bg-slate-900 text-xs font-medium" />
+                    ) : parsedData.summary ? (
+                      <p className="text-xs text-slate-700 dark:text-slate-250 font-medium leading-relaxed">{parsedData.summary}</p>
                     ) : (
-                      <p className="text-xs text-slate-600 dark:text-slate-300 italic">{parsedData.summary || 'No professional summary provided.'}</p>
+                      <div className="bg-emerald-500/10 border border-emerald-500/20 p-4 rounded-xl flex flex-col sm:flex-row items-center justify-between gap-3 text-left">
+                        <div>
+                          <span className="text-xs font-bold text-emerald-600 dark:text-emerald-400 flex items-center gap-1.5">
+                            <Sparkles size={14} /> Professional Summary Missing
+                          </span>
+                          <p className="text-[10px] text-slate-500 dark:text-slate-400 mt-0.5 font-semibold">
+                            Resumes with a 95%+ ATS professional summary receive 3x higher recruiter response rates.
+                          </p>
+                        </div>
+                        <Button 
+                          onClick={handleGenerateSummary} 
+                          disabled={isGeneratingSummary}
+                          className="btn-glow-green text-xs font-bold py-2 px-3.5 shrink-0 flex items-center gap-1.5"
+                        >
+                          {isGeneratingSummary ? (
+                            <><RefreshCw size={13} className="animate-spin" /> Generating...</>
+                          ) : (
+                            <><Sparkles size={13} /> Auto-Generate with Groq AI</>
+                          )}
+                        </Button>
+                      </div>
                     )}
                   </Card>
 
@@ -1850,32 +1929,50 @@ export const UploadResumeWizard: React.FC<UploadResumeWizardProps> = ({
             {/* Step 8: AI Resume Improvement */}
             {step === 8 && (
               <motion.div key="step8" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex flex-col gap-6 w-full text-left">
-                <div className="flex justify-between items-center border-b pb-4">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b pb-4 border-slate-200 dark:border-white/10">
                   <div>
-                    <h2 className="text-lg font-black">AI Improvements Comparison</h2>
-                    <p className="text-xs text-slate-500">Before & after optimization comparisons for descriptions, verbs, and keywords.</p>
+                    <h2 className="text-lg font-black tracking-tight text-slate-900 dark:text-white flex items-center gap-2">
+                      <Sparkles size={18} className="text-emerald-400" />
+                      AI Resume Polish & Improvements
+                    </h2>
+                    <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5 font-medium">
+                      Review AI-suggested improvements — better grammar, stronger verbs, and cleaner structure. Your original facts are preserved.
+                    </p>
                   </div>
-                  <Button onClick={() => setStep(9)} className="btn-glow-green text-xs font-bold py-2.5 px-4 flex items-center gap-1">
+                  <Button onClick={() => setStep(9)} className="btn-glow-green text-xs font-bold py-2.5 px-4 flex items-center gap-1 shrink-0 cursor-pointer">
                     Select Templates <ChevronRight size={14} />
                   </Button>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-h-[45vh] overflow-y-auto pr-2">
-                  <div className="p-5 border border-slate-205 dark:border-white/5 bg-slate-50/50 dark:bg-white/5 rounded-2xl flex flex-col gap-3">
-                    <span className="text-xs font-extrabold uppercase text-slate-500">Original Resume Summary</span>
-                    <p className="text-xs text-slate-450 italic leading-relaxed">
-                      "{parsedData.personal_info?.summary || 'Detailed summary was not defined. Click manual edit sections to insert.'}"
-                    </p>
-                  </div>
-
-                  <div className="p-5 border border-emerald-500/25 bg-emerald-500/5 rounded-2xl flex flex-col gap-3">
-                    <span className="text-xs font-extrabold uppercase text-emerald-500 flex items-center gap-1">
-                      <Sparkles size={12} className="text-emerald-400" /> Optimized AI Rewrite
-                    </span>
-                    <p className="text-xs text-slate-200 leading-relaxed">
-                      "Result-driven professional with a proven track record. Optimized for technical keywords matching target role."
-                    </p>
-                  </div>
+                <div className="max-h-[60vh] overflow-y-auto pr-1">
+                  {resumeId ? (
+                    <ResumeImprovement 
+                      resumeId={resumeId} 
+                      onChangesApplied={async () => {
+                        try {
+                          const profileRes = await apiClient.get(`/api/resume-studio/profile/${resumeId}`);
+                          if (profileRes.data) {
+                            setParsedData(profileRes.data);
+                          }
+                        } catch (err) {
+                          console.error("Error updating profile after improvement:", err);
+                        }
+                      }}
+                    />
+                  ) : (
+                    <div className="text-center py-12 flex flex-col items-center gap-3">
+                      <p className="text-xs text-slate-400 font-semibold">Initializing resume draft for AI improvements...</p>
+                      <Button 
+                        onClick={async () => {
+                          const newId = await saveResumeToDb(parsedData);
+                          if (newId) setResumeId(newId);
+                        }} 
+                        className="btn-glow-green text-xs font-bold py-2.5 px-5"
+                      >
+                        Initialize AI Improvements
+                      </Button>
+                    </div>
+                  )}
                 </div>
               </motion.div>
             )}

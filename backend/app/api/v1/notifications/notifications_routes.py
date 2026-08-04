@@ -8,7 +8,7 @@ from app.models.student import Student
 from app.core.security import verify_token
 from app.core.mongodb import MongoModel, get_next_sequence
 
-router = APIRouter(tags=["Notifications System"])
+router = APIRouter(prefix="/v1", tags=["Notifications System"])
 
 # --- WebSocket Connection Manager ---
 class ConnectionManager:

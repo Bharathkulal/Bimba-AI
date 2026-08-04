@@ -41,13 +41,43 @@ class UploadService:
                 # 4. JSON / Schema Verification
                 parsed_data = self.parser.parse_and_validate(raw_response)
             except Exception as ai_err:
-                log_error("UPLOAD", "AI parsing failed or unauthorized", ai_err)
-                raise PipelineException(
-                    step="Resume Ingestion Parsing",
-                    provider="Groq/Gemini/OpenRouter",
-                    message="AI Resume Ingestion Parsing failed. Please check your API keys or settings.",
-                    details=str(ai_err)
-                )
+                log_error("UPLOAD", "AI LLM parsing failed or rate-limited; falling back to heuristic extraction", ai_err)
+                try:
+                    from app.services.resume_extraction_service import extract_structured_data
+                    heuristic = extract_structured_data(extracted_text)
+                    parsed_data = {
+                        "personal_info": {
+                            "name": heuristic.get("name", "Candidate Name"),
+                            "email": heuristic.get("email", ""),
+                            "phone": heuristic.get("phone", ""),
+                            "location": heuristic.get("location", ""),
+                            "title": "Software Engineer"
+                        },
+                        "summary": heuristic.get("summary", ""),
+                        "objective": "",
+                        "education": heuristic.get("education", []),
+                        "experience": heuristic.get("experience", []),
+                        "projects": heuristic.get("projects", []),
+                        "technicalSkills": heuristic.get("skills", []),
+                        "softSkills": heuristic.get("soft_skills", []),
+                        "certifications": heuristic.get("certifications", []),
+                        "internships": heuristic.get("internships", []),
+                        "achievements": heuristic.get("achievements", []),
+                        "languages": heuristic.get("languages", []),
+                        "portfolioLinks": [],
+                        "publications": heuristic.get("publications", []),
+                        "volunteerExperience": [],
+                        "references": [],
+                        "hobbies": heuristic.get("hobbies", [])
+                    }
+                except Exception as fallback_err:
+                    log_error("UPLOAD", "Heuristic fallback also failed", fallback_err)
+                    raise PipelineException(
+                        step="Resume Ingestion Parsing",
+                        provider="Core System",
+                        message="Resume ingestion failed to extract structured text.",
+                        details=str(ai_err)
+                    )
             
             # Ensure all 16 sections exist with array/string defaults (no nulls)
             list_sections = [
