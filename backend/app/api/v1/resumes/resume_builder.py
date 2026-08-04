@@ -305,10 +305,21 @@ def download_pdf_version(
             detail=f"Failed to fetch document from cloud storage: {str(e)}"
         )
         
+    resume = db.resumes.find_one({"id": record.get("resume_id")}) or {}
+    name_str = (resume.get("personal_info", {}).get("name") if isinstance(resume.get("personal_info"), dict) else resume.get("name")) or student.student_name
+    import re
+    cleaned = re.sub(r'[^a-zA-Z0-9_\- ]', '', str(name_str or 'Resume')).strip().replace(' ', '_')
+    if not cleaned or cleaned.lower() in ["untitled", "resume", "new_resume"]:
+        filename = f"Resume_V{record.get('version', 1)}.pdf"
+    elif not cleaned.lower().endswith("_resume"):
+        filename = f"{cleaned}_Resume.pdf"
+    else:
+        filename = f"{cleaned}.pdf"
+
     return StreamingResponse(
         io.BytesIO(res.content),
         media_type="application/pdf",
         headers={
-            "Content-Disposition": f"attachment; filename=Resume_V{record.get('version', 1)}.pdf"
+            "Content-Disposition": f"attachment; filename={filename}"
         }
     )

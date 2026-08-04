@@ -152,18 +152,18 @@ export const SettingsDesktop: React.FC = () => {
                 onClick={() => setActiveCategory(cat.id as any)}
                 className={`p-4 border rounded-2xl flex items-center gap-3.5 text-left cursor-pointer transition-all ${
                   isActive 
-                    ? 'border-slate-950 text-slate-950 dark:border-white dark:text-white bg-slate-50 dark:bg-white/5 shadow-sm font-bold'
-                    : 'bg-white dark:bg-[#1F2937]/75 border-slate-200/80 hover:border-slate-350'
+                    ? 'border-slate-950 text-slate-950 dark:border-white dark:text-white bg-slate-100 dark:bg-white/10 shadow-sm font-bold'
+                    : 'bg-white dark:bg-[#1E293B] border-slate-200 dark:border-white/10 hover:border-slate-400 dark:hover:border-white/20'
                 }`}
               >
                 <div className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 ${
-                  isActive ? 'bg-slate-950 text-white dark:bg-white dark:text-slate-950' : 'bg-slate-50 dark:bg-white/5 text-slate-400'
+                  isActive ? 'bg-slate-950 text-white dark:bg-white dark:text-slate-950' : 'bg-slate-100 dark:bg-white/5 text-slate-500 dark:text-slate-400'
                 }`}>
                   <Icon size={18} />
                 </div>
                 <div>
-                  <h4 className="font-bold text-xs text-slate-800">{cat.label}</h4>
-                  <p className="text-[10px] text-slate-450 mt-0.5 font-semibold">{cat.desc}</p>
+                  <h4 className="font-bold text-xs text-slate-900 dark:text-white">{cat.label}</h4>
+                  <p className="text-[10px] text-slate-500 dark:text-slate-400 mt-0.5 font-semibold">{cat.desc}</p>
                 </div>
               </button>
             );
@@ -172,15 +172,15 @@ export const SettingsDesktop: React.FC = () => {
 
         {/* Right Side: Active Settings Panel */}
         <div className="lg:col-span-8">
-          <Card className="p-6 h-full flex flex-col justify-between gap-6 hover:border-slate-200">
+          <Card className="p-6 h-full flex flex-col justify-between gap-6 hover:border-slate-200 dark:bg-[#1E293B] dark:border-white/10">
 
 
             {/* Category Notifications Panel */}
             {activeCategory === 'notifications' && (
               <div className="flex flex-col gap-5 text-left">
-                <div className="border-b border-slate-100 pb-3">
-                  <h3 className="text-sm font-extrabold text-slate-800 uppercase tracking-wider">Notification Preferences</h3>
-                  <p className="text-[10px] text-slate-400 mt-1 font-semibold">Choose how and when you receive career alerts. Changes are saved to your account instantly.</p>
+                <div className="border-b border-slate-100 dark:border-white/10 pb-3">
+                  <h3 className="text-sm font-extrabold text-slate-900 dark:text-white uppercase tracking-wider">Notification Preferences</h3>
+                  <p className="text-[10px] text-slate-500 dark:text-slate-400 mt-1 font-semibold">Choose how and when you receive career alerts. Changes are saved to your account instantly.</p>
                 </div>
 
                 <div className="flex flex-col gap-4">
@@ -192,10 +192,10 @@ export const SettingsDesktop: React.FC = () => {
                     { key: 'interviewAlerts' as const, label: 'Interview Alerts', desc: 'Mock interview availability, upcoming interviews, and preparation reminders' },
                     { key: 'announcements' as const, label: 'Announcements', desc: 'Placement officer bulletins and academic notices' },
                   ]).map((notif) => (
-                    <div key={notif.key} className="flex items-start justify-between p-4 border border-slate-150 rounded-xl">
+                    <div key={notif.key} className="flex items-start justify-between p-4 border border-slate-200 dark:border-white/10 bg-slate-50/50 dark:bg-white/5 rounded-xl">
                       <div className="text-left pr-4">
-                        <p className="font-bold text-xs text-slate-800 leading-tight">{notif.label}</p>
-                        <p className="text-[10px] text-slate-450 mt-1 font-semibold leading-relaxed">{notif.desc}</p>
+                        <p className="font-bold text-xs text-slate-900 dark:text-white leading-tight">{notif.label}</p>
+                        <p className="text-[10px] text-slate-500 dark:text-slate-400 mt-1 font-semibold leading-relaxed">{notif.desc}</p>
                       </div>
                       <input 
                         type="checkbox" 
@@ -207,18 +207,18 @@ export const SettingsDesktop: React.FC = () => {
                   ))}
                 </div>
 
-                <div className="border-t border-slate-100 pt-4">
-                  <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3">Delivery Channels</h4>
+                <div className="border-t border-slate-100 dark:border-white/10 pt-4">
+                  <h4 className="text-[10px] font-black text-slate-400 dark:text-slate-400 uppercase tracking-widest mb-3">Delivery Channels</h4>
                   <div className="flex flex-col gap-3">
                     {([
                       { key: 'emailNotifications' as const, label: 'Email Notifications', desc: 'Receive digest emails for important alerts' },
                       { key: 'pushNotifications' as const, label: 'Push Notifications', desc: 'Browser push notifications for real-time alerts' },
                       { key: 'desktopNotifications' as const, label: 'Desktop Notifications', desc: 'System-level desktop notification popups' },
                     ]).map((channel) => (
-                      <div key={channel.key} className="flex items-start justify-between p-4 border border-slate-150 rounded-xl">
+                      <div key={channel.key} className="flex items-start justify-between p-4 border border-slate-200 dark:border-white/10 bg-slate-50/50 dark:bg-white/5 rounded-xl">
                         <div className="text-left pr-4">
-                          <p className="font-bold text-xs text-slate-800 leading-tight">{channel.label}</p>
-                          <p className="text-[10px] text-slate-450 mt-1 font-semibold leading-relaxed">{channel.desc}</p>
+                          <p className="font-bold text-xs text-slate-900 dark:text-white leading-tight">{channel.label}</p>
+                          <p className="text-[10px] text-slate-500 dark:text-slate-400 mt-1 font-semibold leading-relaxed">{channel.desc}</p>
                         </div>
                         <input 
                           type="checkbox" 
@@ -236,9 +236,9 @@ export const SettingsDesktop: React.FC = () => {
             {/* Category Security Panel */}
             {activeCategory === 'security' && (
               <div className="flex flex-col gap-5 text-left">
-                <div className="border-b border-slate-100 pb-3">
-                  <h3 className="text-sm font-extrabold text-slate-800 uppercase tracking-wider">Change Password</h3>
-                  <p className="text-[10px] text-slate-400 mt-1 font-semibold">Update your credentials to secure your student portal.</p>
+                <div className="border-b border-slate-100 dark:border-white/10 pb-3">
+                  <h3 className="text-sm font-extrabold text-slate-900 dark:text-white uppercase tracking-wider">Change Password</h3>
+                  <p className="text-[10px] text-slate-500 dark:text-slate-400 mt-1 font-semibold">Update your credentials to secure your student portal.</p>
                 </div>
 
                 <form onSubmit={handleSubmit(handleUpdatePassword)} className="flex flex-col gap-4">
@@ -282,24 +282,24 @@ export const SettingsDesktop: React.FC = () => {
             {/* Category API Panel */}
             {activeCategory === 'api' && (
               <div className="flex flex-col gap-5 text-left">
-                <div className="border-b border-slate-100 pb-3">
-                  <h3 className="text-sm font-extrabold text-slate-800 uppercase tracking-wider">API Configuration</h3>
-                  <p className="text-[10px] text-slate-400 mt-1 font-semibold">Setup access tokens for search and job APIs.</p>
+                <div className="border-b border-slate-100 dark:border-white/10 pb-3">
+                  <h3 className="text-sm font-extrabold text-slate-900 dark:text-white uppercase tracking-wider">API Configuration</h3>
+                  <p className="text-[10px] text-slate-500 dark:text-slate-400 mt-1 font-semibold">Setup access tokens for search and job APIs.</p>
                 </div>
 
                 <div className="flex flex-col gap-4">
                   <div>
-                    <label className="text-[10px] font-bold text-slate-400 uppercase block mb-1">RapidAPI Key (Host: linkedin-job-search-api)</label>
+                    <label className="text-[10px] font-bold text-slate-400 dark:text-slate-300 uppercase block mb-1">RapidAPI Key (Host: linkedin-job-search-api)</label>
                     <div className="relative flex items-center">
                       <input
                         type={isApiKeyVisible ? 'text' : 'password'}
                         value={rapidApiKey}
                         onChange={(e) => setRapidApiKey(e.target.value)}
-                        className="w-full pl-3 pr-10 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 focus:outline-none focus:border-emerald-500 focus:ring-emerald-500 font-semibold"
+                        className="w-full pl-3 pr-10 py-2.5 bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-xl text-xs text-slate-900 dark:text-white focus:outline-none focus:border-emerald-500 focus:ring-emerald-500 font-semibold"
                       />
                       <button
                         onClick={() => setIsApiKeyVisible(!isApiKeyVisible)}
-                        className="absolute right-3 text-slate-400 hover:text-slate-700 cursor-pointer"
+                        className="absolute right-3 text-slate-400 hover:text-slate-700 dark:hover:text-white cursor-pointer"
                       >
                         <Eye size={16} />
                       </button>
@@ -321,16 +321,16 @@ export const SettingsDesktop: React.FC = () => {
             {/* Category Danger Zone Panel */}
             {activeCategory === 'danger' && (
               <div className="flex flex-col gap-5 text-left">
-                <div className="border-b border-slate-100 pb-3">
+                <div className="border-b border-slate-100 dark:border-white/10 pb-3">
                   <h3 className="text-sm font-extrabold text-rose-600 uppercase tracking-wider">Danger Zone</h3>
-                  <p className="text-[10px] text-slate-400 mt-1 font-semibold">High risk options. These operations are destructive.</p>
+                  <p className="text-[10px] text-slate-500 dark:text-slate-400 mt-1 font-semibold">High risk options. These operations are destructive.</p>
                 </div>
 
                 <div className="flex flex-col gap-4">
-                  <div className="p-4 border border-rose-100 bg-rose-50/20 rounded-xl flex items-center justify-between">
+                  <div className="p-4 border border-rose-100 dark:border-rose-900/40 bg-rose-50/20 dark:bg-rose-950/20 rounded-xl flex items-center justify-between">
                     <div>
-                      <h5 className="text-xs font-bold text-slate-800 leading-tight">Delete Account</h5>
-                      <p className="text-[10px] text-slate-405 mt-1 font-medium">Permanently delete your profile and all resumes.</p>
+                      <h5 className="text-xs font-bold text-slate-900 dark:text-white leading-tight">Delete Account</h5>
+                      <p className="text-[10px] text-slate-500 dark:text-slate-400 mt-1 font-medium">Permanently delete your profile and all resumes.</p>
                     </div>
                     <Button 
                       onClick={handleDeleteAccount}
@@ -341,10 +341,10 @@ export const SettingsDesktop: React.FC = () => {
                     </Button>
                   </div>
 
-                  <div className="p-4 border border-slate-200 bg-slate-50/20 rounded-xl flex items-center justify-between">
+                  <div className="p-4 border border-slate-200 dark:border-white/10 bg-slate-50/20 dark:bg-white/5 rounded-xl flex items-center justify-between">
                     <div>
-                      <h5 className="text-xs font-bold text-slate-800 leading-tight">Sign Out Session</h5>
-                      <p className="text-[10px] text-slate-405 mt-1 font-medium">Log out of the current device portal.</p>
+                      <h5 className="text-xs font-bold text-slate-900 dark:text-white leading-tight">Sign Out Session</h5>
+                      <p className="text-[10px] text-slate-500 dark:text-slate-400 mt-1 font-medium">Log out of the current device portal.</p>
                     </div>
                     <Button 
                       onClick={() => logout()}

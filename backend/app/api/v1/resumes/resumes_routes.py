@@ -39,6 +39,29 @@ def run_ai_gateway_request(db: Any, prompt: str, task_type: str, roll_number: st
     from app.services.ai_gateway import generate_ai_response
     return generate_ai_response(db, prompt, task_type)
 
+def get_sanitized_download_filename(resume: dict, ext: str = "pdf") -> str:
+    candidate_name = ""
+    if isinstance(resume, dict):
+        if isinstance(resume.get("personal_info"), dict):
+            candidate_name = resume["personal_info"].get("name") or resume["personal_info"].get("full_name") or ""
+        if not candidate_name and isinstance(resume.get("resume"), dict):
+            p_info = resume["resume"].get("personal_info") or resume["resume"].get("master") or {}
+            if isinstance(p_info, dict):
+                candidate_name = p_info.get("name") or p_info.get("full_name") or ""
+        if not candidate_name:
+            candidate_name = resume.get("name") or "Resume"
+            
+    cleaned_name = re.sub(r'[^a-zA-Z0-9_\- ]', '', str(candidate_name)).strip()
+    cleaned_name = re.sub(r'\s+', '_', cleaned_name)
+    
+    if not cleaned_name or cleaned_name.lower() in ["untitled", "resume", "new_resume"]:
+        return f"Resume.{ext}"
+        
+    if not cleaned_name.lower().endswith("_resume"):
+        cleaned_name = f"{cleaned_name}_Resume"
+        
+    return f"{cleaned_name}.{ext}"
+
 router = APIRouter(prefix="/resume-studio", tags=["AI Resume Studio"])
 
 @router.post("/analyze-direct")
@@ -1091,10 +1114,11 @@ def get_pdf_export(id: int, inline: bool = False, student: Student = Depends(get
     })
     
     disposition = "inline" if inline else "attachment"
+    download_filename = get_sanitized_download_filename(resume, "pdf")
     return StreamingResponse(
         buffer,
         media_type="application/pdf",
-        headers={"Content-Disposition": f"{disposition}; filename=bimba_resume_{id}.pdf"}
+        headers={"Content-Disposition": f"{disposition}; filename={download_filename}"}
     )
 
 @router.get("/{id}/download/pdf")
@@ -1147,10 +1171,11 @@ def get_docx_download(id: int, student: Student = Depends(get_current_student), 
         "created_at": datetime.utcnow()
     })
     
+    download_filename = get_sanitized_download_filename(resume, "docx")
     return StreamingResponse(
         buffer,
         media_type="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-        headers={"Content-Disposition": f"attachment; filename=bimba_resume_{id}.docx"}
+        headers={"Content-Disposition": f"attachment; filename={download_filename}"}
     )
 
 @router.get("/{id}/download/txt")
@@ -1199,10 +1224,11 @@ def get_txt_download(id: int, student: Student = Depends(get_current_student), d
         "created_at": datetime.utcnow()
     })
     
+    download_filename = get_sanitized_download_filename(resume, "txt")
     return StreamingResponse(
         buffer,
         media_type="text/plain",
-        headers={"Content-Disposition": f"attachment; filename=bimba_resume_{id}.txt"}
+        headers={"Content-Disposition": f"attachment; filename={download_filename}"}
     )
 
 @router.post("/{id}/save-version")
@@ -2214,10 +2240,11 @@ def get_docx_export_endpoint(
     
     docx_stream = generate_docx_resume(resume_data)
     
+    download_filename = get_sanitized_download_filename(dict(resume), "docx")
     return StreamingResponse(
         docx_stream,
         media_type="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-        headers={"Content-Disposition": f"attachment; filename=bimba_resume_{id}.docx"}
+        headers={"Content-Disposition": f"attachment; filename={download_filename}"}
     )
 
 @router.get("/{id}/analysis")

@@ -26,7 +26,7 @@
   --color-warning: var(--warning);
   --color-danger: var(--danger);
   --color-highlight: var(--highlight);
-  
+
   --radius-card: 16px;
 
   /* IMPORTANT: Do NOT remap --color-white. 
@@ -62,7 +62,7 @@
   --accent-light: #EAF3DE;
   --accent-green: #173404;
   --highlight: #C86A3D;
-  
+
   --success: #173404;
   --success-bg: #EAF3DE;
   --warning: #F59E0B;
@@ -70,7 +70,7 @@
   --input-bg: #FFFFFF;
   --modal-bg: #FFFFFF;
   --dropdown-bg: #FFFFFF;
-  
+
   --glass-card-bg: rgba(255, 255, 255, 0.75);
   --glass-card-border: rgba(228, 224, 213, 0.5);
   --glass-card-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.02);
@@ -90,7 +90,7 @@
   --accent-light: rgba(151, 196, 89, 0.1);
   --accent-green: #97C459;
   --highlight: #E08553;
-  
+
   --success: #97C459;
   --success-bg: #223A12;
   --warning: #F59E0B;
@@ -98,17 +98,31 @@
   --input-bg: #22241F;
   --modal-bg: #22241F;
   --dropdown-bg: #22241F;
-  
+
   --glass-card-bg: rgba(34, 36, 31, 0.75);
   --glass-card-border: rgba(50, 53, 47, 0.5);
   --glass-card-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
 }
 
-html, body, button, input, select, textarea, span, p, h1, h2, h3, h4, h5, h6 {
+html,
+body,
+button,
+input,
+select,
+textarea,
+span,
+p,
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
   font-family: 'Inter', sans-serif;
 }
 
-html, body {
+html,
+body {
   background-color: var(--bg-base) !important;
   color: var(--text-primary);
   scroll-behavior: smooth;
@@ -125,11 +139,33 @@ body {
 
 
 /* Global 300ms transitions for dark mode toggles */
-body, aside, header, nav, main, table, th, td, button, input, select, textarea, .glass-card, .glass-panel, a, p, h1, h2, h3, h4, h5, h6, span {
+body,
+aside,
+header,
+nav,
+main,
+table,
+th,
+td,
+button,
+input,
+select,
+textarea,
+.glass-card,
+.glass-panel,
+a,
+p,
+h1,
+h2,
+h3,
+h4,
+h5,
+h6,
+span {
   transition: background-color 300ms cubic-bezier(0.4, 0, 0.2, 1),
-              border-color 300ms cubic-bezier(0.4, 0, 0.2, 1),
-              color 300ms cubic-bezier(0.4, 0, 0.2, 1),
-              box-shadow 300ms cubic-bezier(0.4, 0, 0.2, 1);
+    border-color 300ms cubic-bezier(0.4, 0, 0.2, 1),
+    color 300ms cubic-bezier(0.4, 0, 0.2, 1),
+    box-shadow 300ms cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .dark body {
@@ -296,8 +332,8 @@ body, aside, header, nav, main, table, th, td, button, input, select, textarea, 
 
 /* Autofill style overrides */
 input:-webkit-autofill,
-input:-webkit-autofill:hover, 
-input:-webkit-autofill:focus, 
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus,
 input:-webkit-autofill:active {
   -webkit-box-shadow: 0 0 0 1000px var(--input-bg) inset !important;
   -webkit-text-fill-color: var(--text-primary) !important;
@@ -305,8 +341,8 @@ input:-webkit-autofill:active {
 }
 
 .dark input:-webkit-autofill,
-.dark input:-webkit-autofill:hover, 
-.dark input:-webkit-autofill:focus, 
+.dark input:-webkit-autofill:hover,
+.dark input:-webkit-autofill:focus,
 .dark input:-webkit-autofill:active {
   -webkit-box-shadow: 0 0 0 1000px var(--input-bg) inset !important;
   -webkit-text-fill-color: #FFFFFF !important;
@@ -358,6 +394,7 @@ input:-webkit-autofill:active {
   filter: brightness(0.85) contrast(1.05);
   transition: opacity 0.3s ease, filter 0.3s ease;
 }
+
 .dark img:hover {
   opacity: 1;
   filter: brightness(1) contrast(1);
@@ -375,6 +412,7 @@ input:-webkit-autofill:active {
 .dark svg path[fill="url(#dashboardGradient)"] {
   fill: rgba(255, 255, 255, 0.03) !important;
 }
+
 .dark svg path[stroke="#111111"],
 .dark svg path[stroke="#111111"] {
   stroke: var(--text-secondary) !important;
@@ -465,6 +503,7 @@ input:-webkit-autofill:active {
 .no-scrollbar::-webkit-scrollbar {
   display: none;
 }
+
 .no-scrollbar {
   -ms-overflow-style: none;
   scrollbar-width: none;
@@ -476,9 +515,11 @@ input:-webkit-autofill:active {
 html:not(.dark) main .bg-\[\#102117\] {
   background-color: var(--card-bg) !important;
 }
+
 html:not(.dark) main .bg-\[\#13261B\] {
   background-color: var(--card-bg) !important;
 }
+
 html:not(.dark) main .bg-white\/5 {
   background-color: var(--card-bg) !important;
 }
@@ -489,12 +530,14 @@ html:not(.dark) main select.bg-white\/5 {
   color: var(--text-primary) !important;
   border-color: var(--border) !important;
 }
+
 html:not(.dark) main input.bg-\[\#102117\],
 html:not(.dark) main input.bg-white\/5 {
   background-color: var(--input-bg) !important;
   color: var(--text-primary) !important;
   border-color: var(--border) !important;
 }
+
 html:not(.dark) main textarea.bg-\[\#102117\],
 html:not(.dark) main textarea.bg-white\/5 {
   background-color: var(--input-bg) !important;
@@ -540,9 +583,11 @@ html:not(.dark) main div.bg-white\/5 {
 html:not(.dark) main tr.bg-\[\#102117\] {
   background-color: var(--bg-secondary) !important;
 }
+
 html:not(.dark) main tr.bg-\[\#13261B\] {
   background-color: var(--bg-secondary) !important;
 }
+
 html:not(.dark) main tr.bg-slate-50\/70,
 html:not(.dark) main tr.bg-slate-50\/80 {
   background-color: var(--bg-secondary) !important;
@@ -555,7 +600,7 @@ html:not(.dark) main tr.bg-slate-50\/80 {
 /* Subtle glow effect on primary buttons in dark mode */
 .dark .btn-glow-green:hover {
   box-shadow: 0 0 20px rgba(255, 255, 255, 0.08),
-              0 0 40px rgba(255, 255, 255, 0.04);
+    0 0 40px rgba(255, 255, 255, 0.04);
 }
 
 /* Scale-in animation for cards */
@@ -564,6 +609,7 @@ html:not(.dark) main tr.bg-slate-50\/80 {
     opacity: 0;
     transform: scale(0.96);
   }
+
   to {
     opacity: 1;
     transform: scale(1);
@@ -580,6 +626,7 @@ html:not(.dark) main tr.bg-slate-50\/80 {
     opacity: 0;
     transform: translateY(12px);
   }
+
   to {
     opacity: 1;
     transform: translateY(0);
@@ -592,7 +639,9 @@ html:not(.dark) main tr.bg-slate-50\/80 {
 
 /* Smooth progress bar fill */
 @keyframes progressFill {
-  from { width: 0%; }
+  from {
+    width: 0%;
+  }
 }
 
 .animate-progress {
@@ -604,13 +653,16 @@ html:not(.dark) main tr.bg-slate-50\/80 {
   width: 8px;
   height: 8px;
 }
+
 ::-webkit-scrollbar-track {
   background: transparent;
 }
+
 ::-webkit-scrollbar-thumb {
   background: rgba(0, 0, 0, 0.15);
   border-radius: 4px;
 }
+
 ::-webkit-scrollbar-thumb:hover {
   background: rgba(0, 0, 0, 0.3);
 }
@@ -620,11 +672,13 @@ html:not(.dark) main tr.bg-slate-50\/80 {
 .dark::-webkit-scrollbar-track {
   background: transparent;
 }
+
 .dark ::-webkit-scrollbar-thumb,
 .dark::-webkit-scrollbar-thumb {
   background: rgba(255, 255, 255, 0.15);
   border-radius: 4px;
 }
+
 .dark ::-webkit-scrollbar-thumb:hover,
 .dark::-webkit-scrollbar-thumb:hover {
   background: rgba(255, 255, 255, 0.25);
@@ -632,9 +686,9 @@ html:not(.dark) main tr.bg-slate-50\/80 {
 
 /* Premium Animated Button */
 .premium-btn {
-  --border_radius: 12px;
+  --border_radius: 10px;
   --transition: 0.3s ease-in-out;
-  
+
   cursor: pointer;
   position: relative;
   display: inline-flex;
@@ -648,6 +702,8 @@ html:not(.dark) main tr.bg-slate-50\/80 {
   transform: scale(calc(1 + (var(--active, 0) * 0.015)));
   transition: transform var(--transition);
   text-decoration: none;
+  line-height: 1;
+  vertical-align: middle;
 }
 
 .premium-btn::before {
@@ -660,8 +716,8 @@ html:not(.dark) main tr.bg-slate-50\/80 {
   height: 100%;
   background-color: var(--accent);
   border-radius: var(--border_radius);
-  box-shadow: 
-    inset 0 0.5px rgba(255, 255, 255, 0.2), 
+  box-shadow:
+    inset 0 0.5px rgba(255, 255, 255, 0.2),
     inset 0 -1px 2px 0 rgba(0, 0, 0, 0.3),
     0px 4px 10px -4px rgba(17, 24, 39, calc(0.4 - var(--active, 0) * 0.2)),
     0 0 0 calc(var(--active, 0) * 2px) rgba(17, 24, 39, 0.2);
@@ -678,9 +734,9 @@ html:not(.dark) main tr.bg-slate-50\/80 {
   width: 100%;
   height: 100%;
   background-color: var(--accent-hover);
-  background-image: radial-gradient(at 51% 89%, rgba(255,255,255,0.08) 0px, transparent 50%),
-    radial-gradient(at 100% 100%, rgba(255,255,255,0.04) 0px, transparent 50%),
-    radial-gradient(at 22% 91%, rgba(255,255,255,0.05) 0px, transparent 50%);
+  background-image: radial-gradient(at 51% 89%, rgba(255, 255, 255, 0.08) 0px, transparent 50%),
+    radial-gradient(at 100% 100%, rgba(255, 255, 255, 0.04) 0px, transparent 50%),
+    radial-gradient(at 22% 91%, rgba(255, 255, 255, 0.05) 0px, transparent 50%);
   background-position: top;
   opacity: var(--active, 0);
   border-radius: var(--border_radius);
@@ -704,6 +760,7 @@ html:not(.dark) main tr.bg-slate-50\/80 {
   opacity: 0.6;
   cursor: not-allowed;
 }
+
 .premium-btn:disabled::before {
   box-shadow: none;
 }
@@ -766,33 +823,60 @@ html:not(.dark) main tr.bg-slate-50\/80 {
   animation: premium-path 1.5s linear 0.5s infinite;
 }
 
-.premium-btn .sparkle .path:nth-child(1) { --scale_path_1: 1.2; }
-.premium-btn .sparkle .path:nth-child(2) { --scale_path_2: 1.2; }
-.premium-btn .sparkle .path:nth-child(3) { --scale_path_3: 1.2; }
+.premium-btn .sparkle .path:nth-child(1) {
+  --scale_path_1: 1.2;
+}
+
+.premium-btn .sparkle .path:nth-child(2) {
+  --scale_path_2: 1.2;
+}
+
+.premium-btn .sparkle .path:nth-child(3) {
+  --scale_path_3: 1.2;
+}
 
 @keyframes premium-path {
-  0%, 34%, 71%, 100% { transform: scale(1); }
-  17% { transform: scale(var(--scale_path_1, 1)); }
-  49% { transform: scale(var(--scale_path_2, 1)); }
-  83% { transform: scale(var(--scale_path_3, 1)); }
+
+  0%,
+  34%,
+  71%,
+  100% {
+    transform: scale(1);
+  }
+
+  17% {
+    transform: scale(var(--scale_path_1, 1));
+  }
+
+  49% {
+    transform: scale(var(--scale_path_2, 1));
+  }
+
+  83% {
+    transform: scale(var(--scale_path_3, 1));
+  }
 }
 
 .premium-btn .content_wrapper {
   position: relative;
   z-index: 10;
-  display: flex;
+  display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 0.5rem;
   width: 100%;
+  height: 100%;
+  line-height: 1;
 }
 
 .premium-btn .text_button {
-  background-image: linear-gradient(90deg, #FFFFFF 0%, rgba(255, 255, 255, calc(0.7 + (var(--active, 0) * 0.3))) 120%);
-  background-clip: text;
-  -webkit-background-clip: text;
-  color: transparent;
+  color: #FFFFFF;
   font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+  text-shadow: 0 0.5px 1px rgba(0, 0, 0, 0.2);
 }
 
 /* Custom Uiverse Button style */
@@ -805,8 +889,10 @@ html:not(.dark) main tr.bg-slate-50\/80 {
   --border-radius: 24px;
   --padding: 4px;
   --transition: 0.4s;
-  --button-color: #101010; /* Same as background */
-  --highlight-color-hue: 140deg; /* Green/emerald color hue for Bimba AI */
+  --button-color: #101010;
+  /* Same as background */
+  --highlight-color-hue: 140deg;
+  /* Green/emerald color hue for Bimba AI */
 
   user-select: none;
   display: inline-flex;
@@ -828,7 +914,8 @@ html:not(.dark) main tr.bg-slate-50\/80 {
     inset 0px 4px 4px rgba(255, 255, 255, 0.1),
     inset 0px 8px 8px rgba(255, 255, 255, 0.05),
     inset 0px 16px 16px rgba(255, 255, 255, 0.05),
-    /* drop */ 0px -1px 1px rgba(0, 0, 0, 0.02),
+    /* drop */
+    0px -1px 1px rgba(0, 0, 0, 0.02),
     0px -2px 2px rgba(0, 0, 0, 0.03),
     0px -4px 4px rgba(0, 0, 0, 0.05),
     0px -8px 8px rgba(0, 0, 0, 0.06),
@@ -877,14 +964,12 @@ html:not(.dark) main tr.bg-slate-50\/80 {
   height: 100%;
   border-radius: inherit;
   pointer-events: none;
-  background-image: linear-gradient(
-    0deg,
-    #fff,
-    hsl(var(--highlight-color-hue), 100%, 70%),
-    hsla(var(--highlight-color-hue), 100%, 70%, 50%),
-    8%,
-    transparent
-  );
+  background-image: linear-gradient(0deg,
+      #fff,
+      hsl(var(--highlight-color-hue), 100%, 70%),
+      hsla(var(--highlight-color-hue), 100%, 70%, 50%),
+      8%,
+      transparent);
   background-position: 0 0;
   opacity: 0;
   transition:
@@ -947,7 +1032,6 @@ html:not(.dark) main tr.bg-slate-50\/80 {
 
 .btn-uiverse:hover .btn-uiverse-svg {
   fill: #fff;
-  filter: drop-shadow(0 0 3px hsl(var(--highlight-color-hue), 100%, 70%))
-    drop-shadow(0 -4px 6px #0009);
+  filter: drop-shadow(0 0 3px hsl(var(--highlight-color-hue), 100%, 70%)) drop-shadow(0 -4px 6px #0009);
   animation: none;
 }
