@@ -1,6 +1,7 @@
 import React from 'react';
 import { X, Check, ArrowRight } from 'lucide-react';
-import { ResumeTemplate } from '../services/templates';
+import type { ResumeTemplate } from '../services/templates';
+
 import { ATSBadge } from './ATSBadge';
 import { TemplateBadge } from './TemplateBadge';
 

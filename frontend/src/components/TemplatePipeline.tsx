@@ -1,6 +1,7 @@
 import React, { useRef } from 'react';
 import { ArrowRight, ChevronRight, Sparkles, CheckCircle2 } from 'lucide-react';
-import { ResumeTemplate } from '../services/templates';
+import type { ResumeTemplate } from '../services/templates';
+
 
 interface TemplatePipelineProps {
   templates: ResumeTemplate[];

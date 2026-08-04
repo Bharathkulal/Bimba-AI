@@ -1,6 +1,7 @@
 import React, { useRef } from 'react';
 import { ChevronLeft, ChevronRight, Sparkles } from 'lucide-react';
-import { ResumeTemplate } from '../services/templates';
+import type { ResumeTemplate } from '../services/templates';
+
 import { TemplateCard } from './TemplateCard';
 
 interface TemplateCarouselProps {

@@ -3,7 +3,9 @@ import {
   Plus, Edit, Trash2, Eye, ShieldAlert, Check, Play, RefreshCw, 
   Settings, BarChart3, Database, Save, X, Search, FileText, ToggleLeft, ToggleRight, Sparkles, AlertTriangle, ArrowUp, ArrowDown, Download, Upload
 } from 'lucide-react';
-import { templateService, ResumeTemplate, TemplateAnalytics } from '../../services/templates';
+import { templateService } from '../../services/templates';
+import type { ResumeTemplate, TemplateAnalytics } from '../../services/templates';
+
 import { TemplateBadge } from '../../components/TemplateBadge';
 import { ATSBadge } from '../../components/ATSBadge';
 

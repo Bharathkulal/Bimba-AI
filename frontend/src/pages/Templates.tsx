@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { Columns, LayoutGrid, Eye, Columns2, Sparkles, RefreshCw, Layers } from 'lucide-react';
-import { templateService, ResumeTemplate } from '../services/templates';
+import { templateService } from '../services/templates';
+import type { ResumeTemplate } from '../services/templates';
+
 import { TemplateCategories } from '../components/TemplateCategories';
 import { TemplateSearch } from '../components/TemplateSearch';
 import { TemplateFilters } from '../components/TemplateFilters';
