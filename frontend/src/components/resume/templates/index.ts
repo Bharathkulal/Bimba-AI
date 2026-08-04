@@ -7,6 +7,7 @@ import { ReactiveTemplate } from './ReactiveTemplate';
 import { NovoresumeTemplate } from './NovoresumeTemplate';
 import { FlowCVTemplate } from './FlowCVTemplate';
 import { IndeedTemplate } from './IndeedTemplate';
+import { MinimalistModernTemplate } from './MinimalistModernTemplate';
 
 export const TemplateRegistry: Record<string, React.FC<any>> = {
   harvard: HarvardTemplate,
@@ -17,6 +18,7 @@ export const TemplateRegistry: Record<string, React.FC<any>> = {
   novoresume: NovoresumeTemplate,
   flowcv: FlowCVTemplate,
   indeed: IndeedTemplate,
+  'minimalist-modern': MinimalistModernTemplate,
 };
 
 export const templateMetadata = [

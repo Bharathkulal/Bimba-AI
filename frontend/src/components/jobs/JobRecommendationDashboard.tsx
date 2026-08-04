@@ -27,7 +27,7 @@ export const JobRecommendationDashboard: React.FC<JobRecommendationDashboardProp
 
   return (
     <div className="w-full flex flex-col gap-5 text-left max-w-5xl mx-auto">
-      
+
       {/* Header section with scanning controls */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 border-b border-slate-200 dark:border-white/10 pb-4">
         <div>

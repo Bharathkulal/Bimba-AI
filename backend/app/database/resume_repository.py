@@ -107,6 +107,7 @@ class ResumeRepository:
             "skills": skills,
             "certificates": parsed_data.get("certifications", []) or parsed_data.get("certificates", []),
             "achievements_list": json_dumps_safe(parsed_data.get("achievements")),
+            "hobbies": parsed_data.get("hobbies", []),
             
             "created_at": datetime.now(timezone.utc),
             "updated_at": datetime.now(timezone.utc),

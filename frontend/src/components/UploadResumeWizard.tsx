@@ -21,6 +21,22 @@ interface UploadResumeWizardProps {
   initialStep?: number;
 }
 
+const standardFields: { [key: string]: string[] } = {
+  education: ['institution', 'degree', 'passing_year', 'year', 'cgpa_percentage', 'location', 'achievements'],
+  experience: ['company', 'position', 'duration', 'description', 'location'],
+  projects: ['name', 'title', 'tech_stack', 'technologies', 'description', 'role', 'duration', 'github_link', 'live_demo'],
+  certifications: ['name', 'organization', 'issue_date', 'date', 'credential_id', 'credential_url', 'description'],
+  internships: ['company', 'role', 'duration', 'description', 'location'],
+};
+
+const getExtraFields = (section: string, item: any) => {
+  if (!item || typeof item !== 'object') return [];
+  const standard = standardFields[section] || [];
+  return Object.keys(item).filter(
+    key => !standard.includes(key) && key !== '_id' && key !== 'id' && typeof item[key] !== 'object'
+  );
+};
+
 interface ChatMessage {
   sender: 'ai' | 'user';
   text: string;
@@ -44,7 +60,8 @@ export const UploadResumeWizard: React.FC<UploadResumeWizardProps> = ({
     experience: [],
     projects: [],
     skills: [],
-    certifications: []
+    certifications: [],
+    hobbies: []
   });
   const [analysisData, setAnalysisData] = useState<any>(null);
   const [resumeId, setResumeId] = useState<number | null>(null);
@@ -126,7 +143,7 @@ export const UploadResumeWizard: React.FC<UploadResumeWizardProps> = ({
   };
 
   // Template Selection (Step 9)
-  const [selectedTemplate, setSelectedTemplate] = useState<string>('modern');
+  const [selectedTemplate, setSelectedTemplate] = useState<string>('minimalist-modern');
 
   // Job recommendations and versioning states
   const [recommendedJobs, setRecommendedJobs] = useState<JobListItem[]>([]);
@@ -159,15 +176,28 @@ export const UploadResumeWizard: React.FC<UploadResumeWizardProps> = ({
   }, [initialFile]);
 
   useEffect(() => {
-    if (isParsing && activeTaskIdx < processingTasks.length) {
-      const interval = setTimeout(() => {
+    if (!isParsing) return;
+
+    if (activeTaskIdx < processingTasks.length - 1) {
+      // Tasks 1 to 6: Increment on a realistic timer (1000ms each)
+      const timer = setTimeout(() => {
         setCompletedTasks(prev => [...prev, processingTasks[activeTaskIdx]]);
         setActiveTaskIdx(prev => prev + 1);
-      }, 150);
-      return () => clearTimeout(interval);
-    } else if (isParsing && activeTaskIdx === processingTasks.length && apiCompleted) {
-      setIsParsing(false);
-      setStep(4); // Move to Step 4: Snapshot
+      }, 1000);
+      return () => clearTimeout(timer);
+    } else if (activeTaskIdx === processingTasks.length - 1) {
+      // Task 7: Only complete when the actual API request finishes
+      if (apiCompleted) {
+        setCompletedTasks(prev => [...prev, processingTasks[activeTaskIdx]]);
+        setActiveTaskIdx(prev => prev + 1);
+      }
+    } else if (activeTaskIdx === processingTasks.length && apiCompleted) {
+      // Transition to next page after a brief organic delay
+      const timer = setTimeout(() => {
+        setIsParsing(false);
+        setStep(4);
+      }, 600);
+      return () => clearTimeout(timer);
     }
   }, [isParsing, activeTaskIdx, apiCompleted]);
 
@@ -396,7 +426,8 @@ export const UploadResumeWizard: React.FC<UploadResumeWizardProps> = ({
       portfolioLinks: data.portfolioLinks || [],
       publications: data.publications || [],
       volunteerExperience: data.volunteerExperience || [],
-      references: data.references || []
+      references: data.references || [],
+      hobbies: data.hobbies || []
     };
     try {
       await apiClient.put(`/api/resume-studio/profile/${targetId}`, payload);
@@ -868,11 +899,22 @@ export const UploadResumeWizard: React.FC<UploadResumeWizardProps> = ({
                                 <input type="text" value={edu.degree || ''} placeholder="Degree" onChange={(e) => handleUpdateItemField('education', idx, 'degree', e.target.value)} className="p-1 border border-slate-200 rounded text-xs" />
                                 <input type="text" value={edu.passing_year || edu.year || ''} placeholder="Year" onChange={(e) => handleUpdateItemField('education', idx, 'passing_year', e.target.value)} className="p-1 border border-slate-200 rounded text-xs" />
                                 <input type="text" value={edu.cgpa_percentage || ''} placeholder="CGPA/Grade" onChange={(e) => handleUpdateItemField('education', idx, 'cgpa_percentage', e.target.value)} className="p-1 border border-slate-200 rounded text-xs" />
+                                {getExtraFields('education', edu).map(key => (
+                                  <div key={key} className="flex flex-col gap-0.5 col-span-2">
+                                    <label className="text-[9px] font-bold text-slate-400 uppercase">{key.replace(/_/g, ' ')}</label>
+                                    <input type="text" value={edu[key] || ''} placeholder={key.replace(/_/g, ' ')} onChange={(e) => handleUpdateItemField('education', idx, key, e.target.value)} className="p-1 border border-slate-200 rounded text-xs w-full" />
+                                  </div>
+                                ))}
                               </div>
                             ) : (
                               <div>
                                 <p className="font-bold">{edu.institution || 'Institution'}</p>
                                 <p className="text-[10px] text-slate-500">{edu.degree} • {edu.passing_year || edu.year} {edu.cgpa_percentage ? `• ${edu.cgpa_percentage}` : ''}</p>
+                                {getExtraFields('education', edu).map(key => (
+                                  <p key={key} className="text-[10px] text-slate-500 mt-0.5">
+                                    <span className="font-semibold capitalize">{key.replace(/_/g, ' ')}:</span> {edu[key]}
+                                  </p>
+                                ))}
                               </div>
                             )}
                             <button onClick={() => handleDeleteItemFromSection('education', idx)} className="text-rose-500 hover:text-rose-600 p-1 cursor-pointer shrink-0"><Trash2 size={12}/></button>
@@ -903,12 +945,23 @@ export const UploadResumeWizard: React.FC<UploadResumeWizardProps> = ({
                                 </div>
                                 <input type="text" value={exp.duration || ''} placeholder="Duration" onChange={(e) => handleUpdateItemField('experience', idx, 'duration', e.target.value)} className="p-1 border border-slate-200 rounded text-xs" />
                                 <textarea rows={2} value={exp.description || ''} placeholder="Description" onChange={(e) => handleUpdateItemField('experience', idx, 'description', e.target.value)} className="p-1 border border-slate-200 rounded text-xs" />
+                                {getExtraFields('experience', exp).map(key => (
+                                  <div key={key} className="flex flex-col gap-0.5">
+                                    <label className="text-[9px] font-bold text-slate-400 uppercase">{key.replace(/_/g, ' ')}</label>
+                                    <input type="text" value={exp[key] || ''} placeholder={key.replace(/_/g, ' ')} onChange={(e) => handleUpdateItemField('experience', idx, key, e.target.value)} className="p-1 border border-slate-200 rounded text-xs w-full" />
+                                  </div>
+                                ))}
                               </div>
                             ) : (
                               <div>
                                 <p className="font-bold">{exp.position} {exp.company ? `@ ${exp.company}` : ''}</p>
                                 <p className="text-[10px] text-slate-400">{exp.duration}</p>
                                 <p className="text-slate-600 dark:text-slate-300 mt-1">{exp.description}</p>
+                                {getExtraFields('experience', exp).map(key => (
+                                  <p key={key} className="text-[10px] text-slate-500 mt-0.5">
+                                    <span className="font-semibold capitalize">{key.replace(/_/g, ' ')}:</span> {exp[key]}
+                                  </p>
+                                ))}
                               </div>
                             )}
                             <button onClick={() => handleDeleteItemFromSection('experience', idx)} className="text-rose-500 hover:text-rose-600 p-1 cursor-pointer shrink-0"><Trash2 size={12}/></button>
@@ -938,12 +991,23 @@ export const UploadResumeWizard: React.FC<UploadResumeWizardProps> = ({
                                   <input type="text" value={proj.tech_stack || proj.technologies || ''} placeholder="Tech Stack" onChange={(e) => handleUpdateItemField('projects', idx, 'tech_stack', e.target.value)} className="p-1 border border-slate-200 rounded text-xs" />
                                 </div>
                                 <textarea rows={2} value={proj.description || ''} placeholder="Description" onChange={(e) => handleUpdateItemField('projects', idx, 'description', e.target.value)} className="p-1 border border-slate-200 rounded text-xs" />
+                                {getExtraFields('projects', proj).map(key => (
+                                  <div key={key} className="flex flex-col gap-0.5">
+                                    <label className="text-[9px] font-bold text-slate-400 uppercase">{key.replace(/_/g, ' ')}</label>
+                                    <input type="text" value={proj[key] || ''} placeholder={key.replace(/_/g, ' ')} onChange={(e) => handleUpdateItemField('projects', idx, key, e.target.value)} className="p-1 border border-slate-200 rounded text-xs w-full" />
+                                  </div>
+                                ))}
                               </div>
                             ) : (
                               <div>
                                 <p className="font-bold">{proj.name || proj.title}</p>
                                 <p className="text-[10px] text-slate-400">{proj.tech_stack || proj.technologies}</p>
                                 <p className="text-slate-600 dark:text-slate-300 mt-1">{proj.description}</p>
+                                {getExtraFields('projects', proj).map(key => (
+                                  <p key={key} className="text-[10px] text-slate-500 mt-0.5">
+                                    <span className="font-semibold capitalize">{key.replace(/_/g, ' ')}:</span> {proj[key]}
+                                  </p>
+                                ))}
                               </div>
                             )}
                             <button onClick={() => handleDeleteItemFromSection('projects', idx)} className="text-rose-500 hover:text-rose-600 p-1 cursor-pointer shrink-0"><Trash2 size={12}/></button>
@@ -1012,14 +1076,29 @@ export const UploadResumeWizard: React.FC<UploadResumeWizardProps> = ({
                       {(parsedData.certifications || []).map((cert: any, idx: number) => (
                         <div key={idx} className="border-b last:border-0 pb-2 flex justify-between items-start gap-2">
                           {editingCards['certifications'] ? (
-                            <div className="grid grid-cols-2 gap-1.5 w-full">
-                              <input type="text" value={cert.name || ''} placeholder="Certificate Name" onChange={(e) => handleUpdateItemField('certifications', idx, 'name', e.target.value)} className="p-1 border border-slate-200 rounded text-xs" />
-                              <input type="text" value={cert.organization || ''} placeholder="Issuer" onChange={(e) => handleUpdateItemField('certifications', idx, 'organization', e.target.value)} className="p-1 border border-slate-200 rounded text-xs" />
+                            <div className="flex flex-col gap-1 w-full">
+                              <div className="grid grid-cols-2 gap-1.5">
+                                <input type="text" value={cert.name || ''} placeholder="Certificate Name" onChange={(e) => handleUpdateItemField('certifications', idx, 'name', e.target.value)} className="p-1 border border-slate-200 rounded text-xs" />
+                                <input type="text" value={cert.organization || ''} placeholder="Issuer" onChange={(e) => handleUpdateItemField('certifications', idx, 'organization', e.target.value)} className="p-1 border border-slate-200 rounded text-xs" />
+                              </div>
+                              <textarea rows={2} value={cert.description || ''} placeholder="Description" onChange={(e) => handleUpdateItemField('certifications', idx, 'description', e.target.value)} className="p-1 border border-slate-200 rounded text-xs w-full" />
+                              {getExtraFields('certifications', cert).map(key => (
+                                <div key={key} className="flex flex-col gap-0.5">
+                                  <label className="text-[9px] font-bold text-slate-400 uppercase">{key.replace(/_/g, ' ')}</label>
+                                  <input type="text" value={cert[key] || ''} placeholder={key.replace(/_/g, ' ')} onChange={(e) => handleUpdateItemField('certifications', idx, key, e.target.value)} className="p-1 border border-slate-200 rounded text-xs w-full" />
+                                </div>
+                              ))}
                             </div>
                           ) : (
-                            <div>
+                            <div className="w-full">
                               <p className="font-bold">{cert.name}</p>
                               <p className="text-[10px] text-slate-400">{cert.organization} • {cert.issue_date}</p>
+                              {cert.description && <p className="text-slate-600 dark:text-slate-300 mt-1">{cert.description}</p>}
+                              {getExtraFields('certifications', cert).map(key => (
+                                <p key={key} className="text-[10px] text-slate-500 mt-0.5">
+                                  <span className="font-semibold capitalize">{key.replace(/_/g, ' ')}:</span> {cert[key]}
+                                </p>
+                              ))}
                             </div>
                           )}
                           <button onClick={() => handleDeleteItemFromSection('certifications', idx)} className="text-rose-500 hover:text-rose-600 p-1 cursor-pointer shrink-0"><Trash2 size={12}/></button>
@@ -1047,12 +1126,23 @@ export const UploadResumeWizard: React.FC<UploadResumeWizardProps> = ({
                                 <input type="text" value={intern.role || ''} placeholder="Role" onChange={(e) => handleUpdateItemField('internships', idx, 'role', e.target.value)} className="p-1 border border-slate-200 rounded text-xs" />
                               </div>
                               <textarea rows={2} value={intern.description || ''} placeholder="Description" onChange={(e) => handleUpdateItemField('internships', idx, 'description', e.target.value)} className="p-1 border border-slate-200 rounded text-xs" />
+                              {getExtraFields('internships', intern).map(key => (
+                                <div key={key} className="flex flex-col gap-0.5">
+                                  <label className="text-[9px] font-bold text-slate-400 uppercase">{key.replace(/_/g, ' ')}</label>
+                                  <input type="text" value={intern[key] || ''} placeholder={key.replace(/_/g, ' ')} onChange={(e) => handleUpdateItemField('internships', idx, key, e.target.value)} className="p-1 border border-slate-200 rounded text-xs w-full" />
+                                </div>
+                              ))}
                             </div>
                           ) : (
                             <div>
                               <p className="font-bold">{intern.role} @ {intern.company}</p>
                               <p className="text-[10px] text-slate-400">{intern.duration}</p>
                               <p className="text-slate-600 dark:text-slate-300 mt-1">{intern.description}</p>
+                              {getExtraFields('internships', intern).map(key => (
+                                <p key={key} className="text-[10px] text-slate-500 mt-0.5">
+                                  <span className="font-semibold capitalize">{key.replace(/_/g, ' ')}:</span> {intern[key]}
+                                </p>
+                              ))}
                             </div>
                           )}
                           <button onClick={() => handleDeleteItemFromSection('internships', idx)} className="text-rose-500 hover:text-rose-600 p-1 cursor-pointer shrink-0"><Trash2 size={12}/></button>
@@ -1081,6 +1171,32 @@ export const UploadResumeWizard: React.FC<UploadResumeWizardProps> = ({
                               <span>• {displayText}</span>
                             )}
                             <button onClick={() => handleDeleteItemFromSection('achievements', idx)} className="text-rose-500 hover:text-rose-600 p-1 cursor-pointer shrink-0"><Trash2 size={12}/></button>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </Card>
+
+                  {/* 11.5 Hobbies & Interests Card */}
+                  <Card className="p-5 flex flex-col gap-3">
+                    <div className="flex justify-between items-center border-b pb-2">
+                      <span className="text-xs font-bold text-emerald-500 uppercase">Hobbies & Interests</span>
+                      <div className="flex items-center gap-2">
+                        <button onClick={() => handleAddItemToSection('hobbies', 'New Hobby')} className="text-[10px] font-bold text-emerald-500 hover:text-emerald-600 cursor-pointer flex items-center gap-0.5"><Plus size={11}/> Add Item</button>
+                        <button onClick={() => toggleEditCard('hobbies')} className="text-[10px] font-bold text-slate-400 hover:text-emerald-500 cursor-pointer flex items-center gap-1">{editingCards['hobbies'] ? <><Save size={11} className="text-emerald-500"/> Save</> : <><FileEdit size={11}/> Edit</>}</button>
+                      </div>
+                    </div>
+                    <div className="flex flex-wrap gap-1.5">
+                      {(parsedData.hobbies || []).map((hobby: any, idx: number) => {
+                        const displayText = typeof hobby === 'string' ? hobby : (hobby.name || hobby.value || JSON.stringify(hobby));
+                        return (
+                          <div key={idx} className="flex items-center gap-1 bg-slate-100 dark:bg-white/10 border border-slate-200 dark:border-white/10 px-2 py-1 rounded text-xs font-semibold">
+                            {editingCards['hobbies'] ? (
+                              <input type="text" value={displayText} onChange={(e) => handleUpdateItemField('hobbies', idx, '', e.target.value)} className="w-20 bg-transparent border-b border-slate-400 text-xs focus:outline-none" />
+                            ) : (
+                              <span>{displayText}</span>
+                            )}
+                            <button onClick={() => handleDeleteItemFromSection('hobbies', idx)} className="text-rose-500 hover:text-rose-600 cursor-pointer ml-1"><X size={10}/></button>
                           </div>
                         );
                       })}
@@ -1778,7 +1894,7 @@ export const UploadResumeWizard: React.FC<UploadResumeWizardProps> = ({
                 </div>
 
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                  {['harvard', 'google', 'modern', 'minimal'].map((tpl) => (
+                  {['minimalist-modern'].map((tpl) => (
                     <div 
                       key={tpl}
                       onClick={() => setSelectedTemplate(tpl)}
@@ -1787,8 +1903,9 @@ export const UploadResumeWizard: React.FC<UploadResumeWizardProps> = ({
                       }`}
                     >
                       <FileText size={24} className="mx-auto text-emerald-400" />
-                      <span className="text-xs font-extrabold capitalize">{tpl} Layout</span>
-                      <span className="text-[9px] text-slate-555">ATS Rating: 100%</span>
+                      <span className="text-xs font-extrabold uppercase tracking-wider">Minimalist Modern</span>
+                      <span className="text-[9px] text-slate-500">Premium ATS Layout</span>
+                      <span className="text-[9px] text-emerald-500 font-extrabold">ATS Rating: 100%</span>
                     </div>
                   ))}
                 </div>

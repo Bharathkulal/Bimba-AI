@@ -34,7 +34,7 @@ class AIProviderManager:
             
         return api_key
 
-    def call_llm(self, prompt: str, feature: str = "Parsing") -> str:
+    def call_llm(self, prompt: str, feature: str = "Parsing", response_format: str = None) -> str:
         last_error_msg = ""
         last_failed_provider = ""
         
@@ -119,7 +119,7 @@ class AIProviderManager:
             
             for attempt in range(attempts):
                 try:
-                    response_text = self._execute_call(slug, model, api_key, prompt, timeout=timeout_val)
+                    response_text = self._execute_call(slug, model, api_key, prompt, timeout=timeout_val, response_format=response_format)
                     
                     print("\n========== STEP 4 ==========")
                     print(f"{provider_name} Response")
@@ -183,17 +183,24 @@ class AIProviderManager:
         log_error("AI_PIPELINE", "All configured AI providers failed to return a response", ValueError(last_error_msg))
         raise AIParsingException(last_failed_provider, recovery_message)
 
-    def _execute_call(self, slug: str, model: str, api_key: str, prompt: str, timeout: int = 15) -> str:
+    def _execute_call(self, slug: str, model: str, api_key: str, prompt: str, timeout: int = 15, response_format: str = None) -> str:
         if slug == "gemini":
             url = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent?key={api_key}"
+            generation_config = {
+                "temperature": 0.2,
+                "maxOutputTokens": 4096
+            }
+            if response_format == "json_object":
+                generation_config["responseMimeType"] = "application/json"
+                
             payload = {
                 "contents": [{"parts": [{"text": prompt}]}],
-                "generationConfig": {
-                    "temperature": 0.2,
-                    "maxOutputTokens": 4096
-                }
+                "generationConfig": generation_config
             }
-            headers = {"Content-Type": "application/json"}
+            headers = {
+                "Content-Type": "application/json",
+                "User-Agent": "BimbaAI/1.0 (Windows NT 10.0; Win64; x64)"
+            }
             req = urllib.request.Request(url, data=json.dumps(payload).encode('utf-8'), headers=headers, method="POST")
             
             with urllib.request.urlopen(req, timeout=timeout) as response:
@@ -213,9 +220,13 @@ class AIProviderManager:
                 "temperature": 0.2,
                 "max_tokens": 4096
             }
+            if response_format == "json_object":
+                payload["response_format"] = {"type": "json_object"}
+                
             headers = {
                 "Content-Type": "application/json",
-                "Authorization": f"Bearer {api_key}"
+                "Authorization": f"Bearer {api_key}",
+                "User-Agent": "BimbaAI/1.0 (Windows NT 10.0; Win64; x64)"
             }
             req = urllib.request.Request(url, data=json.dumps(payload).encode('utf-8'), headers=headers, method="POST")
             

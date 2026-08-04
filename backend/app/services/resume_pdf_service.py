@@ -178,7 +178,7 @@ def build_pdf_story(resume_data: Dict[str, Any], template: str = "harvard", db: 
   name = clean_unicode(p_info.get("name", "Candidate Name"))
   email = clean_unicode(p_info.get("email", ""))
   phone = clean_unicode(p_info.get("phone", ""))
-  location = clean_unicode(p_info.get("location", ""))
+  location = clean_unicode(p_info.get("address") or p_info.get("location") or "")
   student = resume_data.get("student")
   
   # Clean AI/Parsed prefixes from name to show the actual candidate name
@@ -188,7 +188,9 @@ def build_pdf_story(resume_data: Dict[str, Any], template: str = "harvard", db: 
   
   email_val = email or getattr(student, "personal_email", "") or "student@bimba.ai"
   phone_val = phone or getattr(student, "phone", "") or "9876543210"
-  loc_val = location or getattr(student, "address", "") or "Mangalore, India"
+  loc_val = location or getattr(student, "address", "") or ""
+  if loc_val:
+    loc_val = loc_val.replace("\n", ", ").replace("\r", "")
   
   contact_parts = [email_val, phone_val, loc_val]
   contact_str = "  |  ".join([part for part in contact_parts if part])
@@ -227,13 +229,13 @@ def build_pdf_story(resume_data: Dict[str, Any], template: str = "harvard", db: 
     for edu in education:
       degree = clean_unicode(edu.get("degree", "Degree"))
       school = clean_unicode(edu.get("institution", "University"))
-      year = clean_unicode(edu.get("year") or edu.get("passing_year") or "")
-      cgpa = clean_unicode(edu.get("cgpa") or edu.get("percentage") or "")
+      year = clean_unicode(edu.get("passing_year") or edu.get("year") or "")
+      cgpa = clean_unicode(edu.get("cgpa_percentage") or edu.get("cgpa") or edu.get("percentage") or "")
       achievements = clean_unicode(edu.get("achievements") or "")
       
       edu_left = f"<b>{school}</b><br/>{degree}"
       if cgpa:
-        edu_left += f" — CGPA: {cgpa}"
+        edu_left += f" — CGPA/Grade: {cgpa}"
       if achievements:
         edu_left += f" | {achievements}"
         
@@ -297,8 +299,8 @@ def build_pdf_story(resume_data: Dict[str, Any], template: str = "harvard", db: 
       return []
     flowables = [Paragraph(sec.get("title") or "ACADEMIC & PERSONAL PROJECTS", h1_style)]
     for proj in projects:
-      title = clean_unicode(proj.get("title", "Project Title"))
-      tech = clean_unicode(proj.get("technologies", ""))
+      title = clean_unicode(proj.get("name") or proj.get("title") or "Project Title")
+      tech = clean_unicode(proj.get("tech_stack") or proj.get("technologies") or "")
       desc = clean_unicode(proj.get("description", ""))
       duration = clean_unicode(proj.get("duration") or "")
       
@@ -329,44 +331,168 @@ def build_pdf_story(resume_data: Dict[str, Any], template: str = "harvard", db: 
     if not skills:
       return []
     flowables = [Paragraph(sec.get("title") or "TECHNICAL SKILLS", h1_style)]
-    if isinstance(skills, list) and skills and isinstance(skills[0], dict):
-      # Group by category
-      groups = {}
+    
+    if isinstance(skills, list) and skills:
       for s in skills:
-        cat = s.get("category") or "General"
-        name = s.get("name") or ""
-        lvl = s.get("level")
-        skill_str = name + (f" (Lvl {lvl})" if lvl else "")
-        if cat not in groups:
-          groups[cat] = []
-        groups[cat].append(skill_str)
-      
-      for cat, items in groups.items():
-        cat_str = f"<b>{clean_unicode(cat)}:</b> {clean_unicode(', '.join(items))}"
-        flowables.append(Paragraph(cat_str, body_style))
-    else:
-      skills_str = ", ".join([clean_unicode(s) for s in skills]) if isinstance(skills, list) else clean_unicode(skills)
-      flowables.append(Paragraph(skills_str, body_style))
+        if isinstance(s, dict):
+          cat_name = s.get("name") or s.get("category") or "Skills"
+          sub_skills = s.get("skills")
+          if isinstance(sub_skills, list):
+            skill_str = ", ".join([str(x) for x in sub_skills])
+          else:
+            skill_str = s.get("skill") or s.get("value") or ""
+          
+          if skill_str:
+            cat_str = f"<b>{clean_unicode(cat_name)}:</b> {clean_unicode(skill_str)}"
+            flowables.append(Paragraph(cat_str, body_style))
+        else:
+          skills_str = ", ".join([clean_unicode(str(x)) for x in skills])
+          flowables.append(Paragraph(skills_str, body_style))
+          break
     flowables.append(Spacer(1, 4))
     return flowables
 
   def make_certifications_flowables(sec):
-    import json
-    achievements_raw = resume_data.get("achievements") or resume_data.get("achievements_list") or {}
-    if isinstance(achievements_raw, str) and achievements_raw:
-      try:
-        achievements_raw = json.loads(achievements_raw)
-      except:
-        achievements_raw = {}
+    certs = resume_data.get("certifications") or []
+    if not certs:
+      return []
+    flowables = [Paragraph(sec.get("title") or "CERTIFICATIONS AND ONLINE COURSES", h1_style)]
+    for cert in certs:
+      name = clean_unicode(cert.get("name") or "")
+      org = clean_unicode(cert.get("organization") or "")
+      date = clean_unicode(cert.get("issue_date") or cert.get("date") or "")
+      desc = clean_unicode(cert.get("description") or "")
+      
+      left_text = f"<b>{name}</b>"
+      if org:
+        left_text += f" — {org}"
+      if desc:
+        left_text += f"<br/>{desc}"
         
-    flowables = []
-    if achievements_raw and isinstance(achievements_raw, dict):
-      ach_items = {k.replace("_", " ").capitalize(): v for k, v in achievements_raw.items() if v}
-      if ach_items:
-        flowables.append(Paragraph(sec.get("title") or "ACHIEVEMENTS & CERTIFICATIONS", h1_style))
-        for k, v in ach_items.items():
-          flowables.append(Paragraph(f"<b>{k}:</b> {clean_unicode(v)}", body_style))
-        flowables.append(Spacer(1, 4))
+      cert_table = Table(
+        [[Paragraph(left_text, body_style), Paragraph(str(date), ParagraphStyle('RightText', parent=body_style, alignment=TA_RIGHT))]],
+        colWidths=[380, 152] if (custom_tpl and custom_tpl.get("layout") in ["two-column", "sidebar"]) else [420, 112]
+      )
+      cert_table.setStyle(TableStyle([
+        ('VALIGN', (0,0), (-1,-1), 'TOP'),
+        ('BOTTOMPADDING', (0,0), (-1,-1), 2),
+        ('TOPPADDING', (0,0), (-1,-1), 2),
+        ('LEFTPADDING', (0,0), (-1,-1), 0),
+        ('RIGHTPADDING', (0,0), (-1,-1), 0),
+      ]))
+      flowables.append(KeepTogether([cert_table]))
+    flowables.append(Spacer(1, 4))
+    return flowables
+
+  def make_achievements_flowables(sec):
+    ach = resume_data.get("achievements") or []
+    if not ach:
+      return []
+    flowables = [Paragraph(sec.get("title") or "AWARDS AND ACHIEVEMENTS", h1_style)]
+    for item in ach:
+      if isinstance(item, dict):
+        title = clean_unicode(item.get("title") or item.get("name") or "")
+        desc = clean_unicode(item.get("description") or "")
+        text = f"• <b>{title}:</b> {desc}" if desc else f"• {title}"
+      else:
+        text = f"• {clean_unicode(str(item))}"
+      flowables.append(Paragraph(text, bullet_style))
+    flowables.append(Spacer(1, 4))
+    return flowables
+
+  def make_hobbies_flowables(sec):
+    hobbies = resume_data.get("hobbies", [])
+    if not hobbies:
+      return []
+    flowables = [Paragraph(sec.get("title") or "HOBBIES & INTERESTS", h1_style)]
+    if isinstance(hobbies, list):
+      hobbies_str = ", ".join([clean_unicode(h) for h in hobbies])
+    else:
+      hobbies_str = clean_unicode(hobbies)
+    flowables.append(Paragraph(hobbies_str, body_style))
+    flowables.append(Spacer(1, 4))
+    return flowables
+
+  def make_soft_skills_flowables(sec):
+    soft = resume_data.get("softSkills") or []
+    if not soft:
+      return []
+    flowables = [Paragraph(sec.get("title") or "SOFT SKILLS", h1_style)]
+    soft_str = ", ".join([clean_unicode(str(x)) for x in soft])
+    flowables.append(Paragraph(soft_str, body_style))
+    flowables.append(Spacer(1, 4))
+    return flowables
+
+  def make_internships_flowables(sec):
+    internships = resume_data.get("internships") or []
+    if not internships:
+      return []
+    flowables = [Paragraph(sec.get("title") or "INTERNSHIPS", h1_style)]
+    for intern in internships:
+      role = clean_unicode(intern.get("role") or "Intern")
+      company = clean_unicode(intern.get("company") or "Company")
+      duration = clean_unicode(intern.get("duration") or "")
+      loc = clean_unicode(intern.get("location") or "")
+      desc = clean_unicode(intern.get("description") or "")
+      
+      header = f"<b>{role}</b> — {company}"
+      if loc:
+        header += f" ({loc})"
+        
+      table = Table(
+        [[Paragraph(header, body_style), Paragraph(duration, ParagraphStyle('RightText', parent=body_style, alignment=TA_RIGHT))]],
+        colWidths=[380, 152] if (custom_tpl and custom_tpl.get("layout") in ["two-column", "sidebar"]) else [420, 112]
+      )
+      table.setStyle(TableStyle([
+        ('VALIGN', (0,0), (-1,-1), 'TOP'),
+        ('BOTTOMPADDING', (0,0), (-1,-1), 0),
+        ('TOPPADDING', (0,0), (-1,-1), 0),
+        ('LEFTPADDING', (0,0), (-1,-1), 0),
+        ('RIGHTPADDING', (0,0), (-1,-1), 0),
+      ]))
+      
+      block = [table]
+      if desc:
+        bullets = [b.strip() for b in re.split(r'[\*\u2022•\n]', desc) if b.strip()]
+        if len(bullets) > 1:
+          for bullet in bullets:
+            block.append(Paragraph(f"• {clean_unicode(bullet)}", bullet_style))
+        else:
+          block.append(Paragraph(desc, body_style))
+      flowables.append(KeepTogether(block))
+      flowables.append(Spacer(1, 4))
+    return flowables
+
+  def make_languages_flowables(sec):
+    langs = resume_data.get("languages") or []
+    if not langs:
+      return []
+    flowables = [Paragraph(sec.get("title") or "LANGUAGES", h1_style)]
+    langs_str = ", ".join([clean_unicode(str(x)) for x in langs])
+    flowables.append(Paragraph(langs_str, body_style))
+    flowables.append(Spacer(1, 4))
+    return flowables
+
+  def make_publications_flowables(sec):
+    pubs = resume_data.get("publications") or []
+    if not pubs:
+      return []
+    flowables = [Paragraph(sec.get("title") or "PUBLICATIONS & RESEARCH PAPERS", h1_style)]
+    for pub in pubs:
+      title = clean_unicode(pub.get("title") or "")
+      publisher = clean_unicode(pub.get("publisher") or "")
+      year = clean_unicode(pub.get("year") or "")
+      desc = clean_unicode(pub.get("description") or "")
+      
+      text = f"• <b>{title}</b>"
+      if publisher:
+        text += f" — {publisher}"
+      if year:
+        text += f" ({year})"
+      if desc:
+        text += f"<br/>{desc}"
+      flowables.append(Paragraph(text, body_style))
+    flowables.append(Spacer(1, 4))
     return flowables
 
   def render_section(sec):
@@ -383,8 +509,20 @@ def build_pdf_story(resume_data: Dict[str, Any], template: str = "harvard", db: 
       return make_projects_flowables(sec)
     elif stype == "skills":
       return make_skills_flowables(sec)
-    elif stype in ["certifications", "achievements"]:
+    elif stype in ["certifications", "certificates"]:
       return make_certifications_flowables(sec)
+    elif stype == "achievements":
+      return make_achievements_flowables(sec)
+    elif stype == "softskills":
+      return make_soft_skills_flowables(sec)
+    elif stype == "internships":
+      return make_internships_flowables(sec)
+    elif stype == "languages":
+      return make_languages_flowables(sec)
+    elif stype == "publications":
+      return make_publications_flowables(sec)
+    elif stype == "hobbies":
+      return make_hobbies_flowables(sec)
     return []
 
   # Divider border line underneath header
@@ -416,7 +554,13 @@ def build_pdf_story(resume_data: Dict[str, Any], template: str = "harvard", db: 
       {"type": "education", "visible": True},
       {"type": "projects", "visible": True},
       {"type": "skills", "visible": True},
-      {"type": "certifications", "visible": True}
+      {"type": "softskills", "visible": True},
+      {"type": "internships", "visible": True},
+      {"type": "certifications", "visible": True},
+      {"type": "achievements", "visible": True},
+      {"type": "publications", "visible": True},
+      {"type": "languages", "visible": True},
+      {"type": "hobbies", "visible": True}
     ]
 
   layout = custom_tpl.get("layout") if custom_tpl else "single-column"

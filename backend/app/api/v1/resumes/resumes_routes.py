@@ -363,6 +363,7 @@ def sync_resume_profile(id: int, student_id: int, payload: dict, db: Any):
             "publications": payload.get("publications") or [],
             "volunteerExperience": payload.get("volunteerExperience") or [],
             "references": payload.get("references") or [],
+            "hobbies": payload.get("hobbies") or [],
             "lastUpdated": datetime.now(timezone.utc).isoformat()
         }
         db.resume_profiles.update_one(
@@ -399,6 +400,7 @@ def get_resume_profile(resume_id: int, student: Student = Depends(get_current_st
             "publications": r_data.get("publications", []),
             "volunteerExperience": r_data.get("volunteerExperience", []),
             "references": r_data.get("references", []),
+            "hobbies": r_data.get("hobbies", []),
             "lastUpdated": datetime.utcnow().isoformat()
         }
     from app.core.mongodb import MongoModel
@@ -876,226 +878,11 @@ def get_pdf_export(id: int, inline: bool = False, student: Student = Depends(get
         "created_at": datetime.utcnow()
     })
     
-    primary_color = colors.HexColor('#1E3A8A')
-    if resume.color_theme:
-        primary_color = resolve_template_color(resume.color_theme)
-        
-    buffer = io.BytesIO()
-    doc = SimpleDocTemplate(
-        buffer,
-        pagesize=letter,
-        rightMargin=40,
-        leftMargin=40,
-        topMargin=40,
-        bottomMargin=40
-    )
-    
-    styles = getSampleStyleSheet()
-    
-    title_style = ParagraphStyle(
-        'DocTitle',
-        parent=styles['Heading1'],
-        fontName='Helvetica-Bold',
-        fontSize=20,
-        leading=24,
-        textColor=primary_color,
-        alignment=1,
-        spaceAfter=6
-    )
-    
-    subtitle_style = ParagraphStyle(
-        'DocSub',
-        parent=styles['Normal'],
-        fontName='Helvetica',
-        fontSize=9,
-        leading=12,
-        textColor=colors.HexColor('#4B5563'),
-        alignment=1,
-        spaceAfter=12
-    )
-    
-    section_title = ParagraphStyle(
-        'SecTitle',
-        parent=styles['Heading2'],
-        fontName='Helvetica-Bold',
-        fontSize=12,
-        leading=16,
-        textColor=primary_color,
-        spaceBefore=12,
-        spaceAfter=4,
-        keepWithNext=True
-    )
-    
-    body_style = ParagraphStyle(
-        'DocBody',
-        parent=styles['Normal'],
-        fontName='Helvetica',
-        fontSize=9.5,
-        leading=13.5,
-        textColor=colors.HexColor('#1F2937'),
-        spaceAfter=4
-    )
-    
-    meta_style = ParagraphStyle(
-        'DocMeta',
-        parent=styles['Normal'],
-        fontName='Helvetica-Bold',
-        fontSize=9.5,
-        leading=13.5,
-        textColor=colors.HexColor('#374151')
-    )
-
-    meta_right = ParagraphStyle(
-        'DocMetaRight',
-        parent=meta_style,
-        alignment=2
-    )
-
-    story = []
-    
     resume_data = get_normalized_resume_dict(resume)
-    p_info = resume_data.get("personal_info") or {}
-    
-    raw_name = (
-        p_info.get("name") or 
-        p_info.get("candidateName") or 
-        resume_data.get("name") or 
-        resume.get("name") or 
-        student.student_name or 
-        "Candidate"
-    )
-    # Clean AI/Parsed/Optimized prefixes from name to show the actual candidate name
-    name = raw_name
-    for prefix in ["AI Parsed - ", "AI Diagnostic - ", "AI Optimized - ", "AI Enhanced - ", "AI Parsed-", "AI Diagnostic-", "AI Optimized-", "AI Enhanced-"]:
-        name = name.replace(prefix, "")
-        name = name.replace(prefix.upper(), "")
-    name = name.strip()
-
-    if not name or name.lower() in ["resume", "new resume", "untitled"]:
-        name = p_info.get("name") or p_info.get("candidateName") or student.student_name or "Candidate"
-
-    contact_parts = []
-    email = (
-        p_info.get("email") or 
-        resume_data.get("email") or 
-        resume.get("email") or 
-        student.email
-    )
-    if email:
-        contact_parts.append(email)
-        
-    phone = (
-        p_info.get("phone") or 
-        resume_data.get("phone") or 
-        resume.get("phone")
-    )
-    if phone:
-        contact_parts.append(phone)
-        
-    address = (
-        p_info.get("address") or 
-        resume_data.get("address") or 
-        resume.get("address")
-    )
-    if address:
-        contact_parts.append(address)
-        
-    sub_parts = []
-    for link_key in ["linkedin", "github", "portfolio", "website"]:
-        link_val = p_info.get(link_key) or resume_data.get(link_key) or resume.get(link_key)
-        if link_val:
-            sub_parts.append(f"{link_key.capitalize()}: {link_val}")
-        
-    story.append(Paragraph(name, title_style))
-    story.append(Paragraph(" • ".join(contact_parts) + "<br/>" + " | ".join(sub_parts), subtitle_style))
-    
-    story.append(Table([['']], colWidths=[532], rowHeights=[1], style=TableStyle([
-        ('LINEBELOW', (0,0), (-1,-1), 1.5, primary_color),
-        ('BOTTOMPADDING', (0,0), (-1,-1), 0),
-        ('TOPPADDING', (0,0), (-1,-1), 0),
-    ])))
-    story.append(Spacer(1, 10))
-    
-    # Render Summary
-    summary_text = p_info.get("summary") or p_info.get("career_objective") or resume.get("career_objective")
-    if summary_text:
-        story.append(Paragraph("PROFESSIONAL SUMMARY", section_title))
-        story.append(Paragraph(summary_text, body_style))
-        story.append(Spacer(1, 8))
-        
-    # Render all other custom and standard sections dynamically
-    for section_name, section_value in resume_data.items():
-        if section_name in ["master", "personal_info", "id", "userId", "student_id", "name", "visibility", "template_id", "color_theme", "status", "ats_score", "created_at", "updated_at", "resume", "cloudinary"]:
-            continue
-            
-        if not section_value:
-            continue
-            
-        formatted_title = section_name.upper().replace('_', ' ')
-        story.append(Paragraph(formatted_title, section_title))
-        
-        if isinstance(section_value, str):
-            story.append(Paragraph(section_value, body_style))
-            story.append(Spacer(1, 8))
-        elif isinstance(section_value, list):
-            for item in section_value:
-                if isinstance(item, str):
-                    story.append(Paragraph(item, body_style))
-                elif isinstance(item, dict):
-                    main_header_candidates = ["institution", "company", "name", "title", "position", "category", "organization"]
-                    date_candidates = ["passing_year", "duration", "date", "year", "issue_date", "time_period"]
-                    sub_candidates = ["degree", "role", "tech_stack", "level"]
-                    desc_candidates = ["description", "achievements", "details", "summary"]
-                    
-                    main_val = next((item[c] for c in main_header_candidates if c in item and item[c]), None)
-                    date_val = next((item[c] for c in date_candidates if c in item and item[c]), None)
-                    sub_val = next((item[c] for c in sub_candidates if c in item and item[c]), None)
-                    desc_val = next((item[c] for c in desc_candidates if c in item and item[c]), None)
-                    
-                    captured_keys = set(main_header_candidates + date_candidates + sub_candidates + desc_candidates + ["id"])
-                    extra_parts = []
-                    for k, v in item.items():
-                        if k not in captured_keys and v:
-                            extra_parts.append(f"<b>{k.replace('_', ' ').capitalize()}:</b> {v}")
-                            
-                    item_table_data = []
-                    
-                    if main_val or date_val:
-                        left_p = Paragraph(f"<b>{main_val}</b>" if main_val else "", body_style)
-                        right_p = Paragraph(str(date_val) if date_val else "", meta_right)
-                        item_table_data.append([left_p, right_p])
-                        
-                    second_line_left = []
-                    if sub_val:
-                        second_line_left.append(str(sub_val))
-                    if extra_parts:
-                        second_line_left.append(" | ".join(extra_parts))
-                        
-                    if second_line_left:
-                        left_content = " — ".join(second_line_left)
-                        item_table_data.append([Paragraph(left_content, body_style), ""])
-                        
-                    if desc_val:
-                        item_table_data.append([Paragraph(str(desc_val), body_style), ""])
-                        
-                    if item_table_data:
-                        t = Table(item_table_data, colWidths=[400, 132])
-                        t_styles = [
-                            ('VALIGN', (0,0), (-1,-1), 'TOP'),
-                            ('BOTTOMPADDING', (0,0), (-1,-1), 2),
-                            ('TOPPADDING', (0,0), (-1,-1), 2),
-                            ('LEFTPADDING', (0,0), (-1,-1), 0),
-                            ('RIGHTPADDING', (0,0), (-1,-1), 0),
-                        ]
-                        for r_idx in range(len(item_table_data)):
-                            if r_idx > 0 or not date_val:
-                                t_styles.append(('SPAN', (0, r_idx), (1, r_idx)))
-                        t.setStyle(TableStyle(t_styles))
-                        story.append(t)
-            story.append(Spacer(1, 8))
-            
-    doc.build(story)
-    buffer.seek(0)
+    from app.services.resume_pdf_service import build_pdf_story
+    template_slug = resume.get("template_id") or "minimalist-modern"
+    pdf_bytes = build_pdf_story(resume_data, template=template_slug, db=db)
+    buffer = io.BytesIO(pdf_bytes)
     
     # Log download action
     db.resume_downloads.insert_one({
@@ -1797,7 +1584,17 @@ def get_normalized_resume_dict(resume: dict) -> dict:
     clean_skills = []
     for s in skills:
         if isinstance(s, dict):
-            clean_skills.append(s.get("name") or s.get("skill") or str(s))
+            sub_skills = s.get("skills")
+            if isinstance(sub_skills, list):
+                clean_skills.append({
+                    "name": s.get("name") or s.get("category") or "General",
+                    "skills": sub_skills
+                })
+            else:
+                clean_skills.append({
+                    "name": s.get("name") or s.get("category") or "General",
+                    "skill": s.get("skill") or s.get("value") or str(s)
+                })
         else:
             clean_skills.append(str(s))
 
@@ -1813,6 +1610,9 @@ def get_normalized_resume_dict(resume: dict) -> dict:
         "achievements": get_list("achievements", ["achievements_list"]),
         "languages": get_list("languages"),
         "publications": get_list("publications"),
+        "hobbies": get_list("hobbies", ["interests"]),
+        "softSkills": get_list("softSkills", ["soft_skills"]),
+        "internships": get_list("internships"),
     }
     return normalized
 

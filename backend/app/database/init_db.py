@@ -357,22 +357,21 @@ def init_db():
             print("Seeded student accounts.")
 
         # 7. Seed Default Resume Templates
-        # 7. Seed Default Resume Templates
         db.resume_templates.delete_many({})
         templates_list = [
             {
                 "id": 1,
-                "slug": "minimal-ats",
-                "name": "Minimal ATS",
-                "category": "Classic",
+                "slug": "minimalist-modern",
+                "name": "Minimalist Modern (Premium ATS)",
+                "category": "Premium",
                 "ats_rating": 100,
-                "popularity": 150,
+                "popularity": 200,
                 "color_theme": "slate",
                 "is_enabled": True,
                 "is_active": True,
                 "is_premium": False,
                 "is_ats_optimized": True,
-                "description": "Clean, single-column design optimised for screen readers and ATS applications.",
+                "description": "Premium 100% ATS-compliant layout designed for professional impact and readability.",
                 "layout": "single-column",
                 "colors": {
                     "primary": "#111827",
@@ -391,125 +390,17 @@ def init_db():
                 },
                 "sections": [
                     { "type": "profile", "title": "Profile", "visible": True, "fontSize": 14, "spacing": 12 },
-                    { "type": "experience", "title": "Professional Experience", "visible": True, "fontSize": 14, "spacing": 16 },
-                    { "type": "education", "title": "Education", "visible": True, "fontSize": 14, "spacing": 14 },
-                    { "type": "skills", "title": "Technical Skills", "visible": True, "fontSize": 14, "spacing": 12, "columns": 2 },
-                    { "type": "projects", "title": "Projects", "visible": True, "fontSize": 14, "spacing": 14 },
-                    { "type": "certifications", "title": "Certifications", "visible": True, "fontSize": 14, "spacing": 12 }
-                ]
-            },
-            {
-                "id": 2,
-                "slug": "rachelle-beaudry",
-                "name": "Rachelle Beaudry (Two Column)",
-                "category": "Modern",
-                "ats_rating": 98,
-                "popularity": 140,
-                "color_theme": "blue",
-                "is_enabled": True,
-                "is_active": True,
-                "is_premium": False,
-                "is_ats_optimized": True,
-                "description": "Dynamic two-column template separating core content from side highlights.",
-                "layout": "two-column",
-                "colors": {
-                    "primary": "#1D4ED8",
-                    "secondary": "#4B5563",
-                    "divider": "#CBD5E1"
-                },
-                "fonts": {
-                    "heading": "Helvetica-Bold",
-                    "body": "Helvetica"
-                },
-                "spacing": 16,
-                "page": {
-                    "size": "A4",
-                    "margin": "24px",
-                    "background": "white"
-                },
-                "sections": [
-                    { "type": "profile", "title": "Profile", "visible": True, "fontSize": 14, "spacing": 12 },
                     { "type": "experience", "title": "Work Experience", "visible": True, "fontSize": 14, "spacing": 16 },
-                    { "type": "education", "title": "Educational Background", "visible": True, "fontSize": 14, "spacing": 14 },
-                    { "type": "skills", "title": "Technical Skills", "visible": True, "fontSize": 14, "spacing": 12, "columns": 1 },
-                    { "type": "certifications", "title": "Certification", "visible": True, "fontSize": 14, "spacing": 12 }
-                ]
-            },
-            {
-                "id": 3,
-                "slug": "morgan-maxwell",
-                "name": "Morgan Maxwell (Corporate)",
-                "category": "Corporate",
-                "ats_rating": 99,
-                "popularity": 135,
-                "color_theme": "slate",
-                "is_enabled": True,
-                "is_active": True,
-                "is_premium": False,
-                "is_ats_optimized": True,
-                "description": "Elegant, centered layout utilizing serif fonts for editorial and branding specialists.",
-                "layout": "single-column",
-                "colors": {
-                    "primary": "#27272A",
-                    "secondary": "#71717A",
-                    "divider": "#E4E4E7"
-                },
-                "fonts": {
-                    "heading": "Times-Bold",
-                    "body": "Times-Roman"
-                },
-                "spacing": 16,
-                "page": {
-                    "size": "A4",
-                    "margin": "36px",
-                    "background": "white"
-                },
-                "sections": [
-                    { "type": "profile", "title": "Profile Summary", "visible": True, "fontSize": 13, "spacing": 12 },
-                    { "type": "experience", "title": "Professional Experience", "visible": True, "fontSize": 13, "spacing": 16 },
-                    { "type": "education", "title": "Education & Credentials", "visible": True, "fontSize": 13, "spacing": 14 },
-                    { "type": "skills", "title": "Core Skills", "visible": True, "fontSize": 13, "spacing": 12, "columns": 1 }
-                ]
-            },
-            {
-                "id": 4,
-                "slug": "olivia-sanchez",
-                "name": "Olivia Sanchez (Executive)",
-                "category": "Executive",
-                "ats_rating": 99,
-                "popularity": 125,
-                "color_theme": "indigo",
-                "is_enabled": True,
-                "is_active": True,
-                "is_premium": True,
-                "is_ats_optimized": True,
-                "description": "Centered executive layout with gray headers and a balanced grid representation.",
-                "layout": "single-column",
-                "colors": {
-                    "primary": "#0F172A",
-                    "secondary": "#64748B",
-                    "divider": "#E2E8F0"
-                },
-                "fonts": {
-                    "heading": "Helvetica-Bold",
-                    "body": "Helvetica"
-                },
-                "spacing": 16,
-                "page": {
-                    "size": "A4",
-                    "margin": "28px",
-                    "background": "white"
-                },
-                "sections": [
-                    { "type": "profile", "title": "Executive Summary", "visible": True, "fontSize": 14, "spacing": 12 },
-                    { "type": "experience", "title": "Professional History", "visible": True, "fontSize": 14, "spacing": 16 },
-                    { "type": "education", "title": "Academic background", "visible": True, "fontSize": 14, "spacing": 14 },
-                    { "type": "skills", "title": "Expertise & Skills", "visible": True, "fontSize": 14, "spacing": 12, "columns": 3 }
+                    { "type": "education", "title": "Education", "visible": True, "fontSize": 14, "spacing": 14 },
+                    { "type": "skills", "title": "Skills", "visible": True, "fontSize": 14, "spacing": 12, "columns": 2 },
+                    { "type": "projects", "title": "Projects", "visible": True, "fontSize": 14, "spacing": 14 },
+                    { "type": "certifications", "title": "Certifications", "visible": True, "fontSize": 14, "spacing": 12 },
+                    { "type": "hobbies", "title": "Hobbies & Interests", "visible": True, "fontSize": 14, "spacing": 12 }
                 ]
             }
         ]
         db.resume_templates.insert_many(templates_list)
-        db.counters.update_one({"_id": "resume_templates"}, {"$set": {"seq": 4}}, upsert=True)
+        db.counters.update_one({"_id": "resume_templates"}, {"$set": {"seq": 1}}, upsert=True)
         print(f"Seeded {len(templates_list)} resume templates.")
             
         print("Successfully initialized and seeded MongoDB database!")

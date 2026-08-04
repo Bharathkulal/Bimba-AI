@@ -66,7 +66,8 @@ class ResumeParser:
             "portfolioLinks": ["portfolioLinks", "links", "urls", "social_links", "socials"],
             "publications": ["publications", "research_papers", "papers"],
             "volunteerExperience": ["volunteerExperience", "volunteer", "social_service", "community_service"],
-            "references": ["references", "referees"]
+            "references": ["references", "referees"],
+            "hobbies": ["hobbies", "interests", "hobbies_interests", "personal_interests", "hobby"]
         }
         
         normalized = {}

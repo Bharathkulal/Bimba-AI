@@ -21,6 +21,7 @@ Extract all available sections:
 14. Publications (title, publisher, year, url, description)
 15. Volunteer Experience (organization, role, duration, description)
 16. References (name, title, company, email, phone, relationship)
+17. Hobbies (list of hobbies / interests)
 
 CRITICAL RULES:
 - Return ONLY a valid JSON object matching the exact schema below.
@@ -82,7 +83,8 @@ Schema:
       "organization": "string",
       "issue_date": "string",
       "credential_id": "string",
-      "credential_url": "string"
+      "credential_url": "string",
+      "description": "string"
     }
   ],
   "internships": [
@@ -124,7 +126,8 @@ Schema:
       "phone": "string",
       "relationship": "string"
     }
-  ]
+  ],
+  "hobbies": ["string"]
 }
 
 Resume Text:
