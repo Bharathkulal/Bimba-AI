@@ -46,7 +46,7 @@ export const PlacementLayout: React.FC = () => {
   const breadcrumbs = location.pathname.split('/').filter(Boolean);
 
   return (
-    <div className={`min-h-screen ${isDark ? 'bg-[#0F172A] text-white shadow-black/20' : 'bg-slate-50 text-slate-900'} flex overflow-x-hidden font-sans relative w-full`}>
+    <div className={`placement-console min-h-screen ${isDark ? 'bg-[#0F172A] text-white shadow-black/20' : 'bg-slate-50 text-slate-900'} flex overflow-x-hidden font-sans relative w-full`}>
       {/* Collapsible Left Sidebar */}
       <aside 
         className={`hidden md:flex flex-col justify-between items-stretch py-6 px-4 border-r h-screen fixed left-0 top-0 z-40 transition-all duration-300 ${

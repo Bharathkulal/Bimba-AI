@@ -138,7 +138,6 @@ export const AdminDashboardOverview: React.FC = () => {
       <section className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
         {kpis.map((kpi, idx) => {
           const Icon = kpi.icon;
-          const isUp = kpi.trend === 'up';
           return (
             <Card key={idx} className="p-4 hover:-[#111111]/30 flex flex-col justify-between h-[120px] transition-all">
               <div className="flex justify-between items-start">
@@ -153,23 +152,6 @@ export const AdminDashboardOverview: React.FC = () => {
                 <div className={`w-8 h-8 rounded-lg bg-slate-100/50 flex items-center justify-center border border-border shrink-0 ${kpi.color}`}>
                   <Icon size={14} />
                 </div>
-              </div>
-
-              {/* Sparkline & trend */}
-              <div className="flex justify-between items-center pt-2 mt-1.5 border-t border-border">
-                <span className="text-[8.5px] font-black flex items-center gap-0.5 -[#111111]">
-                  <ArrowUpRight size={10} />
-                  {kpi.growth}
-                </span>
-                <svg className="w-14 h-5 shrink-0" viewBox="0 0 95 30">
-                  <path
-                    d={kpi.chart}
-                    fill="none"
-                    stroke="#111111"
-                    strokeWidth="1.5"
-                    strokeLinecap="round"
-                  />
-                </svg>
               </div>
             </Card>
           );
