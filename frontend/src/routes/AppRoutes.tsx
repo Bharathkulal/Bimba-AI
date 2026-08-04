@@ -49,6 +49,8 @@ const SettingsModule = lazy(() => import('../pages/admin/SettingsModule').then(m
 const AiGatewayModule = lazy(() => import('../pages/admin/AiGatewayModule').then(module => ({ default: module.AiGatewayModule })));
 const JobsModule = lazy(() => import('../pages/admin/JobsModule').then(module => ({ default: module.JobsModule })));
 const CompaniesModule = lazy(() => import('../pages/admin/CompaniesModule').then(module => ({ default: module.CompaniesModule })));
+const TemplatesModule = lazy(() => import('../pages/admin/TemplatesModule').then(module => ({ default: module.TemplatesModule })));
+
 
 // Placement Pages
 const PlacementDashboard = lazy(() => import('../pages/placement/PlacementDashboard').then(module => ({ default: module.PlacementDashboard })));
@@ -208,7 +210,8 @@ export const AppRoutes: React.FC = () => {
               <Route path="/admin/admins" element={<AdminRolesModule />} />
               <Route path="/admin/monitor" element={<MonitorModule />} />
               <Route path="/admin/notifications" element={<MonitorModule />} />
-              <Route path="/admin/templates" element={<ResumeModule />} />
+              <Route path="/admin/templates" element={<TemplatesModule />} />
+
               <Route path="/admin/ai" element={<AiGatewayModule />} />
               <Route path="/admin/analytics" element={<ReportsModule />} />
               <Route path="/admin/security" element={<SecurityModule />} />

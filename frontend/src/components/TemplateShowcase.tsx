@@ -205,7 +205,8 @@ export const TemplateShowcase: React.FC = () => {
   useEffect(() => {
     const fetchTemplates = async () => {
       try {
-        const res = await apiClient.get('/api/resume-studio/templates');
+        const res = await apiClient.get('/api/templates');
+
         setTemplates(res.data || []);
       } catch (err) {
         console.error("Error loading templates in student showcase:", err);

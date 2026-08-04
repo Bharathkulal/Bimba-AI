@@ -88,12 +88,13 @@ export const useResumeBuilderStore = create<ResumeBuilderState>((set, get) => ({
 
   fetchTemplates: async () => {
     try {
-      const response = await apiClient.get('/api/resume-studio/templates');
+      const response = await apiClient.get('/api/templates');
       set({ templatesList: response.data || [] });
     } catch (err) {
       console.error('Failed to fetch templates:', err);
     }
   },
+
 
   fetchBuilderData: async (resumeId: number) => {
     set({ loading: true, errors: null, resumeId });

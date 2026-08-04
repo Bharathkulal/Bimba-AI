@@ -81,7 +81,8 @@ export const ResumePage: React.FC = () => {
       setIsLoading(true);
       const [resList, tplRes, ats] = await Promise.all([
         analyticsService.getResumes(),
-        apiClient.get('/api/resume-studio/templates'),
+        apiClient.get('/api/templates'),
+
         analyticsService.getAts(),
       ]);
       setResumes(resList);
