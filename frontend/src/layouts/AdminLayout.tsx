@@ -99,7 +99,7 @@ export const AdminLayout: React.FC = () => {
   const breadcrumbs = location.pathname.split('/').filter(Boolean);
 
   return (
-    <div className="min-h-screen bg-background text-slate-900 flex overflow-x-hidden font-sans relative selection:bg-slate-600/25 w-full">
+    <div className="admin-console min-h-screen bg-background text-slate-900 flex overflow-x-hidden font-sans relative selection:bg-slate-600/25 w-full">
       {/* Toast Notification */}
       {toastMessage && (
         <div className="fixed top-6 right-6 z-50 flex items-center gap-2.5 px-4 py-3 rounded-xl shadow-2xl border border-slate-200 bg-sidebar text-slate-900 animate-fadeIn text-xs font-semibold">

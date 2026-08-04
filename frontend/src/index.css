@@ -1035,3 +1035,128 @@ html:not(.dark) main tr.bg-slate-50\/80 {
   filter: drop-shadow(0 0 3px hsl(var(--highlight-color-hue), 100%, 70%)) drop-shadow(0 -4px 6px #0009);
   animation: none;
 }
+
+/* ==========================================
+   Admin Console Typography System
+   ========================================== */
+:root {
+  --font-admin-serif: "Cormorant Garamond", "DM Serif Display", "Playfair Display", Georgia, serif;
+  --font-admin-sans: "Inter", system-ui, sans-serif;
+}
+
+.admin-console {
+  font-family: var(--font-admin-sans);
+}
+
+.admin-console :where(button, input, select, textarea, table, th, td) {
+  font-family: var(--font-admin-sans);
+}
+
+.admin-console main h1 {
+  font-family: var(--font-admin-serif) !important;
+  font-size: 34px !important;
+  font-weight: 600 !important;
+  letter-spacing: -0.02em !important;
+  line-height: 1.05 !important;
+}
+
+.admin-console main h2,
+.admin-console main h3[class*="border-b"],
+.admin-console main .fixed h2,
+.admin-console main .fixed h3 {
+  font-family: var(--font-admin-serif) !important;
+  font-size: 32px !important;
+  font-weight: 600 !important;
+  letter-spacing: -0.02em !important;
+  line-height: 1.05 !important;
+}
+
+.admin-console main h3[class*="border-b"] {
+  text-transform: none !important;
+}
+
+.admin-console main :where(span, p, div, label)[class*="uppercase"][class*="tracking"]:not([class*="rounded"]),
+.admin-console main :where(span, p, div, label)[class*="uppercase"][class*="tracking-wider"]:not([class*="rounded"]) {
+  font-family: var(--font-admin-sans) !important;
+  font-size: 13px !important;
+  font-weight: 600 !important;
+  letter-spacing: 0.08em !important;
+}
+
+.admin-console main :where(h3, h4, span, div)[class*="text-xl"][class*="font-black"],
+.admin-console main :where(h3, h4, span, div)[class*="text-2xl"][class*="font-black"],
+.admin-console main :where(h3, h4, span, div)[class*="text-3xl"][class*="font-black"] {
+  font-family: var(--font-admin-sans) !important;
+  font-size: 40px !important;
+  font-weight: 700 !important;
+  line-height: 1 !important;
+}
+
+.admin-console main :where(th) {
+  font-family: var(--font-admin-sans) !important;
+  font-size: 13px !important;
+  font-weight: 600 !important;
+  letter-spacing: 0.08em !important;
+  text-transform: uppercase !important;
+}
+
+.admin-console main :where(td) {
+  font-family: var(--font-admin-sans) !important;
+  font-size: 15px !important;
+  font-weight: 400 !important;
+}
+
+.admin-console main :where(td) :where(p, div, span):not([class*="uppercase"]):not([class*="rounded"]) {
+  font-family: var(--font-admin-sans) !important;
+  font-size: 15px !important;
+  font-weight: 400 !important;
+}
+
+.admin-console main :where(input, select, textarea) {
+  font-family: var(--font-admin-sans) !important;
+  font-size: 15px !important;
+  font-weight: 500 !important;
+}
+
+.admin-console main :where(input, textarea)::placeholder {
+  font-family: var(--font-admin-sans) !important;
+  font-size: 14px !important;
+  font-weight: 400 !important;
+}
+
+.admin-console :where(button, .premium-btn .text_button) {
+  font-family: var(--font-admin-sans) !important;
+  font-size: 15px !important;
+  font-weight: 600 !important;
+}
+
+.admin-console aside nav :where(button, span),
+.admin-console aside > button,
+.admin-console aside > button span {
+  font-family: var(--font-admin-sans) !important;
+  font-size: 15px !important;
+  font-weight: 500 !important;
+}
+
+.admin-console main :where(span)[class*="uppercase"][class*="rounded"] {
+  font-family: var(--font-admin-sans) !important;
+  font-size: 12px !important;
+  font-weight: 600 !important;
+  letter-spacing: 0.08em !important;
+}
+
+.admin-console main :where(label) {
+  font-family: var(--font-admin-sans) !important;
+}
+
+@media (min-width: 768px) {
+  .admin-console main h1 {
+    font-size: 46px !important;
+  }
+}
+
+@media (min-width: 1024px) {
+  .admin-console main h1 {
+    font-size: 56px !important;
+  }
+}

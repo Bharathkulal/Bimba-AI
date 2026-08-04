@@ -208,7 +208,7 @@ export const StudentsModule: React.FC = () => {
               { label: 'Without Resume', value: stats.without_resume, color: 'text-amber-400' },
               { label: 'Logged In Today', value: stats.logged_in_today, color: 'text-cyan-400' },
             ].map((s, i) => (
-              <div key={i} className="bg-black/20 rounded-2xl p-4 border border-white/5">
+              <div key={i} className="bg-white rounded-2xl p-4 border border-[#E5E7EB] shadow-[0_4px_12px_rgba(15,23,42,0.08)]">
                 <div className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">{s.label}</div>
                 <div className={`text-2xl font-black mt-2 ${s.color}`}>{s.value}</div>
               </div>
@@ -229,7 +229,7 @@ export const StudentsModule: React.FC = () => {
               placeholder="Search by name, roll number, department..."
               value={searchQuery}
               onChange={handleSearch}
-              className="w-full bg-black/20 border border-white/10 rounded-xl pl-9 pr-4 py-2 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-emerald-500"
+              className="w-full bg-white border border-[#E5E7EB] rounded-xl pl-9 pr-4 py-2 text-sm text-slate-900 placeholder-slate-500 shadow-[0_4px_12px_rgba(15,23,42,0.08)] focus:outline-none focus:border-emerald-500"
             />
           </div>
 
@@ -247,10 +247,10 @@ export const StudentsModule: React.FC = () => {
         </div>
 
         {/* Table */}
-        <div className="overflow-x-auto rounded-xl border border-white/5">
+        <div className="overflow-x-auto rounded-xl border border-[#E5E7EB] bg-white shadow-[0_4px_12px_rgba(15,23,42,0.08)]">
           <table className="w-full text-left border-collapse">
             <thead>
-              <tr className="bg-black/40 border-b border-white/5">
+              <tr className="bg-[#F8FAFC] border-b border-[#E5E7EB]">
                 <th className="p-3 w-10 text-center">
                   <input 
                     type="checkbox" 
@@ -259,11 +259,11 @@ export const StudentsModule: React.FC = () => {
                     onChange={handleSelectAll}
                   />
                 </th>
-                <th className="p-3 text-xs font-bold uppercase tracking-wider text-slate-400">Student</th>
-                <th className="p-3 text-xs font-bold uppercase tracking-wider text-slate-400">Roll Number</th>
-                <th className="p-3 text-xs font-bold uppercase tracking-wider text-slate-400">Department</th>
-                <th className="p-3 text-xs font-bold uppercase tracking-wider text-slate-400">Status</th>
-                <th className="p-3 text-xs font-bold uppercase tracking-wider text-slate-400 text-right">Actions</th>
+                <th className="p-3 text-xs font-extrabold uppercase tracking-wider text-slate-700">Student</th>
+                <th className="p-3 text-xs font-extrabold uppercase tracking-wider text-slate-700">Roll Number</th>
+                <th className="p-3 text-xs font-extrabold uppercase tracking-wider text-slate-700">Department</th>
+                <th className="p-3 text-xs font-extrabold uppercase tracking-wider text-slate-700">Status</th>
+                <th className="p-3 text-xs font-extrabold uppercase tracking-wider text-slate-700 text-right">Actions</th>
               </tr>
             </thead>
             <tbody>
