@@ -160,7 +160,9 @@ export const StudentManagement: React.FC = () => {
                     </div>
                   </td>
                   <td className="px-6 py-4 font-bold text-slate-550 dark:text-slate-350">{student.department}</td>
-                  <td className="px-6 py-4 text-center font-bold text-slate-800 dark:text-slate-200">{student.cgpa}</td>
+                  <td className="px-6 py-4 text-center font-bold text-slate-800 dark:text-slate-200">
+                    {student.cgpa !== null && student.cgpa !== undefined ? student.cgpa : '-'}
+                  </td>
                   <td className="px-6 py-4 text-center">
                     <span className={`inline-block px-2.5 py-0.5 rounded-full text-[9px] font-extrabold uppercase border ${
                       student.eligibility_status === 'Eligible' 

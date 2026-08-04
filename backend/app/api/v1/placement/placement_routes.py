@@ -168,8 +168,7 @@ def list_students(
     for s in students_list:
         if "_id" in s:
             s["_id"] = str(s["_id"])
-        # Ensure fallback defaults if fields don't exist
-        s["cgpa"] = s.get("cgpa", 8.5)
+        s["cgpa"] = s.get("cgpa")
         s["eligibility_status"] = s.get("eligibility_status", "Eligible")
         s["placement_status"] = s.get("placement_status", "Unplaced")
     return students_list
@@ -584,7 +583,7 @@ def get_placement_reports(
                 "roll_number": s["roll_number"],
                 "name": s.get("student_name") or s.get("full_name") or "Unknown",
                 "department": s["department"],
-                "cgpa": s.get("cgpa", 8.5),
+                "cgpa": s.get("cgpa"),
                 "eligibility": s.get("eligibility_status", "Eligible"),
                 "status": s.get("placement_status", "Unplaced")
             }
@@ -681,7 +680,7 @@ def rank_candidates(
         Verify fit score for student:
         Name: {student.get('student_name')}
         Skills: {skills}
-        CGPA: {student.get('cgpa', 8.0)}
+        CGPA: {student.get('cgpa') if student.get('cgpa') is not None else 'N/A'}
         
         Against Job Role:
         Role: {drive.get('job_role')}
@@ -702,7 +701,7 @@ def rank_candidates(
         ranked_candidates.append({
             "roll_number": student["roll_number"],
             "name": student.get("student_name") or student.get("full_name"),
-            "cgpa": student.get("cgpa", 8.0),
+            "cgpa": student.get("cgpa"),
             "score": score,
             "reason": reason.strip()
         })

@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
-  Bell, Shield, Key, Trash2, ArrowLeft, CheckCircle2, 
-  ChevronRight, Laptop, LogOut, Lock
+  Bell, Shield, Trash2, ArrowLeft, CheckCircle2, 
+  Laptop, LogOut, Lock, ChevronRight
 } from 'lucide-react';
 import { Card } from '../../components/Card';
 import { Button } from '../../components/Button';
@@ -75,22 +75,6 @@ export const SettingsMobile: React.FC = () => {
           </div>
         </div>
 
-        {/* Category 2: API & Integration */}
-        <div className="flex flex-col gap-2.5">
-          <h3 className="text-[10px] uppercase font-extrabold text-slate-400 tracking-wider px-1">Integrations</h3>
-          <div className="flex flex-col bg-white dark:bg-[#1E293B] border border-slate-200 dark:border-white/5 rounded-2xl overflow-hidden shadow-sm">
-            <button
-              onClick={() => showToast("RapidAPI Keys synced!")}
-              className="flex items-center justify-between p-4 hover:bg-slate-50 dark:hover:bg-white/5 text-left cursor-pointer"
-            >
-              <div className="flex items-center gap-3">
-                <Key size={15} className="text-slate-500" />
-                <span className="text-xs font-bold text-slate-700 dark:text-slate-200">API Configurations</span>
-              </div>
-              <ChevronRight size={14} className="text-slate-400" />
-            </button>
-          </div>
-        </div>
 
         {/* Category 3: Danger Zone */}
         <div className="flex flex-col gap-2.5">

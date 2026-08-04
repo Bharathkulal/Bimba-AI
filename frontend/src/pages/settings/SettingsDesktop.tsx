@@ -6,14 +6,15 @@ import { Input } from '../../components/Input';
 import { 
   Bell, Shield, Keyboard, Volume2, ArrowLeft, KeyRound, 
   CheckCircle2, AlertTriangle, ShieldCheck, Sun, Moon, Laptop,
-  Eye, Lock, Trash2, Key, LogOut
+  Lock, Trash2, LogOut
 } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { useUserStore as useStore } from '../../store/userStore';
 import { apiClient } from '../../services/api';
-import { notificationsService, NotificationSettings } from '../../services/notifications';
+import { notificationsService } from '../../services/notifications';
+import type { NotificationSettings } from '../../services/notifications';
 
 const changePasswordSchema = z.object({
   current_password: z.string().min(1, { message: 'Current password is required' }),
@@ -67,10 +68,6 @@ export const SettingsDesktop: React.FC = () => {
     }
   };
 
-  // RapidAPI config state
-  const [rapidApiKey, setRapidApiKey] = useState('********************************');
-  const [isApiKeyVisible, setIsApiKeyVisible] = useState(false);
-
   // Form hooks
   const { register, handleSubmit, reset, formState: { errors } } = useForm<ChangePasswordSchema>({
     resolver: zodResolver(changePasswordSchema),
@@ -104,14 +101,9 @@ export const SettingsDesktop: React.FC = () => {
     }
   };
 
-  const saveApiConfig = () => {
-    showToast("API configurations saved successfully.", "success");
-  };
-
   const categories = [
     { id: 'notifications', label: 'Notifications', icon: Bell, desc: 'Alert and email updates' },
     { id: 'security', label: 'Password & Security', icon: Shield, desc: 'Change password and protect credentials' },
-    { id: 'api', label: 'API Configuration', icon: Key, desc: 'Setup RapidAPI integrations' },
     { id: 'danger', label: 'Danger Zone', icon: Trash2, desc: 'Log out or delete account' },
   ];
 
@@ -276,45 +268,6 @@ export const SettingsDesktop: React.FC = () => {
                     </Button>
                   </div>
                 </form>
-              </div>
-            )}
-
-            {/* Category API Panel */}
-            {activeCategory === 'api' && (
-              <div className="flex flex-col gap-5 text-left">
-                <div className="border-b border-slate-100 dark:border-white/10 pb-3">
-                  <h3 className="text-sm font-extrabold text-slate-900 dark:text-white uppercase tracking-wider">API Configuration</h3>
-                  <p className="text-[10px] text-slate-500 dark:text-slate-400 mt-1 font-semibold">Setup access tokens for search and job APIs.</p>
-                </div>
-
-                <div className="flex flex-col gap-4">
-                  <div>
-                    <label className="text-[10px] font-bold text-slate-400 dark:text-slate-300 uppercase block mb-1">RapidAPI Key (Host: linkedin-job-search-api)</label>
-                    <div className="relative flex items-center">
-                      <input
-                        type={isApiKeyVisible ? 'text' : 'password'}
-                        value={rapidApiKey}
-                        onChange={(e) => setRapidApiKey(e.target.value)}
-                        className="w-full pl-3 pr-10 py-2.5 bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-xl text-xs text-slate-900 dark:text-white focus:outline-none focus:border-emerald-500 focus:ring-emerald-500 font-semibold"
-                      />
-                      <button
-                        onClick={() => setIsApiKeyVisible(!isApiKeyVisible)}
-                        className="absolute right-3 text-slate-400 hover:text-slate-700 dark:hover:text-white cursor-pointer"
-                      >
-                        <Eye size={16} />
-                      </button>
-                    </div>
-                  </div>
-
-                  <div className="flex justify-end pt-3">
-                    <Button 
-                      onClick={saveApiConfig}
-                      variant="primary"
-                    >
-                      Save Configuration
-                    </Button>
-                  </div>
-                </div>
               </div>
             )}
 

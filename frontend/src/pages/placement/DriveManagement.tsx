@@ -428,7 +428,9 @@ export const DriveManagement: React.FC = () => {
                     </span>
                     <div>
                       <p className="font-bold text-slate-900 dark:text-white text-xs">{candidate.name}</p>
-                      <p className="text-[10px] text-slate-400 font-semibold mt-0.5">Roll: {candidate.roll_number} • CGPA: {candidate.cgpa}</p>
+                      <p className="text-[10px] text-slate-400 font-semibold mt-0.5">
+                        Roll: {candidate.roll_number} • CGPA: {candidate.cgpa !== null && candidate.cgpa !== undefined ? candidate.cgpa : '-'}
+                      </p>
                       <p className="text-[10px] text-emerald-600 dark:text-emerald-400 font-bold mt-1 italic">Fit: {candidate.reason}</p>
                     </div>
                   </div>

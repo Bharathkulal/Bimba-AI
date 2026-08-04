@@ -6,6 +6,7 @@ interface ResumeSectionProps {
     primary: string;
     secondary: string;
     accent?: string;
+    divider?: string;
   };
   fonts: {
     heading: string;

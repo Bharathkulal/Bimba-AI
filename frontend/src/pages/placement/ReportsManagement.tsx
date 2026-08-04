@@ -117,7 +117,9 @@ export const ReportsManagement: React.FC = () => {
                     <td className="px-6 py-3 font-bold text-slate-900 dark:text-white">{det.roll_number}</td>
                     <td className="px-6 py-3 text-slate-750 dark:text-slate-200">{det.name}</td>
                     <td className="px-6 py-3 text-slate-500 dark:text-slate-450 font-bold">{det.department}</td>
-                    <td className="px-6 py-3 text-center text-slate-655 dark:text-slate-350 font-bold">{det.cgpa}</td>
+                    <td className="px-6 py-3 text-center text-slate-655 dark:text-slate-350 font-bold">
+                      {det.cgpa !== null && det.cgpa !== undefined ? det.cgpa : '-'}
+                    </td>
                     <td className="px-6 py-3 text-center">
                       <span className={`inline-block px-2 py-0.5 rounded text-[9.5px] font-extrabold uppercase border ${
                         det.eligibility === 'Eligible' 
