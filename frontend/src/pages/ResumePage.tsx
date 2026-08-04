@@ -29,7 +29,8 @@ export const ResumePage: React.FC = () => {
 
   const getDisplayName = () => {
     if (!user) return 'Student';
-    const email = user.personal_email;
+    if (user.student_name) return user.student_name;
+    const email = user.personal_email || '';
     const prefix = email.split('@')[0];
     const name = prefix.replace(/[0-9_.]/g, ' ');
     return name.charAt(0).toUpperCase() + name.slice(1).trim();

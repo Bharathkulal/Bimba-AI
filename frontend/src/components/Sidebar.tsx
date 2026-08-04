@@ -40,6 +40,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
   const getDisplayName = () => {
     if (!user) return 'Student';
+    if (user.student_name) return user.student_name;
     const email = user.personal_email || '';
     const prefix = email.split('@')[0];
     const name = prefix.replace(/[0-9_.]/g, ' ');

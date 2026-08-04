@@ -69,9 +69,20 @@ export const ResumePreviewSheet: React.FC<ResumePreviewSheetProps> = ({
   }
 
   // Fallback to standard registry templates
-  const mappedTemplateId = ['harvard', 'jakes', 'stanford', 'microsoft', 'reactive', 'novoresume', 'flowcv', 'indeed'].includes(templateId) 
-    ? templateId 
-    : 'harvard';
+  let mappedTemplateId = templateId;
+  if (templateId === 'minimal-ats') {
+    mappedTemplateId = 'jakes';
+  } else if (templateId === 'rachelle-beaudry') {
+    mappedTemplateId = 'flowcv';
+  } else if (templateId === 'morgan-maxwell') {
+    mappedTemplateId = 'stanford';
+  } else if (templateId === 'olivia-sanchez') {
+    mappedTemplateId = 'reactive';
+  }
+
+  if (!['harvard', 'jakes', 'stanford', 'microsoft', 'reactive', 'novoresume', 'flowcv', 'indeed'].includes(mappedTemplateId)) {
+    mappedTemplateId = 'harvard';
+  }
 
   const TemplateComponent = TemplateRegistry[mappedTemplateId] || TemplateRegistry.harvard;
 

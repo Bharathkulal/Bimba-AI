@@ -44,7 +44,8 @@ export const DashboardMobile: React.FC = () => {
 
   const getDisplayName = () => {
     if (!user) return 'Student';
-    const email = user.personal_email;
+    if (user.student_name) return user.student_name;
+    const email = user.personal_email || '';
     const prefix = email.split('@')[0];
     const name = prefix.replace(/[0-9_.]/g, ' ');
     return name.charAt(0).toUpperCase() + name.slice(1).trim();
@@ -313,8 +314,7 @@ export const DashboardMobile: React.FC = () => {
         <div className="grid grid-cols-2 gap-3 w-full">
           <button
             onClick={() => {
-              setWizardInitialStep(2);
-              setShowWizard(true);
+              navigate('/resume');
             }}
             className="flex flex-col items-center justify-center gap-2 p-5 bg-white dark:bg-[#1E293B] border border-slate-200 dark:border-white/5 rounded-2xl shadow-sm min-h-[96px] cursor-pointer"
           >

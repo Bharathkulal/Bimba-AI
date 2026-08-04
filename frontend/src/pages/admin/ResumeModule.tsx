@@ -78,6 +78,27 @@ export const ResumeModule: React.FC = () => {
   // Template Preview customization states
   const [previewViewport, setPreviewViewport] = useState<'desktop' | 'tablet' | 'mobile' | 'a4'>('a4');
   const [previewTheme, setPreviewTheme] = useState<string>('blue');
+  const [viewingResume, setViewingResume] = useState<any | null>(null);
+  const [isFetchingResume, setIsFetchingResume] = useState(false);
+
+  const handleViewResume = async (resumeId: number, template: string) => {
+    try {
+      setIsFetchingResume(true);
+      const res = await apiClient.get(`/api/resume/builder/${resumeId}`);
+      if (res.data && res.data.success) {
+        setViewingResume({
+          ...res.data.extracted_data,
+          templateId: template
+        });
+      } else {
+        showToast("Failed to load resume details.", "error");
+      }
+    } catch (err) {
+      showToast("Error loading resume details.", "error");
+    } finally {
+      setIsFetchingResume(false);
+    }
+  };
 
   const handleOpenPreview = (tpl: any) => {
     setPreviewTemplate(tpl);
@@ -392,6 +413,14 @@ export const ResumeModule: React.FC = () => {
                         <td className="py-4 px-6 text-slate-450">{updatedDate}</td>
                         <td className="py-4 px-6 text-center">
                           <div className="flex items-center justify-center gap-1.5">
+                            <button
+                              onClick={() => handleViewResume(resume.id, resume.template)}
+                              className="p-1.5 rounded-lg bg-white/5 border border-white/5 text-slate-450 hover:text-white transition-colors cursor-pointer"
+                              title="View Resume"
+                              disabled={isFetchingResume}
+                            >
+                              <Eye size={12} />
+                            </button>
                             <button
                               onClick={() => handleMockDownload(resume.name)}
                               className="p-1.5 rounded-lg bg-white/5 border border-white/5 text-slate-450 hover:text-white transition-colors cursor-pointer"
@@ -760,6 +789,46 @@ export const ResumeModule: React.FC = () => {
             {/* Close button */}
             <div className="flex gap-2.5 justify-end border-t border-white/5 pt-4">
               <Button onClick={() => setPreviewTemplate(null)} variant="primary">Close Preview</Button>
+            </div>
+          </div>
+        </Modal>
+      )}
+
+      {/* VIEW STUDENT RESUME PREVIEW MODAL */}
+      {viewingResume && (
+        <Modal
+          isOpen={!!viewingResume}
+          onClose={() => setViewingResume(null)}
+          title={`Student Resume Preview: ${viewingResume.personal_info?.name || 'Resume'}`}
+        >
+          <div className="flex flex-col gap-4">
+            <div className="bg-[#08130D] border border-white/5 rounded-2xl p-6 flex justify-center items-center overflow-x-auto min-h-[450px]">
+              <div className="w-[800px] border border-slate-200 rounded-xl overflow-hidden shadow-2xl bg-white p-8 text-slate-800">
+                <ResumePreviewSheet
+                  personalInfo={{
+                    name: viewingResume.personal_info?.name || viewingResume.name,
+                    email: viewingResume.personal_info?.email,
+                    phone: viewingResume.personal_info?.phone,
+                    address: viewingResume.personal_info?.location,
+                    summary: viewingResume.summary
+                  }}
+                  educationList={viewingResume.education?.map((edu: any) => ({
+                    institution: edu.institution || edu.school,
+                    degree: edu.degree,
+                    passing_year: edu.year,
+                    cgpa: edu.cgpa
+                  })) || []}
+                  experienceList={viewingResume.experience || []}
+                  projectList={viewingResume.projects || []}
+                  skillList={viewingResume.skills || []}
+                  templateId={viewingResume.templateId}
+                  colorTheme="blue"
+                  zoomLevel={100}
+                />
+              </div>
+            </div>
+            <div className="flex gap-2.5 justify-end border-t border-white/5 pt-4">
+              <Button onClick={() => setViewingResume(null)} variant="primary">Close Preview</Button>
             </div>
           </div>
         </Modal>

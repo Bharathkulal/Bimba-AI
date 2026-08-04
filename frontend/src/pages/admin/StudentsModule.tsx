@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { 
   Search, UserPlus, Edit, Trash2, Key, Filter, Download, 
   Upload, FileText, ChevronLeft, ChevronRight, CheckCircle2, 
-  AlertCircle, UploadCloud, X, RefreshCw
+  AlertCircle, UploadCloud, X, RefreshCw, UserCheck, UserX
 } from 'lucide-react';
 import { adminService } from '../../services/admin';
 import type { AdminUserData, StudentStatsData } from '../../services/admin';
@@ -300,16 +300,18 @@ export const StudentsModule: React.FC = () => {
                       {student.is_active ? 'Active' : 'Suspended'}
                     </span>
                   </td>
-                  <td className="p-3 text-right flex justify-end gap-2">
-                    <button onClick={() => handleResetPassword(student.roll_number)} className="p-1.5 text-slate-400 hover:text-blue-400 hover:bg-blue-400/10 rounded-lg transition-colors" title="Reset Password">
-                      <Key size={14} />
-                    </button>
-                    <button onClick={() => handleToggleStatus(student.roll_number)} className="p-1.5 text-slate-400 hover:text-amber-400 hover:bg-amber-400/10 rounded-lg transition-colors" title="Toggle Status">
-                      <Filter size={14} />
-                    </button>
-                    <button onClick={() => handleDelete(student.roll_number)} className="p-1.5 text-slate-400 hover:text-red-400 hover:bg-red-400/10 rounded-lg transition-colors" title="Delete">
-                      <Trash2 size={14} />
-                    </button>
+                  <td className="p-3 text-right">
+                    <div className="flex justify-end gap-2">
+                      <button onClick={() => handleResetPassword(student.roll_number)} className="p-1.5 text-slate-400 hover:text-blue-400 hover:bg-blue-400/10 rounded-lg transition-colors" title="Reset Password">
+                        <Key size={14} />
+                      </button>
+                      <button onClick={() => handleToggleStatus(student.roll_number)} className="p-1.5 text-slate-400 hover:text-amber-400 hover:bg-amber-400/10 rounded-lg transition-colors" title="Toggle Status">
+                        {student.is_active ? <UserX size={14} /> : <UserCheck size={14} />}
+                      </button>
+                      <button onClick={() => handleDelete(student.roll_number)} className="p-1.5 text-slate-400 hover:text-red-400 hover:bg-red-400/10 rounded-lg transition-colors" title="Delete">
+                        <Trash2 size={14} />
+                      </button>
+                    </div>
                   </td>
                 </tr>
               ))}
@@ -416,7 +418,7 @@ export const StudentsModule: React.FC = () => {
                   <div className="border-2 border-dashed border-white/10 rounded-2xl p-8 hover:border-white/20 transition-colors cursor-pointer" onClick={() => fileInputRef.current?.click()}>
                     <UploadCloud size={48} className="mx-auto text-emerald-400 mb-4" />
                     <p className="text-sm text-white font-semibold">Click to upload CSV file</p>
-                    <p className="text-xs text-slate-500 mt-1">Template columns: name, rollNumber, password, department, semester</p>
+                    <p className="text-xs text-slate-500 mt-1">Template columns: name, rollnumber, dateofbirth</p>
                     <input type="file" accept=".csv" className="hidden" ref={fileInputRef} onChange={(e) => setImportFile(e.target.files?.[0] || null)} />
                   </div>
                   {importFile && (

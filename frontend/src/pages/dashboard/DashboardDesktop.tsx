@@ -45,7 +45,8 @@ export const DashboardDesktop: React.FC = () => {
 
   const getDisplayName = () => {
     if (!user) return 'Student';
-    const email = user.personal_email;
+    if (user.student_name) return user.student_name;
+    const email = user.personal_email || '';
     const prefix = email.split('@')[0];
     const name = prefix.replace(/[0-9_.]/g, ' ');
     return name.charAt(0).toUpperCase() + name.slice(1).trim();
@@ -200,8 +201,7 @@ export const DashboardDesktop: React.FC = () => {
         <div className="flex items-center gap-2 shrink-0">
           <button
             onClick={() => {
-              setWizardInitialStep(2);
-              setShowWizard(true);
+              navigate('/resume');
             }}
             className="flex items-center gap-2 px-5 py-2.5 text-xs font-bold bg-[#C86A3D] dark:bg-[#E08553] text-white hover:opacity-95 rounded-xl shadow-md transition-all cursor-pointer border-none"
           >

@@ -51,6 +51,143 @@ const MOCK_STUDENT_RESUME = {
   }
 };
 
+const getMockResumeForTemplate = (slug: string) => {
+  switch (slug) {
+    case 'rachelle-beaudry':
+      return {
+        personalInfo: {
+          name: "Rachelle Beaudry",
+          email: "rachelle.beaudry@email.com",
+          phone: "(555) 019-8765",
+          address: "Seattle, WA",
+          linkedin: "linkedin.com/in/rachelleb",
+          github: "github.com/rachelleb",
+          summary: "Passionate Full Stack Engineer with 4+ years of experience building responsive web applications. Specialized in React, Node.js, and cloud architectures with a track record of improving performance and user engagement."
+        },
+        educationList: [
+          { institution: "University of Washington", degree: "B.S. in Computer Science", passing_year: 2022 }
+        ],
+        experienceList: [
+          { position: "Software Engineer", company: "Amazon", duration: "2022 - Present", description: "Developed scalable microservices for AWS Console. Optimized database queries, reducing API latency by 20%." },
+          { position: "Junior Developer", company: "Nordstrom", duration: "2020 - 2022", description: "Built front-end components for e-commerce website using React and Redux. Collaborated on cross-functional features." }
+        ],
+        projectList: [
+          { name: "DevConnect Social Network", duration: "4 Months", tech_stack: "MERN Stack, Socket.io", description: "Created a real-time collaboration hub for developers, supporting live chat and project sharing." }
+        ],
+        skillList: [
+          { name: "React / TypeScript", level: 5 },
+          { name: "Node.js / Express", level: 5 },
+          { name: "PostgreSQL", level: 4 },
+          { name: "AWS Services", level: 4 }
+        ],
+        certificateList: [
+          { name: "AWS Certified Developer", organization: "Amazon Web Services" }
+        ],
+        achievements: {
+          hackathons: "Seattle Hackfest 2nd Place",
+          awards: "UW Dean's List (2019-2022)",
+          soft_skills: "Technical Writing, Team Collaboration"
+        },
+        sectionVisibility: {
+          experience: true,
+          projects: true,
+          skills: true,
+          certificates: true,
+          achievements: true
+        }
+      };
+    case 'morgan-maxwell':
+      return {
+        personalInfo: {
+          name: "Morgan Maxwell",
+          email: "morgan.maxwell@email.com",
+          phone: "(555) 012-3456",
+          address: "New York, NY",
+          linkedin: "linkedin.com/in/morganmaxwell",
+          github: "github.com/morganmaxwell",
+          summary: "Detail-oriented Financial Analyst with 5+ years of experience in corporate finance, financial modeling, and strategic planning. Proven ability to analyze complex data sets to drive revenue growth and operational efficiency."
+        },
+        educationList: [
+          { institution: "NYU Stern School of Business", degree: "M.S. in Finance", passing_year: 2021 },
+          { institution: "Boston University", degree: "B.S. in Economics", passing_year: 2019 }
+        ],
+        experienceList: [
+          { position: "Senior Analyst", company: "Goldman Sachs", duration: "2021 - Present", description: "Constructed dynamic financial models to evaluate investment opportunities. Presented findings to executive leadership." },
+          { position: "Financial Analyst", company: "J.P. Morgan", duration: "2019 - 2021", description: "Assisted in quarterly forecasting and budget planning. Identified cost-saving opportunities worth $500k annually." }
+        ],
+        projectList: [
+          { name: "Market Risk Analyzer", duration: "6 Months", tech_stack: "Python, Excel, SQL", description: "Built an automated risk assessment pipeline for portfolio managers, improving reporting speed by 40%." }
+        ],
+        skillList: [
+          { name: "Financial Modeling", level: 5 },
+          { name: "Valuation Methods", level: 5 },
+          { name: "Python (Pandas)", level: 4 },
+          { name: "SQL / Excel", level: 5 }
+        ],
+        certificateList: [
+          { name: "CFA Charterholder", organization: "CFA Institute" }
+        ],
+        achievements: {
+          hackathons: "Finance Innovation Challenge Winner",
+          awards: "GS Analyst of the Year 2023",
+          soft_skills: "Analytical Thinking, Executive Presentation"
+        },
+        sectionVisibility: {
+          experience: true,
+          projects: true,
+          skills: true,
+          certificates: true,
+          achievements: true
+        }
+      };
+    case 'olivia-sanchez':
+      return {
+        personalInfo: {
+          name: "Olivia Sanchez",
+          email: "olivia.sanchez@email.com",
+          phone: "(555) 014-7291",
+          address: "Chicago, IL",
+          linkedin: "linkedin.com/in/oliviasanchez",
+          github: "github.com/oliviasanchez",
+          summary: "Dynamic Operations Director with 8+ years of leadership experience in streamlining business operations, managing cross-functional teams, and executing strategic initiatives to maximize productivity and profitability."
+        },
+        educationList: [
+          { institution: "Northwestern University", degree: "Master of Business Administration (MBA)", passing_year: 2018 }
+        ],
+        experienceList: [
+          { position: "Director of Operations", company: "Target Corp", duration: "2021 - Present", description: "Oversee supply chain logistics and store operations for regional branches. Improved operational efficiency by 18%." },
+          { position: "Operations Manager", company: "Walgreens", duration: "2018 - 2021", description: "Managed a team of 45+ associates. Implemented new inventory tracking system, reducing waste by 25%." }
+        ],
+        projectList: [
+          { name: "Logistics Optimization Initiative", duration: "1 Year", tech_stack: "Agile, Six Sigma", description: "Led a cross-functional initiative to revamp regional shipping routes, saving $1.2M in annual distribution costs." }
+        ],
+        skillList: [
+          { name: "Operations Management", level: 5 },
+          { name: "Strategic Planning", level: 5 },
+          { name: "Supply Chain Logistics", level: 4 },
+          { name: "Process Optimization", level: 5 }
+        ],
+        certificateList: [
+          { name: "Six Sigma Black Belt", organization: "ASQ" }
+        ],
+        achievements: {
+          hackathons: "Retail Tech Hackathon Judge",
+          awards: "Walgreens Leadership Award 2020",
+          soft_skills: "Strategic Leadership, Negotiation"
+        },
+        sectionVisibility: {
+          experience: true,
+          projects: true,
+          skills: true,
+          certificates: true,
+          achievements: true
+        }
+      };
+    default:
+      return MOCK_STUDENT_RESUME;
+  }
+};
+
 export const TemplateShowcase: React.FC = () => {
   const [templates, setTemplates] = useState<any[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
@@ -216,6 +353,7 @@ export const TemplateShowcase: React.FC = () => {
             <AnimatePresence mode="popLayout">
               {filteredTemplates.map((tpl) => {
                 const isSelected = selectedTemplate === tpl.slug;
+                const resumeData = getMockResumeForTemplate(tpl.slug);
                 return (
                   <motion.div
                     key={tpl.id}
@@ -247,14 +385,14 @@ export const TemplateShowcase: React.FC = () => {
                       <div className="w-full h-full transform transition-transform duration-250 group-hover:scale-105 overflow-hidden">
                         <div className="w-[540px] h-[756px] scale-[0.34] origin-top-left p-4">
                           <ResumePreviewSheet
-                            personalInfo={MOCK_STUDENT_RESUME.personalInfo}
-                            educationList={MOCK_STUDENT_RESUME.educationList}
-                            experienceList={MOCK_STUDENT_RESUME.experienceList}
-                            projectList={MOCK_STUDENT_RESUME.projectList}
-                            skillList={MOCK_STUDENT_RESUME.skillList}
-                            certificateList={MOCK_STUDENT_RESUME.certificateList}
-                            achievements={MOCK_STUDENT_RESUME.achievements}
-                            sectionVisibility={MOCK_STUDENT_RESUME.sectionVisibility}
+                            personalInfo={resumeData.personalInfo}
+                            educationList={resumeData.educationList}
+                            experienceList={resumeData.experienceList}
+                            projectList={resumeData.projectList}
+                            skillList={resumeData.skillList}
+                            certificateList={resumeData.certificateList}
+                            achievements={resumeData.achievements}
+                            sectionVisibility={resumeData.sectionVisibility}
                             templateId={tpl.slug}
                             colorTheme={tpl.color_theme || 'blue'}
                             zoomLevel={1}
@@ -380,14 +518,14 @@ export const TemplateShowcase: React.FC = () => {
                   style={{ transform: `scale(${zoomLevel / 100})` }}
                 >
                   <ResumePreviewSheet
-                    personalInfo={MOCK_STUDENT_RESUME.personalInfo}
-                    educationList={MOCK_STUDENT_RESUME.educationList}
-                    experienceList={MOCK_STUDENT_RESUME.experienceList}
-                    projectList={MOCK_STUDENT_RESUME.projectList}
-                    skillList={MOCK_STUDENT_RESUME.skillList}
-                    certificateList={MOCK_STUDENT_RESUME.certificateList}
-                    achievements={MOCK_STUDENT_RESUME.achievements}
-                    sectionVisibility={MOCK_STUDENT_RESUME.sectionVisibility}
+                    personalInfo={getMockResumeForTemplate(previewingTemplate.slug).personalInfo}
+                    educationList={getMockResumeForTemplate(previewingTemplate.slug).educationList}
+                    experienceList={getMockResumeForTemplate(previewingTemplate.slug).experienceList}
+                    projectList={getMockResumeForTemplate(previewingTemplate.slug).projectList}
+                    skillList={getMockResumeForTemplate(previewingTemplate.slug).skillList}
+                    certificateList={getMockResumeForTemplate(previewingTemplate.slug).certificateList}
+                    achievements={getMockResumeForTemplate(previewingTemplate.slug).achievements}
+                    sectionVisibility={getMockResumeForTemplate(previewingTemplate.slug).sectionVisibility}
                     templateId={previewingTemplate.slug}
                     colorTheme={previewingTemplate.color_theme || 'blue'}
                     zoomLevel={1}
