@@ -11,7 +11,7 @@ export const API_BASE_URL = (() => {
   if (hostname !== 'localhost' && hostname !== '127.0.0.1') {
     return `http://${hostname}:8000`;
   }
-  return envUrl || 'http://localhost:8000';
+  return envUrl || '';
 })();
 
 export const apiClient = axios.create({
