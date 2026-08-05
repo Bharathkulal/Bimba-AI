@@ -17,11 +17,27 @@ class UploadService:
         self.repository = ResumeRepository(db)
 
     def process_upload(self, file_content: bytes, filename: str, student_id: int) -> Dict[str, Any]:
-        log_stage("UPLOAD", "START", f"Starting upload pipeline orchestration for {filename}")
-        
-        # 1. Ingestion / Size Check
-        size_kb = len(file_content) // 1024
-        log_stage("UPLOAD", "INFO", f"Filename: {filename} | Size: {size_kb} KB")
+        # 1. Ingestion / Security Checks
+        size_mb = len(file_content) / (1024 * 1024)
+        if size_mb > 10.0:
+            raise PipelineException(
+                step="Ingestion / Size Check",
+                provider="Core System",
+                message=f"File exceeds maximum size limit of 10MB. Uploaded: {size_mb:.2f}MB"
+            )
+
+        ext = filename.lower().split('.')[-1]
+        if ext not in ["pdf", "docx", "doc", "txt"]:
+            raise PipelineException(
+                step="Ingestion / Format Validation",
+                provider="Core System",
+                message=f"Forbidden file type: .{ext}. Only .pdf, .docx, .doc, and .txt files are allowed."
+            )
+
+        # Sanitize filename
+        filename = "".join([c for c in filename if c.isalnum() or c in "._- "]).strip()
+        log_stage("UPLOAD", "START", f"Starting upload pipeline orchestration for sanitized filename: {filename}")
+        log_stage("UPLOAD", "INFO", f"Filename: {filename} | Size: {size_mb:.2f} MB")
         
         filepath = ""
         try:

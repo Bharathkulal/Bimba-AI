@@ -191,6 +191,13 @@ export const UploadResumeWizard: React.FC<UploadResumeWizardProps> = ({
 
   // Template Selection (Step 9)
   const [selectedTemplate, setSelectedTemplate] = useState<string>('minimalist-modern');
+  const [selectedColor, setSelectedColor] = useState<string>('#1E3A8A');
+  const [selectedFont, setSelectedFont] = useState<string>('Inter');
+  const [selectedSpacing, setSelectedSpacing] = useState<number>(1.2);
+  const [selectedMargin, setSelectedMargin] = useState<number>(20);
+  const [headerStyle, setHeaderStyle] = useState<string>('classic');
+  const [layoutColumns, setLayoutColumns] = useState<number>(1);
+  const [pageSize, setPageSize] = useState<string>('A4');
 
   // Job recommendations and versioning states
   const [recommendedJobs, setRecommendedJobs] = useState<JobListItem[]>([]);
@@ -312,19 +319,11 @@ export const UploadResumeWizard: React.FC<UploadResumeWizardProps> = ({
       setParsedData(parsed);
       setResumeId(newId);
 
-      // Fetch initial score analysis (non-blocking — don't fail upload if AI is slow)
-      try {
-        const analyzeRes = await apiClient.post(`/api/resume-studio/${newId}/analyze`, {}, {
-          timeout: 90000 // 90s timeout for AI analysis
-        });
-        setAnalysisData(analyzeRes.data);
-      } catch (analyzeErr: any) {
-        console.warn('[Resume Upload] AI analysis failed, using defaults:', analyzeErr?.message);
-        setAnalysisData({
-          scores: { overall_score: 75, ats_score: 78, formatting_score: 75, grammar_score: 85 },
-          suggestions: ['Analysis will be available shortly. Please refresh later.']
-        });
-      }
+      // Initialize empty default analysis structure (will be populated at Step 8)
+      setAnalysisData({
+        scores: { overall_score: 72, ats_score: 72, formatting_score: 75, grammar_score: 80, keyword_match_score: 70, project_quality_score: 70, education_completeness: 90 },
+        suggestions: ['ATS Audit score will be generated when you reach Step 8.']
+      });
 
       // Create conversational interview questions
       const queue: any[] = [];
@@ -457,7 +456,14 @@ export const UploadResumeWizard: React.FC<UploadResumeWizardProps> = ({
         linkedin: data.personal_info?.linkedin || '',
         github: data.personal_info?.github || '',
         portfolio: data.personal_info?.portfolio || '',
-        summary: data.summary || data.personal_info?.summary || ''
+        summary: data.summary || data.personal_info?.summary || '',
+        template_id: selectedTemplate,
+        color_theme: selectedColor,
+        selected_font: selectedFont,
+        spacing: selectedSpacing,
+        margins: selectedMargin,
+        columns: layoutColumns,
+        page_size: pageSize
       },
       personal_info: data.personal_info || {},
       summary: data.summary || '',
@@ -667,8 +673,12 @@ export const UploadResumeWizard: React.FC<UploadResumeWizardProps> = ({
     if (step === 3) return 1;
     if (step === 4) return 2;
     if (step === 5) return 3;
-    if (step >= 6 && step <= 8) return 4;
-    return 5;
+    if (step === 6) return 4;
+    if (step === 7) return 5;
+    if (step === 8) return 6;
+    if (step === 9) return 7;
+    if (step === 10) return 8;
+    return 9;
   };
 
   return (
@@ -695,7 +705,7 @@ export const UploadResumeWizard: React.FC<UploadResumeWizardProps> = ({
               }`}>
                 Bimba AI Resume Suite <Sparkles size={13} className="text-emerald-400" />
               </h3>
-              <p className={`text-[10px] ${isDark ? 'text-slate-400' : 'text-slate-500 font-bold'}`}>Step {step} of 12 — Conversational Career Optimizer</p>
+              <p className={`text-[10px] ${isDark ? 'text-slate-400' : 'text-slate-500 font-bold'}`}>Step {step} of 13 — Conversational Career Optimizer</p>
             </div>
           </div>
           <button onClick={onClose} className="p-1.5 rounded-lg hover:bg-slate-200/50 dark:hover:bg-white/10 cursor-pointer">
@@ -707,7 +717,7 @@ export const UploadResumeWizard: React.FC<UploadResumeWizardProps> = ({
         <div className={`px-6 py-4 border-b flex flex-wrap items-center justify-between gap-4 text-xs font-bold ${
           isDark ? 'border-white/10 bg-slate-900/40' : 'border-slate-100 bg-slate-50'
         }`}>
-          {['Welcome & Upload', 'AI Extraction', 'Interactive Snapshot', 'Career Interview', 'ATS Audit & Improvements', 'Templates & Live Preview'].map((stepName, idx) => {
+          {['Welcome', 'Extraction', 'Snapshot', 'Templates', 'Interview', 'Completion', 'ATS Audit', 'Improvements', 'Quality', 'Export & Jobs'].map((stepName, idx) => {
             const isActive = idx === getActiveStep();
             const isCompleted = idx < getActiveStep();
             return (
@@ -730,8 +740,8 @@ export const UploadResumeWizard: React.FC<UploadResumeWizardProps> = ({
                 }`}>
                   {stepName}
                 </span>
-                {idx < 5 && (
-                  <div className={`flex-grow h-[1px] mx-4 hidden md:block ${
+                {idx < 9 && (
+                  <div className={`flex-grow h-[1px] mx-2 hidden lg:block ${
                     idx < getActiveStep() ? 'bg-emerald-500/30' : 'bg-slate-250 dark:bg-white/10'
                   }`} />
                 )}
@@ -833,7 +843,7 @@ export const UploadResumeWizard: React.FC<UploadResumeWizardProps> = ({
                     <p className="text-xs text-slate-500">Review and edit all extracted sections. Each card supports editing, saving, adding, and deleting items.</p>
                   </div>
                   <Button onClick={() => setStep(5)} className="btn-glow-green text-xs font-bold py-2.5 px-4 flex items-center gap-1">
-                    Continue to Interview <ChevronRight size={14} />
+                    Continue to Templates <ChevronRight size={14} />
                   </Button>
                 </div>
 
@@ -1419,15 +1429,249 @@ export const UploadResumeWizard: React.FC<UploadResumeWizardProps> = ({
               </motion.div>
             )}
 
-            {/* Step 5: AI Resume Interview */}
+            {/* Step 5: Resume Template Selection (NEW) */}
             {step === 5 && (
-              <motion.div key="step5" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex-grow flex flex-col h-[55vh] max-w-4xl mx-auto w-full border border-slate-200 dark:border-white/10 rounded-2xl overflow-hidden bg-slate-50/20 dark:bg-white/5">
+              <motion.div key="step5" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex flex-col gap-6 text-left w-full h-[70vh] overflow-hidden">
+                <div className="flex justify-between items-center border-b pb-4 shrink-0">
+                  <div>
+                    <h2 className="text-lg font-black flex items-center gap-2">
+                      <Sparkles className="text-emerald-400" size={18} /> Select Template & Configure Layout
+                    </h2>
+                    <p className="text-xs text-slate-500">Pick any layout template and adjust styling instantly. AI recommended choices highlighted.</p>
+                  </div>
+                  <Button onClick={() => setStep(6)} className="btn-glow-green text-xs font-bold py-2.5 px-5 flex items-center gap-1.5 cursor-pointer">
+                    Continue to Interview <ChevronRight size={14} />
+                  </Button>
+                </div>
+
+                <div className="flex-grow flex gap-6 overflow-hidden h-full">
+                  {/* Left Column: Styles & Options */}
+                  <div className="w-1/4 flex flex-col gap-4 overflow-y-auto pr-2 bg-slate-50/50 dark:bg-white/5 p-4 rounded-2xl border border-slate-200/50 dark:border-white/5">
+                    <div>
+                      <label className="text-[10px] font-black uppercase text-slate-450 tracking-wider">Template Style</label>
+                      <div className="flex flex-col gap-1.5 mt-2">
+                        {['Classic', 'Modern', 'Minimalist', 'Professional', 'Engineering', 'Academic'].map(cat => (
+                          <button
+                            key={cat}
+                            onClick={() => setSelectedTemplate(cat.toLowerCase())}
+                            className={`w-full text-left px-3 py-2 rounded-xl text-xs font-bold transition-all ${
+                              selectedTemplate === cat.toLowerCase()
+                                ? 'bg-emerald-500 text-white'
+                                : 'hover:bg-slate-200/50 dark:hover:bg-white/10 text-slate-650 dark:text-slate-350'
+                            }`}
+                          >
+                            {cat} Layout
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    <div className="border-t border-slate-200/60 dark:border-white/5 pt-3 space-y-3">
+                      <div>
+                        <label className="text-[10px] font-black uppercase text-slate-450 tracking-wider">Primary Color</label>
+                        <div className="flex gap-2 mt-1.5 flex-wrap">
+                          {['#1E3A8A', '#059669', '#334155', '#DC2626', '#F97316', '#7C3AED'].map(color => (
+                            <button
+                              key={color}
+                              onClick={() => setSelectedColor(color)}
+                              className={`w-6 h-6 rounded-full border-2 transition-all ${
+                                selectedColor === color ? 'border-white scale-110 shadow-lg' : 'border-transparent opacity-80'
+                              }`}
+                              style={{ backgroundColor: color }}
+                            />
+                          ))}
+                        </div>
+                      </div>
+
+                      <div>
+                        <label className="text-[10px] font-black uppercase text-slate-455 tracking-wider">Font Family</label>
+                        <select
+                          value={selectedFont}
+                          onChange={(e) => setSelectedFont(e.target.value)}
+                          className="w-full mt-1.5 p-2 text-xs border rounded-lg bg-transparent border-slate-200/80 dark:border-white/10 dark:text-white"
+                        >
+                          <option value="Inter">Inter</option>
+                          <option value="Roboto">Roboto</option>
+                          <option value="Georgia">Georgia</option>
+                          <option value="Courier Prime">Courier Prime</option>
+                        </select>
+                      </div>
+
+                      <div>
+                        <label className="text-[10px] font-black uppercase text-slate-455 tracking-wider">Spacing: {selectedSpacing}x</label>
+                        <input
+                          type="range"
+                          min="1"
+                          max="2"
+                          step="0.1"
+                          value={selectedSpacing}
+                          onChange={(e) => setSelectedSpacing(parseFloat(e.target.value))}
+                          className="w-full mt-1.5 accent-emerald-500"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="text-[10px] font-black uppercase text-slate-455 tracking-wider">Margins: {selectedMargin}px</label>
+                        <input
+                          type="range"
+                          min="10"
+                          max="40"
+                          value={selectedMargin}
+                          onChange={(e) => setSelectedMargin(parseInt(e.target.value))}
+                          className="w-full mt-1.5 accent-emerald-500"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="text-[10px] font-black uppercase text-slate-455 tracking-wider">Layout Columns</label>
+                        <div className="flex gap-2 mt-1.5">
+                          <button
+                            onClick={() => setLayoutColumns(1)}
+                            className={`flex-grow py-1 rounded text-xs font-bold border ${
+                              layoutColumns === 1 ? 'border-emerald-500 bg-emerald-500/10 text-emerald-500' : 'border-slate-200/60 dark:border-white/10'
+                            }`}
+                          >
+                            Single
+                          </button>
+                          <button
+                            onClick={() => setLayoutColumns(2)}
+                            className={`flex-grow py-1 rounded text-xs font-bold border ${
+                              layoutColumns === 2 ? 'border-emerald-500 bg-emerald-500/10 text-emerald-500' : 'border-slate-200/60 dark:border-white/10'
+                            }`}
+                          >
+                            Double
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Center Column: Live Preview Render Area */}
+                  <div className="flex-grow flex flex-col border border-slate-200 dark:border-white/10 rounded-2xl bg-white dark:bg-slate-950 p-6 overflow-y-auto">
+                    <div 
+                      className="transition-all duration-205" 
+                      style={{ 
+                        fontFamily: selectedFont, 
+                        lineHeight: selectedSpacing, 
+                        padding: `${selectedMargin}px`,
+                        color: isDark ? '#F3F4F6' : '#1F2937'
+                      }}
+                    >
+                      {/* Name Header */}
+                      <div className="border-b pb-4 mb-4 text-center">
+                        <h1 className="text-2xl font-extrabold uppercase tracking-wide" style={{ color: selectedColor }}>
+                          {parsedData.personal_info?.name || 'Your Full Name'}
+                        </h1>
+                        <p className="text-xs text-slate-450 mt-1 flex justify-center gap-3 flex-wrap">
+                          {parsedData.personal_info?.email && <span>📧 {parsedData.personal_info.email}</span>}
+                          {parsedData.personal_info?.phone && <span>📞 {parsedData.personal_info.phone}</span>}
+                          {parsedData.personal_info?.address && <span>📍 {parsedData.personal_info.address}</span>}
+                        </p>
+                        <p className="text-xs text-slate-450 mt-1 flex justify-center gap-3 flex-wrap font-semibold">
+                          {parsedData.personal_info?.linkedin && <span>🔗 linkedin.com/in/{parsedData.personal_info.linkedin}</span>}
+                          {parsedData.personal_info?.github && <span>💻 github.com/{parsedData.personal_info.github}</span>}
+                        </p>
+                      </div>
+
+                      {/* Summary Section */}
+                      {parsedData.summary && (
+                        <div className="mb-4">
+                          <h3 className="text-xs font-black uppercase tracking-wider mb-1 border-b" style={{ color: selectedColor }}>Professional Summary</h3>
+                          <p className="text-[11px] leading-relaxed font-medium">{parsedData.summary}</p>
+                        </div>
+                      )}
+
+                      {/* Layout body */}
+                      <div className={`grid ${layoutColumns === 2 ? 'grid-cols-2 gap-4' : 'grid-cols-1 gap-4'}`}>
+                        {/* Left Side elements */}
+                        <div className="space-y-4">
+                          {/* Experience */}
+                          {parsedData.experience?.length > 0 && (
+                            <div>
+                              <h3 className="text-xs font-black uppercase tracking-wider mb-1.5 border-b" style={{ color: selectedColor }}>Work History</h3>
+                              <div className="space-y-2">
+                                {parsedData.experience.map((exp: any, idx: number) => (
+                                  <div key={idx} className="text-[11px]">
+                                    <div className="flex justify-between font-bold">
+                                      <span>{exp.position} {exp.company && `@ ${exp.company}`}</span>
+                                      <span className="text-[10px] text-slate-400">{exp.duration}</span>
+                                    </div>
+                                    <p className="text-[10px] text-slate-500 mt-0.5">{exp.description}</p>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+
+                          {/* Projects */}
+                          {parsedData.projects?.length > 0 && (
+                            <div>
+                              <h3 className="text-xs font-black uppercase tracking-wider mb-1.5 border-b" style={{ color: selectedColor }}>Showcase Projects</h3>
+                              <div className="space-y-2">
+                                {parsedData.projects.map((proj: any, idx: number) => (
+                                  <div key={idx} className="text-[11px]">
+                                    <div className="flex justify-between font-bold">
+                                      <span>{proj.title || proj.name}</span>
+                                      {proj.tech && <span className="text-[9px] px-1 rounded bg-slate-100 dark:bg-white/5">{proj.tech}</span>}
+                                    </div>
+                                    <p className="text-[10px] text-slate-500 mt-0.5">{proj.description}</p>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+                        </div>
+
+                        {/* Right Side / Single Column elements */}
+                        <div className="space-y-4">
+                          {/* Education */}
+                          {parsedData.education?.length > 0 && (
+                            <div>
+                              <h3 className="text-xs font-black uppercase tracking-wider mb-1.5 border-b" style={{ color: selectedColor }}>Education</h3>
+                              <div className="space-y-2">
+                                {parsedData.education.map((edu: any, idx: number) => (
+                                  <div key={idx} className="text-[11px]">
+                                    <div className="flex justify-between font-bold">
+                                      <span>{edu.degree}</span>
+                                      <span className="text-[10px] text-slate-450">{edu.passing_year || edu.year}</span>
+                                    </div>
+                                    <p className="text-[10px] text-slate-500 mt-0.5">{edu.institution} {edu.cgpa_percentage && `• Grade: ${edu.cgpa_percentage}`}</p>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+
+                          {/* Technical Skills */}
+                          {(parsedData.technicalSkills || parsedData.skills)?.length > 0 && (
+                            <div>
+                              <h3 className="text-xs font-black uppercase tracking-wider mb-1.5 border-b" style={{ color: selectedColor }}>Skills Profile</h3>
+                              <p className="text-[10px] flex flex-wrap gap-1.5">
+                                {(parsedData.technicalSkills || parsedData.skills).map((skill: any, idx: number) => (
+                                  <span key={idx} className="bg-slate-50 dark:bg-white/5 border px-1.5 py-0.5 rounded font-bold">
+                                    {typeof skill === 'object' ? skill.name : skill}
+                                  </span>
+                                ))}
+                              </p>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </motion.div>
+            )}
+
+            {/* Step 6: AI Resume Interview */}
+            {step === 6 && (
+              <motion.div key="step6" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex-grow flex flex-col h-[55vh] max-w-4xl mx-auto w-full border border-slate-200 dark:border-white/10 rounded-2xl overflow-hidden bg-slate-50/20 dark:bg-white/5">
                 <div className="p-4 border-b border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-white/5 flex justify-between items-center">
                   <span className="text-xs font-bold text-slate-700 dark:text-white flex items-center gap-1.5">
                     <Zap size={14} className="text-emerald-400 animate-pulse" /> Live Career Coach Chat
                   </span>
-                  <Button onClick={() => setStep(6)} size="sm" className="btn-glow-green text-[10px] font-bold py-1.5 px-3">
-                    Complete & Select Template
+                  <Button onClick={() => setStep(7)} size="sm" className="btn-glow-green text-[10px] font-bold py-1.5 px-3">
+                    Complete & Go to Completion
                   </Button>
                 </div>
 
@@ -1443,7 +1687,7 @@ export const UploadResumeWizard: React.FC<UploadResumeWizardProps> = ({
                     </div>
                   ))}
                   {isAiResponding && (
-                    <div className="flex gap-3 items-center text-xs text-slate-400">
+                    <div className="flex gap-3 items-center text-xs text-slate-450 font-semibold">
                       <RefreshCw size={12} className="animate-spin text-emerald-550" />
                       <span>AI coach is formulating questions...</span>
                     </div>
@@ -1467,9 +1711,9 @@ export const UploadResumeWizard: React.FC<UploadResumeWizardProps> = ({
               </motion.div>
             )}
 
-            {/* Step 6: Smart Resume Completion */}
-            {step === 6 && (
-              <motion.div key="step6" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex flex-col gap-6 w-full text-left">
+            {/* Step 7: Smart Resume Completion */}
+            {step === 7 && (
+              <motion.div key="step7" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex flex-col gap-6 w-full text-left">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b pb-4 border-slate-200 dark:border-white/10">
                   <div>
                     <h2 className="text-lg font-black tracking-tight text-slate-900 dark:text-white flex items-center gap-2">
@@ -1816,9 +2060,9 @@ export const UploadResumeWizard: React.FC<UploadResumeWizardProps> = ({
               </motion.div>
             )}
 
-            {/* Step 7: AI Resume Analysis */}
-            {step === 7 && (
-              <motion.div key="step7" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex flex-col gap-6 w-full text-left">
+            {/* Step 8: AI Resume Analysis */}
+            {step === 8 && (
+              <motion.div key="step8" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex flex-col gap-6 w-full text-left">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b pb-4 border-slate-200 dark:border-white/10">
                   <div>
                     <h2 className="text-lg font-black tracking-tight text-slate-900 dark:text-white flex items-center gap-2">
@@ -1829,7 +2073,7 @@ export const UploadResumeWizard: React.FC<UploadResumeWizardProps> = ({
                       Real-time diagnostic scoring evaluating ATS compatibility, keyword density, and section structure.
                     </p>
                   </div>
-                  <Button onClick={() => setStep(8)} className="btn-glow-green text-xs font-bold py-2.5 px-5 flex items-center gap-2 shrink-0 cursor-pointer">
+                  <Button onClick={() => setStep(9)} className="btn-glow-green text-xs font-bold py-2.5 px-5 flex items-center gap-2 shrink-0 cursor-pointer">
                     Resume Improvement <ChevronRight size={14} />
                   </Button>
                 </div>
@@ -1926,9 +2170,9 @@ export const UploadResumeWizard: React.FC<UploadResumeWizardProps> = ({
               </motion.div>
             )}
 
-            {/* Step 8: AI Resume Improvement */}
-            {step === 8 && (
-              <motion.div key="step8" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex flex-col gap-6 w-full text-left">
+            {/* Step 9: AI Resume Improvement */}
+            {step === 9 && (
+              <motion.div key="step9" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex flex-col gap-6 w-full text-left">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b pb-4 border-slate-200 dark:border-white/10">
                   <div>
                     <h2 className="text-lg font-black tracking-tight text-slate-900 dark:text-white flex items-center gap-2">
@@ -1939,8 +2183,8 @@ export const UploadResumeWizard: React.FC<UploadResumeWizardProps> = ({
                       Review AI-suggested improvements — better grammar, stronger verbs, and cleaner structure. Your original facts are preserved.
                     </p>
                   </div>
-                  <Button onClick={() => setStep(9)} className="btn-glow-green text-xs font-bold py-2.5 px-4 flex items-center gap-1 shrink-0 cursor-pointer">
-                    Select Templates <ChevronRight size={14} />
+                  <Button onClick={() => setStep(10)} className="btn-glow-green text-xs font-bold py-2.5 px-4 flex items-center gap-1 shrink-0 cursor-pointer">
+                    Quality Audit <ChevronRight size={14} />
                   </Button>
                 </div>
 
@@ -1977,37 +2221,6 @@ export const UploadResumeWizard: React.FC<UploadResumeWizardProps> = ({
               </motion.div>
             )}
 
-            {/* Step 9: Resume Template Selection */}
-            {step === 9 && (
-              <motion.div key="step9" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex flex-col gap-6 w-full text-left">
-                <div className="flex justify-between items-center border-b pb-4">
-                  <div>
-                    <h2 className="text-lg font-black">Select Resume Layout Template</h2>
-                    <p className="text-xs text-slate-500">Pick any professional ATS optimized layouts to preview your real data.</p>
-                  </div>
-                  <Button onClick={() => setStep(10)} className="btn-glow-green text-xs font-bold py-2.5 px-4 flex items-center gap-1">
-                    Final Review <ChevronRight size={14} />
-                  </Button>
-                </div>
-
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                  {['minimalist-modern'].map((tpl) => (
-                    <div 
-                      key={tpl}
-                      onClick={() => setSelectedTemplate(tpl)}
-                      className={`border p-4 rounded-xl cursor-pointer text-center flex flex-col gap-2 transition-all hover:bg-slate-500/5 ${
-                        selectedTemplate === tpl ? 'border-emerald-500 bg-emerald-500/5' : 'border-slate-200 dark:border-white/10 bg-white/5'
-                      }`}
-                    >
-                      <FileText size={24} className="mx-auto text-emerald-400" />
-                      <span className="text-xs font-extrabold uppercase tracking-wider">Minimalist Modern</span>
-                      <span className="text-[9px] text-slate-500">Premium ATS Layout</span>
-                      <span className="text-[9px] text-emerald-500 font-extrabold">ATS Rating: 100%</span>
-                    </div>
-                  ))}
-                </div>
-              </motion.div>
-            )}
 
             {/* Step 10: Final Review */}
             {step === 10 && (
@@ -2260,10 +2473,6 @@ export const UploadResumeWizard: React.FC<UploadResumeWizardProps> = ({
             <button
               onClick={() => {
                 if (step === 4) setStep(2);
-                else if (step === 5) setStep(4);
-                else if (step === 6) setStep(5);
-                else if (step === 8) setStep(6);
-                else if (step > 8) setStep(step - 1);
                 else setStep(prev => Math.max(1, prev - 1));
               }}
               className="flex items-center gap-1.5 px-4 py-2 text-xs font-bold text-slate-600 dark:text-slate-300 hover:bg-slate-200/50 dark:hover:bg-white/10 rounded-xl cursor-pointer transition-all border border-slate-250 dark:border-white/10 bg-transparent"
@@ -2274,15 +2483,7 @@ export const UploadResumeWizard: React.FC<UploadResumeWizardProps> = ({
             <button
               onClick={() => {
                 if (step === 2) setStep(4);
-                else if (step === 4) setStep(5);
-                else if (step === 5) setStep(6);
-                else if (step === 6) setStep(8);
-                else if (step === 8) setStep(9);
-                else if (step === 9) setStep(10);
-                else if (step === 10) setStep(11);
-                else if (step === 11) setStep(12);
-                else if (step === 12) setStep(13);
-                else setStep(prev => prev + 1);
+                else setStep(prev => Math.min(13, prev + 1));
               }}
               className="flex items-center gap-1.5 px-4 py-2 text-xs font-bold text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-white cursor-pointer transition-all"
             >

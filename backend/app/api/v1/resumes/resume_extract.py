@@ -391,7 +391,8 @@ def apply_improvements_endpoint(
 ):
     """
     POST /api/resume/apply-improvements/{resume_id}
-    Persists AI-generated 95%+ ATS improvements directly into student's resume profile in DB.
+    Persists AI-generated improvements directly into student's resume profile in DB.
+    Supports granular accepted_sections filter.
     """
     analysis_record = get_or_create_resume_analysis(resume_id, student.id, db)
 
@@ -407,39 +408,48 @@ def apply_improvements_endpoint(
         target_score = 96
 
     extracted_data = analysis_record.get("extracted_data", {})
+    accepted_sections = payload.get("accepted_sections") if payload else None
     
+    # If not specified, default to all sections
+    if not accepted_sections:
+        accepted_sections = ["summary", "projects", "experience", "skills"]
+
     # 1. Apply summary
-    imp_summary = improvements.get("summary", {}).get("improved")
-    if imp_summary:
-        extracted_data["summary"] = imp_summary
+    if "summary" in accepted_sections:
+        imp_summary = improvements.get("summary", {}).get("improved")
+        if imp_summary:
+            extracted_data["summary"] = imp_summary
 
     # 2. Apply projects
-    imp_projects = improvements.get("projects", [])
-    if imp_projects and "projects" in extracted_data and isinstance(extracted_data["projects"], list):
-        for idx, imp_p in enumerate(imp_projects):
-            if idx < len(extracted_data["projects"]):
-                if isinstance(extracted_data["projects"][idx], dict):
-                    extracted_data["projects"][idx]["description"] = imp_p.get("improved", extracted_data["projects"][idx].get("description", ""))
-                else:
-                    extracted_data["projects"][idx] = imp_p.get("improved", str(extracted_data["projects"][idx]))
+    if "projects" in accepted_sections:
+        imp_projects = improvements.get("projects", [])
+        if imp_projects and "projects" in extracted_data and isinstance(extracted_data["projects"], list):
+            for idx, imp_p in enumerate(imp_projects):
+                if idx < len(extracted_data["projects"]):
+                    if isinstance(extracted_data["projects"][idx], dict):
+                        extracted_data["projects"][idx]["description"] = imp_p.get("improved", extracted_data["projects"][idx].get("description", ""))
+                    else:
+                        extracted_data["projects"][idx] = imp_p.get("improved", str(extracted_data["projects"][idx]))
 
     # 3. Apply experience
-    imp_exp = improvements.get("experience", [])
-    if imp_exp and "experience" in extracted_data and isinstance(extracted_data["experience"], list):
-        for idx, imp_e in enumerate(imp_exp):
-            if idx < len(extracted_data["experience"]):
-                if isinstance(extracted_data["experience"][idx], dict):
-                    extracted_data["experience"][idx]["description"] = imp_e.get("improved", extracted_data["experience"][idx].get("description", ""))
-                else:
-                    extracted_data["experience"][idx] = imp_e.get("improved", str(extracted_data["experience"][idx]))
+    if "experience" in accepted_sections:
+        imp_exp = improvements.get("experience", [])
+        if imp_exp and "experience" in extracted_data and isinstance(extracted_data["experience"], list):
+            for idx, imp_e in enumerate(imp_exp):
+                if idx < len(extracted_data["experience"]):
+                    if isinstance(extracted_data["experience"][idx], dict):
+                        extracted_data["experience"][idx]["description"] = imp_e.get("improved", extracted_data["experience"][idx].get("description", ""))
+                    else:
+                        extracted_data["experience"][idx] = imp_e.get("improved", str(extracted_data["experience"][idx]))
 
     # 4. Integrate ATS keywords & skills
-    existing_skills = extracted_data.get("skills", [])
-    ats_kws = improvements.get("ats_keywords", [])
-    for kw in ats_kws:
-        if kw not in existing_skills:
-            existing_skills.append(kw)
-    extracted_data["skills"] = existing_skills
+    if "skills" in accepted_sections:
+        existing_skills = extracted_data.get("skills", [])
+        ats_kws = improvements.get("ats_keywords", [])
+        for kw in ats_kws:
+            if kw not in existing_skills:
+                existing_skills.append(kw)
+        extracted_data["skills"] = existing_skills
 
     # Update MongoDB Collections
     # A) resume_analysis
@@ -466,6 +476,7 @@ def apply_improvements_endpoint(
 
     # B) resumes
     resume_doc = db.resumes.find_one({"id": resume_id})
+    r_data = {}
     if resume_doc:
         r_data = resume_doc.get("resume", {})
         r_data["summary"] = extracted_data.get("summary", "")
@@ -512,8 +523,27 @@ def apply_improvements_endpoint(
         upsert=True
     )
 
+    # E) Version History snapshot
+    try:
+        from app.core.mongodb import get_next_sequence
+        last_v = db.resume_versions.find_one(
+            {"resume_id": resume_id},
+            sort=[("version_number", -1)]
+        )
+        next_num = (last_v.get("version_number") or 0) + 1 if last_v else 1
+        db.resume_versions.insert_one({
+            "id": get_next_sequence("resume_versions"),
+            "resume_id": resume_id,
+            "version_number": next_num,
+            "action": f"Applied AI Suggestion ({', '.join(accepted_sections)})",
+            "data": json.dumps(r_data),
+            "created_at": datetime.utcnow()
+        })
+    except Exception as e:
+        print(f"Error creating version snapshot: {str(e)}")
+
     return {
         "success": True,
         "new_ats_score": target_score,
-        "message": f"Successfully applied 95%+ ATS AI improvements! Your resume ATS score is now {target_score}%."
+        "message": f"Successfully applied granular AI improvements! Your resume ATS score is now {target_score}%."
     }

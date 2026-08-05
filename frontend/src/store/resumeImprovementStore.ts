@@ -49,12 +49,13 @@ export const useResumeImprovementStore = create<ResumeImprovementState>((set, ge
     }
   },
 
-  applyAllImprovements: async (resumeId: number) => {
+  applyAllImprovements: async (resumeId: number, acceptedSections?: string[]) => {
     set({ applying: true, error: null });
     try {
       const currentImprovements = get().improvements;
       const response = await apiClient.post(`/api/resume/apply-improvements/${resumeId}`, {
-        improvements: currentImprovements
+        improvements: currentImprovements,
+        accepted_sections: acceptedSections
       });
       set({ applying: false });
       return response.data.success || false;

@@ -27,7 +27,7 @@ export const ResumeImprovement: React.FC<ResumeImprovementProps> = ({
 
   const handleApplySingle = async (sectionKey: string) => {
     setAppliedSections(prev => [...prev, sectionKey]);
-    const success = await applyAllImprovements(resumeId);
+    const success = await applyAllImprovements(resumeId, [sectionKey]);
     if (success && onChangesApplied) {
       onChangesApplied();
     }

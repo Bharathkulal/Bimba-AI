@@ -546,10 +546,7 @@ def build_pdf_story(resume_data: Dict[str, Any], template: str = "harvard", db: 
   # Check if template has layout sections
   sections_to_render = []
   if custom_tpl and "sections" in custom_tpl:
-    sections_to_render = [
-      {"type": sec, "visible": True} if isinstance(sec, str) else sec
-      for sec in custom_tpl["sections"]
-    ]
+    sections_to_render = custom_tpl["sections"]
   else:
     sections_to_render = [
       {"type": "profile", "visible": True},
