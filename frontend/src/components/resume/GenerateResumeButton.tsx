@@ -44,8 +44,33 @@ export const GenerateResumeButton: React.FC<GenerateResumeButtonProps> = ({
   const handleDownload = async () => {
     const res = await generatePdf(resumeId);
     if (res) {
-      await downloadFile(res.pdf_url, `Resume_${resumeId}.pdf`);
-      if (onPdfGenerated) {
+      if (res.pdf_base64) {
+        // Simple base64 decode and download
+        const sliceSize = 512;
+        const byteCharacters = atob(res.pdf_base64);
+        const byteArrays = [];
+        for (let offset = 0; offset < byteCharacters.length; offset += sliceSize) {
+          const slice = byteCharacters.slice(offset, offset + sliceSize);
+          const byteNumbers = new Array(slice.length);
+          for (let i = 0; i < slice.length; i++) {
+            byteNumbers[i] = slice.charCodeAt(i);
+          }
+          const byteArray = new Uint8Array(byteNumbers);
+          byteArrays.push(byteArray);
+        }
+        const blob = new Blob(byteArrays, { type: 'application/pdf' });
+        const blobUrl = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = blobUrl;
+        link.download = `Resume_${resumeId}.pdf`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(blobUrl);
+      } else if (res.pdf_url) {
+        await downloadFile(res.pdf_url, `Resume_${resumeId}.pdf`);
+      }
+      if (onPdfGenerated && res.pdf_url) {
         onPdfGenerated(res.pdf_url);
       }
     }

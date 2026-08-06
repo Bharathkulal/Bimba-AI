@@ -70,7 +70,7 @@ interface ResumeBuilderState {
   updateResumeData: (updater: (prev: ResumeBuilderData) => ResumeBuilderData) => void;
   saveResumeData: () => Promise<void>;
   setSelectedTemplate: (template: string) => void;
-  generatePdf: (resumeId: number) => Promise<{ pdf_url: string; pdf_base64?: string } | null>;
+  generatePdf: (resumeId: number) => Promise<{ pdf_url?: string; pdf_base64?: string; error?: string } | null>;
   fetchPreviousVersions: (resumeId: number) => Promise<void>;
   clearBuilderStore: () => void;
 }
@@ -123,7 +123,7 @@ export const useResumeBuilderStore = create<ResumeBuilderState>((set, get) => ({
       // Auto-persist to MongoDB in background
       const resumeId = state.resumeId;
       if (resumeId) {
-        apiClient.put(`/api/resume/${resumeId}/update`, nextData).catch(err => {
+        apiClient.put(`/api/resume-studio/${resumeId}/update`, nextData).catch(err => {
           console.error("Autosave failed:", err);
         });
       }
@@ -136,7 +136,7 @@ export const useResumeBuilderStore = create<ResumeBuilderState>((set, get) => ({
     const { resumeId, resumeData } = get();
     if (!resumeId || !resumeData) return;
     try {
-      await apiClient.put(`/api/resume/${resumeId}/update`, resumeData);
+      await apiClient.put(`/api/resume-studio/${resumeId}/update`, resumeData);
     } catch (err: any) {
       console.error("Manual save failed:", err);
     }
@@ -148,32 +148,62 @@ export const useResumeBuilderStore = create<ResumeBuilderState>((set, get) => ({
     const { resumeData, selectedTemplate } = get();
     if (!resumeData) return null;
 
-    set({ generating: true, errors: null });
+    // Read typography prefs saved by ResumePreview
+    let fontFamily = 'Inter';
+    let fontSize = '11pt';
+    try {
+      const stored = localStorage.getItem('bimba.resumeStudioPreferences.v1');
+      if (stored) {
+        const prefs = JSON.parse(stored);
+        fontFamily = prefs.fontFamily || fontFamily;
+        fontSize = prefs.fontSize || fontSize;
+      }
+    } catch (_) {}
+
+    set({ generating: true });
+    // 35-second AbortController timeout — Playwright browser render can take up to 5–8s
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 35000);
+
     try {
       // Force save latest state before compiling PDF
-      await apiClient.put(`/api/resume/${resumeId}/update`, resumeData);
-      
-      const response = await apiClient.post(`/api/resume/generate-pdf/${resumeId}`, {
-        template: selectedTemplate,
-        resume_data: resumeData
-      });
-      
+      await apiClient.put(`/api/resume-studio/${resumeId}/update`, resumeData);
+
+      const response = await apiClient.post(
+        `/api/resume/generate-pdf/${resumeId}`,
+        {
+          template: selectedTemplate,
+          resume_data: resumeData,
+          font_family: fontFamily,
+          font_size: fontSize
+        },
+        { signal: controller.signal }
+      );
+
+      clearTimeout(timeoutId);
+
       if (response.data.success) {
         set({ generating: false });
-        // Refresh previous versions history list
         await get().fetchPreviousVersions(resumeId);
         return {
           pdf_url: response.data.pdf_url,
           pdf_base64: response.data.pdf_base64
         };
       } else {
-        set({ errors: response.data.message || 'Failed to generate PDF', generating: false });
-        return null;
+        set({ generating: false });
+        return { error: response.data.message || 'Failed to generate PDF' };
       }
     } catch (err: any) {
-      const msg = err.response?.data?.detail || err.message || 'Error compiling PDF resume';
-      set({ errors: msg, generating: false });
-      return null;
+      clearTimeout(timeoutId);
+      set({ generating: false });
+      if (err.name === 'CanceledError' || err.code === 'ERR_CANCELED') {
+        return { error: 'PDF generation timed out (35s). The renderer may be starting up — please try again in a moment.' };
+      }
+      const detail = err.response?.data?.detail;
+      if (detail?.includes('PDF renderer unavailable')) {
+        return { error: 'PDF renderer not running. Please start it: cd backend/pdf_renderer && node server.mjs' };
+      }
+      return { error: detail || err.message || 'Error compiling PDF resume' };
     }
   },
 

@@ -24,7 +24,7 @@ interface ResumeImprovementState {
   applying: boolean;
   error: string | null;
   fetchImprovements: (resumeId: number) => Promise<void>;
-  applyAllImprovements: (resumeId: number) => Promise<boolean>;
+  applyAllImprovements: (resumeId: number, acceptedSections?: string[]) => Promise<boolean>;
   clearImprovements: () => void;
 }
 

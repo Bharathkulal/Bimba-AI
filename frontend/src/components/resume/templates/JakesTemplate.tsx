@@ -112,6 +112,33 @@ export const JakesTemplate: React.FC<TemplateProps> = ({ data, fontFamily, fontS
           </div>
         </div>
       )}
+
+      {/* Certifications */}
+      {data.certifications && data.certifications.length > 0 && (
+        <div className="mb-4">
+          <h3 className="text-[12px] font-black uppercase tracking-wider text-slate-900 border-b border-slate-300 pb-0.5 mb-1.5">Certifications</h3>
+          <div className="space-y-2">
+            {data.certifications.map((cert: any, idx: number) => (
+              <div key={idx} className="space-y-0.5">
+                <div className="flex justify-between items-baseline text-[11px] font-black text-slate-800">
+                  <span>{cert.name}{cert.organization ? ` — ${cert.organization}` : ''}</span>
+                  <span className="font-medium text-[10px] text-slate-500">{cert.issue_date}</span>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Portfolio */}
+      {data.portfolioLinks && data.portfolioLinks.length > 0 && (
+        <div className="mb-4">
+          <h3 className="text-[12px] font-black uppercase tracking-wider text-slate-900 border-b border-slate-300 pb-0.5 mb-1.5">Portfolio</h3>
+          <p className="text-[10.5px] text-slate-650 leading-relaxed">
+            {data.portfolioLinks.join('  •  ')}
+          </p>
+        </div>
+      )}
     </div>
   );
 };

@@ -119,6 +119,33 @@ export const HarvardTemplate: React.FC<TemplateProps> = ({ data, fontFamily, fon
           </div>
         </div>
       )}
+
+      {/* Certifications */}
+      {data.certifications && data.certifications.length > 0 && (
+        <div className="mb-5">
+          <h3 className="text-sm font-black uppercase tracking-wider text-slate-900 border-b border-slate-300 pb-1 mb-2">Certifications</h3>
+          <div className="space-y-3">
+            {data.certifications.map((cert: any, idx: number) => (
+              <div key={idx} className="space-y-1">
+                <div className="flex justify-between items-baseline">
+                  <h4 className="text-[11.5px] font-black text-slate-800">{cert.name}{cert.organization ? ` — ${cert.organization}` : ''}</h4>
+                  <span className="text-[10.5px] font-semibold text-slate-500">{cert.issue_date}</span>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Portfolio */}
+      {data.portfolioLinks && data.portfolioLinks.length > 0 && (
+        <div className="mb-5">
+          <h3 className="text-sm font-black uppercase tracking-wider text-slate-900 border-b border-slate-300 pb-1 mb-2">Portfolio</h3>
+          <p className="text-[11.5px] text-slate-700 leading-relaxed">
+            {data.portfolioLinks.join('  •  ')}
+          </p>
+        </div>
+      )}
     </div>
   );
 };

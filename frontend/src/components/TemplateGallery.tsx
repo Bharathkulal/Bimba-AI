@@ -1,5 +1,5 @@
 import React from 'react';
-import { ResumeTemplate } from '../services/templates';
+import type { ResumeTemplate } from '../services/templates';
 import { TemplateCard } from './TemplateCard';
 import { Loader } from './Loader';
 

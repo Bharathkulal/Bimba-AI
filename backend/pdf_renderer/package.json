@@ -1,0 +1,14 @@
+{
+  "name": "bimba-pdf-renderer",
+  "version": "1.0.0",
+  "description": "Playwright-based headless HTML-to-PDF renderer for Bimba AI Resume Builder",
+  "type": "module",
+  "main": "server.mjs",
+  "scripts": {
+    "start": "node server.mjs",
+    "install-browser": "npx playwright install chromium"
+  },
+  "dependencies": {
+    "playwright": "^1.62.1"
+  }
+}

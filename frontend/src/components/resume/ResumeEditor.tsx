@@ -3,8 +3,8 @@ import { useResumeBuilderStore } from '../../store/resumeBuilderStore';
 import { Sparkles, RefreshCw, Plus, Trash2, ArrowUpRight, Check } from 'lucide-react';
 
 interface ResumeEditorProps {
-  activeSection: 'info' | 'summary' | 'skills' | 'experience' | 'projects' | 'education';
-  setActiveSection: (sec: 'info' | 'summary' | 'skills' | 'experience' | 'projects' | 'education') => void;
+  activeSection: 'info' | 'summary' | 'skills' | 'experience' | 'projects' | 'education' | 'certifications' | 'portfolio';
+  setActiveSection: (sec: 'info' | 'summary' | 'skills' | 'experience' | 'projects' | 'education' | 'certifications' | 'portfolio') => void;
 }
 
 export const ResumeEditor: React.FC<ResumeEditorProps> = ({ activeSection, setActiveSection }) => {
@@ -102,6 +102,37 @@ export const ResumeEditor: React.FC<ResumeEditorProps> = ({ activeSection, setAc
     updateResumeData((prev) => ({
       ...prev,
       education: prev.education.filter((_, i) => i !== idx)
+    }));
+  };
+
+  // --- Certification Handlers ---
+  const handleCertificationChange = (idx: number, field: string, value: string) => {
+    updateResumeData((prev) => {
+      const certCopy = [...(prev.certifications || [])];
+      certCopy[idx] = { ...certCopy[idx], [field]: value };
+      return { ...prev, certifications: certCopy };
+    });
+  };
+
+  const addCertification = () => {
+    updateResumeData((prev) => ({
+      ...prev,
+      certifications: [...(prev.certifications || []), { name: '', organization: '', issue_date: '' }]
+    }));
+  };
+
+  const removeCertification = (idx: number) => {
+    updateResumeData((prev) => ({
+      ...prev,
+      certifications: (prev.certifications || []).filter((_, i) => i !== idx)
+    }));
+  };
+
+  // --- Portfolio Handlers ---
+  const handlePortfolioChange = (value: string) => {
+    updateResumeData((prev) => ({
+      ...prev,
+      portfolioLinks: value.split(',').map(s => s.trim()).filter(Boolean)
     }));
   };
 
@@ -462,6 +493,84 @@ export const ResumeEditor: React.FC<ResumeEditorProps> = ({ activeSection, setAc
                   </div>
                 </div>
               ))}
+            </div>
+          </div>
+        )}
+
+        {/* CERTIFICATIONS SECTION */}
+        {activeSection === 'certifications' && (
+          <div className="flex flex-col gap-4">
+            <div className="flex justify-between items-center">
+              <h4 className="text-xs font-black uppercase text-slate-400">Certifications</h4>
+              <button
+                onClick={addCertification}
+                className="px-2 py-1 bg-slate-200 hover:bg-slate-300 dark:bg-white/10 dark:hover:bg-white/15 text-slate-700 dark:text-white font-bold text-[9px] rounded-lg cursor-pointer flex items-center gap-1"
+              >
+                <Plus size={10} /> Add Certification
+              </button>
+            </div>
+
+            <div className="flex flex-col gap-4 max-h-[50vh] overflow-y-auto pr-1">
+              {(resumeData.certifications || []).map((cert, idx) => (
+                <div key={idx} className="border border-slate-200 dark:border-white/10 p-3.5 rounded-2xl flex flex-col gap-3 relative bg-white/40 dark:bg-white/5">
+                  <button
+                    onClick={() => removeCertification(idx)}
+                    className="absolute right-3 top-3 p-1 rounded-lg hover:bg-slate-100 dark:hover:bg-white/10 text-slate-400 hover:text-rose-500 transition-colors cursor-pointer"
+                  >
+                    <Trash2 size={13} />
+                  </button>
+
+                  <div className="grid grid-cols-2 gap-3 pr-6">
+                    <div className="flex flex-col gap-1">
+                      <label className="text-[9px] font-bold text-slate-500 uppercase">Certification Name</label>
+                      <input
+                        type="text"
+                        value={cert.name || ''}
+                        onChange={(e) => handleCertificationChange(idx, 'name', e.target.value)}
+                        className="px-2.5 py-1.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/10 rounded-lg text-xs focus:outline-none focus:border-emerald-500"
+                        placeholder="e.g. AWS Solutions Architect"
+                      />
+                    </div>
+                    <div className="flex flex-col gap-1">
+                      <label className="text-[9px] font-bold text-slate-500 uppercase">Organization</label>
+                      <input
+                        type="text"
+                        value={cert.organization || ''}
+                        onChange={(e) => handleCertificationChange(idx, 'organization', e.target.value)}
+                        className="px-2.5 py-1.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/10 rounded-lg text-xs focus:outline-none focus:border-emerald-500"
+                        placeholder="e.g. Amazon Web Services"
+                      />
+                    </div>
+                    <div className="flex flex-col gap-1 col-span-2">
+                      <label className="text-[9px] font-bold text-slate-500 uppercase">Issue Date</label>
+                      <input
+                        type="text"
+                        value={cert.issue_date || ''}
+                        onChange={(e) => handleCertificationChange(idx, 'issue_date', e.target.value)}
+                        className="px-2.5 py-1.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/10 rounded-lg text-xs focus:outline-none focus:border-emerald-500"
+                        placeholder="e.g. May 2023"
+                      />
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* PORTFOLIO SECTION */}
+        {activeSection === 'portfolio' && (
+          <div className="flex flex-col gap-3.5">
+            <h4 className="text-xs font-black uppercase text-slate-400">Portfolio Links</h4>
+            <div className="flex flex-col gap-1">
+              <label className="text-[10px] font-bold text-slate-500 uppercase">Links (comma separated)</label>
+              <textarea
+                value={(resumeData.portfolioLinks || []).join(', ')}
+                onChange={(e) => handlePortfolioChange(e.target.value)}
+                rows={4}
+                placeholder="github.com/johndoe, myportfolio.com, linkedin.com/in/johndoe"
+                className="px-3 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/10 rounded-xl text-xs focus:outline-none focus:border-emerald-500 font-semibold"
+              />
             </div>
           </div>
         )}

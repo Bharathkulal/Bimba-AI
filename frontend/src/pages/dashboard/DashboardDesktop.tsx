@@ -15,8 +15,8 @@ import { jobsService } from '../../services/jobs';
 import type { JobListItem, JobApplication } from '../../services/jobs';
 import type { DashboardData, AtsData, ActivityTimelineItem, ResumeAnalyticsItem } from '../../services/analytics';
 import { UploadResumeWizard } from '../../components/UploadResumeWizard';
-import { apiClient } from '../../services/api';
 import { DisplayHeading } from '../../components/DisplayHeading';
+import { CreateFromScratchWizard } from '../../components/resume/CreateFromScratchWizard';
 
 const formatTimeAgo = (dateString?: string) => {
   if (!dateString) return 'Just now';
@@ -135,6 +135,7 @@ export const DashboardDesktop: React.FC = () => {
   const [isUploading, setIsUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState('');
   const [showWizard, setShowWizard] = useState(false);
+  const [showScratchWizard, setShowScratchWizard] = useState(false);
   const [wizardFile, setWizardFile] = useState<File | null>(null);
   const [wizardInitialStep, setWizardInitialStep] = useState<number>(2);
 
@@ -409,16 +410,7 @@ export const DashboardDesktop: React.FC = () => {
             <div className="text-center py-8 text-slate-400 text-xs font-medium border border-dashed border-[#E4E0D5] rounded-xl flex flex-col items-center justify-center gap-3">
               <p>No resumes found.</p>
               <button
-                onClick={async () => {
-                  try {
-                    const res = await apiClient.post('/api/resume-studio/create', { name: "New Resume" });
-                    if (res.data && res.data.id) {
-                      navigate(`/resume-builder?id=${res.data.id}`);
-                    }
-                  } catch (err) {
-                    console.error(err);
-                  }
-                }}
+                onClick={() => setShowScratchWizard(true)}
                 className="px-4 py-2 text-xs font-bold bg-[#173404] text-white rounded-xl cursor-pointer border-none"
               >
                 Create Resume
@@ -471,6 +463,23 @@ export const DashboardDesktop: React.FC = () => {
             setShowWizard(false);
             setWizardFile(null);
             setWizardInitialStep(2);
+            fetchDashboardOverview();
+          }}
+          isDark={isDark}
+        />
+      )}
+
+      {showScratchWizard && (
+        <CreateFromScratchWizard
+          initialContact={{
+            name: displayName === 'Student' ? '' : displayName,
+            email: user?.personal_email || '',
+            phone: (user as any)?.phone || '',
+            location: (user as any)?.address || ''
+          }}
+          onClose={() => setShowScratchWizard(false)}
+          onSuccess={() => {
+            setShowScratchWizard(false);
             fetchDashboardOverview();
           }}
           isDark={isDark}

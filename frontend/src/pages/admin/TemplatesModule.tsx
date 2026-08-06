@@ -8,6 +8,7 @@ import type { ResumeTemplate, TemplateAnalytics } from '../../services/templates
 
 import { TemplateBadge } from '../../components/TemplateBadge';
 import { ATSBadge } from '../../components/ATSBadge';
+import { Loader } from '../../components/Loader';
 
 export const TemplatesModule: React.FC = () => {
   const [templates, setTemplates] = useState<ResumeTemplate[]>([]);

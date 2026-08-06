@@ -104,6 +104,33 @@ export const StanfordTemplate: React.FC<TemplateProps> = ({ data, fontFamily, fo
           </p>
         </div>
       )}
+
+      {/* Certifications */}
+      {data.certifications && data.certifications.length > 0 && (
+        <div className="mb-5">
+          <h3 className="text-[12px] font-black uppercase tracking-wider text-red-800 border-b-2 border-red-800/10 pb-0.5 mb-2">Certifications</h3>
+          <div className="space-y-3">
+            {data.certifications.map((cert: any, idx: number) => (
+              <div key={idx} className="space-y-0.5">
+                <div className="flex justify-between items-baseline text-[11px] font-bold text-slate-800">
+                  <span>{cert.name}{cert.organization ? ` — ${cert.organization}` : ''}</span>
+                  <span className="font-medium text-[10.5px] text-slate-500">{cert.issue_date}</span>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Portfolio */}
+      {data.portfolioLinks && data.portfolioLinks.length > 0 && (
+        <div className="mb-5">
+          <h3 className="text-[12px] font-black uppercase tracking-wider text-red-800 border-b-2 border-red-800/10 pb-0.5 mb-2">Portfolio</h3>
+          <p className="text-[11px] text-slate-700 leading-relaxed">
+            {data.portfolioLinks.join('  •  ')}
+          </p>
+        </div>
+      )}
     </div>
   );
 };

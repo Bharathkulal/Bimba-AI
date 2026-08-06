@@ -26,8 +26,9 @@ export const ResumeBuilder: React.FC<ResumeBuilderProps> = ({
     fetchBuilderData, clearBuilderStore, generatePdf, fetchPreviousVersions
   } = useResumeBuilderStore();
 
-  const [activeSection, setActiveSection] = useState<'info' | 'summary' | 'skills' | 'experience' | 'projects' | 'education'>('info');
+  const [activeSection, setActiveSection] = useState<'info' | 'summary' | 'skills' | 'experience' | 'projects' | 'education' | 'certifications' | 'portfolio'>('info');
   const [showHistory, setShowHistory] = useState(false);
+  const [downloadError, setDownloadError] = useState<string | null>(null);
 
   useEffect(() => {
     if (resumeId) {
@@ -48,6 +49,8 @@ export const ResumeBuilder: React.FC<ResumeBuilderProps> = ({
       case 'experience': return <Briefcase size={14} />;
       case 'projects': return <FileCode size={14} />;
       case 'education': return <Award size={14} />;
+      case 'certifications': return <Award size={14} />;
+      case 'portfolio': return <FileText size={14} />;
       default: return <FileText size={14} />;
     }
   };
@@ -68,6 +71,10 @@ export const ResumeBuilder: React.FC<ResumeBuilderProps> = ({
         return !!(resumeData.projects && resumeData.projects.length > 0);
       case 'education':
         return !!(resumeData.education && resumeData.education.length > 0);
+      case 'certifications':
+        return !!(resumeData.certifications && resumeData.certifications.length > 0);
+      case 'portfolio':
+        return !!(resumeData.portfolioLinks && resumeData.portfolioLinks.length > 0);
       default:
         return false;
     }
@@ -103,15 +110,19 @@ export const ResumeBuilder: React.FC<ResumeBuilderProps> = ({
   };
 
   const handleDownload = async () => {
+    setDownloadError(null);
     const res = await generatePdf(resumeId);
     if (res) {
+      if (res.error) {
+        setDownloadError(res.error);
+        return;
+      }
       if (res.pdf_base64) {
         downloadBase64(res.pdf_base64, `Resume_${resumeId}.pdf`);
-      } else {
-        // Fallback to direct download link
+      } else if (res.pdf_url) {
         window.open(res.pdf_url, '_blank');
       }
-      if (onPdfGenerated) {
+      if (onPdfGenerated && res.pdf_url) {
         onPdfGenerated(res.pdf_url);
       }
     }
@@ -157,6 +168,8 @@ export const ResumeBuilder: React.FC<ResumeBuilderProps> = ({
     { id: 'experience', label: 'Experience' },
     { id: 'projects', label: 'Projects' },
     { id: 'education', label: 'Education' },
+    { id: 'certifications', label: 'Certifications' },
+    { id: 'portfolio', label: 'Portfolio' },
   ] as const;
 
   return (
@@ -339,10 +352,16 @@ export const ResumeBuilder: React.FC<ResumeBuilderProps> = ({
             icon={<Download size={13} />}
             className="text-xs font-bold py-2 btn-glow-green"
           >
-            {generating ? 'Downloading...' : 'Download PDF'}
+            {generating ? 'Rendering PDF...' : 'Download PDF'}
           </Button>
 
-          {onPdfGenerated && (
+          {downloadError && (
+            <div className="mt-2 mx-2 px-3 py-2 bg-rose-50 dark:bg-rose-900/20 border border-rose-300 dark:border-rose-500/30 rounded-lg text-[10px] text-rose-700 dark:text-rose-300 font-medium leading-snug flex items-start gap-2">
+              <span className="shrink-0 mt-0.5">⚠</span>
+              <span>{downloadError}</span>
+              <button onClick={() => setDownloadError(null)} className="ml-auto shrink-0 text-rose-400 hover:text-rose-600 cursor-pointer font-bold">✕</button>
+            </div>
+          )}          {onPdfGenerated && (
             <Button
               variant="primary"
               size="sm"

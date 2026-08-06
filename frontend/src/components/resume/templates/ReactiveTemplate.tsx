@@ -102,6 +102,33 @@ export const ReactiveTemplate: React.FC<TemplateProps> = ({ data, fontFamily, fo
           </div>
         </div>
       )}
+
+      {/* Certifications */}
+      {data.certifications && data.certifications.length > 0 && (
+        <div className="mb-4.5">
+          <h3 className="text-xs font-black uppercase tracking-widest text-indigo-600 mb-2">Certifications</h3>
+          <div className="space-y-2">
+            {data.certifications.map((cert: any, idx: number) => (
+              <div key={idx} className="space-y-0.5">
+                <div className="flex justify-between items-baseline text-[11px] font-bold text-slate-850">
+                  <span>{cert.name}{cert.organization ? ` — ${cert.organization}` : ''}</span>
+                  <span className="font-semibold text-[9.5px] text-slate-450">{cert.issue_date}</span>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Portfolio */}
+      {data.portfolioLinks && data.portfolioLinks.length > 0 && (
+        <div className="mb-4.5">
+          <h3 className="text-xs font-black uppercase tracking-widest text-indigo-600 mb-2">Portfolio</h3>
+          <p className="text-[11px] text-slate-650 leading-relaxed">
+            {data.portfolioLinks.join('  •  ')}
+          </p>
+        </div>
+      )}
     </div>
   );
 };

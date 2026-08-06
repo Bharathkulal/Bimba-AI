@@ -168,6 +168,16 @@ export const MinimalistModernTemplate: React.FC<TemplateProps> = ({ data, fontFa
           </div>
         </div>
       )}
+
+      {/* Portfolio */}
+      {data.portfolioLinks && data.portfolioLinks.length > 0 && (
+        <div className="mb-5">
+          <h3 className="text-xs font-black uppercase tracking-wider text-slate-900 border-b border-slate-200 pb-1 mb-2">Portfolio</h3>
+          <p className="text-[10.5px] text-slate-650 leading-relaxed">
+            {data.portfolioLinks.join('  •  ')}
+          </p>
+        </div>
+      )}
     </div>
   );
 };

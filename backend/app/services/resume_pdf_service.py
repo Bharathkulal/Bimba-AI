@@ -23,6 +23,128 @@ def clean_unicode(text: Any) -> str:
   text = text.replace("\u2022", "*") # Bullet point
   return re.sub(r'[^\x00-\x7F]+', ' ', text)
 
+
+TEMPLATE_CONFIGS = {
+    "harvard": {
+        "name_uppercase": True,
+        "contact_separator": " • ",
+        "sections": [
+            {"type": "summary", "title": "Professional Summary"},
+            {"type": "skills", "title": "Technical Skills"},
+            {"type": "experience", "title": "Work Experience"},
+            {"type": "projects", "title": "Academic & Personal Projects"},
+            {"type": "education", "title": "Education"},
+            {"type": "certifications", "title": "Certifications"},
+            {"type": "portfolio", "title": "Portfolio"}
+        ]
+    },
+    "jakes": {
+        "name_uppercase": True,
+        "contact_separator": " | ",
+        "sections": [
+            {"type": "summary", "title": "Summary"},
+            {"type": "experience", "title": "Experience"},
+            {"type": "projects", "title": "Projects"},
+            {"type": "skills", "title": "Skills"},
+            {"type": "education", "title": "Education"},
+            {"type": "certifications", "title": "Certifications"},
+            {"type": "portfolio", "title": "Portfolio"}
+        ]
+    },
+    "stanford": {
+        "name_uppercase": False,
+        "contact_separator": " • ",
+        "sections": [
+            {"type": "summary", "title": "Professional Summary"},
+            {"type": "education", "title": "Education"},
+            {"type": "experience", "title": "Academic & Research Experience"},
+            {"type": "projects", "title": "Projects & Publications"},
+            {"type": "skills", "title": "Technical Skills"},
+            {"type": "certifications", "title": "Certifications"},
+            {"type": "portfolio", "title": "Portfolio"}
+        ]
+    },
+    "microsoft": {
+        "name_uppercase": False,
+        "contact_separator": " | ",
+        "sections": [
+            {"type": "summary", "title": "Professional Summary"},
+            {"type": "skills", "title": "Core Competencies"},
+            {"type": "experience", "title": "Work History"},
+            {"type": "projects", "title": "Technical Projects"},
+            {"type": "education", "title": "Education"},
+            {"type": "certifications", "title": "Certifications"},
+            {"type": "portfolio", "title": "Portfolio"}
+        ]
+    },
+    "reactive": {
+        "name_uppercase": True,
+        "contact_separator": " | ",
+        "sections": [
+            {"type": "summary", "title": "Summary"},
+            {"type": "experience", "title": "Experience"},
+            {"type": "projects", "title": "Projects"},
+            {"type": "skills", "title": "Skills"},
+            {"type": "education", "title": "Education"},
+            {"type": "certifications", "title": "Certifications"},
+            {"type": "portfolio", "title": "Portfolio"}
+        ]
+    },
+    "novoresume": {
+        "name_uppercase": False,
+        "contact_separator": " • ",
+        "sections": [
+            {"type": "summary", "title": "Profile"},
+            {"type": "experience", "title": "Work Experience"},
+            {"type": "projects", "title": "Personal Projects"},
+            {"type": "skills", "title": "Skills"},
+            {"type": "education", "title": "Education"},
+            {"type": "certifications", "title": "Certifications"},
+            {"type": "portfolio", "title": "Portfolio"}
+        ]
+    },
+    "flowcv": {
+        "name_uppercase": False,
+        "contact_separator": " / ",
+        "sections": [
+            {"type": "summary", "title": "About"},
+            {"type": "experience", "title": "Experience"},
+            {"type": "projects", "title": "Projects"},
+            {"type": "skills", "title": "Skills"},
+            {"type": "education", "title": "Education"},
+            {"type": "certifications", "title": "Certifications"},
+            {"type": "portfolio", "title": "Portfolio"}
+        ]
+    },
+    "indeed": {
+        "name_uppercase": False,
+        "contact_separator": " • ",
+        "sections": [
+            {"type": "summary", "title": "About Me"},
+            {"type": "experience", "title": "Work Experience"},
+            {"type": "projects", "title": "Projects"},
+            {"type": "skills", "title": "Skills"},
+            {"type": "education", "title": "Education"},
+            {"type": "certifications", "title": "Certifications"},
+            {"type": "portfolio", "title": "Portfolio"}
+        ]
+    },
+    "minimalist-modern": {
+        "name_uppercase": False,
+        "contact_separator": " • ",
+        "sections": [
+            {"type": "summary", "title": "Profile"},
+            {"type": "experience", "title": "Work Experience"},
+            {"type": "education", "title": "Education"},
+            {"type": "skills", "title": "Skills"},
+            {"type": "projects", "title": "Projects"},
+            {"type": "certifications", "title": "Certifications"},
+            {"type": "hobbies", "title": "Hobbies & Interests"},
+            {"type": "portfolio", "title": "Portfolio"}
+        ]
+    }
+}
+
 def build_pdf_story(resume_data: Dict[str, Any], template: str = "harvard", db: Any = None) -> bytes:
   """
   Generates a high-quality PDF matching the chosen ATS template layout.
@@ -192,9 +314,14 @@ def build_pdf_story(resume_data: Dict[str, Any], template: str = "harvard", db: 
   if loc_val:
     loc_val = loc_val.replace("\n", ", ").replace("\r", "")
   
+  tpl_cfg = TEMPLATE_CONFIGS.get(template, {})
   contact_parts = [email_val, phone_val, loc_val]
-  contact_str = "  |  ".join([part for part in contact_parts if part])
+  separator = tpl_cfg.get("contact_separator", "  |  ")
+  contact_str = separator.join([part for part in contact_parts if part])
   
+  if tpl_cfg.get("name_uppercase"):
+      clean_name = clean_name.upper()
+
   story = []
   story.append(Paragraph(clean_name, title_style))
   story.append(Paragraph(contact_str, subtitle_style))
@@ -400,6 +527,17 @@ def build_pdf_story(resume_data: Dict[str, Any], template: str = "harvard", db: 
     flowables.append(Spacer(1, 4))
     return flowables
 
+
+  def make_portfolio_flowables(sec):
+    links = resume_data.get("portfolioLinks") or []
+    if not links:
+      return []
+    flowables = [Paragraph(sec.get("title") or "PORTFOLIO", h1_style)]
+    links_str = "  •  ".join([clean_unicode(str(x)) for x in links])
+    flowables.append(Paragraph(links_str, body_style))
+    flowables.append(Spacer(1, 4))
+    return flowables
+
   def make_hobbies_flowables(sec):
     hobbies = resume_data.get("hobbies", [])
     if not hobbies:
@@ -521,6 +659,8 @@ def build_pdf_story(resume_data: Dict[str, Any], template: str = "harvard", db: 
       return make_languages_flowables(sec)
     elif stype == "publications":
       return make_publications_flowables(sec)
+    elif stype == "portfolio":
+      return make_portfolio_flowables(sec)
     elif stype == "hobbies":
       return make_hobbies_flowables(sec)
     return []
@@ -548,20 +688,22 @@ def build_pdf_story(resume_data: Dict[str, Any], template: str = "harvard", db: 
   if custom_tpl and "sections" in custom_tpl:
     sections_to_render = custom_tpl["sections"]
   else:
-    sections_to_render = [
-      {"type": "profile", "visible": True},
-      {"type": "experience", "visible": True},
-      {"type": "education", "visible": True},
-      {"type": "projects", "visible": True},
-      {"type": "skills", "visible": True},
-      {"type": "softskills", "visible": True},
-      {"type": "internships", "visible": True},
-      {"type": "certifications", "visible": True},
-      {"type": "achievements", "visible": True},
-      {"type": "publications", "visible": True},
-      {"type": "languages", "visible": True},
-      {"type": "hobbies", "visible": True}
-    ]
+    tpl_cfg = TEMPLATE_CONFIGS.get(template, {})
+    if "sections" in tpl_cfg:
+        sections_to_render = tpl_cfg["sections"]
+    else:
+        sections_to_render = [
+          {"type": "profile", "title": "Professional Summary"},
+          {"type": "experience", "title": "Work Experience"},
+          {"type": "education", "title": "Education"},
+          {"type": "projects", "title": "Projects"},
+          {"type": "skills", "title": "Skills"},
+          {"type": "softskills", "title": "Soft Skills"},
+          {"type": "internships", "title": "Internships"},
+          {"type": "certifications", "title": "Certifications"},
+          {"type": "achievements", "title": "Achievements"},
+          {"type": "portfolio", "title": "Portfolio"}
+        ]
 
   layout = custom_tpl.get("layout") if custom_tpl else "single-column"
 

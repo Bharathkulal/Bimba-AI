@@ -127,7 +127,7 @@ export const UploadResumeWizard: React.FC<UploadResumeWizardProps> = ({
       console.error("Error generating summary with AI:", err);
       const role = parsedData.personal_info?.title || 'Software Engineer';
       const fallbackSummary = `Results-driven ${role} with strong problem-solving skills and hands-on experience building web systems. Dedicated to applying modern engineering methodologies to deliver high-quality products.`;
-      setParsedData(prev => ({ ...prev, summary: fallbackSummary }));
+      setParsedData((prev: any) => ({ ...prev, summary: fallbackSummary }));
     } finally {
       setIsGeneratingSummary(false);
     }

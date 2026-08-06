@@ -102,6 +102,33 @@ export const IndeedTemplate: React.FC<TemplateProps> = ({ data, fontFamily, font
           </div>
         </div>
       )}
+
+      {/* Certifications */}
+      {data.certifications && data.certifications.length > 0 && (
+        <div className="mb-3.5 border-t border-slate-200 pt-3">
+          <h3 className="text-xs font-black uppercase text-slate-700 mb-2">Certifications</h3>
+          <div className="space-y-2">
+            {data.certifications.map((cert: any, idx: number) => (
+              <div key={idx} className="space-y-0.5">
+                <div className="flex justify-between items-baseline text-[10.5px] font-bold text-slate-800">
+                  <span>{cert.name}{cert.organization ? ` — ${cert.organization}` : ''}</span>
+                  <span className="font-semibold text-[9.5px] text-slate-400">{cert.issue_date}</span>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Portfolio */}
+      {data.portfolioLinks && data.portfolioLinks.length > 0 && (
+        <div className="mb-3.5 border-t border-slate-200 pt-3">
+          <h3 className="text-xs font-black uppercase text-slate-700 mb-2">Portfolio</h3>
+          <p className="text-[10.5px] text-slate-600 leading-relaxed">
+            {data.portfolioLinks.join('  •  ')}
+          </p>
+        </div>
+      )}
     </div>
   );
 };

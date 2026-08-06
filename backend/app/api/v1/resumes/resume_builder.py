@@ -2,18 +2,68 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from typing import List, Dict, Optional, Any
 from pydantic import BaseModel
 from datetime import datetime, timezone
+import json, time, urllib.request, urllib.error
 from app.database.session import get_db
 from app.api.analytics import get_current_student
 from app.models.student import Student
-from app.services.resume_pdf_service import build_pdf_story
 from app.services.cloudinary_service import upload_file
 from app.core.mongodb import get_next_sequence
+
+PDF_RENDERER_URL = "http://127.0.0.1:5174/render-pdf"
+
+def _call_playwright_renderer(resume_data: dict, template: str, font_family: str = "Inter", font_size: str = "11pt") -> bytes:
+    """
+    Calls the Node.js Playwright PDF renderer microservice.
+    Retries up to 3 times with 1s exponential backoff.
+    Returns raw PDF bytes.
+    """
+    payload = json.dumps({
+        "template": template,
+        "data": resume_data,
+        "fontFamily": font_family,
+        "fontSize": font_size
+    }).encode("utf-8")
+
+    last_error = None
+    for attempt in range(1, 4):
+        try:
+            req = urllib.request.Request(
+                PDF_RENDERER_URL,
+                data=payload,
+                headers={"Content-Type": "application/json"},
+                method="POST"
+            )
+            with urllib.request.urlopen(req, timeout=35) as resp:
+                body = json.loads(resp.read().decode("utf-8"))
+                if not body.get("success"):
+                    raise RuntimeError(f"Renderer returned error: {body.get('error', 'unknown')}")
+                import base64
+                return base64.b64decode(body["pdf_base64"])
+        except urllib.error.URLError as e:
+            last_error = e
+            print(f"[PDF renderer] Attempt {attempt}/3 failed (URLError): {e}")
+            if attempt < 3:
+                time.sleep(attempt * 1.0)
+        except Exception as e:
+            last_error = e
+            print(f"[PDF renderer] Attempt {attempt}/3 failed: {e}")
+            if attempt < 3:
+                time.sleep(attempt * 1.0)
+
+    raise RuntimeError(
+        f"PDF renderer unreachable after 3 attempts. "
+        f"Ensure the Node renderer is running: "
+        f"cd backend/pdf_renderer && node server.mjs. "
+        f"Last error: {last_error}"
+    )
 
 router = APIRouter(prefix="/resume", tags=["Resume Builder & PDF Engine"])
 
 class GeneratePdfRequest(BaseModel):
-    template: str # "ats_classic" | "modern_dev" | "minimal_pro" | "creative_portfolio"
+    template: str
     resume_data: Dict[str, Any]
+    font_family: Optional[str] = "Inter"
+    font_size: Optional[str] = "11pt"
 
 @router.get("/builder/{resume_id}")
 def get_resume_builder_data(
@@ -184,9 +234,19 @@ async def generate_resume_pdf_endpoint(
             detail="Resume not found or unauthorized"
         )
         
-    # 2. Build PDF binary content in memory
+    # 2. Build PDF via Playwright headless browser renderer
     try:
-        pdf_bytes = build_pdf_story(payload.resume_data, payload.template, db)
+        pdf_bytes = _call_playwright_renderer(
+            resume_data=payload.resume_data,
+            template=payload.template,
+            font_family=payload.font_family if hasattr(payload, 'font_family') else "Inter",
+            font_size=payload.font_size if hasattr(payload, 'font_size') else "11pt"
+        )
+    except RuntimeError as e:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail=f"PDF renderer unavailable: {str(e)}"
+        )
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,

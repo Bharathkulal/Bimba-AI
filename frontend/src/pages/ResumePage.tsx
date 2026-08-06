@@ -22,6 +22,7 @@ import { ResumeAIAnalysis } from '../components/resume/ResumeAIAnalysis';
 import { ResumeHealthDashboard } from '../components/resume/ResumeHealthDashboard';
 import { ResumeImprovement } from '../components/resume/ResumeImprovement';
 import { ResumeBuilder } from '../components/resume/ResumeBuilder';
+import { CreateFromScratchWizard } from '../components/resume/CreateFromScratchWizard';
 
 export const ResumePage: React.FC = () => {
   const navigate = useNavigate();
@@ -62,6 +63,7 @@ export const ResumePage: React.FC = () => {
   // Active Tab: 'resumes' | 'templates' | 'ats-scanner'
   const [activeSubTab, setActiveSubTab] = useState<'resumes' | 'templates' | 'ats-scanner'>('resumes');
   const [showWizard, setShowWizard] = useState(false);
+  const [showScratchWizard, setShowScratchWizard] = useState(false);
   const [wizardFile, setWizardFile] = useState<File | null>(null);
   const [uploadedFile, setUploadedFile] = useState<File | null>(null);
   const [activeAnalysisResumeId, setActiveAnalysisResumeId] = useState<number | null>(null);
@@ -237,19 +239,7 @@ export const ResumePage: React.FC = () => {
             Upload PDF/DOCX/TXT
           </Button>
           <Button 
-            onClick={async () => {
-              try {
-                const res = await apiClient.post('/api/resume-studio/create', { name: "New Resume" });
-                if (res.data && res.data.id) {
-                  navigate(`/resume-builder?id=${res.data.id}`);
-                } else {
-                  alert("Failed to initialize new resume draft.");
-                }
-              } catch (err) {
-                console.error(err);
-                alert("Error creating new resume draft.");
-              }
-            }}
+            onClick={() => setShowScratchWizard(true)}
             variant="primary" 
             size="sm"
             className="flex items-center gap-1.5"
@@ -664,6 +654,23 @@ export const ResumePage: React.FC = () => {
           onSuccess={() => {
             setShowWizard(false);
             setWizardFile(null);
+            fetchResumeData();
+          }}
+          isDark={isDark}
+        />
+      )}
+
+      {showScratchWizard && (
+        <CreateFromScratchWizard
+          initialContact={{
+            name: displayName === 'Student' ? '' : displayName,
+            email: user?.personal_email || '',
+            phone: (user as any)?.phone || '',
+            location: (user as any)?.address || ''
+          }}
+          onClose={() => setShowScratchWizard(false)}
+          onSuccess={() => {
+            setShowScratchWizard(false);
             fetchResumeData();
           }}
           isDark={isDark}
