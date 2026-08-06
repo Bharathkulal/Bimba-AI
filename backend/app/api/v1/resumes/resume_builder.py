@@ -11,18 +11,27 @@ from app.core.mongodb import get_next_sequence
 
 PDF_RENDERER_URL = "http://127.0.0.1:5174/render-pdf"
 
-def _call_playwright_renderer(resume_data: dict, template: str, font_family: str = "Inter", font_size: str = "11pt") -> bytes:
+def _call_playwright_renderer(
+    resume_data: dict, 
+    template: str, 
+    font_family: str = "Inter", 
+    font_size: str = "11pt",
+    custom_config: dict = None
+) -> bytes:
     """
     Calls the Node.js Playwright PDF renderer microservice.
     Retries up to 3 times with 1s exponential backoff.
     Returns raw PDF bytes.
     """
-    payload = json.dumps({
+    payload_dict = {
         "template": template,
         "data": resume_data,
         "fontFamily": font_family,
         "fontSize": font_size
-    }).encode("utf-8")
+    }
+    if custom_config:
+        payload_dict.update(custom_config)
+    payload = json.dumps(payload_dict).encode("utf-8")
 
     last_error = None
     for attempt in range(1, 4):
@@ -64,6 +73,7 @@ class GeneratePdfRequest(BaseModel):
     resume_data: Dict[str, Any]
     font_family: Optional[str] = "Inter"
     font_size: Optional[str] = "11pt"
+    custom_config: Optional[Dict[str, Any]] = None
 
 @router.get("/builder/{resume_id}")
 def get_resume_builder_data(
@@ -240,7 +250,8 @@ async def generate_resume_pdf_endpoint(
             resume_data=payload.resume_data,
             template=payload.template,
             font_family=payload.font_family if hasattr(payload, 'font_family') else "Inter",
-            font_size=payload.font_size if hasattr(payload, 'font_size') else "11pt"
+            font_size=payload.font_size if hasattr(payload, 'font_size') else "11pt",
+            custom_config=payload.custom_config if hasattr(payload, 'custom_config') else None
         )
     except RuntimeError as e:
         raise HTTPException(

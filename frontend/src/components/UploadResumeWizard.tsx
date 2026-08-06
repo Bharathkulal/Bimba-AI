@@ -1587,7 +1587,21 @@ export const UploadResumeWizard: React.FC<UploadResumeWizardProps> = ({
                       onDownload={async () => {
                         const targetId = resumeId;
                         if (targetId) {
-                          const res = await apiClient.post(`/api/resume-studio/generate-pdf/${targetId}`);
+                          const res = await apiClient.post(`/api/resume/generate-pdf/${targetId}`, {
+                            template: selectedTemplate,
+                            resume_data: parsedData,
+                            font_family: selectedFont,
+                            font_size: `${selectedFontSize}pt`,
+                            custom_config: {
+                              accentColor: selectedColor,
+                              spacing: selectedSpacing,
+                              margins: selectedMargin,
+                              layout: layoutColumns === 2 ? 'two-column' : 'one-column',
+                              headerStyle: headerAlignment === 'left' ? 'classic' : headerAlignment === 'center' ? 'centered' : 'modern',
+                              dividerStyle: sectionDividerStyle,
+                              enabledSections: enabledSections
+                            }
+                          });
                           if (res.data && res.data.pdf_url) {
                             window.open(res.data.pdf_url, '_blank');
                           }

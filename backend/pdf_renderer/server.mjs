@@ -18,34 +18,12 @@
 
 import http from 'http';
 import { chromium } from 'playwright';
-import { renderHarvard } from './templates/harvard.mjs';
-import { renderJakes } from './templates/jakes.mjs';
-import { renderStanford } from './templates/stanford.mjs';
-import { renderMicrosoft } from './templates/microsoft.mjs';
-import { renderReactive } from './templates/reactive.mjs';
-import { renderNovoresume } from './templates/novoresume.mjs';
-import { renderFlowCV } from './templates/flowcv.mjs';
-import { renderIndeed } from './templates/indeed.mjs';
-import { renderMinimalistModern } from './templates/minimalist_modern.mjs';
+import { renderAtsDynamic } from './templates/ats_dynamic.mjs';
 
 const PORT = 5174;
 const RENDER_TIMEOUT_MS = 30000;
 const MAX_RETRIES = 3;
 
-const templateRenderers = {
-  harvard: renderHarvard,
-  jakes: renderJakes,
-  stanford: renderStanford,
-  microsoft: renderMicrosoft,
-  reactive: renderReactive,
-  novoresume: renderNovoresume,
-  flowcv: renderFlowCV,
-  indeed: renderIndeed,
-  'minimalist-modern': renderMinimalistModern,
-  // Aliases
-  ats_classic: renderHarvard,
-  'harvard-ats': renderHarvard,
-};
 
 // ─── Browser Pool ────────────────────────────────────────────────────────────
 let browser = null;
@@ -69,9 +47,12 @@ async function getBrowser() {
   return browser;
 }
 
-async function renderPdf(template, data, fontFamily = 'Inter', fontSize = '11pt') {
-  const renderer = templateRenderers[template] || templateRenderers.harvard;
-  const html = renderer(data, fontFamily, fontSize);
+async function renderPdf(template, data, fontFamily = 'Inter', fontSize = '11pt', customConfig = {}) {
+  const html = renderAtsDynamic(data, template, {
+    fontFamily,
+    fontSize,
+    ...customConfig
+  });
 
   let lastError = null;
   for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
@@ -133,10 +114,30 @@ const server = http.createServer(async (req, res) => {
       return;
     }
 
-    const { template = 'harvard', data = {}, fontFamily = 'Inter', fontSize = '11pt' } = payload;
+    const { 
+      template = 'harvard', 
+      data = {}, 
+      fontFamily = 'Inter', 
+      fontSize = '11pt',
+      accentColor,
+      spacing,
+      margins,
+      layout,
+      headerStyle,
+      dividerStyle,
+      enabledSections
+    } = payload;
 
     try {
-      const pdfBytes = await renderPdf(template, data, fontFamily, fontSize);
+      const pdfBytes = await renderPdf(template, data, fontFamily, fontSize, {
+        accentColor,
+        spacing,
+        margins,
+        layout,
+        headerStyle,
+        dividerStyle,
+        enabledSections
+      });
       const base64 = Buffer.from(pdfBytes).toString('base64');
       res.writeHead(200, { 'Content-Type': 'application/json' });
       res.end(JSON.stringify({ success: true, pdf_base64: base64 }));
