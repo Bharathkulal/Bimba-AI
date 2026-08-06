@@ -204,7 +204,66 @@ def get_job_recommendations_with_matching(
             jobs = []
 
     if not jobs:
-        logger.warning("No jobs returned by any provider.")
+        logger.warning("No jobs returned by any provider. Activating LLM Job Generation Fallback.")
+        profile = _extract_candidate_profile(resume_analysis, student, keyword)
+        try:
+            from app.services.ai_provider_manager import AIProviderManager
+            import json
+            
+            ai_manager = AIProviderManager(db)
+            skills_str = ", ".join(profile.get("skills", []))
+            prompt = f"""You are an expert recruiter. Generate 6 highly realistic, current job openings in {location} matching the candidate's target role: "{profile.get('target_role')}" and skills: {skills_str}.
+
+Each job must have:
+- title: Specific job title
+- company: Realistic hiring company
+- location: City and country (matching candidate preference or tech hubs)
+- description: Detailed, professional job description
+- salary: Realistic salary range
+- employment_type: "Full-time", "Part-time", "Contract", or "Internship"
+- remote: true or false
+- posted_date: "1 day ago" or similar
+- experience: e.g. "Entry Level", "Mid Level", "Senior", or "2-4 years"
+- url: A search link on LinkedIn or Google Jobs, e.g. "https://www.linkedin.com/jobs/search/?keywords=software+engineer"
+- requirements: List of 3-5 technical requirements
+- responsibilities: List of 3-5 key responsibilities
+- benefits: List of 2-3 benefits
+
+Return ONLY a JSON object with a single root key "jobs" containing the list of jobs, without markdown wrappers:
+{{
+  "jobs": [
+    {{
+      "title": "...",
+      "company": "...",
+      "location": "...",
+      "description": "...",
+      "salary": "...",
+      "employment_type": "...",
+      "remote": true,
+      "posted_date": "...",
+      "experience": "...",
+      "url": "...",
+      "requirements": [],
+      "responsibilities": [],
+      "benefits": []
+    }}
+  ]
+}}"""
+            raw_response = ai_manager.call_llm(prompt, feature="Job Generation Fallback", response_format="json_object")
+            cleaned = raw_response.strip()
+            if cleaned.startswith("```"):
+                cleaned = cleaned.split("```")[1]
+                if cleaned.startswith("json"):
+                    cleaned = cleaned[4:]
+            res_data = json.loads(cleaned.strip())
+            jobs = res_data.get("jobs", [])
+            for job in jobs:
+                job["source"] = "ai_fallback"
+        except Exception as ai_exc:
+            logger.error("LLM Job Generation Fallback failed: %s", ai_exc)
+            jobs = []
+
+    if not jobs:
         return []
 
     profile = _extract_candidate_profile(resume_analysis, student, keyword)

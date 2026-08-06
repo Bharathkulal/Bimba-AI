@@ -1,321 +1,98 @@
 import { esc } from './shared.mjs';
 
-// Predefined presets for the 20 templates
-export const TemplatePresets = {
-  'classic-professional': {
-    accentColor: '#1E3A8A',
-    fontFamily: 'Georgia',
-    spacing: 1.4,
-    margins: 15,
-    layout: 'one-column',
-    headerStyle: 'classic',
-    dividerStyle: 'solid'
-  },
-  'modern-professional': {
-    accentColor: '#14532D',
-    fontFamily: 'Inter',
-    spacing: 1.3,
-    margins: 15,
-    layout: 'one-column',
-    headerStyle: 'modern',
-    dividerStyle: 'solid'
-  },
-  'minimal-professional': {
-    accentColor: '#4B5563',
-    fontFamily: 'Roboto',
-    spacing: 1.35,
-    margins: 15,
-    layout: 'one-column',
-    headerStyle: 'classic',
-    dividerStyle: 'none'
-  },
-  'executive': {
-    accentColor: '#0F172A',
-    fontFamily: 'Georgia',
-    spacing: 1.4,
-    margins: 15,
-    layout: 'one-column',
-    headerStyle: 'modern',
-    dividerStyle: 'solid'
-  },
-  'software-engineer': {
-    accentColor: '#059669',
-    fontFamily: 'Roboto',
-    spacing: 1.3,
-    margins: 15,
-    layout: 'one-column',
-    headerStyle: 'classic',
-    dividerStyle: 'solid'
-  },
-  'business': {
-    accentColor: '#1E3A8A',
-    fontFamily: 'Lato',
-    spacing: 1.35,
-    margins: 15,
-    layout: 'one-column',
-    headerStyle: 'centered',
-    dividerStyle: 'solid'
-  },
-  'student': {
-    accentColor: '#7C3AED',
-    fontFamily: 'Poppins',
-    spacing: 1.35,
-    margins: 15,
-    layout: 'one-column',
-    headerStyle: 'classic',
-    dividerStyle: 'dashed'
-  },
-  'college-fresher': {
-    accentColor: '#4B5563',
-    fontFamily: 'Inter',
-    spacing: 1.3,
-    margins: 15,
-    layout: 'one-column',
-    headerStyle: 'centered',
-    dividerStyle: 'solid'
-  },
-  'simple-ats': {
-    accentColor: '#000000',
-    fontFamily: 'Inter',
-    spacing: 1.4,
-    margins: 15,
-    layout: 'one-column',
-    headerStyle: 'classic',
-    dividerStyle: 'solid'
-  },
-  'corporate-ats': {
-    accentColor: '#0F172A',
-    fontFamily: 'Roboto',
-    spacing: 1.35,
-    margins: 15,
-    layout: 'one-column',
-    headerStyle: 'classic',
-    dividerStyle: 'solid'
-  },
-  'harvard-style': {
-    accentColor: '#000000',
-    fontFamily: 'Georgia',
-    spacing: 1.4,
-    margins: 15,
-    layout: 'one-column',
-    headerStyle: 'centered',
-    dividerStyle: 'solid'
-  },
-  'stanford-style': {
-    accentColor: '#990000',
-    fontFamily: 'Georgia',
-    spacing: 1.4,
-    margins: 15,
-    layout: 'one-column',
-    headerStyle: 'classic',
-    dividerStyle: 'solid'
-  },
-  'mit-style': {
-    accentColor: '#8A1538',
-    fontFamily: 'Roboto',
-    spacing: 1.3,
-    margins: 15,
-    layout: 'one-column',
-    headerStyle: 'classic',
-    dividerStyle: 'solid'
-  },
-  'two-column-modern': {
-    accentColor: '#14532D',
-    fontFamily: 'Inter',
-    spacing: 1.3,
-    margins: 15,
-    layout: 'two-column',
-    headerStyle: 'modern',
-    dividerStyle: 'solid'
-  },
-  'elegant-minimal': {
-    accentColor: '#4B5563',
-    fontFamily: 'Georgia',
-    spacing: 1.4,
-    margins: 15,
-    layout: 'one-column',
-    headerStyle: 'classic',
-    dividerStyle: 'none'
-  },
-  'reverse-chronological': {
-    accentColor: '#1E3A8A',
-    fontFamily: 'Inter',
-    spacing: 1.35,
-    margins: 15,
-    layout: 'one-column',
-    headerStyle: 'classic',
-    dividerStyle: 'solid'
-  },
-  'project-focused': {
-    accentColor: '#059669',
-    fontFamily: 'Roboto',
-    spacing: 1.35,
-    margins: 15,
-    layout: 'one-column',
-    headerStyle: 'classic',
-    dividerStyle: 'solid'
-  },
-  'research-resume': {
-    accentColor: '#0F172A',
-    fontFamily: 'Georgia',
-    spacing: 1.4,
-    margins: 15,
-    layout: 'one-column',
-    headerStyle: 'centered',
-    dividerStyle: 'solid'
-  },
-  'academic-cv': {
-    accentColor: '#000000',
-    fontFamily: 'Georgia',
-    spacing: 1.45,
-    margins: 15,
-    layout: 'one-column',
-    headerStyle: 'centered',
-    dividerStyle: 'solid'
-  },
-  'internship-resume': {
-    accentColor: '#7C3AED',
-    fontFamily: 'Poppins',
-    spacing: 1.35,
-    margins: 15,
-    layout: 'one-column',
-    headerStyle: 'classic',
-    dividerStyle: 'solid'
-  }
-};
+export const TemplatePresets = {};
 
 export function renderAtsDynamic(data, presetName, customConfig = {}) {
-  // Merge custom config options on top of the selected preset
-  const preset = TemplatePresets[presetName] || TemplatePresets['classic-professional'];
-  const config = { ...preset, ...customConfig };
-
   const p = data.personal_info || {};
   const name = esc(p.name || 'Your Full Name');
+  const headline = esc(data.target_role || p.title || '');
   const email = esc(p.email || '');
   const phone = esc(p.phone || '');
   const location = esc(p.location || p.address || '');
-  
-  const accentColor = config.accentColor || '#14532D';
-  const fontFamily = config.fontFamily || 'Inter';
-  const fontSize = config.fontSize || 11;
-  const lineSpacing = config.spacing || 1.35;
-  const margins = config.margins || 15; // in mm
-  const layout = config.layout || 'one-column';
-  const headerStyle = config.headerStyle || 'classic';
-  const dividerStyle = config.dividerStyle || 'solid';
-  const enabledSections = config.enabledSections || {
-    summary: true,
-    experience: true,
-    projects: true,
-    skills: true,
-    education: true,
-    certifications: true
-  };
+  const linkedin = esc(p.linkedin || '');
+  const github = esc(p.github || '');
+  const portfolio = esc(p.portfolio || p.website || '');
 
-  const fontImportMap = {
-    'Inter': 'Inter:wght@400;500;600;700;800;900',
-    'Roboto': 'Roboto:wght@400;500;700;900',
-    'Poppins': 'Poppins:wght@400;500;600;700',
-    'Lato': 'Lato:wght@400;700',
-    'Open Sans': 'Open+Sans:wght@400;600;700',
-    'Merriweather': 'Merriweather:wght@450;700',
-    'Georgia': 'Lora:wght@400;600;700',
-  };
-
-  const googleFontWeight = fontImportMap[fontFamily] || 'Inter:wght@400;500;600;700;800;900';
+  // Typography selection (Inter default)
+  const fontCssName = "'Inter', sans-serif";
   const fontImport = `<link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=${googleFontWeight}&display=swap" rel="stylesheet">`;
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">`;
 
-  const fontCssName = {
-    'Inter': "'Inter', sans-serif",
-    'Roboto': "'Roboto', sans-serif",
-    'Poppins': "'Poppins', sans-serif",
-    'Lato': "'Lato', sans-serif",
-    'Open Sans': "'Open Sans', sans-serif",
-    'Merriweather': "'Merriweather', serif",
-    'Georgia': "'Lora', 'Georgia', serif",
-  }[fontFamily] || "'Inter', sans-serif";
+  // Centered Header
+  const contactParts = [
+    phone ? `<span>${phone}</span>` : '',
+    email ? `<a href="mailto:${email}" class="hover:underline">${email}</a>` : '',
+    location ? `<span>${location}</span>` : '',
+    linkedin ? `<a href="${linkedin.startsWith('http') ? linkedin : 'https://' + linkedin}" target="_blank" class="hover:underline">LinkedIn</a>` : '',
+    github ? `<a href="${github.startsWith('http') ? github : 'https://' + github}" target="_blank" class="hover:underline">GitHub</a>` : '',
+    portfolio ? `<a href="${portfolio.startsWith('http') ? portfolio : 'https://' + portfolio}" target="_blank" class="hover:underline">Portfolio</a>` : ''
+  ].filter(Boolean);
 
-  // Header Style rendering
-  let headerHtml = '';
-  const contactParts = [email, phone, location].filter(Boolean);
-  
-  if (headerStyle === 'centered') {
-    headerHtml = `
-      <div class="text-center mb-6">
-        <h1 class="font-extrabold uppercase tracking-wide leading-none" style="font-size: 28px; color: ${accentColor};">${name}</h1>
-        <div class="text-[10px] text-slate-500 font-bold mt-2 flex flex-wrap justify-center gap-4">
-          ${contactParts.map(c => `<span>${c}</span>`).join('')}
-        </div>
+  const headerHtml = `
+    <div class="text-center mb-8">
+      <h1 class="font-extrabold uppercase tracking-wide leading-none" style="font-size: 32pt; color: #111111; margin-bottom: 6px;">${name}</h1>
+      ${headline ? `<p class="text-[13pt] text-slate-600 font-semibold uppercase tracking-wider mb-3">${headline}</p>` : ''}
+      <div class="text-[11pt] text-slate-500 font-medium flex flex-wrap justify-center gap-x-4 gap-y-1">
+        ${contactParts.join(' <span class="text-slate-300">•</span> ')}
       </div>
-    `;
-  } else if (headerStyle === 'modern') {
-    headerHtml = `
-      <div class="flex justify-between items-end border-b-2 pb-4 mb-6" style="border-color: ${accentColor}22;">
-        <div class="text-left">
-          <h1 class="font-black uppercase tracking-tight leading-none" style="font-size: 32px; color: ${accentColor};">${name}</h1>
-          <p class="text-[11px] text-slate-450 font-black tracking-wider uppercase mt-1">Software Engineer</p>
-        </div>
-        <div class="text-right text-[10px] text-slate-500 font-bold space-y-0.5">
-          ${contactParts.map(c => `<div>${c}</div>`).join('')}
-        </div>
-      </div>
-    `;
-  } else {
-    headerHtml = `
-      <div class="text-left mb-6">
-        <h1 class="font-extrabold uppercase tracking-wide leading-none" style="font-size: 30px; color: ${accentColor};">${name}</h1>
-        <div class="text-[10px] text-slate-555 font-bold mt-2 flex flex-wrap gap-4">
-          ${contactParts.map(c => `<span>${c}</span>`).join('')}
-        </div>
-      </div>
-    `;
-  }
+    </div>
+  `;
 
-  // Section title generator
+  // Render Section Header
   const renderSectionHeader = (title) => {
-    if (dividerStyle === 'none') {
-      return `<h3 class="font-black uppercase tracking-wider text-[13px] mb-2" style="color: ${accentColor};">${title}</h3>`;
-    }
-    const borderClass = dividerStyle === 'dashed' ? 'border-dashed' : 'border-solid';
     return `
-      <div class="mb-3 mt-4">
-        <h3 class="font-black uppercase tracking-wider text-[13px] mb-1" style="color: ${accentColor};">${title}</h3>
-        <div class="border-b-2 ${borderClass}" style="border-color: ${accentColor}; opacity: 0.85;"></div>
+      <div class="mb-4 mt-6" style="page-break-after: avoid; break-after: avoid;">
+        <h3 class="font-bold uppercase tracking-wider text-[14pt] text-slate-900 mb-1.5">${title}</h3>
+        <div class="border-b" style="border-color: #cbd5e1;"></div>
       </div>
     `;
   };
 
-  // 1. Summary
-  const summaryHtml = (enabledSections.summary && data.summary) ? `
-    <div class="mb-[18px]">
+  // 1. Summary (4-6 lines)
+  const summaryText = data.summary || data.objective || '';
+  const summaryHtml = summaryText ? `
+    <div class="mb-6" style="page-break-inside: avoid; break-inside: avoid;">
       ${renderSectionHeader('Professional Summary')}
-      <p class="text-[11px] text-slate-700 leading-relaxed font-medium">${esc(data.summary)}</p>
+      <p class="text-[11pt] text-slate-700 leading-relaxed font-normal text-justify">${esc(summaryText)}</p>
     </div>
   ` : '';
 
   // 2. Experience
   let experienceHtml = '';
-  if (enabledSections.experience && data.experience && data.experience.length > 0) {
-    const listHtml = data.experience.map(exp => {
-      const bullets = exp.description ? exp.description.split('•').map(b => b.trim()).filter(Boolean) : [];
-      const bulletsList = bullets.map(b => `<li class="relative pl-3 text-slate-650 leading-relaxed font-medium before:content-['•'] before:absolute before:left-0 before:text-emerald-700">${esc(b)}</li>`).join('');
+  const expList = data.experience || [];
+  if (expList.length > 0) {
+    const listHtml = expList.map(exp => {
+      const desc = exp.description || '';
+      let bulletsList = '';
+      if (desc) {
+        const bullets = desc.includes('•') 
+          ? desc.split('•').map(b => b.trim()).filter(Boolean)
+          : desc.split('\n').map(b => b.trim()).filter(Boolean);
+        bulletsList = bullets.map(b => `
+          <li class="relative pl-4 text-slate-700 leading-relaxed font-normal before:content-['•'] before:absolute before:left-0 before:text-slate-400">
+            ${esc(b)}
+          </li>
+        `).join('');
+      }
       return `
-        <div class="mb-4">
-          <div class="flex justify-between items-baseline">
-            <span class="font-extrabold text-[12px] text-slate-900">${esc(exp.company)}</span>
-            <span class="text-[10px] font-bold text-slate-450">${esc(exp.duration)}</span>
+        <div class="mb-5" style="page-break-inside: avoid; break-inside: avoid;">
+          <div class="flex justify-between items-baseline font-bold text-[12pt] text-slate-900">
+            <span>${esc(exp.company)}</span>
+            <span class="font-medium text-[10.5pt] text-slate-550">${esc(exp.duration || '')}</span>
           </div>
-          <div class="text-[11px] font-bold text-slate-600 mt-0.5">${esc(exp.position)}</div>
-          ${bulletsList ? `<ul class="mt-1.5 space-y-1 text-[11px]">${bulletsList}</ul>` : `<p class="text-[11px] text-slate-650 mt-1">${esc(exp.description)}</p>`}
+          <div class="flex justify-between items-baseline text-[11pt] text-slate-600 font-semibold mt-0.5 mb-1.5">
+            <span>${esc(exp.position)}</span>
+            ${exp.location ? `<span class="font-medium text-[10.5pt] text-slate-500">${esc(exp.location)}</span>` : ''}
+          </div>
+          ${bulletsList ? `<ul class="space-y-1.5 text-[11pt]">${bulletsList}</ul>` : `<p class="text-[11pt] text-slate-700 leading-relaxed">${esc(desc)}</p>`}
         </div>
       `;
     }).join('');
-    
+
     experienceHtml = `
-      <div class="mb-[18px]">
-        ${renderSectionHeader('Work Experience')}
+      <div class="mb-6">
+        ${renderSectionHeader('Professional Experience')}
         <div class="space-y-4">${listHtml}</div>
       </div>
     `;
@@ -323,63 +100,99 @@ export function renderAtsDynamic(data, presetName, customConfig = {}) {
 
   // 3. Projects
   let projectsHtml = '';
-  if (enabledSections.projects && data.projects && data.projects.length > 0) {
-    const listHtml = data.projects.map(proj => {
+  const projList = data.projects || [];
+  if (projList.length > 0) {
+    const listHtml = projList.map(proj => {
+      const tech = proj.technologies || proj.tech || '';
+      const url = proj.url || proj.github || proj.link || '';
       return `
-        <div class="mb-3">
-          <div class="flex justify-between items-baseline">
-            <span class="font-extrabold text-[12px] text-slate-900">${esc(proj.title || proj.name)}</span>
-            ${proj.technologies ? `<span class="text-[10px] text-emerald-600 font-bold">(${esc(proj.technologies)})</span>` : ''}
+        <div class="mb-4" style="page-break-inside: avoid; break-inside: avoid;">
+          <div class="flex justify-between items-baseline font-bold text-[12pt] text-slate-900 mb-1">
+            <span>
+              ${esc(proj.title || proj.name)}
+              ${tech ? `<span class="text-[10pt] text-slate-500 font-medium ml-2">| ${esc(tech)}</span>` : ''}
+            </span>
+            ${url ? `<a href="${url.startsWith('http') ? url : 'https://' + url}" target="_blank" class="text-[10pt] text-blue-600 font-semibold hover:underline">Link</a>` : ''}
           </div>
-          ${proj.description ? `<p class="text-[11px] text-slate-655 mt-1 leading-relaxed">${esc(proj.description)}</p>` : ''}
+          ${proj.description ? `<p class="text-[11pt] text-slate-700 leading-relaxed text-justify">${esc(proj.description)}</p>` : ''}
         </div>
       `;
     }).join('');
-    
+
     projectsHtml = `
-      <div class="mb-[18px]">
-        ${renderSectionHeader('Academic & Personal Projects')}
+      <div class="mb-6">
+        ${renderSectionHeader('Projects')}
         <div class="space-y-3">${listHtml}</div>
       </div>
     `;
   }
 
-  // 4. Skills
+  // 4. Skills (Dynamic AI grouping)
   let skillsHtml = '';
-  if (enabledSections.skills && data.skills && data.skills.length > 0) {
-    const skillList = Array.isArray(data.skills) ? data.skills : [data.skills];
-    const skillItems = skillList.map(s => `
-      <span class="inline-flex items-center text-[11px] font-bold text-slate-700">
-        ${esc(s)}
-      </span>
-    `).join(' <span class="text-slate-300 mx-1.5">•</span> ');
+  const rawSkills = data.skills || data.technicalSkills || [];
+  if (rawSkills.length > 0) {
+    const skillsList = Array.isArray(rawSkills) ? rawSkills : [rawSkills];
+    
+    // Group skills helper
+    const skillsMap = {};
+    skillsList.forEach(s => {
+      if (typeof s === 'object' && s.category) {
+        const cat = s.category;
+        const name = s.name || s.value || '';
+        if (!skillsMap[cat]) skillsMap[cat] = [];
+        skillsMap[cat].push(name);
+      } else if (typeof s === 'string') {
+        const val = s.trim();
+        if (val.includes(':')) {
+          const parts = val.split(':');
+          const cat = parts[0].trim();
+          const items = parts[1].split(',').map(x => x.trim());
+          if (!skillsMap[cat]) skillsMap[cat] = [];
+          skillsMap[cat].push(...items);
+        } else {
+          if (!skillsMap['Skills']) skillsMap['Skills'] = [];
+          skillsMap['Skills'].push(val);
+        }
+      }
+    });
+
+    const skillGroupHtml = Object.entries(skillsMap).map(([category, items]) => {
+      const listStr = items.filter(Boolean).join(', ');
+      if (!listStr) return '';
+      return `
+        <div class="mb-2 text-[11pt] text-slate-700">
+          <strong class="text-slate-900">${esc(category)}:</strong> ${esc(listStr)}
+        </div>
+      `;
+    }).join('');
 
     skillsHtml = `
-      <div class="mb-[18px]">
+      <div class="mb-6" style="page-break-inside: avoid; break-inside: avoid;">
         ${renderSectionHeader('Skills Profile')}
-        <div class="flex flex-wrap items-center mt-1">${skillItems}</div>
+        <div class="space-y-1 mt-1">${skillGroupHtml}</div>
       </div>
     `;
   }
 
   // 5. Education
   let educationHtml = '';
-  if (enabledSections.education && data.education && data.education.length > 0) {
-    const listHtml = data.education.map(edu => `
-      <div class="mb-3 flex justify-between items-start">
-        <div>
-          <span class="font-extrabold text-[12px] text-slate-900">${esc(edu.institution)}</span>
-          <div class="text-[11px] font-bold text-slate-600 mt-0.5">${esc(edu.degree)}</div>
+  const eduList = data.education || [];
+  if (eduList.length > 0) {
+    const listHtml = eduList.map(edu => `
+      <div class="mb-4" style="page-break-inside: avoid; break-inside: avoid;">
+        <div class="flex justify-between items-baseline font-bold text-[12pt] text-slate-900">
+          <span>${esc(edu.institution)}</span>
+          <span class="font-medium text-[10.5pt] text-slate-550">${esc(edu.year)}</span>
         </div>
-        <div class="text-right">
-          <span class="text-[10.5px] font-bold text-slate-500">${esc(edu.year)}</span>
-          ${edu.cgpa_percentage ? `<div class="text-[10px] text-slate-400 font-semibold mt-0.5">CGPA: ${esc(edu.cgpa_percentage)}</div>` : ''}
+        <div class="flex justify-between items-baseline text-[11pt] text-slate-650 font-semibold mt-0.5">
+          <span>${esc(edu.degree)}</span>
+          ${edu.cgpa_percentage || edu.cgpa ? `<span class="font-medium text-[10.5pt] text-slate-500">GPA: ${esc(edu.cgpa_percentage || edu.cgpa)}</span>` : ''}
         </div>
       </div>
     `).join('');
-    
+
     educationHtml = `
-      <div class="mb-[18px]">
+      <div class="mb-6">
         ${renderSectionHeader('Education')}
         <div class="space-y-3">${listHtml}</div>
       </div>
@@ -388,51 +201,86 @@ export function renderAtsDynamic(data, presetName, customConfig = {}) {
 
   // 6. Certifications
   let certificationsHtml = '';
-  if (enabledSections.certifications && data.certifications && data.certifications.length > 0) {
-    const listHtml = data.certifications.map(cert => `
-      <div class="mb-2 flex justify-between items-baseline">
-        <span class="font-extrabold text-[11.5px] text-slate-800">${esc(cert.name)} ${cert.organization ? `by ${esc(cert.organization)}` : ''}</span>
-        <span class="text-[10px] font-bold text-slate-500">${esc(cert.issue_date || '')}</span>
+  const certList = data.certifications || data.certificates || [];
+  if (certList.length > 0) {
+    const listHtml = certList.map(cert => `
+      <div class="mb-2.5 flex justify-between items-baseline" style="page-break-inside: avoid; break-inside: avoid;">
+        <span class="font-bold text-[11.5pt] text-slate-800">${esc(cert.name || cert.title)} ${cert.organization || cert.issuer ? `by ${esc(cert.organization || cert.issuer)}` : ''}</span>
+        <span class="text-[10pt] font-semibold text-slate-500">${esc(cert.issue_date || cert.year || '')}</span>
       </div>
     `).join('');
-    
+
     certificationsHtml = `
-      <div class="mb-[18px]">
+      <div class="mb-6">
         ${renderSectionHeader('Certifications')}
-        <div class="space-y-2">${listHtml}</div>
+        <div class="space-y-1.5">${listHtml}</div>
       </div>
     `;
   }
 
-  // Assemble template content
-  let contentHtml = '';
-  if (layout === 'two-column') {
-    contentHtml = `
-      <div class="grid grid-cols-12 gap-6 mt-4">
-        <div class="col-span-8 space-y-4">
-          ${summaryHtml}
-          ${experienceHtml}
-          ${projectsHtml}
-        </div>
-        <div class="col-span-4 space-y-4">
-          ${skillsHtml}
-          ${educationHtml}
-          ${certificationsHtml}
-        </div>
-      </div>
-    `;
-  } else {
-    contentHtml = `
-      <div class="space-y-4">
-        ${summaryHtml}
-        ${skillsHtml}
-        ${experienceHtml}
-        ${projectsHtml}
-        ${educationHtml}
-        ${certificationsHtml}
+  // 7. Optional AI Sections (Languages, Custom Sections, Achievements)
+  let optionalHtml = '';
+  const achievements = data.achievements || [];
+  if (achievements.length > 0) {
+    const achList = achievements.map(ach => `
+      <li class="relative pl-4 text-slate-700 leading-relaxed font-normal before:content-['•'] before:absolute before:left-0 before:text-slate-400">
+        ${esc(typeof ach === 'string' ? ach : (ach.title || ach.name || ''))}
+      </li>
+    `).join('');
+    optionalHtml += `
+      <div class="mb-6" style="page-break-inside: avoid; break-inside: avoid;">
+        ${renderSectionHeader('Awards & Achievements')}
+        <ul class="space-y-1.5 text-[11pt]">${achList}</ul>
       </div>
     `;
   }
+
+  const languages = data.languages || [];
+  if (languages.length > 0) {
+    const langStr = languages.join(', ');
+    optionalHtml += `
+      <div class="mb-6" style="page-break-inside: avoid; break-inside: avoid;">
+        ${renderSectionHeader('Languages')}
+        <p class="text-[11pt] text-slate-700 leading-relaxed">${esc(langStr)}</p>
+      </div>
+    `;
+  }
+
+  const customSecs = data.custom_sections || data.customSections || [];
+  if (customSecs.length > 0) {
+    customSecs.forEach(sec => {
+      const title = esc(sec.section_name || sec.title || 'Additional Section');
+      const content = sec.content || sec.description || '';
+      let contentHtml = '';
+      if (Array.isArray(content)) {
+        contentHtml = `<ul class="space-y-1.5 text-[11pt]">` + content.map(c => `
+          <li class="relative pl-4 text-slate-700 leading-relaxed font-normal before:content-['•'] before:absolute before:left-0 before:text-slate-400">
+            ${esc(c)}
+          </li>
+        `).join('') + `</ul>`;
+      } else {
+        contentHtml = `<p class="text-[11pt] text-slate-700 leading-relaxed">${esc(content)}</p>`;
+      }
+      optionalHtml += `
+        <div class="mb-6" style="page-break-inside: avoid; break-inside: avoid;">
+          ${renderSectionHeader(title)}
+          ${contentHtml}
+        </div>
+      `;
+    });
+  }
+
+  const contentHtml = `
+    <div class="space-y-4">
+      ${summaryHtml}
+      ${skillsHtml}
+      ${experienceHtml}
+      ${projectsHtml}
+      ${educationHtml}
+      ${certificationsHtml}
+      ${optionalHtml}
+    </div>
+  `;
 
   return `<!DOCTYPE html>
 <html lang="en">
@@ -446,8 +294,8 @@ export function renderAtsDynamic(data, presetName, customConfig = {}) {
     html, body { margin: 0; padding: 0; background: white; }
     body {
       font-family: ${fontCssName};
-      font-size: ${fontSize}pt;
-      line-height: ${lineSpacing};
+      font-size: 11pt;
+      line-height: 1.4;
     }
     @media print {
       body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
@@ -459,7 +307,7 @@ export function renderAtsDynamic(data, presetName, customConfig = {}) {
     style="
       width: 210mm;
       min-height: 297mm;
-      padding: ${margins}mm;
+      padding: 18mm;
       box-sizing: border-box;
       margin: 0 auto;
     "

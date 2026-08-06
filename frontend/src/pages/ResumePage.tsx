@@ -68,6 +68,7 @@ export const ResumePage: React.FC = () => {
   const [uploadedFile, setUploadedFile] = useState<File | null>(null);
   const [activeAnalysisResumeId, setActiveAnalysisResumeId] = useState<number | null>(null);
   const [previewResumeId, setPreviewResumeId] = useState<number | null>(null);
+  const [deleteConfirmId, setDeleteConfirmId] = useState<number | null>(null);
   const [modalView, setModalView] = useState<'default' | 'improve' | 'builder'>('default');
   const { theme } = useThemeStore();
   const isDark = theme === 'dark';
@@ -140,15 +141,20 @@ export const ResumePage: React.FC = () => {
     }
   };
 
-  const deleteResume = async (id: number) => {
-    if (confirm("Are you sure you want to delete this resume?")) {
-      try {
-        await apiClient.delete(`/api/resume-studio/${id}`);
-        await handleTrackAction('activity', `Deleted Resume ID: ${id}`);
-        fetchResumeData();
-      } catch (err) {
-        alert("Failed to delete resume.");
-      }
+  const deleteResume = (id: number) => {
+    setDeleteConfirmId(id);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!deleteConfirmId) return;
+    try {
+      await apiClient.delete(`/api/resume-studio/${deleteConfirmId}`);
+      await handleTrackAction('activity', `Deleted Resume ID: ${deleteConfirmId}`);
+      fetchResumeData();
+    } catch (err) {
+      alert("Failed to delete resume.");
+    } finally {
+      setDeleteConfirmId(null);
     }
   };
 
@@ -760,6 +766,43 @@ export const ResumePage: React.FC = () => {
               className="w-full h-full border-none"
               title="Resume PDF Preview"
             />
+          </div>
+        </Modal>
+      )}
+
+      {/* Delete Confirmation Modal */}
+      {deleteConfirmId !== null && (
+        <Modal
+          isOpen={deleteConfirmId !== null}
+          onClose={() => setDeleteConfirmId(null)}
+          title="Delete Resume"
+          size="sm"
+        >
+          <div className="flex flex-col gap-4 text-center p-2">
+            <div className="mx-auto w-12 h-12 bg-rose-50 dark:bg-rose-950/20 text-rose-600 dark:text-rose-450 rounded-full flex items-center justify-center border border-rose-100 dark:border-rose-900/30">
+              <Trash2 size={20} />
+            </div>
+            <div>
+              <h3 className="font-extrabold text-sm text-slate-800 dark:text-white">Confirm Deletion</h3>
+              <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+                Are you sure you want to delete this resume? This action cannot be undone.
+              </p>
+            </div>
+            <div className="flex gap-3 justify-center mt-2">
+              <Button 
+                variant="outline" 
+                onClick={() => setDeleteConfirmId(null)}
+                className="text-xs py-2 px-4 cursor-pointer font-bold rounded-xl"
+              >
+                Cancel
+              </Button>
+              <Button 
+                onClick={handleConfirmDelete}
+                className="bg-rose-600 hover:bg-rose-700 text-white text-xs py-2 px-4 cursor-pointer font-bold rounded-xl"
+              >
+                Delete
+              </Button>
+            </div>
           </div>
         </Modal>
       )}

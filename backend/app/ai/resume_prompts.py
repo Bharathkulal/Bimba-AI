@@ -232,11 +232,13 @@ You are an expert AI Resume Writer. Rewrite and improve the following resume JSO
 You can improve the Summary, Projects, Experience, Skills, Achievements, descriptions, action verbs, grammar, and formatting.
 
 CRITICAL RULES:
-- DO NOT invent or fabricate fake experience, employment history, or companies.
-- DO NOT fabricate certifications or degrees.
-- ONLY rewrite, clarify, structure, and improve existing bullet points and text.
-- Use strong action verbs (e.g., 'Spearheaded', 'Optimized', 'Architected').
-- Quantify achievements where possible (e.g. 'improving load speed by 25%') based on details in the original description, or structure them to allow numbers.
+1. NEVER SHORTEN OR SUMMARIZE THE RESUME. If the original experience has 10 bullet points, keep 10 bullet points.
+2. NEVER combine multiple projects, responsibilities, or skills into fewer entries.
+3. NEVER delete details or achievements. Keep every single factual point intact.
+4. DO NOT invent or fabricate fake experience, employment history, companies, certifications, degrees, or metrics.
+5. ONLY rewrite, clarify, structure, and professionally expand existing descriptions using strong action verbs naturally.
+6. If a bullet point is short, expand it professionally using only existing context (e.g. explain the technology stack used or the role's professional scope).
+7. Keep the generated resume detailed and allow it to span multiple pages naturally.
 
 Return ONLY a valid JSON representing the fully improved resume structure (matching the original schema keys). Do not add markdown blocks:
 {resume_json}
@@ -296,14 +298,17 @@ Resume Language: {resume_language}
 Target Job (optional): {target_job}
 Target Industry (optional): {target_industry}
 
+
 CRITICAL RULES:
-1. NEVER invent, fabricate, or exaggerate achievements, companies, roles, certifications, degrees, or projects.
-2. Maintain the detected resume language unless requested.
-3. Optimize grammar, sentence flow, action verbs, clarity, and keyword density.
-4. For every modification (Summary, Experiences, Projects), provide original, improved, and reason.
-5. Group skills dynamically into context-aware categories (e.g., Programming Languages, Frameworks, Cloud, etc.).
-6. Automatically determine the resume type, career level, and optimal section ordering based on content.
-7. Compute detailed non-hardcoded ATS Scores across formatting, completeness, keywords, experience, skills, projects, grammar, and readability.
+1. ZERO INFORMATION LOSS: Keep every single experience, project, education entry, certification, award, skill, and language.
+2. NO SUMMARIZATION: Do NOT summarize descriptions or combine multiple bullet points/items. Preserve the detail level of all entries.
+3. NEVER invent, fabricate, or exaggerate achievements, companies, roles, certifications, degrees, or projects.
+4. Maintain the detected resume language unless requested.
+5. Optimize grammar, sentence flow, action verbs, clarity, and keyword density.
+6. For every modification (Summary, Experiences, Projects), provide original, improved, and reason.
+7. Group skills dynamically into context-aware categories (e.g., Programming Languages, Frameworks, Cloud, etc.).
+8. Automatically determine the resume type, career level, and optimal section ordering based on content.
+9. Compute detailed non-hardcoded ATS Scores across formatting, completeness, keywords, experience, skills, projects, grammar, and readability.
 
 Your output MUST be ONLY a valid JSON object matching this schema, without markdown wrappers:
 {
