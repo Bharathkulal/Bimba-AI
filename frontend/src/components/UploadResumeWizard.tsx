@@ -5,7 +5,8 @@ import {
   ArrowRight, Check, X, HelpCircle, Download, Briefcase, RefreshCw, 
   Search, ShieldAlert, Award, FileCode, CheckCircle, ExternalLink, Filter, MapPin,
   TrendingUp, Activity, FileEdit, UserCheck, Play, Zap, Info, ArrowLeft, Send, Sparkle,
-  Trash2, Plus, Eye, ListOrdered, FileUp, SparklesIcon, CheckSquare, Save
+  Trash2, Plus, Eye, ListOrdered, FileUp, SparklesIcon, CheckSquare, Save,
+  Undo, Redo, ZoomIn, ZoomOut, Maximize2, RotateCcw, Columns, Type, Palette, Layout, Settings2, Layers
 } from 'lucide-react';
 import { apiClient } from '../services/api';
 import { jobsService, type JobListItem } from '../services/jobs';
@@ -13,6 +14,106 @@ import { Button } from './Button';
 import { Card } from './Card';
 import { ResumeBuilder } from './resume/ResumeBuilder';
 import { ResumeImprovement } from './resume/ResumeImprovement';
+import { LayoutGrid } from 'lucide-react';
+
+import TemplateSidebar from './resume/studio/TemplateSidebar';
+import CustomizationPanel from './resume/studio/CustomizationPanel';
+import ResumePreview from './resume/studio/ResumePreview';
+import PreviewToolbar from './resume/studio/PreviewToolbar';
+import BottomNavigation from './resume/studio/BottomNavigation';
+import AISuggestionBanner from './resume/studio/AISuggestionBanner';
+
+const ATSScoreRing = ({ score }: { score: number }) => {
+  const radius = 18;
+  const stroke = 3.5;
+  const normalizedRadius = radius - stroke * 2;
+  const circumference = normalizedRadius * 2 * Math.PI;
+  const strokeDashoffset = circumference - (score / 100) * circumference;
+  
+  let color = "text-emerald-500";
+  if (score < 60) color = "text-rose-500";
+  else if (score < 85) color = "text-amber-500";
+
+  return (
+    <div className="relative flex items-center justify-center shrink-0" style={{ width: 44, height: 44 }}>
+      <svg height="44" width="44" className="transform -rotate-90">
+        <circle
+          stroke="rgba(0,0,0,0.05)"
+          fill="transparent"
+          strokeWidth={stroke}
+          r={normalizedRadius}
+          cx="22"
+          cy="22"
+        />
+        <circle
+          className={`transition-all duration-500 ${color}`}
+          stroke="currentColor"
+          fill="transparent"
+          strokeWidth={stroke}
+          strokeDasharray={circumference + ' ' + circumference}
+          style={{ strokeDashoffset }}
+          r={normalizedRadius}
+          cx="22"
+          cy="22"
+        />
+      </svg>
+      <span className="absolute text-[10px] font-black text-slate-700 dark:text-slate-200">{score}%</span>
+    </div>
+  );
+};
+
+const StepProgressBar = ({ currentStep, totalSteps, stepName }: { currentStep: number, totalSteps: number, stepName: string }) => {
+  const [expanded, setExpanded] = useState(false);
+  const percentage = (currentStep / totalSteps) * 100;
+  
+  return (
+    <div className="w-full bg-white dark:bg-[#111827] border border-slate-200/60 dark:border-white/5 p-4 rounded-xl shadow-md mb-4 transition-all">
+      <div className="flex justify-between items-center">
+        <div className="flex items-center gap-2.5">
+          <span className="text-xs font-black text-[#1a3d2e] dark:text-emerald-400">Step {currentStep} of {totalSteps}</span>
+          <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">— {stepName}</span>
+        </div>
+        <button 
+          onClick={() => setExpanded(!expanded)}
+          className="text-[10px] font-extrabold uppercase tracking-widest text-[#1a3d2e] dark:text-emerald-400 hover:underline cursor-pointer"
+        >
+          {expanded ? 'Hide all steps' : 'View all steps'}
+        </button>
+      </div>
+      
+      <div className="w-full h-1.5 bg-slate-100 dark:bg-white/5 rounded-full overflow-hidden mt-2.5">
+        <div className="h-full bg-[#1a3d2e] dark:bg-emerald-500 transition-all duration-500" style={{ width: `${percentage}%` }}></div>
+      </div>
+
+      {expanded && (
+        <div className="grid grid-cols-5 gap-2 mt-4 pt-4 border-t border-slate-100 dark:border-white/5">
+          {[
+            'Welcome', 'Extraction', 'Snapshot', 'Templates', 'Interview',
+            'Completion', 'ATS Audit', 'Improvements', 'Quality', 'Export & Jobs'
+          ].map((name, i) => {
+            const stepNum = i + 1;
+            const isCompleted = stepNum < currentStep;
+            const isActive = stepNum === currentStep;
+            return (
+              <div key={name} className="flex flex-col gap-1 text-left">
+                <span className={`text-[9px] font-black uppercase tracking-wider ${
+                  isActive ? 'text-[#1a3d2e] dark:text-emerald-400' : isCompleted ? 'text-emerald-500' : 'text-slate-400'
+                }`}>
+                  Step {stepNum}
+                </span>
+                <span className={`text-[10px] font-semibold truncate ${
+                  isActive ? 'text-slate-800 dark:text-white font-extrabold' : 'text-slate-400'
+                }`}>
+                  {name}
+                </span>
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+};
 
 interface UploadResumeWizardProps {
   onClose: () => void;
@@ -198,6 +299,31 @@ export const UploadResumeWizard: React.FC<UploadResumeWizardProps> = ({
   const [headerStyle, setHeaderStyle] = useState<string>('classic');
   const [layoutColumns, setLayoutColumns] = useState<number>(1);
   const [pageSize, setPageSize] = useState<string>('A4');
+
+  // Studio Redesign customization states
+  const [zoom, setZoom] = useState<number>(85);
+  const [currentPage, setCurrentPage] = useState<number>(1);
+  const [activeTab, setActiveTab] = useState<'design' | 'typography' | 'layout' | 'sections'>('design');
+  const [showAutoSavedToast, setShowAutoSavedToast] = useState<boolean>(false);
+  const [isTemplateDrawerOpen, setIsTemplateDrawerOpen] = useState<boolean>(false);
+  const [selectedFontSize, setSelectedFontSize] = useState<number>(10);
+  const [selectedHeadingSize, setSelectedHeadingSize] = useState<number>(16);
+  const [letterSpacing, setLetterSpacing] = useState<string>('normal');
+  const [sectionDividerStyle, setSectionDividerStyle] = useState<string>('solid');
+  const [sectionGap, setSectionGap] = useState<number>(16);
+  const [bulletStyle, setBulletStyle] = useState<string>('disc');
+  const [headerAlignment, setHeaderAlignment] = useState<string>('center');
+  const [enabledSections, setEnabledSections] = useState<Record<string, boolean>>({
+    summary: true,
+    experience: true,
+    projects: true,
+    skills: true,
+    education: true,
+    certifications: true,
+    languages: true,
+    volunteer: true,
+    references: true
+  });
 
   // Job recommendations and versioning states
   const [recommendedJobs, setRecommendedJobs] = useState<JobListItem[]>([]);
@@ -510,6 +636,10 @@ export const UploadResumeWizard: React.FC<UploadResumeWizardProps> = ({
     try {
       await apiClient.put(`/api/resume-studio/profile/${targetId}`, payload);
       await apiClient.put(`/api/resume-studio/${targetId}/update`, payload);
+      setShowAutoSavedToast(true);
+      setTimeout(() => {
+        setShowAutoSavedToast(false);
+      }, 2000);
     } catch (err) {
       console.error("Error saving resume profile:", err);
     }
@@ -737,41 +867,15 @@ export const UploadResumeWizard: React.FC<UploadResumeWizardProps> = ({
           </button>
         </div>
 
-        {/* Stepper Progress Steps */}
-        <div className={`px-6 py-4 border-b flex flex-wrap items-center justify-between gap-4 text-xs font-bold ${
-          isDark ? 'border-white/10 bg-slate-900/40' : 'border-slate-100 bg-slate-50'
-        }`}>
-          {['Welcome', 'Extraction', 'Snapshot', 'Templates', 'Interview', 'Completion', 'ATS Audit', 'Improvements', 'Quality', 'Export & Jobs'].map((stepName, idx) => {
-            const isActive = idx === getActiveStep();
-            const isCompleted = idx < getActiveStep();
-            return (
-              <div key={idx} className="flex items-center gap-2 flex-grow last:flex-grow-0">
-                <div className={`w-6 h-6 rounded-full flex items-center justify-center text-[10px] border transition-all ${
-                  isActive 
-                    ? 'bg-emerald-500 text-white border-emerald-500 shadow-md ring-2 ring-emerald-500/20' 
-                    : isCompleted 
-                      ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30' 
-                      : 'bg-slate-100 dark:bg-white/5 text-slate-500 dark:text-slate-400 border-transparent'
-                }`}>
-                  {isCompleted ? <Check size={12} className="text-emerald-500" /> : idx + 1}
-                </div>
-                <span className={`text-[10px] tracking-tight uppercase ${
-                  isActive 
-                    ? 'text-slate-800 dark:text-white font-black' 
-                    : isCompleted 
-                      ? 'text-emerald-500 font-bold' 
-                      : 'text-slate-550 dark:text-slate-450 font-semibold'
-                }`}>
-                  {stepName}
-                </span>
-                {idx < 9 && (
-                  <div className={`flex-grow h-[1px] mx-2 hidden lg:block ${
-                    idx < getActiveStep() ? 'bg-emerald-500/30' : 'bg-slate-250 dark:bg-white/10'
-                  }`} />
-                )}
-              </div>
-            );
-          })}
+        {/* Step Progress Bar */}
+        <div className="px-6 py-3 border-b dark:border-white/10 bg-slate-50/50 dark:bg-[#111827]">
+          <StepProgressBar 
+            currentStep={getActiveStep() + 1} 
+            totalSteps={10} 
+            stepName={
+              ['Welcome', 'Extraction', 'Snapshot', 'Templates', 'Interview', 'Completion', 'ATS Audit', 'Improvements', 'Quality', 'Export & Jobs'][getActiveStep()] || 'Optimizer'
+            } 
+          />
         </div>
 
         {/* 12-Step Content Renderer */}
@@ -1452,240 +1556,137 @@ export const UploadResumeWizard: React.FC<UploadResumeWizardProps> = ({
                 </div>
               </motion.div>
             )}
-
-            {/* Step 5: Resume Template Selection (NEW) */}
+              {/* S            {/* Step 5: Premium Resume Template Studio */}
             {step === 5 && (
-              <motion.div key="step5" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex flex-col gap-6 text-left w-full h-[70vh] overflow-hidden">
-                <div className="flex justify-between items-center border-b pb-4 shrink-0">
-                  <div>
-                    <h2 className="text-lg font-black flex items-center gap-2">
-                      <Sparkles className="text-emerald-400" size={18} /> Select Template & Configure Layout
-                    </h2>
-                    <p className="text-xs text-slate-500">Pick any layout template and adjust styling instantly. AI recommended choices highlighted.</p>
-                  </div>
-                  <Button onClick={() => setStep(6)} className="btn-glow-green text-xs font-bold py-2.5 px-5 flex items-center gap-1.5 cursor-pointer">
-                    Continue to Interview <ChevronRight size={14} />
-                  </Button>
-                </div>
-
-                <div className="flex-grow flex gap-6 overflow-hidden h-full">
-                  {/* Left Column: Styles & Options */}
-                  <div className="w-1/4 flex flex-col gap-4 overflow-y-auto pr-2 bg-slate-50/50 dark:bg-white/5 p-4 rounded-2xl border border-slate-200/50 dark:border-white/5">
-                    <div>
-                      <label className="text-[10px] font-black uppercase text-slate-450 tracking-wider">Template Style</label>
-                      <div className="flex flex-col gap-1.5 mt-2">
-                        {['Classic', 'Modern', 'Minimalist', 'Professional', 'Engineering', 'Academic'].map(cat => (
-                          <button
-                            key={cat}
-                            onClick={() => setSelectedTemplate(cat.toLowerCase())}
-                            className={`w-full text-left px-3 py-2 rounded-xl text-xs font-bold transition-all ${
-                              selectedTemplate === cat.toLowerCase()
-                                ? 'bg-emerald-500 text-white'
-                                : 'hover:bg-slate-200/50 dark:hover:bg-white/10 text-slate-650 dark:text-slate-350'
-                            }`}
-                          >
-                            {cat} Layout
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-
-                    <div className="border-t border-slate-200/60 dark:border-white/5 pt-3 space-y-3">
-                      <div>
-                        <label className="text-[10px] font-black uppercase text-slate-450 tracking-wider">Primary Color</label>
-                        <div className="flex gap-2 mt-1.5 flex-wrap">
-                          {['#1E3A8A', '#059669', '#334155', '#DC2626', '#F97316', '#7C3AED'].map(color => (
-                            <button
-                              key={color}
-                              onClick={() => setSelectedColor(color)}
-                              className={`w-6 h-6 rounded-full border-2 transition-all ${
-                                selectedColor === color ? 'border-white scale-110 shadow-lg' : 'border-transparent opacity-80'
-                              }`}
-                              style={{ backgroundColor: color }}
-                            />
-                          ))}
-                        </div>
-                      </div>
-
-                      <div>
-                        <label className="text-[10px] font-black uppercase text-slate-455 tracking-wider">Font Family</label>
-                        <select
-                          value={selectedFont}
-                          onChange={(e) => setSelectedFont(e.target.value)}
-                          className="w-full mt-1.5 p-2 text-xs border rounded-lg bg-transparent border-slate-200/80 dark:border-white/10 dark:text-white"
-                        >
-                          <option value="Inter">Inter</option>
-                          <option value="Roboto">Roboto</option>
-                          <option value="Georgia">Georgia</option>
-                          <option value="Courier Prime">Courier Prime</option>
-                        </select>
-                      </div>
-
-                      <div>
-                        <label className="text-[10px] font-black uppercase text-slate-455 tracking-wider">Spacing: {selectedSpacing}x</label>
-                        <input
-                          type="range"
-                          min="1"
-                          max="2"
-                          step="0.1"
-                          value={selectedSpacing}
-                          onChange={(e) => setSelectedSpacing(parseFloat(e.target.value))}
-                          className="w-full mt-1.5 accent-emerald-500"
-                        />
-                      </div>
-
-                      <div>
-                        <label className="text-[10px] font-black uppercase text-slate-455 tracking-wider">Margins: {selectedMargin}px</label>
-                        <input
-                          type="range"
-                          min="10"
-                          max="40"
-                          value={selectedMargin}
-                          onChange={(e) => setSelectedMargin(parseInt(e.target.value))}
-                          className="w-full mt-1.5 accent-emerald-500"
-                        />
-                      </div>
-
-                      <div>
-                        <label className="text-[10px] font-black uppercase text-slate-455 tracking-wider">Layout Columns</label>
-                        <div className="flex gap-2 mt-1.5">
-                          <button
-                            onClick={() => setLayoutColumns(1)}
-                            className={`flex-grow py-1 rounded text-xs font-bold border ${
-                              layoutColumns === 1 ? 'border-emerald-500 bg-emerald-500/10 text-emerald-500' : 'border-slate-200/60 dark:border-white/10'
-                            }`}
-                          >
-                            Single
-                          </button>
-                          <button
-                            onClick={() => setLayoutColumns(2)}
-                            className={`flex-grow py-1 rounded text-xs font-bold border ${
-                              layoutColumns === 2 ? 'border-emerald-500 bg-emerald-500/10 text-emerald-500' : 'border-slate-200/60 dark:border-white/10'
-                            }`}
-                          >
-                            Double
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Center Column: Live Preview Render Area */}
-                  <div className="flex-grow flex flex-col border border-slate-200 dark:border-white/10 rounded-2xl bg-white dark:bg-slate-950 p-6 overflow-y-auto">
-                    <div 
-                      className="transition-all duration-205" 
-                      style={{ 
-                        fontFamily: selectedFont, 
-                        lineHeight: selectedSpacing, 
-                        padding: `${selectedMargin}px`,
-                        color: isDark ? '#F3F4F6' : '#1F2937'
+              <motion.div 
+                key="step5" 
+                initial={{ opacity: 0, y: 10 }} 
+                animate={{ opacity: 1, y: 0 }} 
+                exit={{ opacity: 0, y: -10 }}
+                className="flex flex-col text-left w-full h-[65vh] overflow-hidden bg-transparent"
+              >
+                {/* 3-Column Layout: TemplateSidebar | ResumePreview + AISuggestionBanner + PreviewToolbar | CustomizationPanel */}
+                <div className="flex-grow flex flex-col md:flex-row gap-6 overflow-hidden h-full relative">
+                  
+                  {/* Left Column: Template Gallery Sidebar */}
+                  <div className="hidden lg:block shrink-0">
+                    <TemplateSidebar 
+                      selectedTemplate={selectedTemplate}
+                      onSelectTemplate={(id, color) => {
+                        setSelectedTemplate(id);
+                        setSelectedColor(color);
                       }}
-                    >
-                      {/* Name Header */}
-                      <div className="border-b pb-4 mb-4 text-center">
-                        <h1 className="text-2xl font-extrabold uppercase tracking-wide" style={{ color: selectedColor }}>
-                          {parsedData.personal_info?.name || 'Your Full Name'}
-                        </h1>
-                        <p className="text-xs text-slate-450 mt-1 flex justify-center gap-3 flex-wrap">
-                          {parsedData.personal_info?.email && <span>📧 {parsedData.personal_info.email}</span>}
-                          {parsedData.personal_info?.phone && <span>📞 {parsedData.personal_info.phone}</span>}
-                          {parsedData.personal_info?.address && <span>📍 {parsedData.personal_info.address}</span>}
-                        </p>
-                        <p className="text-xs text-slate-450 mt-1 flex justify-center gap-3 flex-wrap font-semibold">
-                          {parsedData.personal_info?.linkedin && <span>🔗 linkedin.com/in/{parsedData.personal_info.linkedin}</span>}
-                          {parsedData.personal_info?.github && <span>💻 github.com/{parsedData.personal_info.github}</span>}
-                        </p>
-                      </div>
+                    />
+                  </div>
 
-                      {/* Summary Section */}
-                      {parsedData.summary && (
-                        <div className="mb-4">
-                          <h3 className="text-xs font-black uppercase tracking-wider mb-1 border-b" style={{ color: selectedColor }}>Professional Summary</h3>
-                          <p className="text-[11px] leading-relaxed font-medium">{parsedData.summary}</p>
-                        </div>
-                      )}
+                  {/* Center Column: Live Preview Area */}
+                  <div className="flex-grow flex flex-col gap-4 overflow-hidden h-full relative bg-slate-50/20 border border-slate-200/60 rounded-2xl p-4">
+                    <PreviewToolbar 
+                      zoom={zoom}
+                      setZoom={setZoom}
+                      onDownload={async () => {
+                        const targetId = resumeId;
+                        if (targetId) {
+                          const res = await apiClient.post(`/api/resume-studio/generate-pdf/${targetId}`);
+                          if (res.data && res.data.pdf_url) {
+                            window.open(res.data.pdf_url, '_blank');
+                          }
+                        }
+                      }}
+                    />
+                    
+                    <AISuggestionBanner 
+                      onOptimize={() => {
+                        setShowAutoSavedToast(true);
+                        setTimeout(() => setShowAutoSavedToast(false), 2005);
+                      }}
+                    />
 
-                      {/* Layout body */}
-                      <div className={`grid ${layoutColumns === 2 ? 'grid-cols-2 gap-4' : 'grid-cols-1 gap-4'}`}>
-                        {/* Left Side elements */}
-                        <div className="space-y-4">
-                          {/* Experience */}
-                          {parsedData.experience?.length > 0 && (
-                            <div>
-                              <h3 className="text-xs font-black uppercase tracking-wider mb-1.5 border-b" style={{ color: selectedColor }}>Work History</h3>
-                              <div className="space-y-2">
-                                {parsedData.experience.map((exp: any, idx: number) => (
-                                  <div key={idx} className="text-[11px]">
-                                    <div className="flex justify-between font-bold">
-                                      <span>{exp.position} {exp.company && `@ ${exp.company}`}</span>
-                                      <span className="text-[10px] text-slate-400">{exp.duration}</span>
-                                    </div>
-                                    <p className="text-[10px] text-slate-500 mt-0.5">{exp.description}</p>
-                                  </div>
-                                ))}
-                              </div>
-                            </div>
-                          )}
+                    <ResumePreview 
+                      parsedData={parsedData}
+                      selectedColor={selectedColor}
+                      selectedFont={selectedFont}
+                      selectedFontSize={selectedFontSize}
+                      selectedHeadingSize={selectedHeadingSize}
+                      selectedSpacing={selectedSpacing}
+                      selectedMargin={selectedMargin}
+                      layoutColumns={layoutColumns}
+                      sectionDividerStyle={sectionDividerStyle}
+                      enabledSections={enabledSections}
+                      headerAlignment={headerAlignment}
+                      zoom={zoom}
+                    />
 
-                          {/* Projects */}
-                          {parsedData.projects?.length > 0 && (
-                            <div>
-                              <h3 className="text-xs font-black uppercase tracking-wider mb-1.5 border-b" style={{ color: selectedColor }}>Showcase Projects</h3>
-                              <div className="space-y-2">
-                                {parsedData.projects.map((proj: any, idx: number) => (
-                                  <div key={idx} className="text-[11px]">
-                                    <div className="flex justify-between font-bold">
-                                      <span>{proj.title || proj.name}</span>
-                                      {proj.tech && <span className="text-[9px] px-1 rounded bg-slate-100 dark:bg-white/5">{proj.tech}</span>}
-                                    </div>
-                                    <p className="text-[10px] text-slate-500 mt-0.5">{proj.description}</p>
-                                  </div>
-                                ))}
-                              </div>
-                            </div>
-                          )}
-                        </div>
-
-                        {/* Right Side / Single Column elements */}
-                        <div className="space-y-4">
-                          {/* Education */}
-                          {parsedData.education?.length > 0 && (
-                            <div>
-                              <h3 className="text-xs font-black uppercase tracking-wider mb-1.5 border-b" style={{ color: selectedColor }}>Education</h3>
-                              <div className="space-y-2">
-                                {parsedData.education.map((edu: any, idx: number) => (
-                                  <div key={idx} className="text-[11px]">
-                                    <div className="flex justify-between font-bold">
-                                      <span>{edu.degree}</span>
-                                      <span className="text-[10px] text-slate-450">{edu.passing_year || edu.year}</span>
-                                    </div>
-                                    <p className="text-[10px] text-slate-500 mt-0.5">{edu.institution} {edu.cgpa_percentage && `• Grade: ${edu.cgpa_percentage}`}</p>
-                                  </div>
-                                ))}
-                              </div>
-                            </div>
-                          )}
-
-                          {/* Technical Skills */}
-                          {(parsedData.technicalSkills || parsedData.skills)?.length > 0 && (
-                            <div>
-                              <h3 className="text-xs font-black uppercase tracking-wider mb-1.5 border-b" style={{ color: selectedColor }}>Skills Profile</h3>
-                              <p className="text-[10px] flex flex-wrap gap-1.5">
-                                {(parsedData.technicalSkills || parsedData.skills).map((skill: any, idx: number) => (
-                                  <span key={idx} className="bg-slate-50 dark:bg-white/5 border px-1.5 py-0.5 rounded font-bold">
-                                    {typeof skill === 'object' ? skill.name : skill}
-                                  </span>
-                                ))}
-                              </p>
-                            </div>
-                          )}
-                        </div>
-                      </div>
+                    {/* Simple page pagination display */}
+                    <div className="shrink-0 flex justify-center items-center gap-4 py-1 border-t border-slate-100">
+                      <button 
+                        onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                        className="px-2 py-0.5 bg-slate-50 border border-slate-200 text-[9px] font-black uppercase rounded text-slate-500 hover:bg-slate-100 transition-colors cursor-pointer"
+                      >
+                        Previous Page
+                      </button>
+                      <span className="text-[10px] font-black text-slate-500">
+                        Page {currentPage} of 1
+                      </span>
+                      <button 
+                        onClick={() => setCurrentPage(prev => Math.min(1, prev + 1))}
+                        className="px-2 py-0.5 bg-slate-50 border border-slate-200 text-[9px] font-black uppercase rounded text-slate-500 hover:bg-slate-100 transition-colors cursor-pointer"
+                      >
+                        Next Page
+                      </button>
                     </div>
                   </div>
+
+                  {/* Right Column: Customization Properties Panel */}
+                  <div className="hidden md:block shrink-0">
+                    <CustomizationPanel 
+                      selectedColor={selectedColor}
+                      setSelectedColor={setSelectedColor}
+                      headerAlignment={headerAlignment}
+                      setHeaderAlignment={setHeaderAlignment}
+                      selectedFont={selectedFont}
+                      setSelectedFont={setSelectedFont}
+                      selectedFontSize={selectedFontSize}
+                      setSelectedFontSize={setSelectedFontSize}
+                      selectedHeadingSize={selectedHeadingSize}
+                      setSelectedHeadingSize={setSelectedHeadingSize}
+                      selectedSpacing={selectedSpacing}
+                      setSelectedSpacing={setSelectedSpacing}
+                      layoutColumns={layoutColumns}
+                      setLayoutColumns={setLayoutColumns}
+                      selectedMargin={selectedMargin}
+                      setSelectedMargin={setSelectedMargin}
+                      sectionDividerStyle={sectionDividerStyle}
+                      setSectionDividerStyle={setSectionDividerStyle}
+                      enabledSections={enabledSections}
+                      setEnabledSections={setEnabledSections}
+                    />
+                  </div>
+
                 </div>
+
+                {/* Bottom Navigation */}
+                <BottomNavigation 
+                  onBack={() => setStep(4)}
+                  onSkip={() => setStep(6)}
+                  onContinue={() => setStep(6)}
+                />
               </motion.div>
             )}
+
+            {/* Auto-saved Toast Notification */}
+            <AnimatePresence>
+              {showAutoSavedToast && (
+                <motion.div 
+                  initial={{ opacity: 0, y: 50 }} 
+                  animate={{ opacity: 1, y: 0 }} 
+                  exit={{ opacity: 0, y: 50 }}
+                  className="fixed bottom-20 left-1/2 transform -translate-x-1/2 bg-[#1a3d2e] text-white text-[11px] font-bold px-4 py-2.5 rounded-xl shadow-lg z-[9999] flex items-center gap-1.5"
+                >
+                  <CheckCircle2 size={14} className="text-emerald-400" /> Changes saved to Bimba cloud
+                </motion.div>
+              )}
+            </AnimatePresence>
 
             {/* Step 6: AI Resume Interview */}
             {step === 6 && (
@@ -1749,7 +1750,7 @@ export const UploadResumeWizard: React.FC<UploadResumeWizardProps> = ({
                     </p>
                   </div>
                   <Button 
-                    onClick={() => runAnalysis(7)} 
+                    onClick={() => runAnalysis(8)} 
                     disabled={isAnalyzing}
                     className="btn-glow-green text-xs font-bold py-2.5 px-5 flex items-center gap-2 shrink-0 cursor-pointer disabled:opacity-50"
                   >
@@ -2490,7 +2491,7 @@ export const UploadResumeWizard: React.FC<UploadResumeWizardProps> = ({
         </div>
 
         {/* Navigation Footer */}
-        {step > 1 && step < 13 && step !== 3 && (
+        {step > 1 && step < 13 && step !== 3 && step !== 5 && (
           <div className={`px-6 py-4 border-t flex items-center justify-between shrink-0 ${
             isDark ? 'border-white/10 bg-[#1F2937]/30' : 'border-slate-100 bg-slate-50'
           }`}>

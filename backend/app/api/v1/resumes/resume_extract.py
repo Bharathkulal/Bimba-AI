@@ -81,8 +81,19 @@ def get_or_create_resume_analysis(resume_id: int, student_id: int, db: Any) -> d
         analysis_record["extracted_data"] = extracted_data
         return analysis_record
     else:
-        db.resume_analysis.insert_one(new_analysis_doc)
-        return new_analysis_doc
+        try:
+            db.resume_analysis.insert_one(new_analysis_doc)
+            return new_analysis_doc
+        except Exception as e:
+            existing = db.resume_analysis.find_one({"resume_id": resume_id}) or db.resume_analysis.find_one({"id": resume_id})
+            if existing:
+                db.resume_analysis.update_one(
+                    {"_id": existing["_id"]},
+                    {"$set": {"extracted_data": extracted_data}}
+                )
+                existing["extracted_data"] = extracted_data
+                return existing
+            raise e
 
 @router.post("/extract/{resume_id}")
 async def extract_resume_data_endpoint(
