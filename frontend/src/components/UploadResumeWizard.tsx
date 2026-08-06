@@ -310,7 +310,7 @@ export const UploadResumeWizard: React.FC<UploadResumeWizardProps> = ({
       
       // Do NOT set Content-Type manually — axios auto-adds the multipart boundary
       const uploadRes = await apiClient.post('/api/resume-studio/upload', formData, {
-        headers: { 'Content-Type': undefined as any },
+        headers: { 'Content-Type': 'multipart/form-data' },
         timeout: 120000 // 2 min timeout for large files + OCR
       });
       
@@ -380,9 +380,33 @@ export const UploadResumeWizard: React.FC<UploadResumeWizardProps> = ({
 
       setApiCompleted(true);
     } catch (e: any) {
-      console.error(e);
-      const serverMsg = e.response?.data?.error || e.response?.data?.details || e.response?.data?.detail || e.message || 'FastAPI server connection error.';
-      alert('Ingestion failed: ' + serverMsg);
+      console.error('Ingestion error details:', e);
+      let errorMsg = '';
+      if (e.response) {
+        const status = e.response.status;
+        const details = e.response.data?.error || e.response.data?.details || e.response.data?.detail || JSON.stringify(e.response.data);
+        if (status === 404) {
+          errorMsg = `Upload endpoint not found (HTTP 404). Details: ${details}`;
+        } else if (status === 401 || status === 403) {
+          errorMsg = `Authentication failed (HTTP ${status}). Please log in again. Details: ${details}`;
+        } else if (status === 500) {
+          errorMsg = `Internal Server Error (HTTP 500). Details: ${details}`;
+        } else if (status === 502 || status === 504) {
+          errorMsg = `AI Gateway / Service Gateway timeout (HTTP ${status}). Details: ${details}`;
+        } else {
+          errorMsg = `Ingestion failed with status code ${status}. Details: ${details}`;
+        }
+      } else if (e.request) {
+        if (e.message?.toLowerCase().includes('timeout')) {
+          errorMsg = 'Upload request timed out (timeout limit 120s reached).';
+        } else {
+          errorMsg = 'Backend server unavailable or network connection failed. Please ensure uvicorn is running on port 8000.';
+        }
+      } else {
+        errorMsg = `Request configuration error: ${e.message}`;
+      }
+      
+      alert(`Ingestion failed: ${errorMsg}`);
       setFile(null);
       setStep(1);
     }

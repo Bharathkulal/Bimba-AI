@@ -1267,14 +1267,27 @@ async def upload_resume_file(
             }
         )
     except Exception as e:
+        import traceback
+        import sys
+        exc_type, exc_obj, exc_tb = sys.exc_info()
+        tb_list = traceback.extract_tb(exc_tb)
+        last_tb = tb_list[-1] if tb_list else None
+        file_name = last_tb.filename if last_tb else "Unknown"
+        func_name = last_tb.name if last_tb else "Unknown"
+        line_num = last_tb.lineno if last_tb else 0
+        
         return JSONResponse(
             status_code=500,
             content={
                 "success": False,
-                "step": "Upload Pipeline Orchestration",
-                "provider": "Core System",
-                "error": str(e),
-                "details": str(e)
+                "stage": "Resume Ingestion Pipeline",
+                "exception": exc_type.__name__ if exc_type else "Exception",
+                "message": str(e),
+                "file": file_name,
+                "function": func_name,
+                "line": line_num,
+                "details": traceback.format_exc(),
+                "status": 500
             }
         )
 

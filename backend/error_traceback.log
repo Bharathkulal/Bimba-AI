@@ -1,0 +1,63 @@
+Traceback (most recent call last):
+  File "D:\Bimba AI\backend\venv\Lib\site-packages\starlette\middleware\errors.py", line 164, in __call__
+    await self.app(scope, receive, _send)
+  File "D:\Bimba AI\backend\venv\Lib\site-packages\starlette\middleware\gzip.py", line 29, in __call__
+    await responder(scope, receive, send)
+  File "D:\Bimba AI\backend\venv\Lib\site-packages\starlette\middleware\gzip.py", line 46, in __call__
+    await self.app(scope, receive, self.send_with_compression)
+  File "D:\Bimba AI\backend\venv\Lib\site-packages\starlette\middleware\cors.py", line 88, in __call__
+    await self.app(scope, receive, send)
+  File "D:\Bimba AI\backend\venv\Lib\site-packages\starlette\middleware\exceptions.py", line 63, in __call__
+    await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)
+  File "D:\Bimba AI\backend\venv\Lib\site-packages\starlette\_exception_handler.py", line 53, in wrapped_app
+    raise exc
+  File "D:\Bimba AI\backend\venv\Lib\site-packages\starlette\_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+  File "D:\Bimba AI\backend\venv\Lib\site-packages\fastapi\middleware\asyncexitstack.py", line 18, in __call__
+    await self.app(scope, receive, send)
+  File "D:\Bimba AI\backend\venv\Lib\site-packages\starlette\routing.py", line 660, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "D:\Bimba AI\backend\venv\Lib\site-packages\fastapi\routing.py", line 2683, in app
+    await route.handle(scope, receive, send)
+  File "D:\Bimba AI\backend\venv\Lib\site-packages\fastapi\routing.py", line 1753, in handle
+    await self.original_router.handle(scope, receive, send)
+  File "D:\Bimba AI\backend\venv\Lib\site-packages\fastapi\routing.py", line 2738, in handle
+    await included_router._handle_selected(scope, receive, send)
+  File "D:\Bimba AI\backend\venv\Lib\site-packages\fastapi\routing.py", line 1773, in _handle_selected
+    await original_route.handle(scope, receive, send)
+  File "D:\Bimba AI\backend\venv\Lib\site-packages\fastapi\routing.py", line 1264, in handle
+    await app(scope, receive, send)
+  File "D:\Bimba AI\backend\venv\Lib\site-packages\fastapi\routing.py", line 150, in app
+    await wrap_app_handling_exceptions(app, request)(scope, receive, send)
+  File "D:\Bimba AI\backend\venv\Lib\site-packages\starlette\_exception_handler.py", line 53, in wrapped_app
+    raise exc
+  File "D:\Bimba AI\backend\venv\Lib\site-packages\starlette\_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+  File "D:\Bimba AI\backend\venv\Lib\site-packages\fastapi\routing.py", line 136, in app
+    response = await f(request)
+               ^^^^^^^^^^^^^^^^
+  File "D:\Bimba AI\backend\venv\Lib\site-packages\fastapi\routing.py", line 711, in app
+    content = await serialize_response(
+              ^^^^^^^^^^^^^^^^^^^^^^^^^
+    ...<11 lines>...
+    )
+    ^
+  File "D:\Bimba AI\backend\venv\Lib\site-packages\fastapi\routing.py", line 316, in serialize_response
+    raise ResponseValidationError(
+    ...<3 lines>...
+    )
+fastapi.exceptions.ResponseValidationError: 11 validation errors:
+  {'type': 'missing', 'loc': ('response', 0, 'templateId'), 'msg': 'Field required', 'input': {'_id': '6a71be6a6ad97e9327931a4e', 'id': 1, 'slug': 'minimalist-modern', 'name': 'Minimalist Modern (Premium ATS)', 'category': 'Premium', 'ats_rating': 100, 'popularity': 200, 'color_theme': 'slate', 'is_enabled': True, 'is_active': True, 'is_premium': False, 'is_ats_optimized': True, 'description': 'Premium 100% ATS-compliant layout designed for professional impact and readability.', 'layout': 'single-column', 'colors': {'primary': '#111827', 'secondary': '#4B5563', 'divider': '#E5E7EB'}, 'fonts': {'heading': 'Helvetica-Bold', 'body': 'Helvetica'}, 'spacing': 16, 'page': {'size': 'A4', 'margin': '32px', 'background': 'white'}, 'sections': [{'type': 'profile', 'title': 'Profile', 'visible': True, 'fontSize': 14, 'spacing': 12}, {'type': 'experience', 'title': 'Work Experience', 'visible': True, 'fontSize': 14, 'spacing': 16}, {'type': 'education', 'title': 'Education', 'visible': True, 'fontSize': 14, 'spacing': 14}, {'type': 'skills', 'title': 'Skills', 'visible': True, 'fontSize': 14, 'spacing': 12, 'columns': 2}, {'type': 'projects', 'title': 'Projects', 'visible': True, 'fontSize': 14, 'spacing': 14}, {'type': 'certifications', 'title': 'Certifications', 'visible': True, 'fontSize': 14, 'spacing': 12}, {'type': 'hobbies', 'title': 'Hobbies & Interests', 'visible': True, 'fontSize': 14, 'spacing': 12}]}}
+  {'type': 'model_attributes_type', 'loc': ('response', 0, 'layout'), 'msg': 'Input should be a valid dictionary or object to extract fields from', 'input': 'single-column'}
+  {'type': 'string_type', 'loc': ('response', 0, 'sections', 0), 'msg': 'Input should be a valid string', 'input': {'type': 'profile', 'title': 'Profile', 'visible': True, 'fontSize': 14, 'spacing': 12}}
+  {'type': 'string_type', 'loc': ('response', 0, 'sections', 1), 'msg': 'Input should be a valid string', 'input': {'type': 'experience', 'title': 'Work Experience', 'visible': True, 'fontSize': 14, 'spacing': 16}}
+  {'type': 'string_type', 'loc': ('response', 0, 'sections', 2), 'msg': 'Input should be a valid string', 'input': {'type': 'education', 'title': 'Education', 'visible': True, 'fontSize': 14, 'spacing': 14}}
+  {'type': 'string_type', 'loc': ('response', 0, 'sections', 3), 'msg': 'Input should be a valid string', 'input': {'type': 'skills', 'title': 'Skills', 'visible': True, 'fontSize': 14, 'spacing': 12, 'columns': 2}}
+  {'type': 'string_type', 'loc': ('response', 0, 'sections', 4), 'msg': 'Input should be a valid string', 'input': {'type': 'projects', 'title': 'Projects', 'visible': True, 'fontSize': 14, 'spacing': 14}}
+  {'type': 'string_type', 'loc': ('response', 0, 'sections', 5), 'msg': 'Input should be a valid string', 'input': {'type': 'certifications', 'title': 'Certifications', 'visible': True, 'fontSize': 14, 'spacing': 12}}
+  {'type': 'string_type', 'loc': ('response', 0, 'sections', 6), 'msg': 'Input should be a valid string', 'input': {'type': 'hobbies', 'title': 'Hobbies & Interests', 'visible': True, 'fontSize': 14, 'spacing': 12}}
+  {'type': 'missing', 'loc': ('response', 0, 'renderer'), 'msg': 'Field required', 'input': {'_id': '6a71be6a6ad97e9327931a4e', 'id': 1, 'slug': 'minimalist-modern', 'name': 'Minimalist Modern (Premium ATS)', 'category': 'Premium', 'ats_rating': 100, 'popularity': 200, 'color_theme': 'slate', 'is_enabled': True, 'is_active': True, 'is_premium': False, 'is_ats_optimized': True, 'description': 'Premium 100% ATS-compliant layout designed for professional impact and readability.', 'layout': 'single-column', 'colors': {'primary': '#111827', 'secondary': '#4B5563', 'divider': '#E5E7EB'}, 'fonts': {'heading': 'Helvetica-Bold', 'body': 'Helvetica'}, 'spacing': 16, 'page': {'size': 'A4', 'margin': '32px', 'background': 'white'}, 'sections': [{'type': 'profile', 'title': 'Profile', 'visible': True, 'fontSize': 14, 'spacing': 12}, {'type': 'experience', 'title': 'Work Experience', 'visible': True, 'fontSize': 14, 'spacing': 16}, {'type': 'education', 'title': 'Education', 'visible': True, 'fontSize': 14, 'spacing': 14}, {'type': 'skills', 'title': 'Skills', 'visible': True, 'fontSize': 14, 'spacing': 12, 'columns': 2}, {'type': 'projects', 'title': 'Projects', 'visible': True, 'fontSize': 14, 'spacing': 14}, {'type': 'certifications', 'title': 'Certifications', 'visible': True, 'fontSize': 14, 'spacing': 12}, {'type': 'hobbies', 'title': 'Hobbies & Interests', 'visible': True, 'fontSize': 14, 'spacing': 12}]}}
+  {'type': 'string_type', 'loc': ('response', 0, 'id'), 'msg': 'Input should be a valid string', 'input': 1}
+
+  File "D:\Bimba AI\backend\app\api\v1\templates\templates_routes.py", line 22, in get_templates
+    GET /api/templates

@@ -27,6 +27,16 @@ def get_templates(
     q: Optional[str] = Query(None),
     db: Any = Depends(get_db)
 ):
+    from fastapi.params import Query as FastAPIQuery
+    if isinstance(category, FastAPIQuery) or category is None:
+        category = None
+    if isinstance(enabled, FastAPIQuery) or enabled is None:
+        enabled = None
+    if isinstance(premium, FastAPIQuery) or premium is None:
+        premium = None
+    if isinstance(q, FastAPIQuery) or q is None:
+        q = None
+
     filters = {}
     if category is not None:
         filters["category"] = category
