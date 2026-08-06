@@ -633,6 +633,158 @@ def build_pdf_story(resume_data: Dict[str, Any], template: str = "harvard", db: 
     flowables.append(Spacer(1, 4))
     return flowables
 
+  def make_volunteer_flowables(sec):
+    vol = resume_data.get("volunteerExperience") or resume_data.get("volunteer_experience") or []
+    if not vol:
+      return []
+    flowables = [Paragraph(sec.get("title") or "VOLUNTEER EXPERIENCE", h1_style)]
+    for v in vol:
+      org = clean_unicode(v.get("organization") or "")
+      role = clean_unicode(v.get("role") or "Volunteer")
+      duration = clean_unicode(v.get("duration") or "")
+      desc = clean_unicode(v.get("description") or "")
+      header = f"<b>{role}</b> — {org}"
+      
+      table = Table(
+        [[Paragraph(header, body_style), Paragraph(duration, ParagraphStyle('RightText', parent=body_style, alignment=TA_RIGHT))]],
+        colWidths=[380, 152] if (custom_tpl and custom_tpl.get("layout") in ["two-column", "sidebar"]) else [420, 112]
+      )
+      table.setStyle(TableStyle([
+        ('VALIGN', (0,0), (-1,-1), 'TOP'),
+        ('BOTTOMPADDING', (0,0), (-1,-1), 0),
+        ('TOPPADDING', (0,0), (-1,-1), 0),
+        ('LEFTPADDING', (0,0), (-1,-1), 0),
+        ('RIGHTPADDING', (0,0), (-1,-1), 0),
+      ]))
+      block = [table]
+      if desc:
+        block.append(Paragraph(desc, body_style))
+      flowables.append(KeepTogether(block))
+      flowables.append(Spacer(1, 4))
+    return flowables
+
+  def make_leadership_flowables(sec):
+    lead = resume_data.get("leadership") or []
+    if not lead:
+      return []
+    flowables = [Paragraph(sec.get("title") or "LEADERSHIP EXPERIENCE", h1_style)]
+    for l in lead:
+      org = clean_unicode(l.get("organization") or "")
+      role = clean_unicode(l.get("role") or "")
+      duration = clean_unicode(l.get("duration") or "")
+      desc = clean_unicode(l.get("description") or "")
+      header = f"<b>{role}</b>" + (f" — {org}" if org else "")
+      
+      table = Table(
+        [[Paragraph(header, body_style), Paragraph(duration, ParagraphStyle('RightText', parent=body_style, alignment=TA_RIGHT))]],
+        colWidths=[380, 152] if (custom_tpl and custom_tpl.get("layout") in ["two-column", "sidebar"]) else [420, 112]
+      )
+      table.setStyle(TableStyle([
+        ('VALIGN', (0,0), (-1,-1), 'TOP'),
+        ('BOTTOMPADDING', (0,0), (-1,-1), 0),
+        ('TOPPADDING', (0,0), (-1,-1), 0),
+        ('LEFTPADDING', (0,0), (-1,-1), 0),
+        ('RIGHTPADDING', (0,0), (-1,-1), 0),
+      ]))
+      block = [table]
+      if desc:
+        block.append(Paragraph(desc, body_style))
+      flowables.append(KeepTogether(block))
+      flowables.append(Spacer(1, 4))
+    return flowables
+
+  def make_awards_flowables(sec):
+    awards = resume_data.get("awards") or []
+    if not awards:
+      return []
+    flowables = [Paragraph(sec.get("title") or "AWARDS", h1_style)]
+    for item in awards:
+      flowables.append(Paragraph(f"• {clean_unicode(str(item))}", bullet_style))
+    flowables.append(Spacer(1, 4))
+    return flowables
+
+  def make_research_papers_flowables(sec):
+    papers = resume_data.get("research_papers") or []
+    if not papers:
+      return []
+    flowables = [Paragraph(sec.get("title") or "RESEARCH PAPERS", h1_style)]
+    for p in papers:
+      title = clean_unicode(p.get("title") or "")
+      authors = clean_unicode(p.get("authors") or "")
+      journal = clean_unicode(p.get("journal") or p.get("journal/conference") or "")
+      year = clean_unicode(p.get("year") or "")
+      desc = clean_unicode(p.get("description") or "")
+      
+      text = f"• <b>{title}</b>"
+      if authors:
+        text += f" by {authors}"
+      if journal:
+        text += f" — {journal}"
+      if year:
+        text += f" ({year})"
+      if desc:
+        text += f"<br/>{desc}"
+      flowables.append(Paragraph(text, body_style))
+    flowables.append(Spacer(1, 4))
+    return flowables
+
+  def make_references_flowables(sec):
+    refs = resume_data.get("references") or []
+    if not refs:
+      return []
+    flowables = [Paragraph(sec.get("title") or "REFERENCES", h1_style)]
+    for r in refs:
+      name = clean_unicode(r.get("name") or "")
+      title = clean_unicode(r.get("title") or "")
+      comp = clean_unicode(r.get("company") or "")
+      email = clean_unicode(r.get("email") or "")
+      phone = clean_unicode(r.get("phone") or "")
+      rel = clean_unicode(r.get("relationship") or "")
+      
+      ref_str = f"<b>{name}</b>"
+      if title or comp:
+        ref_str += f" — {title}" + (f", {comp}" if comp else "")
+      contact_details = []
+      if email:
+        contact_details.append(email)
+      if phone:
+        contact_details.append(phone)
+      if rel:
+        contact_details.append(f"Relationship: {rel}")
+      if contact_details:
+        ref_str += f"<br/>" + " | ".join(contact_details)
+      flowables.append(Paragraph(ref_str, body_style))
+      flowables.append(Spacer(1, 2))
+    flowables.append(Spacer(1, 4))
+    return flowables
+
+  def make_activities_flowables(sec):
+    act = resume_data.get("activities") or []
+    if not act:
+      return []
+    flowables = [Paragraph(sec.get("title") or "ACTIVITIES", h1_style)]
+    for item in act:
+      flowables.append(Paragraph(f"• {clean_unicode(str(item))}", bullet_style))
+    flowables.append(Spacer(1, 4))
+    return flowables
+
+  def make_custom_sections_flowables(sec):
+    customs = resume_data.get("custom_sections") or []
+    if not customs:
+      return []
+    flowables = []
+    for c in customs:
+      title = clean_unicode(c.get("section_name") or "Additional Section")
+      flowables.append(Paragraph(title.upper(), h1_style))
+      content = c.get("content", [])
+      if isinstance(content, list):
+        for item in content:
+          flowables.append(Paragraph(clean_unicode(str(item)), body_style))
+      else:
+        flowables.append(Paragraph(clean_unicode(str(content)), body_style))
+      flowables.append(Spacer(1, 4))
+    return flowables
+
   def render_section(sec):
     if not sec.get("visible", True):
       return []
@@ -663,6 +815,20 @@ def build_pdf_story(resume_data: Dict[str, Any], template: str = "harvard", db: 
       return make_portfolio_flowables(sec)
     elif stype == "hobbies":
       return make_hobbies_flowables(sec)
+    elif stype == "volunteer":
+      return make_volunteer_flowables(sec)
+    elif stype == "leadership":
+      return make_leadership_flowables(sec)
+    elif stype == "awards":
+      return make_awards_flowables(sec)
+    elif stype in ["research_papers", "research_paper"]:
+      return make_research_papers_flowables(sec)
+    elif stype == "references":
+      return make_references_flowables(sec)
+    elif stype == "activities":
+      return make_activities_flowables(sec)
+    elif stype == "custom_sections":
+      return make_custom_sections_flowables(sec)
     return []
 
   # Divider border line underneath header
@@ -704,6 +870,38 @@ def build_pdf_story(resume_data: Dict[str, Any], template: str = "harvard", db: 
           {"type": "achievements", "title": "Achievements"},
           {"type": "portfolio", "title": "Portfolio"}
         ]
+
+  # Auto-append fallback sections if not explicitly configured in sections_to_render but contain content
+  rendered_types = {sec.get("type", "").lower() for sec in sections_to_render}
+  for fallback_sec in [
+    {"type": "volunteer", "title": "Volunteer Experience"},
+    {"type": "leadership", "title": "Leadership"},
+    {"type": "awards", "title": "Awards"},
+    {"type": "research_papers", "title": "Research Papers"},
+    {"type": "references", "title": "References"},
+    {"type": "activities", "title": "Activities"},
+    {"type": "custom_sections", "title": "Custom Sections"}
+  ]:
+    ftype = fallback_sec["type"]
+    if ftype not in rendered_types:
+      has_content = False
+      if ftype == "volunteer" and (resume_data.get("volunteerExperience") or resume_data.get("volunteer_experience")):
+        has_content = True
+      elif ftype == "leadership" and resume_data.get("leadership"):
+        has_content = True
+      elif ftype == "awards" and resume_data.get("awards"):
+        has_content = True
+      elif ftype == "research_papers" and resume_data.get("research_papers"):
+        has_content = True
+      elif ftype == "references" and resume_data.get("references"):
+        has_content = True
+      elif ftype == "activities" and resume_data.get("activities"):
+        has_content = True
+      elif ftype == "custom_sections" and resume_data.get("custom_sections"):
+        has_content = True
+        
+      if has_content:
+        sections_to_render.append(fallback_sec)
 
   layout = custom_tpl.get("layout") if custom_tpl else "single-column"
 

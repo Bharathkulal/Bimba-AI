@@ -56,18 +56,25 @@ class ResumeParser:
             "objective": ["objective", "career_objective"],
             "education": ["education", "educationInfo", "academic", "academics", "studies", "degree", "degrees", "qualifications"],
             "experience": ["experience", "work_experience", "workExperience", "history", "employment", "jobs", "work_history", "experiences"],
-            "projects": ["projects", "project_details", "portfolio_projects", "academic_projects", "project_list"],
-            "technicalSkills": ["technicalSkills", "technical_skills", "skills", "key_skills", "skillsInfo", "technologies", "skillset", "skill_sets"],
-            "softSkills": ["softSkills", "soft_skills", "interpersonal_skills"],
-            "certifications": ["certifications", "certificates", "certifications_list", "credentials"],
             "internships": ["internships", "internship_experience", "industrial_training"],
-            "achievements": ["achievements", "awards", "honors", "accomplishments", "hackathons"],
+            "projects": ["projects", "project_details", "portfolio_projects", "academic_projects", "project_list"],
+            "skills": ["skills", "generic_skills"],
+            "technicalSkills": ["technicalSkills", "technical_skills", "key_skills", "skillsInfo", "technologies", "skillset", "skill_sets"],
+            "softSkills": ["softSkills", "soft_skills", "interpersonal_skills"],
+            "tools": ["tools", "tool_list", "technologies_tools"],
             "languages": ["languages", "languages_spoken", "spoken_languages"],
-            "portfolioLinks": ["portfolioLinks", "links", "urls", "social_links", "socials"],
-            "publications": ["publications", "research_papers", "papers"],
+            "certifications": ["certifications", "certificates", "certifications_list", "credentials"],
+            "achievements": ["achievements", "awards_achievements", "accomplishments", "hackathons"],
+            "awards": ["awards", "honors", "distinctions"],
+            "research_papers": ["research_papers", "papers", "research"],
+            "publications": ["publications", "research_publications"],
+            "leadership": ["leadership", "leadership_experience"],
             "volunteerExperience": ["volunteerExperience", "volunteer", "social_service", "community_service"],
+            "activities": ["activities", "extracurricular", "extra_curricular"],
+            "portfolioLinks": ["portfolioLinks", "links", "urls", "social_links", "socials"],
             "references": ["references", "referees"],
-            "hobbies": ["hobbies", "interests", "hobbies_interests", "personal_interests", "hobby"]
+            "hobbies": ["hobbies", "interests", "hobbies_interests", "personal_interests", "hobby"],
+            "custom_sections": ["custom_sections", "custom"]
         }
         
         normalized = {}
@@ -101,7 +108,8 @@ class ResumeParser:
             "address": ["address", "location", "city_state", "residence"],
             "linkedin": ["linkedin", "linkedin_url", "linkedinUrl"],
             "github": ["github", "github_url", "githubUrl"],
-            "portfolio": ["portfolio", "portfolio_url", "portfolioUrl", "website"]
+            "portfolio": ["portfolio", "portfolio_url", "portfolioUrl", "website"],
+            "title": ["title", "target_role", "role"]
         }
         
         norm_personal = {}
@@ -126,6 +134,35 @@ class ResumeParser:
             raw_skills = parsed["skills"]
             if isinstance(raw_skills, list):
                 normalized["technicalSkills"] = raw_skills
+
+        # Auto-collect completely unknown sections
+        known_vars = set()
+        for target, variations in standard_keys.items():
+            known_vars.update(variations)
+            
+        custom_from_unknown = []
+        for key, val in parsed.items():
+            if key not in known_vars and val:
+                content_list = []
+                if isinstance(val, list):
+                    for item in val:
+                        if isinstance(item, dict):
+                            content_list.append(json.dumps(item))
+                        else:
+                            content_list.append(str(item))
+                elif isinstance(val, dict):
+                    content_list.append(json.dumps(val))
+                else:
+                    content_list.append(str(val))
+                
+                custom_from_unknown.append({
+                    "section_name": key.replace("_", " ").title(),
+                    "content": content_list
+                })
+        
+        # Append unknown custom sections to custom_sections
+        if custom_from_unknown:
+            normalized["custom_sections"] = normalized.get("custom_sections", []) + custom_from_unknown
 
         print("Mapped Mappings and Auto-repair Results:")
         print(f"Required Fields Standardized: {list(normalized.keys())}")

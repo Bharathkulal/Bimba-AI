@@ -15,19 +15,22 @@ class ResumeIntegrityValidator:
         errors = []
         warnings = []
         
-        sections_to_check = {
-            "experience": "Work History/Experience",
-            "projects": "Showcase Projects",
+        # 1. Standard List sections to check counts
+        list_sections = {
             "education": "Education Nodes",
-            "certifications": "Certifications",
+            "experience": "Work History/Experience",
             "internships": "Internships",
+            "projects": "Showcase Projects",
+            "certifications": "Certifications",
+            "research_papers": "Research Papers",
             "publications": "Publications",
+            "leadership": "Leadership",
             "volunteerExperience": "Volunteer Experience",
-            "references": "References"
+            "references": "References",
+            "custom_sections": "Custom Sections"
         }
         
-        # 1. Check list counts
-        for key, name in sections_to_check.items():
+        for key, name in list_sections.items():
             orig_list = original.get(key, []) or []
             curr_list = current.get(key, []) or []
             
@@ -43,16 +46,20 @@ class ResumeIntegrityValidator:
                 msg = f"{name} count dropped from {orig_len} to {curr_len}."
                 errors.append(msg)
                 
-        # 2. Check string arrays (skills, languages, achievements, hobbies)
+        # 2. String Arrays sections
         string_sections = {
             "skills": "Skills Profile",
             "technicalSkills": "Technical Skills",
             "softSkills": "Soft Skills",
-            "achievements": "Achievements",
+            "tools": "Tools",
             "languages": "Languages",
-            "hobbies": "Hobbies",
-            "portfolioLinks": "Portfolio Links"
+            "achievements": "Achievements",
+            "awards": "Awards",
+            "activities": "Activities",
+            "portfolioLinks": "Portfolio Links",
+            "hobbies": "Hobbies"
         }
+        
         for key, name in string_sections.items():
             orig_list = original.get(key, []) or []
             curr_list = current.get(key, []) or []
@@ -65,14 +72,11 @@ class ResumeIntegrityValidator:
             orig_set = set(str(x).lower().strip() for x in orig_list if x)
             curr_set = set(str(x).lower().strip() for x in curr_list if x)
             
-            missing = orig_set - curr_set
-            if missing:
-                # If skills list was modified/cleaned, we can treat it as warning instead of hard error
-                # unless ALL skills are deleted.
-                if len(curr_set) == 0 and len(orig_set) > 0:
-                    errors.append(f"All {name} were deleted.")
-                else:
-                    warnings.append(f"Missing items in {name}: {', '.join(list(missing)[:5])}")
+            if len(orig_set) > 0 and len(curr_set) == 0:
+                msg = f"This section was not included: '{name}' was present in the original but is missing now. Please review."
+                errors.append(msg)
+            elif orig_set - curr_set:
+                warnings.append(f"Missing items in {name}: {', '.join(list(orig_set - curr_set)[:5])}")
 
         # 3. Check personal info fields
         orig_pi = original.get("personal_info", {}) or {}
@@ -81,6 +85,17 @@ class ResumeIntegrityValidator:
             for k in ["name", "email", "phone"]:
                 if orig_pi.get(k) and not curr_pi.get(k):
                     errors.append(f"Personal Information field '{k}' was cleared.")
+
+        # 4. Text/String sections
+        text_sections = {
+            "summary": "Professional Summary",
+            "objective": "Objective"
+        }
+        for key, name in text_sections.items():
+            orig_text = str(original.get(key, "")).strip()
+            curr_text = str(current.get(key, "")).strip()
+            if orig_text and not curr_text:
+                errors.append(f"This section was not included: '{name}' was present in the original but is missing now. Please review.")
 
         is_valid = len(errors) == 0
         return {

@@ -225,6 +225,63 @@ def get_resume_builder_data(
         "ai_improvements": improvements
     }
 
+import re
+
+def run_quality_gate(resume_data: dict, original_data: dict) -> List[str]:
+    errors = []
+    
+    # 1. Contact details present
+    pi = resume_data.get("personal_info", {}) or {}
+    if not pi.get("name") or str(pi.get("name")).strip() == "" or pi.get("name") == "Candidate Name":
+        errors.append("Contact Details: Candidate Name is missing or default.")
+    if not pi.get("email") or str(pi.get("email")).strip() == "":
+        errors.append("Contact Details: Email address is missing.")
+    if not pi.get("phone") or str(pi.get("phone")).strip() == "":
+        errors.append("Contact Details: Phone number is missing.")
+        
+    # 2. No empty headings
+    for idx, edu in enumerate(resume_data.get("education", [])):
+        if not edu.get("institution") or str(edu.get("institution")).strip() == "":
+            errors.append(f"Education item {idx+1}: Institution name is empty.")
+        if not edu.get("degree") or str(edu.get("degree")).strip() == "":
+            errors.append(f"Education item {idx+1}: Degree name is empty.")
+            
+    for idx, exp in enumerate(resume_data.get("experience", [])):
+        if not exp.get("company") or str(exp.get("company")).strip() == "":
+            errors.append(f"Experience item {idx+1}: Company name is empty.")
+        if not exp.get("position") or str(exp.get("position")).strip() == "":
+            errors.append(f"Experience item {idx+1}: Position title is empty.")
+            
+    for idx, proj in enumerate(resume_data.get("projects", [])):
+        title = proj.get("title") or proj.get("name")
+        if not title or str(title).strip() == "":
+            errors.append(f"Project item {idx+1}: Project title is empty.")
+            
+    # 3. Valid date sequences
+    def parse_year(val):
+        if not val:
+            return None
+        match = re.search(r'\b(19|20)\d{2}\b', str(val))
+        return int(match.group(0)) if match else None
+        
+    for idx, exp in enumerate(resume_data.get("experience", [])):
+        dur = exp.get("duration", "")
+        if dur and "-" in dur:
+            parts = dur.split("-")
+            start_yr = parse_year(parts[0])
+            end_yr = parse_year(parts[1])
+            if start_yr and end_yr and start_yr > end_yr:
+                errors.append(f"Experience item {idx+1}: Start date ({start_yr}) cannot be after end date ({end_yr}).")
+                
+    # 4. Integrity validation (prevent missing sections)
+    if original_data:
+        from app.services.integrity_validator import ResumeIntegrityValidator
+        val_res = ResumeIntegrityValidator.validate(original_data, resume_data)
+        if not val_res["isValid"]:
+            errors.extend(val_res["errors"])
+            
+    return errors
+
 @router.post("/generate-pdf/{resume_id}")
 async def generate_resume_pdf_endpoint(
     resume_id: int,
@@ -244,7 +301,23 @@ async def generate_resume_pdf_endpoint(
             detail="Resume not found or unauthorized"
         )
         
-    # 2. Build PDF via Playwright headless browser renderer
+    # 2. Run Quality Gate checks
+    original_data = {}
+    analysis_record = db.resume_analysis.find_one({"resume_id": resume_id, "student_id": student.id})
+    if analysis_record and "extracted_data" in analysis_record:
+        original_data = analysis_record["extracted_data"]
+        
+    gate_errors = run_quality_gate(payload.resume_data, original_data)
+    if gate_errors:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail={
+                "message": "Quality Gate validation failed. Please address the errors before exporting.",
+                "errors": gate_errors
+            }
+        )
+
+    # 3. Build PDF via Playwright headless browser renderer
     try:
         pdf_bytes = _call_playwright_renderer(
             resume_data=payload.resume_data,
@@ -264,7 +337,22 @@ async def generate_resume_pdf_endpoint(
             detail=f"PDF compilation failed: {str(e)}"
         )
 
-    # 3. Upload PDF bytes to Cloudinary
+    # 4. Post-generation PDF Validator checks
+    from app.services.pdf_validator import PDFValidator
+    orig_pages = analysis_record.get("extracted_data", {}).get("pages", 1) if analysis_record else 1
+    if not isinstance(orig_pages, int):
+        orig_pages = 1
+    pdf_val = PDFValidator.validate_pdf_content(pdf_bytes, original_page_count=orig_pages)
+    if not pdf_val["isValid"]:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail={
+                "message": "Generated PDF readability checks failed.",
+                "errors": pdf_val["errors"]
+            }
+        )
+
+    # 5. Upload PDF bytes to Cloudinary
     filename = f"resume_student_{student.id}_v"
     try:
         version_count = db.generated_resumes.count_documents({"resume_id": resume_id})
@@ -282,7 +370,7 @@ async def generate_resume_pdf_endpoint(
             detail=f"Cloudinary PDF Upload failed: {str(e)}"
         )
 
-    # 4. Save metadata to generated_resumes collection
+    # 6. Save metadata to generated_resumes collection
     gen_id = str(get_next_sequence("generated_resumes"))
     db.generated_resumes.insert_one({
         "id": int(gen_id),

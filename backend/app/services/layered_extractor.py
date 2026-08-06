@@ -42,10 +42,12 @@ class LayeredExtractor:
                 "text": "",
                 "pages": 1,
                 "confidence": 0.0,
-                "method": "failed"
+                "method": "failed",
+                "pages_metadata": []
             }
 
         extracted_pages_text = []
+        pages_metadata = []
         method_log = ["PyMuPDF"]
         ocr_performed_pages = 0
         easyocr_reader = None
@@ -66,12 +68,20 @@ class LayeredExtractor:
             # Skip OCR if the text layer is valid and readable
             if page_text and words_count >= 20 and confidence >= 0.4:
                 extracted_pages_text.append(page_text)
+                pages_metadata.append({
+                    "page_number": idx + 1,
+                    "confidence": float(round(confidence, 2)),
+                    "source": "PyMuPDF",
+                    "text": page_text
+                })
                 continue
             
             # Step 3: Run real OCR on the image-only or low-confidence page
             log_stage("EXTRACTOR", "OCR_TRIGGERED", f"Page {idx+1} has low confidence ({confidence:.2f}) or is empty. Running OCR...")
             ocr_performed_pages += 1
             page_ocr_text = ""
+            page_source = "PyMuPDF"
+            page_conf = confidence
             
             try:
                 pix = page.get_pixmap(dpi=150)
@@ -83,6 +93,8 @@ class LayeredExtractor:
                     from PIL import Image
                     image = Image.open(io.BytesIO(img_data))
                     page_ocr_text = pytesseract.image_to_string(image).strip()
+                    page_source = "OCR (PyTesseract)"
+                    page_conf = 0.85 # Standard high confidence OCR fallback default
                 except Exception as t_err:
                     log_error("EXTRACTOR", "PyTesseract failed, trying EasyOCR fallback", t_err)
                     
@@ -93,6 +105,8 @@ class LayeredExtractor:
                             easyocr_reader = easyocr.Reader(['en'], gpu=False)
                         results = easyocr_reader.readtext(img_data, detail=0)
                         page_ocr_text = " ".join(results).strip()
+                        page_source = "OCR (EasyOCR)"
+                        page_conf = 0.75 # EasyOCR fallback baseline
                     except Exception as e_err:
                         log_error("EXTRACTOR", "EasyOCR fallback failed", e_err)
                         page_ocr_text = ""
@@ -101,13 +115,28 @@ class LayeredExtractor:
             
             if page_ocr_text:
                 extracted_pages_text.append(page_ocr_text)
+                pages_metadata.append({
+                    "page_number": idx + 1,
+                    "confidence": float(round(page_conf, 2)),
+                    "source": page_source,
+                    "text": page_ocr_text
+                })
                 if "OCR" not in method_log:
                     method_log.append("OCR")
             else:
                 extracted_pages_text.append(page_text)
+                pages_metadata.append({
+                    "page_number": idx + 1,
+                    "confidence": float(round(confidence, 2)),
+                    "source": "PyMuPDF (Low Confidence)",
+                    "text": page_text
+                })
 
         # Merge results from all pages
-        merged_text = "\n\n".join(extracted_pages_text).strip()
+        merged_text = ""
+        for p_meta in pages_metadata:
+            merged_text += f"\n--- PAGE {p_meta['page_number']} ---\n{p_meta['text']}\n"
+        merged_text = merged_text.strip()
 
         # Clean text artifacts
         from app.services.resume_extraction_service import clean_text_artifacts
@@ -123,8 +152,9 @@ class LayeredExtractor:
         return {
             "text": merged_text.strip(),
             "pages": pages_count or 1,
-            "confidence": final_confidence,
-            "method": " + ".join(method_log)
+            "confidence": float(round(final_confidence, 2)),
+            "method": " + ".join(method_log),
+            "pages_metadata": pages_metadata
         }
 
     @staticmethod
@@ -152,5 +182,13 @@ class LayeredExtractor:
             "text": text.strip(),
             "pages": 1,
             "confidence": 1.0,
-            "method": "python-docx"
+            "method": "python-docx",
+            "pages_metadata": [
+                {
+                    "page_number": 1,
+                    "confidence": 1.0,
+                    "source": "python-docx",
+                    "text": text.strip()
+                }
+            ]
         }

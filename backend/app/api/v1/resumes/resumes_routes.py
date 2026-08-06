@@ -891,9 +891,43 @@ def get_pdf_export(id: int, inline: bool = False, student: Student = Depends(get
     })
     
     resume_data = get_normalized_resume_dict(resume)
+    
+    # Run Quality Gate checks
+    original_data = {}
+    analysis_record = db.resume_analysis.find_one({"resume_id": id, "student_id": student.id})
+    if analysis_record and "extracted_data" in analysis_record:
+        original_data = analysis_record["extracted_data"]
+        
+    from app.api.v1.resumes.resume_builder import run_quality_gate
+    gate_errors = run_quality_gate(resume_data, original_data)
+    if gate_errors:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail={
+                "message": "Quality Gate validation failed. Please address the errors before exporting.",
+                "errors": gate_errors
+            }
+        )
+        
     from app.services.resume_pdf_service import build_pdf_story
     template_slug = resume.get("template_id") or "minimalist-modern"
     pdf_bytes = build_pdf_story(resume_data, template=template_slug, db=db)
+    
+    # Post-generation PDF Validator checks
+    from app.services.pdf_validator import PDFValidator
+    orig_pages = original_data.get("pages", 1) if original_data else 1
+    if not isinstance(orig_pages, int):
+        orig_pages = 1
+    pdf_val = PDFValidator.validate_pdf_content(pdf_bytes, original_page_count=orig_pages)
+    if not pdf_val["isValid"]:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail={
+                "message": "Generated PDF readability checks failed.",
+                "errors": pdf_val["errors"]
+            }
+        )
+
     buffer = io.BytesIO(pdf_bytes)
     
     # Log download action

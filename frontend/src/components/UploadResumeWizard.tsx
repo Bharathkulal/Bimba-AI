@@ -244,6 +244,14 @@ export const UploadResumeWizard: React.FC<UploadResumeWizardProps> = ({
     });
   };
 
+  const isSectionLowConfidence = (sectionKey: string) => {
+    const meta = parsedData?.confidence_metadata?.[sectionKey];
+    if (meta && typeof meta.score === 'number' && meta.score < 75) {
+      return true;
+    }
+    return false;
+  };
+
   const handleAddItemToSection = (sectionKey: string, defaultItem: any) => {
     const currentList = Array.isArray(parsedData[sectionKey]) ? parsedData[sectionKey] : [];
     const updatedList = [...currentList, defaultItem];
@@ -976,11 +984,21 @@ export const UploadResumeWizard: React.FC<UploadResumeWizardProps> = ({
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-h-[60vh] overflow-y-auto pr-2">
-                  
-                  {/* 1. Personal Information Card */}
-                  <Card className="p-5 flex flex-col gap-3">
+                              {/* 1. Personal Information Card */}
+                  <Card className={`p-5 flex flex-col gap-3 transition-all ${
+                    isSectionLowConfidence('personal_info')
+                      ? 'border-amber-400 dark:border-amber-600 ring-2 ring-amber-400/20 bg-amber-500/5'
+                      : 'border-slate-200 dark:border-white/10'
+                  }`}>
                     <div className="flex justify-between items-center border-b pb-2">
-                      <span className="text-xs font-bold text-emerald-500 uppercase">Personal Information</span>
+                      <span className="text-xs font-bold text-emerald-500 uppercase flex items-center gap-1.5">
+                        Personal Information
+                        {isSectionLowConfidence('personal_info') && (
+                          <span className="bg-amber-100 dark:bg-amber-900/30 text-amber-800 dark:text-amber-300 text-[9px] font-extrabold px-1.5 py-0.5 rounded-full flex items-center gap-0.5">
+                            <AlertTriangle size={9} /> Review Required
+                          </span>
+                        )}
+                      </span>
                       <button 
                         onClick={() => toggleEditCard('personal_info')} 
                         className="text-[10px] font-bold text-slate-400 hover:text-emerald-500 cursor-pointer flex items-center gap-1"
@@ -988,6 +1006,11 @@ export const UploadResumeWizard: React.FC<UploadResumeWizardProps> = ({
                         {editingCards['personal_info'] ? <><Save size={11} className="text-emerald-500"/> Save</> : <><FileEdit size={11}/> Edit</>}
                       </button>
                     </div>
+                    {isSectionLowConfidence('personal_info') && (
+                      <p className="text-[10px] font-semibold text-amber-700 dark:text-amber-400 bg-amber-500/10 border border-amber-500/20 px-2 py-1.5 rounded-lg flex items-center gap-1">
+                        <AlertTriangle size={11} className="text-amber-500 animate-pulse" /> Please verify name, email, and phone.
+                      </p>
+                    )}
                     {editingCards['personal_info'] ? (
                       <div className="grid grid-cols-2 gap-2 text-xs">
                         <div>
@@ -1026,14 +1049,23 @@ export const UploadResumeWizard: React.FC<UploadResumeWizardProps> = ({
                       </div>
                     )}
                   </Card>
-
+ 
                   {/* 2. Professional Summary Card */}
-                  <Card className="p-5 flex flex-col gap-3 border-slate-200 dark:border-white/10">
+                  <Card className={`p-5 flex flex-col gap-3 transition-all ${
+                    isSectionLowConfidence('summary')
+                      ? 'border-amber-400 dark:border-amber-600 ring-2 ring-amber-400/20 bg-amber-500/5'
+                      : 'border-slate-200 dark:border-white/10'
+                  }`}>
                     <div className="flex justify-between items-center border-b pb-2">
                       <span className="text-xs font-bold text-emerald-500 uppercase flex items-center gap-1.5">
                         <Sparkles size={13} /> Professional Summary
+                        {isSectionLowConfidence('summary') && (
+                          <span className="bg-amber-100 dark:bg-amber-900/30 text-amber-800 dark:text-amber-300 text-[9px] font-extrabold px-1.5 py-0.5 rounded-full flex items-center gap-0.5">
+                            <AlertTriangle size={9} /> Review Required
+                          </span>
+                        )}
                       </span>
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-2"> gap-2">
                         <button
                           onClick={handleGenerateSummary}
                           disabled={isGeneratingSummary}

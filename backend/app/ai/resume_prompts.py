@@ -2,33 +2,40 @@
 
 RESUME_PARSE_PROMPT = """
 You are an expert AI Resume Parser. Your task is to extract all content from the following resume text and parse it into a clean, structured JSON format.
-This parser must work universally across all degrees, majors, and formats (e.g. BCA, BBA, B.Com, B.Tech, MBA, MCA, M.Tech, BS, MS, BA, MA, etc.).
+This parser must work universally across all degrees, majors, and formats.
 
 Extract all available sections:
-1. Personal Information (name, email, phone, address, linkedin, github, portfolio)
-2. Summary (professional summary / profile summary / about me)
-3. Objective (career objective)
-4. Education (institution, degree, field_of_study, passing_year, cgpa_percentage, location, achievements)
-5. Experience (company, position, duration, location, description, achievements)
-6. Projects (name, description, tech_stack, role, duration, github_link, live_demo)
-7. Technical Skills (list of technical skills / programming languages / tools)
-8. Soft Skills (list of soft skills / interpersonal skills)
-9. Certifications (name, organization, issue_date, credential_id, credential_url)
-10. Internships (company, role, duration, location, description, achievements)
-11. Achievements (list of achievements, awards, hackathons, honors)
-12. Languages (list of languages spoken/known)
-13. Portfolio Links (list of portfolio, GitHub, LinkedIn, or personal website links)
-14. Publications (title, publisher, year, url, description)
-15. Volunteer Experience (organization, role, duration, description)
-16. References (name, title, company, email, phone, relationship)
-17. Hobbies (list of hobbies / interests)
+1. personal_info (name, email, phone, address, linkedin, github, portfolio, title)
+2. summary (professional summary / profile summary / about me)
+3. objective (career objective)
+4. education (institution, degree, field_of_study, passing_year, cgpa_percentage, location, achievements)
+5. experience (company, position, duration, location, description, achievements)
+6. internships (company, role, duration, location, description, achievements)
+7. projects (name, description, tech_stack, role, duration, github_link, live_demo)
+8. skills (list of all generic skills)
+9. technicalSkills (list of technical skills / programming languages / frameworks / databases)
+10. softSkills (list of soft skills / interpersonal skills)
+11. tools (list of tools / software / platforms)
+12. languages (list of languages spoken/known)
+13. certifications (name, organization, issue_date, credential_id, credential_url, description)
+14. achievements (list of achievements, awards, hackathons, honors)
+15. awards (list of awards or distinctions)
+16. research_papers (title, authors, journal/conference, year, url, description)
+17. publications (title, publisher, year, url, description)
+18. leadership (organization, role, duration, description)
+19. volunteerExperience (organization, role, duration, description)
+20. activities (list of extra-curricular activities / club participations)
+21. portfolioLinks (list of links / urls)
+22. references (name, title, company, email, phone, relationship)
+23. hobbies (list of hobbies / interests)
+24. custom_sections (list of objects representing ANY OTHER sections present in the resume that do not map to standard fields. Each custom section object must have "section_name" (string) and "content" (array of strings or details)).
 
 CRITICAL RULES:
 - Return ONLY a valid JSON object matching the exact schema below.
 - Do NOT add markdown code wrappers (no ```json).
+- NEVER silently discard any section or information from the uploaded resume. Any heading/section not explicitly matching one of the standard schema fields (1-23) MUST be captured under "custom_sections" with its original header name and all related text/bullet points as content.
 - IF A SECTION IS MISSING IN THE RESUME, YOU MUST RETURN AN EMPTY ARRAY [] FOR LIST FIELDS AND AN EMPTY STRING "" FOR TEXT FIELDS. NEVER RETURN NULL OR OMIT KEYS.
-- ACHIEVEMENTS & AWARDS PARSING: Parse content strictly according to the section header under which it appears in the original resume. All bullet points listed under an "ACHIEVEMENTS" header belong in the "achievements" array. Do NOT move items from the "ACHIEVEMENTS" section into "publications" even if they mention patents, books, YouTube, or articles. Only populate "publications" if there is an explicit "PUBLICATIONS", "PATENTS", or "RESEARCH PAPERS" section header in the resume text.
-- PROJECTS PARSING: Each distinct project begins with a title or bullet point. If a project description wraps across multiple lines in the text, DO NOT split wrapped lines into separate projects titled "Project". Combine all description text under the SAME parent project entry so the total count of projects matches the actual resume.
+- Combine wrapped descriptions under the same parent section or item (e.g. projects, experiences) rather than breaking them up.
 
 Schema:
 {
@@ -39,7 +46,8 @@ Schema:
     "address": "string",
     "linkedin": "string",
     "github": "string",
-    "portfolio": "string"
+    "portfolio": "string",
+    "title": "string"
   },
   "summary": "string",
   "objective": "string",
@@ -64,6 +72,16 @@ Schema:
       "achievements": "string"
     }
   ],
+  "internships": [
+    {
+      "company": "string",
+      "role": "string",
+      "duration": "string",
+      "location": "string",
+      "description": "string",
+      "achievements": "string"
+    }
+  ],
   "projects": [
     {
       "name": "string",
@@ -75,8 +93,11 @@ Schema:
       "live_demo": "string"
     }
   ],
+  "skills": ["string"],
   "technicalSkills": ["string"],
   "softSkills": ["string"],
+  "tools": ["string"],
+  "languages": ["string"],
   "certifications": [
     {
       "name": "string",
@@ -87,25 +108,32 @@ Schema:
       "description": "string"
     }
   ],
-  "internships": [
+  "achievements": ["string"],
+  "awards": ["string"],
+  "research_papers": [
     {
-      "company": "string",
-      "role": "string",
-      "duration": "string",
-      "location": "string",
-      "description": "string",
-      "achievements": "string"
+      "title": "string",
+      "authors": "string",
+      "journal": "string",
+      "year": "string",
+      "url": "string",
+      "description": "string"
     }
   ],
-  "achievements": ["string"],
-  "languages": ["string"],
-  "portfolioLinks": ["string"],
   "publications": [
     {
       "title": "string",
       "publisher": "string",
       "year": "string",
       "url": "string",
+      "description": "string"
+    }
+  ],
+  "leadership": [
+    {
+      "organization": "string",
+      "role": "string",
+      "duration": "string",
       "description": "string"
     }
   ],
@@ -117,6 +145,8 @@ Schema:
       "description": "string"
     }
   ],
+  "activities": ["string"],
+  "portfolioLinks": ["string"],
   "references": [
     {
       "name": "string",
@@ -127,7 +157,13 @@ Schema:
       "relationship": "string"
     }
   ],
-  "hobbies": ["string"]
+  "hobbies": ["string"],
+  "custom_sections": [
+    {
+      "section_name": "string",
+      "content": ["string"]
+    }
+  ]
 }
 
 Resume Text:
