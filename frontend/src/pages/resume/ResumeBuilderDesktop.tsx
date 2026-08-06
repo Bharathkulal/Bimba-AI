@@ -1,23 +1,19 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState, useRef } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import {
   AlertCircle,
-  ArrowDown,
   ArrowLeft,
-  ArrowUp,
   Award,
+  Check,
+  ChevronDown,
   Download,
-  RefreshCw,
-  ShieldCheck
+  RefreshCw
 } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { useResumeBuilderStore, type ResumeBuilderData } from '../../store/resumeBuilderStore';
-import { ResumePreview } from '../../components/resume/ResumePreview';
-import { TemplateSelector } from '../../components/resume/TemplateSelector';
-import { ResumeEditor } from '../../components/resume/ResumeEditor';
 import { TemplateRegistry, templateMetadata } from '../../components/resume/templates';
+import { CreateFromScratchWizard } from '../../components/resume/CreateFromScratchWizard';
 
-type ActiveSection = 'info' | 'summary' | 'skills' | 'experience' | 'projects' | 'education' | 'certifications' | 'portfolio';
-type NavigationTab = 'editor' | 'templates' | 'analysis';
 
 const STUDIO_PREFS_KEY = 'bimba.resumeStudioPreferences.v1';
 
@@ -50,22 +46,11 @@ export const ResumeBuilderDesktop: React.FC = () => {
   } = useResumeBuilderStore();
 
   const initialPrefs = loadStudioPreferences();
-  const [activeSection, setActiveSection] = useState<ActiveSection>('info');
-  const [navigationTab, setNavigationTab] = useState<NavigationTab>('editor');
+
   const [fontFamily, setFontFamily] = useState(initialPrefs.fontFamily || 'Inter');
   const [fontSize, setFontSize] = useState(initialPrefs.fontSize || '11pt');
   const [downloadError, setDownloadError] = useState<string | null>(null);
-
-  const [sections, setSections] = useState<string[]>([
-    'Contact Info',
-    'Professional Summary',
-    'Technical Skills',
-    'Work Experience',
-    'Academic Projects',
-    'Education',
-    'Certifications',
-    'Portfolio Links'
-  ]);
+  const [isEditingWizardOpen, setIsEditingWizardOpen] = useState(false);
 
   useEffect(() => {
     if (resumeId) {
@@ -110,34 +95,6 @@ export const ResumeBuilderDesktop: React.FC = () => {
 
   const selectedTemplateName =
     availableTemplates.find((template) => template.id === selectedTemplate)?.name || 'Microsoft ATS';
-
-  const moveSection = (index: number, direction: 'up' | 'down') => {
-    const nextIndex = direction === 'up' ? index - 1 : index + 1;
-    if (nextIndex < 0 || nextIndex >= sections.length) return;
-
-    const updated = [...sections];
-    const temp = updated[index];
-    updated[index] = updated[nextIndex];
-    updated[nextIndex] = temp;
-    setSections(updated);
-  };
-
-  const calculateAtsScore = () => {
-    if (!resumeData) return 0;
-    let score = 30;
-
-    if (resumeData.personal_info.email && resumeData.personal_info.phone) score += 10;
-    if (resumeData.summary && resumeData.summary.length > 50) score += 15;
-    if (resumeData.skills && resumeData.skills.length > 3) score += 15;
-    if (resumeData.experience && resumeData.experience.length > 0) score += 15;
-    if (resumeData.projects && resumeData.projects.length > 0) score += 10;
-    if (resumeData.education && resumeData.education.length > 0) score += 5;
-
-    return Math.min(score, 100);
-  };
-
-  const atsScore = calculateAtsScore();
-
   const downloadBase64 = (base64Data: string, filename: string) => {
     try {
       const sliceSize = 512;
@@ -244,7 +201,6 @@ export const ResumeBuilderDesktop: React.FC = () => {
             </div>
 
             <div className="flex flex-col gap-3 lg:flex-row lg:items-end">
-              <SegmentedTabs activeTab={navigationTab} onChange={setNavigationTab} />
               <div className="flex flex-col gap-1">
                 <span className="text-[10px] font-black uppercase tracking-[0.22em] text-slate-500">Template</span>
                 <TemplateDropdown
@@ -255,7 +211,15 @@ export const ResumeBuilderDesktop: React.FC = () => {
                 />
               </div>
               <div className="flex flex-col items-end gap-1">
-                <DownloadButton onClick={handleDownload} generating={generating} />
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => setIsEditingWizardOpen(true)}
+                    className="inline-flex h-[46px] cursor-pointer items-center justify-center gap-2 rounded-2xl bg-white border border-[#DED6C4] px-6 text-sm font-black text-slate-900 shadow-sm transition hover:bg-slate-50"
+                  >
+                    Edit Resume
+                  </button>
+                  <DownloadButton onClick={handleDownload} generating={generating} />
+                </div>
                 {downloadError && <span className="text-[10px] font-bold text-rose-500 mt-1 max-w-[200px] text-right">{downloadError}</span>}
               </div>
             </div>
@@ -263,7 +227,6 @@ export const ResumeBuilderDesktop: React.FC = () => {
         </header>
 
         <main className="flex flex-col gap-6 px-6 py-6">
-
 
           <StudioPreviewCard
             resumeData={resumeData}
@@ -275,173 +238,168 @@ export const ResumeBuilderDesktop: React.FC = () => {
             onFontSizeChange={setFontSize}
           />
 
-          <section className="grid grid-cols-1 gap-5 lg:grid-cols-12">
-            <div className="flex min-h-[560px] flex-col gap-4 overflow-y-auto rounded-[24px] border border-slate-200/70 bg-white p-5 text-left shadow-sm lg:col-span-3 lg:max-h-[760px]">
-              <div>
-                <h3 className="text-xs font-black uppercase tracking-wider text-slate-500">Document Sections</h3>
-                <p className="text-[10px] font-semibold text-slate-400">Organize section hierarchy for scanning priority</p>
-              </div>
-
-              <div className="flex flex-col gap-2">
-                {sections.map((section, idx) => {
-                  const editorMap: Record<string, ActiveSection> = {
-                    'Contact Info': 'info',
-                    'Professional Summary': 'summary',
-                    'Technical Skills': 'skills',
-                    'Work Experience': 'experience',
-                    'Academic Projects': 'projects',
-                    Education: 'education'
-                  };
-                  const targetSec = editorMap[section];
-                  const isActive = activeSection === targetSec;
-
-                  return (
-                    <div
-                      key={section}
-                      onClick={() => {
-                        setActiveSection(targetSec);
-                        setNavigationTab('editor');
-                      }}
-                      className={`flex cursor-pointer items-center justify-between rounded-xl border p-3 transition-all ${
-                        isActive ? 'border-[#173404] bg-[#F1F8EA]' : 'border-slate-200 bg-white hover:bg-slate-50'
-                      }`}
-                    >
-                      <div className="flex items-center gap-2">
-                        <span className="text-[10.5px] font-extrabold text-slate-700">{section}</span>
-                      </div>
-
-                      <div className="flex shrink-0 items-center gap-1" onClick={(event) => event.stopPropagation()}>
-                        <button
-                          onClick={() => moveSection(idx, 'up')}
-                          disabled={idx === 0}
-                          className="cursor-pointer rounded p-1 text-slate-400 hover:bg-slate-100 disabled:opacity-30"
-                          aria-label={`Move ${section} up`}
-                        >
-                          <ArrowUp size={12} />
-                        </button>
-                        <button
-                          onClick={() => moveSection(idx, 'down')}
-                          disabled={idx === sections.length - 1}
-                          className="cursor-pointer rounded p-1 text-slate-400 hover:bg-slate-100 disabled:opacity-30"
-                          aria-label={`Move ${section} down`}
-                        >
-                          <ArrowDown size={12} />
-                        </button>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-
-            <div className="flex min-h-[560px] flex-col gap-4 overflow-y-auto rounded-[24px] border border-slate-200/70 bg-white p-6 shadow-sm lg:col-span-5 lg:max-h-[760px]">
-              {navigationTab === 'editor' && (
-                <ResumeEditor activeSection={activeSection} setActiveSection={setActiveSection} />
-              )}
-
-              {navigationTab === 'templates' && <TemplateSelector />}
-
-              {navigationTab === 'analysis' && (
-                <div className="flex flex-col gap-4 text-left">
-                  <div>
-                    <h4 className="text-xs font-black uppercase tracking-wider text-slate-500">ATS Scanner Analysis</h4>
-                    <p className="text-[10px] font-semibold text-slate-400">Real-time keyword audit and styling scoring</p>
-                  </div>
-
-                  <div className="flex items-center justify-between gap-4 rounded-2xl border border-slate-100 bg-slate-50 p-4.5">
-                    <div className="space-y-1">
-                      <h4 className="text-2xl font-black text-slate-900">{atsScore}%</h4>
-                      <p className="text-[10px] font-black uppercase tracking-wider text-slate-500">Overall ATS Match</p>
-                    </div>
-                    <div className="flex h-12 w-12 animate-spin items-center justify-center rounded-full border-4 border-emerald-500/20 border-t-emerald-600" />
-                  </div>
-
-                  <div className="space-y-2.5">
-                    <div className="flex items-start gap-2.5 rounded-xl border border-indigo-100/50 bg-indigo-50/50 p-3">
-                      <ShieldCheck size={14} className="mt-0.5 shrink-0 text-indigo-600" />
-                      <div className="text-[10.5px]">
-                        <h5 className="font-extrabold text-slate-800">Perfect Formatting</h5>
-                        <p className="mt-0.5 font-bold text-slate-500">
-                          Template constraints prevent multi-column splits, ensuring high parse rates in automated screening bots.
-                        </p>
-                      </div>
-                    </div>
-
-                    <div className="flex items-start gap-2.5 rounded-xl border border-amber-100/50 bg-amber-50/50 p-3">
-                      <AlertCircle size={14} className="mt-0.5 shrink-0 text-amber-600" />
-                      <div className="text-[10.5px]">
-                        <h5 className="font-extrabold text-slate-800">Add Achievements Details</h5>
-                        <p className="mt-0.5 font-bold text-slate-500">
-                          Make sure to outline measurable business values like percentages, savings, and metrics in work experience descriptions.
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              )}
-            </div>
-
-            <div className="flex min-h-[560px] flex-col gap-4 overflow-y-auto rounded-[24px] border border-slate-200/70 bg-white p-6 shadow-sm lg:col-span-4 lg:max-h-[760px]">
-              <ResumePreview
-                fontFamily={fontFamily}
-                fontSize={fontSize}
-                onFontFamilyChange={setFontFamily}
-                onFontSizeChange={setFontSize}
-                frameClassName="max-h-[620px] min-h-[460px]"
-              />
-            </div>
-          </section>
         </main>
       </div>
+
+      {isEditingWizardOpen && resumeData && (
+        <CreateFromScratchWizard
+          resumeId={resumeId}
+          initialData={resumeData}
+          onClose={() => setIsEditingWizardOpen(false)}
+          onSuccess={() => {
+            setIsEditingWizardOpen(false);
+            if (resumeId) fetchBuilderData(resumeId);
+          }}
+        />
+      )}
     </div>
   );
 };
 
-const SegmentedTabs: React.FC<{
-  activeTab: NavigationTab;
-  onChange: (tab: NavigationTab) => void;
-}> = ({ activeTab, onChange }) => {
-  const tabs: Array<{ id: NavigationTab; label: string }> = [
-    { id: 'editor', label: 'Form Editor' },
-    { id: 'templates', label: 'Templates' },
-    { id: 'analysis', label: 'ATS Checker' }
-  ];
 
-  return (
-    <div className="flex rounded-2xl bg-[#DED6C4] p-1">
-      {tabs.map((tab) => (
-        <button
-          key={tab.id}
-          onClick={() => onChange(tab.id)}
-          className={`cursor-pointer rounded-xl px-4 py-2 text-[10px] font-black uppercase tracking-wide transition ${
-            activeTab === tab.id ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-900'
-          }`}
-        >
-          {tab.label}
-        </button>
-      ))}
-    </div>
-  );
-};
 
 const TemplateDropdown: React.FC<{
   value: string;
   templates: Array<{ id: string; name: string }>;
   onChange: (value: string) => void;
   className?: string;
-}> = ({ value, templates, onChange, className = '' }) => (
-  <select
-    value={value}
-    onChange={(event) => onChange(event.target.value)}
-    className={`rounded-2xl border border-[#DED6C4] bg-white px-5 py-3 text-sm font-black text-slate-900 outline-none transition focus:border-[#173404] focus:ring-2 focus:ring-[#173404]/10 ${className}`}
-  >
-    {templates.map((template) => (
-      <option key={template.id} value={template.id}>
-        {template.name}
-      </option>
-    ))}
-  </select>
-);
+}> = ({ value, templates, onChange, className = '' }) => {
+  const [isOpen, setIsOpen] = useState(false);
+  const [focusedIndex, setFocusedIndex] = useState(-1);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const listboxRef = useRef<HTMLUListElement>(null);
+
+  const selectedTemplate = templates.find((t) => t.id === value);
+
+  useEffect(() => {
+    const handleOutsideClick = (e: MouseEvent) => {
+      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
+        setIsOpen(false);
+      }
+    };
+    if (isOpen) {
+      document.addEventListener('mousedown', handleOutsideClick);
+    }
+    return () => document.removeEventListener('mousedown', handleOutsideClick);
+  }, [isOpen]);
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (!isOpen) {
+      if (e.key === 'Enter' || e.key === ' ' || e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+        e.preventDefault();
+        setIsOpen(true);
+        setFocusedIndex(templates.findIndex(t => t.id === value));
+      }
+      return;
+    }
+
+    switch (e.key) {
+      case 'Escape':
+        setIsOpen(false);
+        break;
+      case 'ArrowDown':
+        e.preventDefault();
+        setFocusedIndex((prev) => (prev < templates.length - 1 ? prev + 1 : 0));
+        break;
+      case 'ArrowUp':
+        e.preventDefault();
+        setFocusedIndex((prev) => (prev > 0 ? prev - 1 : templates.length - 1));
+        break;
+      case 'Enter':
+      case ' ':
+        e.preventDefault();
+        if (focusedIndex >= 0 && focusedIndex < templates.length) {
+          onChange(templates[focusedIndex].id);
+          setIsOpen(false);
+        }
+        break;
+      case 'Tab':
+        setIsOpen(false);
+        break;
+    }
+  };
+
+  useEffect(() => {
+    if (isOpen && focusedIndex >= 0 && listboxRef.current) {
+      const activeElement = listboxRef.current.children[focusedIndex] as HTMLElement;
+      if (activeElement) {
+        activeElement.scrollIntoView({ block: 'nearest' });
+      }
+    }
+  }, [focusedIndex, isOpen]);
+
+  return (
+    <div className={`relative ${className}`} ref={containerRef}>
+      <button
+        type="button"
+        className="flex w-full items-center justify-between gap-3 rounded-2xl border border-[#DED6C4] bg-white px-5 py-3 text-sm font-black text-slate-900 outline-none transition-all focus:border-[#173404] focus:ring-2 focus:ring-[#173404]/10 hover:bg-slate-50 cursor-pointer"
+        aria-haspopup="listbox"
+        aria-expanded={isOpen}
+        onClick={() => {
+          setIsOpen(!isOpen);
+          if (!isOpen) setFocusedIndex(templates.findIndex(t => t.id === value));
+        }}
+        onKeyDown={handleKeyDown}
+      >
+        <span>{selectedTemplate?.name || 'Select Template'}</span>
+        <ChevronDown 
+          size={16} 
+          className={`text-slate-500 transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`} 
+        />
+      </button>
+
+      <AnimatePresence>
+        {isOpen && (
+          <motion.div
+            initial={{ opacity: 0, y: -8 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -4 }}
+            transition={{ duration: 0.15, ease: "easeOut" }}
+            className="absolute right-0 top-[calc(100%+8px)] z-50 w-full min-w-[280px] overflow-hidden rounded-[12px] border border-slate-200 bg-white p-2 shadow-[0_8px_30px_rgb(0,0,0,0.08)]"
+          >
+            <ul
+              ref={listboxRef}
+              role="listbox"
+              aria-activedescendant={focusedIndex >= 0 ? `template-option-${focusedIndex}` : undefined}
+              className="flex max-h-[340px] flex-col gap-1 overflow-y-auto outline-none"
+              tabIndex={-1}
+            >
+              {templates.map((template, index) => {
+                const isSelected = template.id === value;
+                const isFocused = index === focusedIndex;
+                
+                return (
+                  <li
+                    key={template.id}
+                    id={`template-option-${index}`}
+                    role="option"
+                    aria-selected={isSelected}
+                    onClick={() => {
+                      onChange(template.id);
+                      setIsOpen(false);
+                    }}
+                    onMouseEnter={() => setFocusedIndex(index)}
+                    className={`
+                      relative flex cursor-pointer items-center justify-between rounded-lg px-4 py-2.5 text-sm transition-colors duration-100
+                      ${isSelected ? 'bg-[#F1F8EA] text-[#173404] font-black' : 'text-slate-900 font-bold'}
+                      ${!isSelected && isFocused ? 'bg-[#F1F8EA]/60' : ''}
+                      ${isFocused ? 'ring-1 ring-[#173404]/10' : ''}
+                    `}
+                  >
+                    <span>{template.name}</span>
+                    {isSelected && (
+                      <Check size={16} className="text-[#6C7E3D]" />
+                    )}
+                  </li>
+                );
+              })}
+            </ul>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+};
 
 const DownloadButton: React.FC<{
   onClick: () => void;

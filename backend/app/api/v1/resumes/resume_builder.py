@@ -293,106 +293,154 @@ async def generate_resume_pdf_endpoint(
     POST /api/resume/generate-pdf/{resume_id}
     Generates ReportLab PDF, uploads it to Cloudinary, and stores metadata link.
     """
-    # 1. Verify resume ownership
-    resume_doc = db.resumes.find_one({"id": resume_id, "student_id": student.id})
-    if not resume_doc:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Resume not found or unauthorized"
-        )
-        
-    # 2. Run Quality Gate checks
-    original_data = {}
-    analysis_record = db.resume_analysis.find_one({"resume_id": resume_id, "student_id": student.id})
-    if analysis_record and "extracted_data" in analysis_record:
-        original_data = analysis_record["extracted_data"]
-        
-    gate_errors = run_quality_gate(payload.resume_data, original_data)
-    if gate_errors:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail={
-                "message": "Quality Gate validation failed. Please address the errors before exporting.",
-                "errors": gate_errors
-            }
-        )
+    import traceback
+    print(f"\n{'='*60}")
+    print(f"[PDF-GEN] Starting PDF generation for resume_id={resume_id}, student_id={student.id}")
+    print(f"[PDF-GEN] Template: {payload.template}, Font: {payload.font_family}/{payload.font_size}")
+    print(f"{'='*60}")
 
-    # 3. Build PDF via Playwright headless browser renderer
     try:
-        pdf_bytes = _call_playwright_renderer(
-            resume_data=payload.resume_data,
-            template=payload.template,
-            font_family=payload.font_family if hasattr(payload, 'font_family') else "Inter",
-            font_size=payload.font_size if hasattr(payload, 'font_size') else "11pt",
-            custom_config=payload.custom_config if hasattr(payload, 'custom_config') else None
-        )
-    except RuntimeError as e:
-        raise HTTPException(
-            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-            detail=f"PDF renderer unavailable: {str(e)}"
-        )
+        # 1. Verify resume ownership
+        print(f"[PDF-GEN] Step 1: Verifying resume ownership...")
+        resume_doc = db.resumes.find_one({"id": resume_id, "student_id": student.id})
+        if not resume_doc:
+            print(f"[PDF-GEN] Step 1 FAILED: Resume {resume_id} not found for student {student.id}")
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Resume not found or unauthorized"
+            )
+        print(f"[PDF-GEN] Step 1 OK: Resume found (name={resume_doc.get('name', 'N/A')})")
+
+        # 2. Run Quality Gate checks
+        print(f"[PDF-GEN] Step 2: Running quality gate checks...")
+        original_data = {}
+        analysis_record = db.resume_analysis.find_one({"resume_id": resume_id, "student_id": student.id})
+        if analysis_record and "extracted_data" in analysis_record:
+            original_data = analysis_record["extracted_data"]
+            print(f"[PDF-GEN] Step 2: Found analysis record with extracted_data")
+        else:
+            print(f"[PDF-GEN] Step 2: No analysis record found — using empty original_data (scratch resume)")
+
+        gate_errors = run_quality_gate(payload.resume_data, original_data)
+        if gate_errors:
+            print(f"[PDF-GEN] Step 2 FAILED: Quality gate errors: {gate_errors}")
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail={
+                    "message": "Quality Gate validation failed. Please address the errors before exporting.",
+                    "errors": gate_errors
+                }
+            )
+        print(f"[PDF-GEN] Step 2 OK: Quality gate passed")
+
+        # 3. Build PDF via Playwright headless browser renderer
+        print(f"[PDF-GEN] Step 3: Calling Playwright renderer...")
+        try:
+            pdf_bytes = _call_playwright_renderer(
+                resume_data=payload.resume_data,
+                template=payload.template,
+                font_family=payload.font_family if hasattr(payload, 'font_family') else "Inter",
+                font_size=payload.font_size if hasattr(payload, 'font_size') else "11pt",
+                custom_config=payload.custom_config if hasattr(payload, 'custom_config') else None
+            )
+            print(f"[PDF-GEN] Step 3 OK: Renderer returned {len(pdf_bytes)} bytes")
+        except RuntimeError as e:
+            print(f"[PDF-GEN] Step 3 FAILED (RuntimeError): {e}")
+            traceback.print_exc()
+            raise HTTPException(
+                status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+                detail=f"PDF renderer unavailable: {str(e)}"
+            )
+        except Exception as e:
+            print(f"[PDF-GEN] Step 3 FAILED (Exception): {e}")
+            traceback.print_exc()
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail=f"PDF compilation failed: {str(e)}"
+            )
+
+        # 4. Post-generation PDF Validator checks
+        print(f"[PDF-GEN] Step 4: Validating PDF content...")
+        from app.services.pdf_validator import PDFValidator
+        orig_pages = analysis_record.get("extracted_data", {}).get("pages", 1) if analysis_record else 1
+        if not isinstance(orig_pages, int):
+            orig_pages = 1
+        pdf_val = PDFValidator.validate_pdf_content(pdf_bytes, original_page_count=orig_pages)
+        print(f"[PDF-GEN] Step 4: Validation result: isValid={pdf_val['isValid']}, errors={pdf_val.get('errors', [])}, warnings={pdf_val.get('warnings', [])}")
+        if not pdf_val["isValid"]:
+            print(f"[PDF-GEN] Step 4 FAILED: PDF validation errors: {pdf_val['errors']}")
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail={
+                    "message": "Generated PDF readability checks failed.",
+                    "errors": pdf_val["errors"]
+                }
+            )
+        print(f"[PDF-GEN] Step 4 OK: PDF validation passed")
+
+        # 5. Upload PDF bytes to Cloudinary (optional — gracefully skip if not configured)
+        print(f"[PDF-GEN] Step 5: Uploading to Cloudinary...")
+        filename = f"resume_student_{student.id}_v"
+        upload_res = None
+        current_version = 1
+        try:
+            version_count = db.generated_resumes.count_documents({"resume_id": resume_id})
+            current_version = version_count + 1
+            print(f"[PDF-GEN] Step 5: Version={current_version}, filename={filename}{current_version}.pdf")
+
+            from app.services.cloudinary_service import is_configured as cloudinary_configured
+            if not cloudinary_configured:
+                print(f"[PDF-GEN] Step 5 SKIPPED: Cloudinary not configured — returning base64 only")
+            else:
+                upload_res = upload_file(
+                    pdf_bytes,
+                    filename=f"{filename}{current_version}.pdf",
+                    folder="generated-resumes"
+                )
+                print(f"[PDF-GEN] Step 5 OK: Cloudinary upload succeeded, url={upload_res.get('url', 'N/A')}")
+        except Exception as e:
+            print(f"[PDF-GEN] Step 5 WARNING: Cloudinary upload failed (non-fatal): {e}")
+            traceback.print_exc()
+            # Don't raise — we can still return the PDF as base64
+
+        # 6. Save metadata to generated_resumes collection
+        print(f"[PDF-GEN] Step 6: Saving metadata to MongoDB...")
+        gen_id = str(get_next_sequence("generated_resumes"))
+        pdf_url = upload_res["url"] if upload_res else ""
+        public_id = upload_res["public_id"] if upload_res else ""
+        db.generated_resumes.insert_one({
+            "id": int(gen_id),
+            "student_id": student.id,
+            "resume_id": resume_id,
+            "template": payload.template,
+            "pdf_url": pdf_url,
+            "public_id": public_id,
+            "version": current_version,
+            "created_at": datetime.now(timezone.utc).isoformat()
+        })
+        print(f"[PDF-GEN] Step 6 OK: Metadata saved (gen_id={gen_id})")
+
+        import base64
+        pdf_base64 = base64.b64encode(pdf_bytes).decode('utf-8')
+        print(f"[PDF-GEN] COMPLETE: PDF generated successfully ({len(pdf_base64)} base64 chars)")
+
+        return {
+            "success": True,
+            "message": "Resume PDF generated successfully",
+            "pdf_url": pdf_url,
+            "pdf_base64": pdf_base64,
+            "version": current_version
+        }
+
+    except HTTPException:
+        raise  # Re-raise FastAPI HTTP exceptions as-is
     except Exception as e:
+        print(f"[PDF-GEN] UNEXPECTED ERROR: {e}")
+        traceback.print_exc()
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"PDF compilation failed: {str(e)}"
+            detail=f"Unexpected PDF generation error: {str(e)}"
         )
-
-    # 4. Post-generation PDF Validator checks
-    from app.services.pdf_validator import PDFValidator
-    orig_pages = analysis_record.get("extracted_data", {}).get("pages", 1) if analysis_record else 1
-    if not isinstance(orig_pages, int):
-        orig_pages = 1
-    pdf_val = PDFValidator.validate_pdf_content(pdf_bytes, original_page_count=orig_pages)
-    if not pdf_val["isValid"]:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail={
-                "message": "Generated PDF readability checks failed.",
-                "errors": pdf_val["errors"]
-            }
-        )
-
-    # 5. Upload PDF bytes to Cloudinary
-    filename = f"resume_student_{student.id}_v"
-    try:
-        version_count = db.generated_resumes.count_documents({"resume_id": resume_id})
-        current_version = version_count + 1
-        
-        # Upload
-        upload_res = upload_file(
-            pdf_bytes, 
-            filename=f"{filename}{current_version}.pdf",
-            folder="generated-resumes"
-        )
-    except Exception as e:
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Cloudinary PDF Upload failed: {str(e)}"
-        )
-
-    # 6. Save metadata to generated_resumes collection
-    gen_id = str(get_next_sequence("generated_resumes"))
-    db.generated_resumes.insert_one({
-        "id": int(gen_id),
-        "student_id": student.id,
-        "resume_id": resume_id,
-        "template": payload.template,
-        "pdf_url": upload_res["url"],
-        "public_id": upload_res["public_id"],
-        "version": current_version,
-        "created_at": datetime.now(timezone.utc).isoformat()
-    })
-
-    import base64
-    pdf_base64 = base64.b64encode(pdf_bytes).decode('utf-8')
-
-    return {
-        "success": True,
-        "message": "Resume PDF generated successfully",
-        "pdf_url": upload_res["url"],
-        "pdf_base64": pdf_base64,
-        "version": current_version
-    }
 
 @router.get("/generated/{resume_id}")
 def get_previously_generated_resumes(

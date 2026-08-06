@@ -1,12 +1,6 @@
 @import "tailwindcss";
 
-@font-face {
-  font-family: 'Bogue Slab Thin';
-  src: url('/fonts/BogueSlab-Thin.woff2') format('woff2');
-  font-weight: 100;
-  font-style: normal;
-  font-display: swap;
-}
+/* Display font — Cormorant Garamond loaded via Google Fonts in index.html */
 
 /* Force Tailwind CSS v4 class-based dark mode selector strategy */
 @variant dark (&:where(.dark, .dark *));
@@ -45,7 +39,7 @@
   --color-emerald-950: var(--accent-hover);
 
   --font-sans: 'Inter', sans-serif;
-  --font-display: 'Bogue Slab Thin', Georgia, serif;
+  --font-display: 'Cormorant Garamond', Georgia, serif;
 }
 
 :root {

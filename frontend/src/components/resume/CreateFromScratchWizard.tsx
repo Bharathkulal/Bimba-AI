@@ -47,6 +47,8 @@ interface ScratchDraft {
 
 interface CreateFromScratchWizardProps {
   initialContact?: Partial<PersonalInfo>;
+  initialData?: ResumeBuilderData | null;
+  resumeId?: number | null;
   isDark?: boolean;
   onClose: () => void;
   onSuccess?: () => void;
@@ -145,11 +147,22 @@ const labelClass = 'text-[10px] font-black uppercase tracking-wider text-slate-5
 
 export const CreateFromScratchWizard: React.FC<CreateFromScratchWizardProps> = ({
   initialContact,
+  initialData,
+  resumeId,
+  isDark,
   onClose,
   onSuccess
 }) => {
   const navigate = useNavigate();
-  const [draft, setDraft] = useState<ScratchDraft>(() => loadDraft(initialContact));
+  const [draft, setDraft] = useState<ScratchDraft>(() => {
+    if (initialData) {
+      return normalizeDraft({
+        resumeId: resumeId || null,
+        data: initialData
+      });
+    }
+    return loadDraft(initialContact);
+  });
   const [activeStep, setActiveStep] = useState<StepId>('contact');
   const [savedAt, setSavedAt] = useState(new Date());
   const [isSaving, setIsSaving] = useState(false);
