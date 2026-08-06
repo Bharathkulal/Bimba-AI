@@ -95,7 +95,7 @@ class ResumeIntegrityValidator:
             orig_text = str(original.get(key, "")).strip()
             curr_text = str(current.get(key, "")).strip()
             if orig_text and not curr_text:
-                errors.append(f"This section was not included: '{name}' was present in the original but is missing now. Please review.")
+                warnings.append(f"This section was not included: '{name}' was present in the original but is missing now. Please review.")
 
         is_valid = len(errors) == 0
         return {

@@ -279,3 +279,86 @@ Return ONLY the optimized valid JSON object:
 Job Description:
 {job_description}
 """
+
+RESUME_INTELLIGENCE_PROMPT = """
+You are a senior recruiter, hiring manager, ATS (Applicant Tracking System) expert, and professional resume writer.
+Analyze the following resume (JSON and original raw text) and return a comprehensive analysis, dynamic organization, and professional sentence-level optimizations.
+
+Input Data:
+Resume JSON:
+{resume_json}
+
+Original Raw Text:
+{original_text}
+
+OCR Confidence: {ocr_confidence}
+Resume Language: {resume_language}
+Target Job (optional): {target_job}
+Target Industry (optional): {target_industry}
+
+CRITICAL RULES:
+1. NEVER invent, fabricate, or exaggerate achievements, companies, roles, certifications, degrees, or projects.
+2. Maintain the detected resume language unless requested.
+3. Optimize grammar, sentence flow, action verbs, clarity, and keyword density.
+4. For every modification (Summary, Experiences, Projects), provide original, improved, and reason.
+5. Group skills dynamically into context-aware categories (e.g., Programming Languages, Frameworks, Cloud, etc.).
+6. Automatically determine the resume type, career level, and optimal section ordering based on content.
+7. Compute detailed non-hardcoded ATS Scores across formatting, completeness, keywords, experience, skills, projects, grammar, and readability.
+
+Your output MUST be ONLY a valid JSON object matching this schema, without markdown wrappers:
+{
+  "detected_metadata": {
+    "resume_type": "Student | Software Engineer | Data Scientist | Management | Researcher | etc.",
+    "career_level": "Student | Entry Level | Junior | Mid Level | Senior | Lead | Manager | Director | etc.",
+    "section_order": ["summary", "education", "skills", "experience", "projects", "certifications", "hobbies", "etc."]
+  },
+  "summary": {
+    "original": "original summary if present",
+    "improved": "recruiter-quality summary using only extracted facts",
+    "reason": "why it was improved"
+  },
+  "experience": [
+    {
+      "company": "string",
+      "position": "string",
+      "duration": "string",
+      "original": "original descriptions / responsibilities",
+      "improved": "achievement-oriented descriptions using strong action verbs naturally",
+      "reason": "why it was improved"
+    }
+  ],
+  "projects": [
+    {
+      "title": "string",
+      "original": "original description",
+      "improved": "impact-oriented rewrite explaining problem, solution, technologies, and impact",
+      "reason": "why it was improved"
+    }
+  ],
+  "skills_groups": [
+    {
+      "group_name": "Programming Languages | Cloud | Soft Skills | etc.",
+      "skills": ["string"]
+    }
+  ],
+  "ats_analysis": {
+    "scores": {
+      "overall_score": 75,
+      "formatting_score": 80,
+      "completeness_score": 85,
+      "keywords_score": 70,
+      "experience_score": 75,
+      "skills_score": 80,
+      "projects_score": 70,
+      "grammar_score": 90,
+      "readability_score": 85
+    },
+    "strengths": ["string"],
+    "weaknesses": ["string"],
+    "improvement_suggestions": ["string"],
+    "missing_keywords": ["string"]
+  },
+  "confidence": 0.95
+}
+"""
+

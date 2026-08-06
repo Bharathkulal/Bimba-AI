@@ -1065,7 +1065,7 @@ export const UploadResumeWizard: React.FC<UploadResumeWizardProps> = ({
                           </span>
                         )}
                       </span>
-                      <div className="flex items-center gap-2"> gap-2">
+                      <div className="flex items-center gap-2">
                         <button
                           onClick={handleGenerateSummary}
                           disabled={isGeneratingSummary}

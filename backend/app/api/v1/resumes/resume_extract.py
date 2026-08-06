@@ -242,11 +242,22 @@ def analyze_resume_endpoint(
     # 1. Verify ownership and fetch or create resume_analysis record
     analysis_record = get_or_create_resume_analysis(resume_id, student.id, db)
 
-    # 1.5 Always perform fresh Groq AI analysis on updated resume data (bypassing stale cache)
+    # Fetch resume document to get target job / target industry details
+    resume_doc = db.resumes.find_one({"id": resume_id, "student_id": student.id}) or {}
+    target_job = resume_doc.get("target_role") or resume_doc.get("master", {}).get("target_role")
+    target_industry = resume_doc.get("target_industry") or resume_doc.get("master", {}).get("target_industry")
 
     # 2. Call AI Analyzer service
     try:
-        ai_res = analyze_resume(db, analysis_record.get("extracted_data", {}))
+        ai_res = analyze_resume(
+            db, 
+            analysis_record.get("extracted_data", {}),
+            raw_text=analysis_record.get("raw_text", ""),
+            ocr_confidence=analysis_record.get("ocr_confidence", 1.0),
+            resume_language=analysis_record.get("language") or analysis_record.get("resume_language", "en"),
+            target_job=target_job,
+            target_industry=target_industry
+        )
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,

@@ -82,7 +82,7 @@ class ResumeRepository:
             "name": f"AI Parsed - {personal_info.get('name') or 'Resume'}",
             "resume_type": "Experienced" if len(experience) > 0 else "Fresher",
             "target_role": personal_info.get("title") or "",
-            "career_objective": personal_info.get("summary") or "",
+            "career_objective": parsed_data.get("objective") or parsed_data.get("summary") or "",
             "preferred_industry": "",
             "language": "English",
             "expected_salary": "",
@@ -99,7 +99,7 @@ class ResumeRepository:
             "linkedin": personal_info.get("linkedin", ""),
             "github": personal_info.get("github", ""),
             "portfolio": personal_info.get("portfolio", ""),
-            "summary": personal_info.get("summary", ""),
+            "summary": parsed_data.get("summary") or personal_info.get("summary", ""),
             
             "education": education,
             "experience": experience,
