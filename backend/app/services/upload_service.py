@@ -177,9 +177,12 @@ class UploadService:
             raise pe
         except Exception as e:
             # Package generic unexpected failures cleanly
+            import traceback
+            tb_str = traceback.format_exc()
             log_error("UPLOAD", f"Unexpected pipeline failure on {filename}", e)
             raise PipelineException(
                 step="Orchestration Pipeline",
                 provider="Core Service",
-                message=f"Pipeline failed: {str(e)}"
+                message=f"Pipeline failed: {str(e)}",
+                details=tb_str
             )

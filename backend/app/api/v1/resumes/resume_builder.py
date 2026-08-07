@@ -439,7 +439,7 @@ async def generate_resume_pdf_endpoint(
         traceback.print_exc()
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Unexpected PDF generation error: {str(e)}"
+            detail="An unexpected error occurred during PDF generation. Please try again later."
         )
 
 @router.get("/generated/{resume_id}")

@@ -1,5 +1,6 @@
 from typing import Dict, Any
 from datetime import datetime, timezone
+import json
 import pymongo.errors
 from app.core.exceptions import DatabaseException
 from app.core.logging_service import log_stage, log_error
@@ -106,7 +107,7 @@ class ResumeRepository:
             "projects": projects,
             "skills": skills,
             "certificates": parsed_data.get("certifications", []) or parsed_data.get("certificates", []),
-            "achievements_list": json_dumps_safe(parsed_data.get("achievements")),
+            "achievements_list": json.dumps(parsed_data.get("achievements", [])),
             "hobbies": parsed_data.get("hobbies", []),
             
             "created_at": datetime.now(timezone.utc),
@@ -130,7 +131,6 @@ class ResumeRepository:
         sanitized_doc = copy.deepcopy(resume_doc)
         sanitized_doc["created_at"] = str(sanitized_doc["created_at"])
         sanitized_doc["updated_at"] = str(sanitized_doc["updated_at"])
-        import json
         print(json.dumps(sanitized_doc, indent=2))
         
         try:

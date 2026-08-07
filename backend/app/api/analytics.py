@@ -271,18 +271,42 @@ def get_ats_analytics(student: Student = Depends(get_current_student), db: Any =
         readability_score = int(analysis.get("grammar_score", 0))
         keyword_match = int(analysis.get("keyword_match_score", 0))
         
-        suggestions_str = analysis.get("suggestions")
-        if suggestions_str:
+        suggestions_raw = analysis.get("suggestions")
+        if suggestions_raw:
             try:
                 import json
-                suggestions = json.loads(suggestions_str)
-                for s in suggestions:
-                    recommendations.append({
-                        "title": s.get("problem", "Optimize Details"),
-                        "reason": s.get("reason", "Scan alert check"),
-                        "priority": s.get("priority", "Medium"),
-                        "fix": s.get("fix", "")
-                    })
+                
+                # Default to raw value
+                suggestions = suggestions_raw
+                
+                # Try to parse if it's a string
+                if isinstance(suggestions, str):
+                    try:
+                        suggestions = json.loads(suggestions)
+                        # Handle double-encoded JSON strings
+                        if isinstance(suggestions, str):
+                            suggestions = json.loads(suggestions)
+                    except json.JSONDecodeError:
+                        pass
+                
+                # Normalize to list
+                if isinstance(suggestions, dict):
+                    suggestions = [suggestions]
+                
+                # Extract recommendations
+                if isinstance(suggestions, list):
+                    for s in suggestions:
+                        if isinstance(s, dict):
+                            recommendations.append({
+                                "title": s.get("problem", "Optimize Details"),
+                                "reason": s.get("reason", "Scan alert check"),
+                                "priority": s.get("priority", "Medium"),
+                                "fix": s.get("fix", "")
+                            })
+                        else:
+                            print(f"[Analytics suggestions parse error] Expected dict, got {type(s)}: {s}")
+                else:
+                    print(f"[Analytics suggestions parse error] Expected list, got {type(suggestions)}")
             except Exception as ex:
                 print(f"[Analytics suggestions parse error] {ex}")
                 

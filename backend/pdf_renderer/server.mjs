@@ -18,7 +18,37 @@
 
 import http from 'http';
 import { chromium } from 'playwright';
+
+// ─── Template Imports ────────────────────────────────────────────────────────
 import { renderAtsDynamic } from './templates/ats_dynamic.mjs';
+import { renderHarvard } from './templates/harvard.mjs';
+import { renderJakes } from './templates/jakes.mjs';
+import { renderStanford } from './templates/stanford.mjs';
+import { renderMicrosoft } from './templates/microsoft.mjs';
+import { renderReactive } from './templates/reactive.mjs';
+import { renderNovoresume } from './templates/novoresume.mjs';
+import { renderFlowCV } from './templates/flowcv.mjs';
+import { renderIndeed } from './templates/indeed.mjs';
+import { renderMinimalistModern } from './templates/minimalist_modern.mjs';
+
+// ─── Template Registry ───────────────────────────────────────────────────────
+// Maps frontend template IDs to their backend HTML render functions.
+// This must stay in sync with frontend's TemplateRegistry in
+// frontend/src/components/resume/templates/index.ts
+const TemplateRenderers = {
+  harvard:             (data, ff, fs) => renderHarvard(data, ff, fs),
+  jakes:               (data, ff, fs) => renderJakes(data, ff, fs),
+  stanford:            (data, ff, fs) => renderStanford(data, ff, fs),
+  microsoft:           (data, ff, fs) => renderMicrosoft(data, ff, fs),
+  reactive:            (data, ff, fs) => renderReactive(data, ff, fs),
+  novoresume:          (data, ff, fs) => renderNovoresume(data, ff, fs),
+  flowcv:              (data, ff, fs) => renderFlowCV(data, ff, fs),
+  indeed:              (data, ff, fs) => renderIndeed(data, ff, fs),
+  'minimalist-modern': (data, ff, fs) => renderMinimalistModern(data, ff, fs),
+  // Fallback / legacy names
+  ats_classic:         (data, ff, fs) => renderAtsDynamic(data, 'ats_classic', { fontFamily: ff, fontSize: fs }),
+  ats_dynamic:         (data, ff, fs) => renderAtsDynamic(data, 'ats_dynamic', { fontFamily: ff, fontSize: fs }),
+};
 
 const PORT = 5174;
 const RENDER_TIMEOUT_MS = 30000;
@@ -48,11 +78,15 @@ async function getBrowser() {
 }
 
 async function renderPdf(template, data, fontFamily = 'Inter', fontSize = '11pt', customConfig = {}) {
-  const html = renderAtsDynamic(data, template, {
-    fontFamily,
-    fontSize,
-    ...customConfig
-  });
+  // Look up the correct renderer for the selected template
+  const renderer = TemplateRenderers[template];
+  if (!renderer) {
+    console.warn(`[pdf-renderer] Unknown template "${template}" — falling back to ats_dynamic`);
+  }
+  const renderFn = renderer || TemplateRenderers.ats_dynamic;
+  const html = renderFn(data, fontFamily, fontSize);
+
+  console.log(`[pdf-renderer] Rendering template="${template}", font="${fontFamily}/${fontSize}"`);
 
   let lastError = null;
   for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
@@ -92,7 +126,11 @@ async function renderPdf(template, data, fontFamily = 'Inter', fontSize = '11pt'
 const server = http.createServer(async (req, res) => {
   if (req.method === 'GET' && req.url === '/health') {
     res.writeHead(200, { 'Content-Type': 'application/json' });
-    res.end(JSON.stringify({ status: 'ok', browserReady: !!(browser && browser.isConnected()) }));
+    res.end(JSON.stringify({ 
+      status: 'ok', 
+      browserReady: !!(browser && browser.isConnected()),
+      templates: Object.keys(TemplateRenderers)
+    }));
     return;
   }
 
@@ -160,6 +198,7 @@ async function start() {
     process.exit(1);
   }
 
+  console.log(`[pdf-renderer] Available templates: ${Object.keys(TemplateRenderers).join(', ')}`);
   server.listen(PORT, '127.0.0.1', () => {
     console.log(`[pdf-renderer] Listening on http://127.0.0.1:${PORT}`);
   });

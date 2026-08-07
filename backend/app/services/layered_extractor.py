@@ -1,5 +1,5 @@
 import io
-import fitz  # PyMuPDF
+import pymupdf
 import pdfplumber
 import docx
 import re
@@ -34,7 +34,7 @@ class LayeredExtractor:
         log_stage("EXTRACTOR", "START", f"Running layered extraction for {filename}")
         
         try:
-            doc = fitz.open(stream=file_content, filetype="pdf")
+            doc = pymupdf.open(stream=file_content, filetype="pdf")
             pages_count = len(doc)
         except Exception as e:
             log_error("EXTRACTOR", "Failed to open PDF file", e)

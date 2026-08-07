@@ -42,7 +42,7 @@ export function renderAtsDynamic(data, presetName, customConfig = {}) {
   // Render Section Header
   const renderSectionHeader = (title) => {
     return `
-      <div class="mb-4 mt-6" style="page-break-after: avoid; break-after: avoid;">
+      <div class="section-header" style="break-after: avoid; page-break-after: avoid;">
         <h3 class="font-bold uppercase tracking-wider text-[14pt] text-slate-900 mb-1.5">${title}</h3>
         <div class="border-b" style="border-color: #cbd5e1;"></div>
       </div>
@@ -52,9 +52,9 @@ export function renderAtsDynamic(data, presetName, customConfig = {}) {
   // 1. Summary (4-6 lines)
   const summaryText = data.summary || data.objective || '';
   const summaryHtml = summaryText ? `
-    <div class="mb-6" style="page-break-inside: avoid; break-inside: avoid;">
+    <div class="resume-section" style="page-break-inside: avoid; break-inside: avoid;">
       ${renderSectionHeader('Professional Summary')}
-      <p class="text-[11pt] text-slate-700 leading-relaxed font-normal text-justify">${esc(summaryText)}</p>
+      <p class="text-[11pt] text-slate-700 leading-relaxed font-normal text-justify mt-3">${esc(summaryText)}</p>
     </div>
   ` : '';
 
@@ -76,7 +76,7 @@ export function renderAtsDynamic(data, presetName, customConfig = {}) {
         `).join('');
       }
       return `
-        <div class="mb-5" style="page-break-inside: avoid; break-inside: avoid;">
+        <div class="entry-block" style="page-break-inside: avoid; break-inside: avoid;">
           <div class="flex justify-between items-baseline font-bold text-[12pt] text-slate-900">
             <span>${esc(exp.company)}</span>
             <span class="font-medium text-[10.5pt] text-slate-550">${esc(exp.duration || '')}</span>
@@ -91,9 +91,9 @@ export function renderAtsDynamic(data, presetName, customConfig = {}) {
     }).join('');
 
     experienceHtml = `
-      <div class="mb-6">
+      <div class="resume-section" style="break-inside: auto;">
         ${renderSectionHeader('Professional Experience')}
-        <div class="space-y-4">${listHtml}</div>
+        <div class="mt-3 space-y-4">${listHtml}</div>
       </div>
     `;
   }
@@ -106,7 +106,7 @@ export function renderAtsDynamic(data, presetName, customConfig = {}) {
       const tech = proj.technologies || proj.tech || '';
       const url = proj.url || proj.github || proj.link || '';
       return `
-        <div class="mb-4" style="page-break-inside: avoid; break-inside: avoid;">
+        <div class="entry-block" style="page-break-inside: avoid; break-inside: avoid;">
           <div class="flex justify-between items-baseline font-bold text-[12pt] text-slate-900 mb-1">
             <span>
               ${esc(proj.title || proj.name)}
@@ -120,9 +120,9 @@ export function renderAtsDynamic(data, presetName, customConfig = {}) {
     }).join('');
 
     projectsHtml = `
-      <div class="mb-6">
+      <div class="resume-section" style="break-inside: auto;">
         ${renderSectionHeader('Projects')}
-        <div class="space-y-3">${listHtml}</div>
+        <div class="mt-3 space-y-3">${listHtml}</div>
       </div>
     `;
   }
@@ -167,9 +167,9 @@ export function renderAtsDynamic(data, presetName, customConfig = {}) {
     }).join('');
 
     skillsHtml = `
-      <div class="mb-6" style="page-break-inside: avoid; break-inside: avoid;">
+      <div class="resume-section" style="page-break-inside: avoid; break-inside: avoid;">
         ${renderSectionHeader('Skills Profile')}
-        <div class="space-y-1 mt-1">${skillGroupHtml}</div>
+        <div class="mt-3 space-y-1">${skillGroupHtml}</div>
       </div>
     `;
   }
@@ -179,7 +179,7 @@ export function renderAtsDynamic(data, presetName, customConfig = {}) {
   const eduList = data.education || [];
   if (eduList.length > 0) {
     const listHtml = eduList.map(edu => `
-      <div class="mb-4" style="page-break-inside: avoid; break-inside: avoid;">
+      <div class="entry-block" style="page-break-inside: avoid; break-inside: avoid;">
         <div class="flex justify-between items-baseline font-bold text-[12pt] text-slate-900">
           <span>${esc(edu.institution)}</span>
           <span class="font-medium text-[10.5pt] text-slate-550">${esc(edu.year)}</span>
@@ -192,9 +192,9 @@ export function renderAtsDynamic(data, presetName, customConfig = {}) {
     `).join('');
 
     educationHtml = `
-      <div class="mb-6">
+      <div class="resume-section" style="page-break-inside: avoid; break-inside: avoid;">
         ${renderSectionHeader('Education')}
-        <div class="space-y-3">${listHtml}</div>
+        <div class="mt-3 space-y-3">${listHtml}</div>
       </div>
     `;
   }
@@ -204,16 +204,16 @@ export function renderAtsDynamic(data, presetName, customConfig = {}) {
   const certList = data.certifications || data.certificates || [];
   if (certList.length > 0) {
     const listHtml = certList.map(cert => `
-      <div class="mb-2.5 flex justify-between items-baseline" style="page-break-inside: avoid; break-inside: avoid;">
+      <div class="entry-block" style="page-break-inside: avoid; break-inside: avoid;">
         <span class="font-bold text-[11.5pt] text-slate-800">${esc(cert.name || cert.title)} ${cert.organization || cert.issuer ? `by ${esc(cert.organization || cert.issuer)}` : ''}</span>
-        <span class="text-[10pt] font-semibold text-slate-500">${esc(cert.issue_date || cert.year || '')}</span>
+        <span class="text-[10pt] font-semibold text-slate-500 ml-2">${esc(cert.issue_date || cert.year || '')}</span>
       </div>
     `).join('');
 
     certificationsHtml = `
-      <div class="mb-6">
+      <div class="resume-section" style="page-break-inside: avoid; break-inside: avoid;">
         ${renderSectionHeader('Certifications')}
-        <div class="space-y-1.5">${listHtml}</div>
+        <div class="mt-3 space-y-1.5">${listHtml}</div>
       </div>
     `;
   }
@@ -228,9 +228,9 @@ export function renderAtsDynamic(data, presetName, customConfig = {}) {
       </li>
     `).join('');
     optionalHtml += `
-      <div class="mb-6" style="page-break-inside: avoid; break-inside: avoid;">
+      <div class="resume-section" style="page-break-inside: avoid; break-inside: avoid;">
         ${renderSectionHeader('Awards & Achievements')}
-        <ul class="space-y-1.5 text-[11pt]">${achList}</ul>
+        <ul class="mt-3 space-y-1.5 text-[11pt]">${achList}</ul>
       </div>
     `;
   }
@@ -239,9 +239,9 @@ export function renderAtsDynamic(data, presetName, customConfig = {}) {
   if (languages.length > 0) {
     const langStr = languages.join(', ');
     optionalHtml += `
-      <div class="mb-6" style="page-break-inside: avoid; break-inside: avoid;">
+      <div class="resume-section" style="page-break-inside: avoid; break-inside: avoid;">
         ${renderSectionHeader('Languages')}
-        <p class="text-[11pt] text-slate-700 leading-relaxed">${esc(langStr)}</p>
+        <p class="mt-3 text-[11pt] text-slate-700 leading-relaxed">${esc(langStr)}</p>
       </div>
     `;
   }
@@ -253,16 +253,16 @@ export function renderAtsDynamic(data, presetName, customConfig = {}) {
       const content = sec.content || sec.description || '';
       let contentHtml = '';
       if (Array.isArray(content)) {
-        contentHtml = `<ul class="space-y-1.5 text-[11pt]">` + content.map(c => `
+        contentHtml = `<ul class="mt-3 space-y-1.5 text-[11pt]">` + content.map(c => `
           <li class="relative pl-4 text-slate-700 leading-relaxed font-normal before:content-['•'] before:absolute before:left-0 before:text-slate-400">
             ${esc(c)}
           </li>
         `).join('') + `</ul>`;
       } else {
-        contentHtml = `<p class="text-[11pt] text-slate-700 leading-relaxed">${esc(content)}</p>`;
+        contentHtml = `<p class="mt-3 text-[11pt] text-slate-700 leading-relaxed">${esc(content)}</p>`;
       }
       optionalHtml += `
-        <div class="mb-6" style="page-break-inside: avoid; break-inside: avoid;">
+        <div class="resume-section" style="page-break-inside: avoid; break-inside: avoid;">
           ${renderSectionHeader(title)}
           ${contentHtml}
         </div>
@@ -297,16 +297,51 @@ export function renderAtsDynamic(data, presetName, customConfig = {}) {
       font-size: 11pt;
       line-height: 1.4;
     }
+
+    /* ── Page break / pagination rules ── */
+    @page {
+      size: Letter;
+      margin: 0;
+    }
+
+    /* Keep section headers glued to their content */
+    .section-header {
+      break-after: avoid;
+      page-break-after: avoid;
+      margin-bottom: 0;
+      margin-top: 16px;
+    }
+
+    /* Keep individual entries (education, experience, etc.) together */
+    .entry-block {
+      break-inside: avoid;
+      page-break-inside: avoid;
+    }
+
+    /* Keep small sections (skills, summary, short education) fully together */
+    .resume-section {
+      break-inside: avoid;
+      page-break-inside: avoid;
+    }
+
+    /* For large sections (experience, projects) that might legitimately span pages,
+       allow the section to break but keep individual entries together */
+    .resume-section[style*="break-inside: auto"] {
+      break-inside: auto;
+      page-break-inside: auto;
+    }
+
     @media print {
       body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+      .section-header { break-after: avoid; page-break-after: avoid; }
+      .entry-block { break-inside: avoid; page-break-inside: avoid; }
     }
   </style>
 </head>
 <body class="bg-white">
   <div 
     style="
-      width: 210mm;
-      min-height: 297mm;
+      width: 100%;
       padding: 18mm;
       box-sizing: border-box;
       margin: 0 auto;

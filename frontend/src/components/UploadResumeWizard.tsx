@@ -193,6 +193,7 @@ export const UploadResumeWizard: React.FC<UploadResumeWizardProps> = ({
   const [completedTasks, setCompletedTasks] = useState<string[]>([]);
   const [isParsing, setIsParsing] = useState<boolean>(false);
   const [apiCompleted, setApiCompleted] = useState<boolean>(false);
+  const [uploadError, setUploadError] = useState<string>('');
 
   // Conversational Interview (Step 5)
   const [messages, setMessages] = useState<ChatMessage[]>([]);
@@ -457,16 +458,32 @@ export const UploadResumeWizard: React.FC<UploadResumeWizardProps> = ({
     setApiCompleted(false);
     setActiveTaskIdx(0);
     setCompletedTasks([]);
+    setUploadError('');
 
     try {
       const formData = new FormData();
       formData.append('file', targetFile);
 
-      // Do NOT set Content-Type manually — axios auto-adds the multipart boundary
-      const uploadRes = await apiClient.post('/api/resume-studio/upload', formData, {
-        headers: { 'Content-Type': 'multipart/form-data' },
-        timeout: 120000 // 2 min timeout for large files + OCR
-      });
+      let uploadRes;
+      let retries = 0;
+      const MAX_RETRIES = 2;
+      while (retries <= MAX_RETRIES) {
+        try {
+          uploadRes = await apiClient.post('/api/resume-studio/upload', formData, {
+            headers: { 'Content-Type': 'multipart/form-data' },
+            timeout: 120000 // 2 min timeout for large files + OCR
+          });
+          break; // Success
+        } catch (e: any) {
+          if (e.response && e.response.status >= 500 && retries < MAX_RETRIES) {
+            retries++;
+            console.warn(`Upload failed with server error. Retrying (${retries}/${MAX_RETRIES}) in ${retries * 2}s...`);
+            await new Promise(resolve => setTimeout(resolve, retries * 2000));
+            continue;
+          }
+          throw e; // Rethrow if not a 5xx error or out of retries
+        }
+      }
 
       const parsed = uploadRes.data.parsed_data || {};
       const newId = uploadRes.data.resume_id;
@@ -560,9 +577,9 @@ export const UploadResumeWizard: React.FC<UploadResumeWizardProps> = ({
         errorMsg = `Request configuration error: ${e.message}`;
       }
 
-      alert(`Ingestion failed: ${errorMsg}`);
+      setUploadError(errorMsg);
       setFile(null);
-      setStep(1);
+      setStep(2); // Keep them on the upload step to see the error
     }
   };
 
@@ -903,7 +920,7 @@ export const UploadResumeWizard: React.FC<UploadResumeWizardProps> = ({
 
         {/* 12-Step Content Renderer */}
         <div className="flex-grow overflow-hidden flex flex-col h-full p-6 md:p-8 overflow-y-auto">
-          <AnimatePresence mode="wait">
+          <AnimatePresence mode="popLayout">
 
             {/* Step 1: Welcome Screen */}
             {step === 1 && (
@@ -946,6 +963,13 @@ export const UploadResumeWizard: React.FC<UploadResumeWizardProps> = ({
                     Upload your resume to instantly run our unified career parser. Supported formats include PDF, DOC, DOCX, and TXT.
                   </p>
                 </div>
+                
+                {uploadError && (
+                  <div className="bg-rose-50 border border-rose-200 text-rose-600 rounded-xl p-3 text-xs font-bold text-left flex items-start gap-2 shadow-sm">
+                    <AlertCircle size={16} className="shrink-0 mt-0.5" />
+                    <span>{uploadError}</span>
+                  </div>
+                )}
 
                 <div
                   onDragOver={(e) => e.preventDefault()}

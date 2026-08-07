@@ -200,10 +200,19 @@ export const useResumeBuilderStore = create<ResumeBuilderState>((set, get) => ({
         return { error: 'PDF generation timed out (35s). The renderer may be starting up — please try again in a moment.' };
       }
       const detail = err.response?.data?.detail;
-      if (detail?.includes('PDF renderer unavailable')) {
-        return { error: 'PDF renderer not running. Please start it: cd backend/pdf_renderer && node server.mjs' };
+      let errorMsg = err.message || 'Error compiling PDF resume';
+      if (typeof detail === 'string') {
+        if (detail.includes('PDF renderer unavailable')) {
+          errorMsg = 'PDF renderer not running. Please start it: cd backend/pdf_renderer && node server.mjs';
+        } else {
+          errorMsg = detail;
+        }
+      } else if (detail && detail.message) {
+        errorMsg = detail.message;
+      } else if (detail) {
+        errorMsg = JSON.stringify(detail);
       }
-      return { error: detail || err.message || 'Error compiling PDF resume' };
+      return { error: errorMsg };
     }
   },
 

@@ -55,7 +55,7 @@ export const ResumeAIAnalysis: React.FC<ResumeAIAnalysisProps> = ({
 
   return (
     <div className="w-full max-w-2xl mx-auto bg-white/70 dark:bg-[#1F2937]/75 backdrop-blur-md border border-slate-200/80 dark:border-white/10 rounded-2xl p-6 shadow-xl relative overflow-hidden transition-all duration-300">
-      <AnimatePresence mode="wait">
+      <AnimatePresence mode="popLayout">
         
         {/* Idle State */}
         {status === 'idle' && (

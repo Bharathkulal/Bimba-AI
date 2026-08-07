@@ -275,7 +275,7 @@ export const ResumeImprovement: React.FC<ResumeImprovementProps> = ({
 
       {/* Tab Panels */}
       <div className="min-h-[250px]">
-        <AnimatePresence mode="wait">
+        <AnimatePresence mode="popLayout">
 
           {/* Summary Tab */}
           {activeTab === 'summary' && (

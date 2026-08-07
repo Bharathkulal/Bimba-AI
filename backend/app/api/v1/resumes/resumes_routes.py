@@ -1280,27 +1280,35 @@ async def upload_resume_file(
     student: Student = Depends(get_current_student),
     db: Any = Depends(get_db)
 ):
-    from app.services.upload_service import UploadService
-    from app.core.exceptions import PipelineException
-    from fastapi.responses import JSONResponse
-    
     try:
+        from app.services.upload_service import UploadService
+        from app.core.exceptions import PipelineException
+        from fastapi.responses import JSONResponse
+        
         content = await file.read()
         service = UploadService(db)
         result = service.process_upload(content, file.filename, student.id)
         return result
-    except PipelineException as pe:
-        return JSONResponse(
-            status_code=pe.status_code,
-            content={
-                "success": False,
-                "step": pe.step,
-                "provider": pe.provider,
-                "error": pe.message,
-                "details": pe.details
-            }
-        )
     except Exception as e:
+        # If the exception is PipelineException, we still want to catch it 
+        # but since PipelineException is imported inside the try, we check by name
+        if type(e).__name__ == "PipelineException":
+            import traceback
+            import sys
+            print(f"PipelineException in upload: {e.message}")
+            print(traceback.format_exc())
+            from fastapi.responses import JSONResponse
+            return JSONResponse(
+                status_code=e.status_code,
+                content={
+                    "success": False,
+                    "step": e.step,
+                    "provider": e.provider,
+                    "error": e.message,
+                    "details": e.details
+                }
+            )
+            
         import traceback
         import sys
         exc_type, exc_obj, exc_tb = sys.exc_info()
@@ -1310,17 +1318,17 @@ async def upload_resume_file(
         func_name = last_tb.name if last_tb else "Unknown"
         line_num = last_tb.lineno if last_tb else 0
         
+        err_msg = str(e)
+        tb_str = traceback.format_exc()
+        print(f"Unhandled Exception in upload_resume_file: {err_msg}")
+        print(tb_str)
+        
+        from fastapi.responses import JSONResponse
         return JSONResponse(
             status_code=500,
             content={
                 "success": False,
-                "stage": "Resume Ingestion Pipeline",
-                "exception": exc_type.__name__ if exc_type else "Exception",
-                "message": str(e),
-                "file": file_name,
-                "function": func_name,
-                "line": line_num,
-                "details": traceback.format_exc(),
+                "error": "Something went wrong while processing your resume. Please try again.",
                 "status": 500
             }
         )
