@@ -51,7 +51,11 @@ class UploadService:
             prompt = RESUME_PARSE_PROMPT.replace("{resume_text}", extracted_text)
             
             try:
-                # Execute LLM Call using manager fallback chain
+                print("========== EXTRACTED TEXT ==========")
+                print(extracted_text[:1000])
+                print("====================================")
+                
+                # 3. Request LLM structured parsing manager fallback chain
                 raw_response = self.ai_manager.call_llm(prompt, feature="Resume Ingestion Parsing", response_format="json_object")
                 
                 # 4. JSON / Schema Verification
@@ -63,11 +67,14 @@ class UploadService:
                     heuristic = extract_structured_data(extracted_text)
                     parsed_data = {
                         "personal_info": {
-                            "name": heuristic.get("name", "Candidate Name"),
-                            "email": heuristic.get("email", ""),
-                            "phone": heuristic.get("phone", ""),
-                            "location": heuristic.get("location", ""),
-                            "title": "Software Engineer"
+                            "name": heuristic.get("personal_info", {}).get("name", "Candidate Name"),
+                            "email": heuristic.get("personal_info", {}).get("email", ""),
+                            "phone": heuristic.get("personal_info", {}).get("phone", ""),
+                            "address": heuristic.get("personal_info", {}).get("address", ""),
+                            "linkedin": heuristic.get("personal_info", {}).get("linkedin", ""),
+                            "github": heuristic.get("personal_info", {}).get("github", ""),
+                            "portfolio": heuristic.get("personal_info", {}).get("portfolio", ""),
+                            "title": heuristic.get("personal_info", {}).get("title", "Software Engineer")
                         },
                         "summary": heuristic.get("summary", ""),
                         "objective": "",
@@ -84,7 +91,8 @@ class UploadService:
                         "publications": heuristic.get("publications", []),
                         "volunteerExperience": [],
                         "references": [],
-                        "hobbies": heuristic.get("hobbies", [])
+                        "hobbies": heuristic.get("hobbies", []),
+                        "custom_sections": heuristic.get("custom_sections", [])
                     }
                 except Exception as fallback_err:
                     log_error("UPLOAD", "Heuristic fallback also failed", fallback_err)
@@ -99,7 +107,8 @@ class UploadService:
             list_sections = [
                 "education", "experience", "projects", "technicalSkills", "softSkills",
                 "certifications", "internships", "achievements", "languages",
-                "portfolioLinks", "publications", "volunteerExperience", "references", "hobbies"
+                "portfolioLinks", "publications", "volunteerExperience", "references", "hobbies",
+                "custom_sections"
             ]
             for sec in list_sections:
                 if sec not in parsed_data or parsed_data[sec] is None:
@@ -166,6 +175,7 @@ class UploadService:
                 "volunteerExperience": parsed_data.get("volunteerExperience", []),
                 "references": parsed_data.get("references", []),
                 "hobbies": parsed_data.get("hobbies", []),
+                "custom_sections": parsed_data.get("custom_sections", []),
                 "lastUpdated": datetime.now(timezone.utc).isoformat()
             }
             self.db.resume_profiles.update_one(

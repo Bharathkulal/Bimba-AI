@@ -1,0 +1,14 @@
+Charlie Custom
+charlie@charlie.com
+
+Experience
+Data Analyst
+DataCo | 2018 - 2022
+- Analyzed data.
+
+Speaking Engagements
+- PyCon 2021: "Data in the Modern Age"
+- Local Meetup: "Why Python?"
+
+Community Service
+- Helped at local shelter (2019-2021)

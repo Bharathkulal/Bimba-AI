@@ -1,0 +1,21 @@
+Bob Unlabeled
+bob.unlabeled@gmail.com | 222-333-4444 | Seattle, WA | github.com/bob
+
+Backend developer who loves building fast APIs.
+
+Work History
+
+Developer at Startup Inc
+March 2021 to Present
+* Wrote Node.js APIs
+* Managed PostgreSQL database
+
+Academics
+
+Master of Computer Applications
+Seattle Tech University
+2020
+
+Tech Stack
+
+Node.js, PostgreSQL, Docker, AWS

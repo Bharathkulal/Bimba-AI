@@ -1707,6 +1707,51 @@ export const UploadResumeWizard: React.FC<UploadResumeWizardProps> = ({
                       ))}
                     </div>
                   </Card>
+                  {/* 17. Custom Sections */}
+                  {parsedData.custom_sections && parsedData.custom_sections.map((customSec: any, secIdx: number) => (
+                    <Card key={`custom-${secIdx}`} className="p-5 flex flex-col gap-3 border-emerald-400/50 bg-emerald-50/10">
+                      <div className="flex justify-between items-center border-b pb-2">
+                        <span className="text-xs font-bold text-emerald-500 uppercase">{customSec.section_name}</span>
+                        <div className="flex items-center gap-2">
+                          <button onClick={() => toggleEditCard(`custom_${secIdx}`)} className="text-[10px] font-bold text-slate-400 hover:text-emerald-500 cursor-pointer flex items-center gap-1">
+                            {editingCards[`custom_${secIdx}`] ? <><Save size={11} className="text-emerald-500" /> Save</> : <><FileEdit size={11} /> Edit</>}
+                          </button>
+                        </div>
+                      </div>
+                      <div className="text-xs space-y-2">
+                        {(customSec.content || []).map((contentItem: any, idx: number) => {
+                          const displayText = typeof contentItem === 'string' ? contentItem : JSON.stringify(contentItem);
+                          return (
+                            <div key={idx} className="border-b last:border-0 pb-2 flex justify-between items-start gap-2">
+                              {editingCards[`custom_${secIdx}`] ? (
+                                <textarea
+                                  rows={2}
+                                  value={displayText}
+                                  onChange={(e) => {
+                                    const newContent = [...customSec.content];
+                                    newContent[idx] = e.target.value;
+                                    handleUpdateScalarField('custom_sections', parsedData.custom_sections.map((c: any, i: number) => i === secIdx ? { ...c, content: newContent } : c));
+                                  }}
+                                  className="w-full p-1 border border-slate-200 rounded text-xs"
+                                />
+                              ) : (
+                                <span>• {displayText}</span>
+                              )}
+                              <button
+                                onClick={() => {
+                                  const newContent = customSec.content.filter((_: any, i: number) => i !== idx);
+                                  handleUpdateScalarField('custom_sections', parsedData.custom_sections.map((c: any, i: number) => i === secIdx ? { ...c, content: newContent } : c));
+                                }}
+                                className="text-rose-500 hover:text-rose-600 p-1 cursor-pointer shrink-0"
+                              >
+                                <Trash2 size={12} />
+                              </button>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </Card>
+                  ))}
 
                 </div>
               </motion.div>

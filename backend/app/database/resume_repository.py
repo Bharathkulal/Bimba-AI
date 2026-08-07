@@ -192,7 +192,6 @@ class ResumeRepository:
         sanitized_doc = copy.deepcopy(resume_doc)
         sanitized_doc["created_at"] = str(sanitized_doc["created_at"])
         sanitized_doc["updated_at"] = str(sanitized_doc["updated_at"])
-        import json      
         try:
             print(json.dumps(sanitized_doc, indent=2))
         except UnicodeEncodeError:

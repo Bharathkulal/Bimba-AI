@@ -161,17 +161,58 @@ class LayeredExtractor:
     def _extract_docx(file_content: bytes, filename: str) -> Dict[str, Any]:
         text = ""
         try:
+            from docx.document import Document
+            from docx.oxml.table import CT_Tbl
+            from docx.oxml.text.paragraph import CT_P
+            from docx.table import _Cell, Table
+            from docx.text.paragraph import Paragraph
+
             doc = docx.Document(io.BytesIO(file_content))
-            for para in doc.paragraphs:
-                if para.text:
-                    text += para.text + "\n"
             
-            # Extract table layouts
-            for table in doc.tables:
-                for row in table.rows:
-                    row_cells = [cell.text.strip() for cell in row.cells if cell.text.strip()]
-                    if row_cells:
-                        text += " | ".join(row_cells) + "\n"
+            def iter_block_items(parent):
+                if isinstance(parent, Document):
+                    parent_elm = parent.element.body
+                elif isinstance(parent, _Cell):
+                    parent_elm = parent._tc
+                else:
+                    return
+
+                for child in parent_elm.iterchildren():
+                    if isinstance(child, CT_P):
+                        yield Paragraph(child, parent)
+                    elif isinstance(child, CT_Tbl):
+                        yield Table(child, parent)
+
+            for block in iter_block_items(doc):
+                if isinstance(block, Paragraph):
+                    if block.text.strip():
+                        # Add bold/upper cues for heuristic parser
+                        is_heading = False
+                        if len(block.text) < 60:
+                            if any(run.bold for run in block.runs if run.text.strip()):
+                                is_heading = True
+                            if block.text.isupper():
+                                is_heading = True
+                        if is_heading:
+                            text += f"<H> {block.text.strip()} </H>\n"
+                        else:
+                            text += block.text.strip() + "\n"
+                elif isinstance(block, Table):
+                    text += "<TABLE>\n"
+                    for i, row in enumerate(block.rows):
+                        row_data = []
+                        for cell in row.cells:
+                            # Extract text from cell preserving newlines
+                            cell_text = "\\n".join(p.text.strip() for p in cell.paragraphs if p.text.strip())
+                            row_data.append(cell_text)
+                        if any(row_data):
+                            # Mark first row as header if it's the first row
+                            if i == 0:
+                                text += "<TR-HEADER> " + " | ".join(row_data) + "\n"
+                            else:
+                                text += "<TR> " + " | ".join(row_data) + "\n"
+                    text += "</TABLE>\n"
+
         except Exception as e:
             # Fallback for old .doc binary files
             log_stage("EXTRACTOR", "FALLBACK", "DOCX parsing failed, decoding binary strings")
