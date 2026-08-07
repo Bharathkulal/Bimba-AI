@@ -70,28 +70,30 @@ def generate_ai_response(db: Any, prompt: str, task_type: str) -> str:
         "openrouter": call_openrouter
     }
     
-    priority_order = []
+    priority_order = [
+        {"name": "Groq", "slug": "groq", "timeout": ai_timeout, "retry_attempts": retry_attempts if auto_retry else 1, "fallback_enabled": True},
+        {"name": "Gemini", "slug": "gemini", "timeout": ai_timeout, "retry_attempts": retry_attempts if auto_retry else 1, "fallback_enabled": True},
+        {"name": "OpenRouter", "slug": "openrouter", "timeout": ai_timeout, "retry_attempts": retry_attempts if auto_retry else 1, "fallback_enabled": True}
+    ]
+    
     if db is not None and not is_mock_db:
         try:
+            db_providers = []
             providers_cursor = db.ai_providers.find({"is_enabled": True}).sort("priority", 1)
             for p in providers_cursor:
                 if p["slug"] in provider_funcs:
-                    priority_order.append({
+                    db_providers.append({
                         "name": p["provider_name"],
                         "slug": p["slug"],
                         "timeout": p.get("timeout") or ai_timeout,
                         "retry_attempts": p.get("retry_attempts") or (retry_attempts if auto_retry else 1),
                         "fallback_enabled": p.get("fallback_enabled", True)
                     })
+            if db_providers:
+                priority_order = db_providers
         except Exception as e:
             logger.warning(f"Failed to fetch enabled providers from database: {str(e)}")
-            
-        # Default fallback priority order matching user preference for Groq AI
-        priority_order = [
-            {"name": "Groq", "slug": "groq", "timeout": ai_timeout, "retry_attempts": retry_attempts if auto_retry else 1, "fallback_enabled": True},
-            {"name": "Gemini", "slug": "gemini", "timeout": ai_timeout, "retry_attempts": retry_attempts if auto_retry else 1, "fallback_enabled": True},
-            {"name": "OpenRouter", "slug": "openrouter", "timeout": ai_timeout, "retry_attempts": retry_attempts if auto_retry else 1, "fallback_enabled": True}
-        ]
+
 
     detailed_failures = []
     

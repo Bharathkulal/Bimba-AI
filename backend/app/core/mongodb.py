@@ -125,6 +125,20 @@ def get_next_sequence(collection_name: str) -> int:
     )
     return counter["seq"]
 
+def get_next_sequence_batch(collection_name: str, count: int) -> int:
+    """
+    Generate the starting sequence ID for a batch of `count` items in a single query.
+    """
+    if count <= 0:
+        return 0
+    counter = db.counters.find_one_and_update(
+        {"_id": collection_name},
+        {"$inc": {"seq": count}},
+        upsert=True,
+        return_document=True
+    )
+    return counter["seq"] - count + 1
+
 def create_indexes():
     """
     Create all required database indexes in MongoDB.

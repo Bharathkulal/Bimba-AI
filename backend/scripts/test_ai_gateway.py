@@ -37,8 +37,11 @@ class TestAiGatewayAndAnalyzer(unittest.TestCase):
             "certifications": ["AWS Practitioner"]
         }
 
+    @patch("app.services.ai_gateway.call_groq")
     @patch("app.services.ai_gateway.call_gemini")
-    def test_gemini_success(self, mock_gemini):
+    def test_gemini_success(self, mock_gemini, mock_groq):
+        # Mock Groq failure so it falls back to Gemini
+        mock_groq.return_value = {"success": False, "error": "Quota exceeded"}
         # Mock Gemini succeeding
         mock_gemini.return_value = {"success": True, "content": "Gemini response text"}
         
@@ -52,14 +55,13 @@ class TestAiGatewayAndAnalyzer(unittest.TestCase):
     @patch("app.services.ai_gateway.call_groq")
     @patch("app.services.ai_gateway.call_gemini")
     def test_gemini_fails_groq_succeeds(self, mock_gemini, mock_groq):
-        # Mock Gemini failure, Groq success
-        mock_gemini.return_value = {"success": False, "error": "Quota exceeded"}
+        # Since Groq is tried first, we mock it to succeed directly
         mock_groq.return_value = {"success": True, "content": "Groq response text"}
+        mock_gemini.return_value = {"success": False, "error": "Quota exceeded"}
         
         res = generate_ai_response(self.mock_db, "hello", "test_task")
         
         self.assertEqual(res, "Groq response text")
-        mock_gemini.assert_called_once()
         mock_groq.assert_called_once()
 
     @patch("app.services.ai_gateway.call_openrouter")

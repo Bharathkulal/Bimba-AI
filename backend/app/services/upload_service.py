@@ -112,6 +112,7 @@ class UploadService:
                     parsed_data[sec] = ""
 
             # 5. Database Save Operations
+            warnings = []
             cloudinary_url = None
             public_id = None
             try:
@@ -124,7 +125,14 @@ class UploadService:
                     log_stage("UPLOAD", "INFO", f"Cloudinary upload success! URL: {cloudinary_url}")
             except Exception as cle:
                 log_error("UPLOAD", "Cloudinary upload failed, falling back to local file copy", cle)
+                warnings.append(f"Cloudinary upload failed: {str(cle)}")
 
+            import logging
+            logger = logging.getLogger("bimba_ai_pipeline")
+
+            logger.info("INGESTION: Preparing MongoDB document")
+            logger.info("INGESTION: Document validation started")
+            
             resume_id = self.repository.save_parsed_resume(
                 student_id=student_id,
                 parsed_data=parsed_data,
@@ -133,7 +141,10 @@ class UploadService:
                 public_id=public_id
             )
 
+            logger.info("INGESTION: Document validation completed")
+
             # Save / Upsert to MongoDB resume_profiles collection
+            logger.info("INGESTION: MongoDB insert started")
             from datetime import datetime, timezone
             profile_doc = {
                 "userId": student_id,
@@ -162,11 +173,17 @@ class UploadService:
                 {"$set": profile_doc},
                 upsert=True
             )
+            logger.info("INGESTION: MongoDB insert completed")
+            logger.info("INGESTION: Resume ingestion completed")
             
             log_stage("UPLOAD", "COMPLETED", f"Orchestration completed successfully for {filename}")
             return {
                 "success": True,
                 "resume_id": resume_id,
+                "status": "completed_with_warnings" if warnings else "completed",
+                "message": "Resume successfully ingested",
+                "next_step": "instant-verdict",
+                "warnings": warnings,
                 "parsed_data": parsed_data,
                 "file_path": filepath,
                 "cloudinary_url": cloudinary_url

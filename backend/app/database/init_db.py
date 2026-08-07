@@ -257,10 +257,10 @@ def init_db():
             print("Seeded AI system settings.")
 
         # 6. Seed Default Students
-        db.students.update_one(
-            {"roll_number": "BCA24001"},
-            {"$set": {
-                "id": 1,
+        # 6. Seed Default Students
+        students_to_seed = [
+            {
+                "roll_number": "BCA24001",
                 "student_name": "John Doe",
                 "full_name": "John Doe",
                 "email": "student@bimba.ai",
@@ -273,136 +273,141 @@ def init_db():
                 "is_active": True,
                 "account_activated": True,
                 "otp_verified": True,
-                "created_at": datetime.now(timezone.utc),
-                "updated_at": datetime.now(timezone.utc)
-            }},
-            upsert=True
-        )
-        if db.students.count_documents({}) <= 1:
-            db.students.insert_many([
-                {
-                    "id": 2,
-                    "roll_number": "BCA24002",
-                    "student_name": "Jane Smith",
-                    "full_name": "Jane Smith",
-                    "email": "jane@bimba.ai",
-                    "dob": "01-01-2005",
-                    "phone": "9876543211",
-                    "department": "BCA",
-                    "semester": 3,
-                    "status": "Active",
-                    "password_hash": get_password_hash("01-01-2005"),
-                    "is_active": True,
-                    "account_activated": True,
-                    "otp_verified": True,
-                    "created_at": datetime.now(timezone.utc),
-                    "updated_at": datetime.now(timezone.utc)
-                },
-                {
-                    "id": 3,
-                    "roll_number": "BCA24003",
-                    "student_name": "Alice Johnson",
-                    "full_name": "Alice Johnson",
-                    "email": "alice@bimba.ai",
-                    "dob": "10-10-2005",
-                    "phone": "9876543212",
-                    "department": "BCA",
-                    "semester": 3,
-                    "status": "Active",
-                    "password_hash": get_password_hash("10-10-2005"),
-                    "is_active": True,
-                    "account_activated": True,
-                    "otp_verified": True,
-                    "created_at": datetime.now(timezone.utc),
-                    "updated_at": datetime.now(timezone.utc)
-                },
-                {
-                    "id": 4,
-                    "roll_number": "BCA24004",
-                    "student_name": "Bob Wilson",
-                    "full_name": "Bob Wilson",
-                    "email": "bob@bimba.ai",
-                    "dob": "12-12-2005",
-                    "phone": "9876543213",
-                    "department": "BCA",
-                    "semester": 3,
-                    "status": "Active",
-                    "password_hash": get_password_hash("12-12-2005"),
-                    "is_active": True,
-                    "account_activated": True,
-                    "otp_verified": True,
-                    "created_at": datetime.now(timezone.utc),
-                    "updated_at": datetime.now(timezone.utc)
-                },
-                {
-                    "id": 5,
-                    "roll_number": "BCA24005",
-                    "student_name": "Charlie Brown",
-                    "full_name": "Charlie Brown",
-                    "email": "charlie@bimba.ai",
-                    "dob": "20-05-2005",
-                    "phone": "9876543214",
-                    "department": "BCA",
-                    "semester": 3,
-                    "status": "Active",
-                    "password_hash": get_password_hash("20-05-2005"),
-                    "is_active": True,
-                    "account_activated": True,
-                    "otp_verified": True,
-                    "created_at": datetime.now(timezone.utc),
-                    "updated_at": datetime.now(timezone.utc)
-                }
-            ])
-            db.counters.update_one({"_id": "students"}, {"$set": {"seq": 5}}, upsert=True)
-            print("Seeded student accounts.")
-
-        # 7. Seed Default Resume Templates
-        db.resume_templates.delete_many({})
-        templates_list = [
+            },
             {
-                "id": 1,
-                "slug": "minimalist-modern",
-                "name": "Minimalist Modern (Premium ATS)",
-                "category": "Premium",
-                "ats_rating": 100,
-                "popularity": 200,
-                "color_theme": "slate",
-                "is_enabled": True,
+                "roll_number": "BCA24002",
+                "student_name": "Jane Smith",
+                "full_name": "Jane Smith",
+                "email": "jane@bimba.ai",
+                "dob": "01-01-2005",
+                "phone": "9876543211",
+                "department": "BCA",
+                "semester": 3,
+                "status": "Active",
+                "password_hash": get_password_hash("01-01-2005"),
                 "is_active": True,
-                "is_premium": False,
-                "is_ats_optimized": True,
-                "description": "Premium 100% ATS-compliant layout designed for professional impact and readability.",
-                "layout": "single-column",
-                "colors": {
-                    "primary": "#111827",
-                    "secondary": "#4B5563",
-                    "divider": "#E5E7EB"
-                },
-                "fonts": {
-                    "heading": "Helvetica-Bold",
-                    "body": "Helvetica"
-                },
-                "spacing": 16,
-                "page": {
-                    "size": "A4",
-                    "margin": "32px",
-                    "background": "white"
-                },
-                "sections": [
-                    { "type": "profile", "title": "Profile", "visible": True, "fontSize": 14, "spacing": 12 },
-                    { "type": "experience", "title": "Work Experience", "visible": True, "fontSize": 14, "spacing": 16 },
-                    { "type": "education", "title": "Education", "visible": True, "fontSize": 14, "spacing": 14 },
-                    { "type": "skills", "title": "Skills", "visible": True, "fontSize": 14, "spacing": 12, "columns": 2 },
-                    { "type": "projects", "title": "Projects", "visible": True, "fontSize": 14, "spacing": 14 },
-                    { "type": "certifications", "title": "Certifications", "visible": True, "fontSize": 14, "spacing": 12 },
-                    { "type": "hobbies", "title": "Hobbies & Interests", "visible": True, "fontSize": 14, "spacing": 12 }
-                ]
+                "account_activated": True,
+                "otp_verified": True,
+            },
+            {
+                "roll_number": "BCA24003",
+                "student_name": "Alice Johnson",
+                "full_name": "Alice Johnson",
+                "email": "alice@bimba.ai",
+                "dob": "10-10-2005",
+                "phone": "9876543212",
+                "department": "BCA",
+                "semester": 3,
+                "status": "Active",
+                "password_hash": get_password_hash("10-10-2005"),
+                "is_active": True,
+                "account_activated": True,
+                "otp_verified": True,
+            },
+            {
+                "roll_number": "BCA24004",
+                "student_name": "Bob Wilson",
+                "full_name": "Bob Wilson",
+                "email": "bob@bimba.ai",
+                "dob": "12-12-2005",
+                "phone": "9876543213",
+                "department": "BCA",
+                "semester": 3,
+                "status": "Active",
+                "password_hash": get_password_hash("12-12-2005"),
+                "is_active": True,
+                "account_activated": True,
+                "otp_verified": True,
+            },
+            {
+                "roll_number": "BCA24005",
+                "student_name": "Charlie Brown",
+                "full_name": "Charlie Brown",
+                "email": "charlie@bimba.ai",
+                "dob": "20-05-2005",
+                "phone": "9876543214",
+                "department": "BCA",
+                "semester": 3,
+                "status": "Active",
+                "password_hash": get_password_hash("20-05-2005"),
+                "is_active": True,
+                "account_activated": True,
+                "otp_verified": True,
             }
         ]
-        db.resume_templates.insert_many(templates_list)
-        db.counters.update_one({"_id": "resume_templates"}, {"$set": {"seq": 1}}, upsert=True)
-        print(f"Seeded {len(templates_list)} resume templates.")
+
+        seeded_count = 0
+        from app.core.mongodb import get_next_sequence
+        for sdata in students_to_seed:
+            existing = db.students.find_one({"roll_number": sdata["roll_number"]})
+            if not existing:
+                email_conflict = db.students.find_one({"email": sdata["email"]})
+                if email_conflict:
+                    continue
+                new_id = get_next_sequence("students")
+                while db.students.find_one({"id": new_id}):
+                    new_id = get_next_sequence("students")
+                sdata["id"] = new_id
+                sdata["created_at"] = datetime.now(timezone.utc)
+                sdata["updated_at"] = datetime.now(timezone.utc)
+                db.students.insert_one(sdata)
+                seeded_count += 1
+        if seeded_count > 0:
+            print(f"Seeded {seeded_count} student accounts.")
+
+        # 7. Seed Default Resume Templates
+        if db.resume_templates.count_documents({}) == 0:
+            try:
+                import sys
+                import os
+                backend_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+                if backend_dir not in sys.path:
+                    sys.path.append(backend_dir)
+                from seed_templates import seed_templates
+                seed_templates()
+                print("Seeded all 20 resume templates using seed_templates.py.")
+            except Exception as e:
+                print(f"Failed to seed templates using seed_templates.py: {e}. Seeding minimalist-modern fallback...")
+                templates_list = [
+                    {
+                        "templateId": "minimalist-modern",
+                        "id": "minimalist-modern",
+                        "slug": "minimalist-modern",
+                        "name": "Minimalist Modern (Premium ATS)",
+                        "category": "Premium",
+                        "atsScore": 100,
+                        "atsFriendly": True,
+                        "featured": False,
+                        "premium": False,
+                        "description": "Premium 100% ATS-compliant layout designed for professional impact and readability.",
+                        "layout": {
+                            "columns": 1,
+                            "header": "top",
+                            "spacing": 16,
+                            "margin": 32
+                        },
+                        "colors": {
+                            "primary": "#111827",
+                            "secondary": "#4B5563"
+                        },
+                        "font": {
+                            "family": "Helvetica",
+                            "heading": 18,
+                            "body": 11
+                        },
+                        "sections": ["profile", "experience", "education", "skills", "projects", "certifications", "hobbies"],
+                        "renderer": "standard",
+                        "enabled": True,
+                        "displayOrder": 1,
+                        "createdAt": datetime.now(timezone.utc),
+                        "updatedAt": datetime.now(timezone.utc)
+                    }
+                ]
+                db.resume_templates.insert_many(templates_list)
+                db.counters.update_one({"_id": "resume_templates"}, {"$set": {"seq": 1}}, upsert=True)
+                print("Seeded minimalist-modern fallback template.")
             
         print("Successfully initialized and seeded MongoDB database!")
     except Exception as e:
         print(f"Error seeding MongoDB database: {e}")
+

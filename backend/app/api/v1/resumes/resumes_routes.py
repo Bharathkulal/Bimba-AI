@@ -1285,9 +1285,16 @@ async def upload_resume_file(
     from fastapi.responses import JSONResponse
     
     try:
+        from fastapi.concurrency import run_in_threadpool
+        import logging
+        logger = logging.getLogger("bimba_ai_pipeline")
+
         content = await file.read()
         service = UploadService(db)
-        result = service.process_upload(content, file.filename, student.id)
+        
+        logger.info("[RESUME] ABOUT TO RETURN API RESPONSE")
+        result = await run_in_threadpool(service.process_upload, content, file.filename, student.id)
+        logger.info("[RESUME] API RESPONSE RETURNED")
         return result
     except PipelineException as pe:
         return JSONResponse(

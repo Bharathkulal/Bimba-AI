@@ -193,6 +193,8 @@ export const UploadResumeWizard: React.FC<UploadResumeWizardProps> = ({
   const [completedTasks, setCompletedTasks] = useState<string[]>([]);
   const [isParsing, setIsParsing] = useState<boolean>(false);
   const [apiCompleted, setApiCompleted] = useState<boolean>(false);
+  const [ingestionError, setIngestionError] = useState<string | null>(null);
+  const abortControllerRef = useRef<AbortController | null>(null);
 
   // Conversational Interview (Step 5)
   const [messages, setMessages] = useState<ChatMessage[]>([]);
@@ -457,6 +459,13 @@ export const UploadResumeWizard: React.FC<UploadResumeWizardProps> = ({
     setApiCompleted(false);
     setActiveTaskIdx(0);
     setCompletedTasks([]);
+    setIngestionError(null);
+
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+    }
+    const controller = new AbortController();
+    abortControllerRef.current = controller;
 
     try {
       const formData = new FormData();
@@ -465,7 +474,8 @@ export const UploadResumeWizard: React.FC<UploadResumeWizardProps> = ({
       // Do NOT set Content-Type manually — axios auto-adds the multipart boundary
       const uploadRes = await apiClient.post('/api/resume-studio/upload', formData, {
         headers: { 'Content-Type': 'multipart/form-data' },
-        timeout: 120000 // 2 min timeout for large files + OCR
+        timeout: 120000, // 2 min timeout for large files + OCR
+        signal: controller.signal
       });
 
       const parsed = uploadRes.data.parsed_data || {};
@@ -534,6 +544,10 @@ export const UploadResumeWizard: React.FC<UploadResumeWizardProps> = ({
 
       setApiCompleted(true);
     } catch (e: any) {
+      if (e.name === 'CanceledError' || e.code === 'ERR_CANCELED') {
+        console.log("Upload cancelled by user");
+        return;
+      }
       console.error('Ingestion error details:', e);
       let errorMsg = '';
       if (e.response) {
@@ -560,9 +574,8 @@ export const UploadResumeWizard: React.FC<UploadResumeWizardProps> = ({
         errorMsg = `Request configuration error: ${e.message}`;
       }
 
-      alert(`Ingestion failed: ${errorMsg}`);
-      setFile(null);
-      setStep(1);
+      setIngestionError(errorMsg);
+      setIsParsing(false);
     }
   };
 
@@ -980,25 +993,73 @@ export const UploadResumeWizard: React.FC<UploadResumeWizardProps> = ({
               <motion.div key="step3" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="max-w-md mx-auto w-full flex flex-col gap-5 py-12">
                 <div className="flex items-center justify-between text-xs font-bold">
                   <span className="flex items-center gap-1.5 text-slate-800 dark:text-slate-200">
-                    <RefreshCw size={12} className="animate-spin text-emerald-400" /> Active AI Parsing Heuristics
+                    <RefreshCw size={12} className={`text-emerald-400 ${!ingestionError ? 'animate-spin' : ''}`} /> Active AI Parsing Heuristics
                   </span>
                   <span className="text-emerald-400 font-extrabold">{Math.round((completedTasks.length / processingTasks.length) * 100)}%</span>
                 </div>
                 <div className="w-full bg-slate-100 dark:bg-white/10 h-1.5 rounded-full overflow-hidden">
                   <div className="bg-gradient-to-r from-emerald-500 to-teal-400 h-full transition-all duration-500" style={{ width: `${(completedTasks.length / processingTasks.length) * 100}%` }} />
                 </div>
-                <div className="flex flex-col gap-3 mt-2 text-xs bg-slate-50/50 dark:bg-white/5 p-5 rounded-2xl border border-slate-100 dark:border-white/5 shadow-sm">
-                  {processingTasks.map((task, idx) => (
-                    <div key={idx} className={`flex items-center justify-between ${idx < completedTasks.length ? 'text-slate-450 font-medium' : idx === completedTasks.length ? 'text-emerald-500 font-extrabold animate-pulse' : 'text-slate-400 dark:text-slate-600'}`}>
-                      <span>{task}</span>
-                      {idx < completedTasks.length ? (
-                        <CheckCircle2 size={14} className="text-emerald-500" />
-                      ) : (
-                        <div className={`w-3 h-3 rounded-full border-2 ${idx === completedTasks.length ? 'border-emerald-500 border-t-transparent animate-spin' : 'border-slate-350 dark:border-white/10'}`} />
-                      )}
+                
+                {!ingestionError ? (
+                  <>
+                    <div className="flex flex-col gap-3 mt-2 text-xs bg-slate-50/50 dark:bg-white/5 p-5 rounded-2xl border border-slate-100 dark:border-white/5 shadow-sm">
+                      {processingTasks.map((task, idx) => (
+                        <div key={idx} className={`flex items-center justify-between ${idx < completedTasks.length ? 'text-slate-450 font-medium' : idx === completedTasks.length ? 'text-emerald-500 font-extrabold animate-pulse' : 'text-slate-400 dark:text-slate-600'}`}>
+                          <span>{task}</span>
+                          {idx < completedTasks.length ? (
+                            <CheckCircle2 size={14} className="text-emerald-500" />
+                          ) : (
+                            <div className={`w-3 h-3 rounded-full border-2 ${idx === completedTasks.length ? 'border-emerald-500 border-t-transparent animate-spin' : 'border-slate-350 dark:border-white/10'}`} />
+                          )}
+                        </div>
+                      ))}
                     </div>
-                  ))}
-                </div>
+                    <Button
+                      onClick={() => {
+                        if (abortControllerRef.current) {
+                          abortControllerRef.current.abort();
+                        }
+                        setIsParsing(false);
+                        setStep(2);
+                      }}
+                      className="px-4 py-2.5 bg-slate-100 dark:bg-white/5 hover:bg-slate-200 dark:hover:bg-white/10 text-slate-800 dark:text-slate-200 font-bold text-xs rounded-xl transition-all shadow-sm max-w-[140px] mx-auto cursor-pointer"
+                    >
+                      Cancel Ingestion
+                    </Button>
+                  </>
+                ) : (
+                  <div className="mt-2 p-5 border border-rose-500/20 bg-rose-500/5 rounded-2xl text-center space-y-4 shadow-sm">
+                    <div className="w-12 h-12 rounded-xl bg-rose-500/10 text-rose-500 flex items-center justify-center border border-rose-500/20 shadow-md mx-auto animate-bounce">
+                      <AlertTriangle size={24} />
+                    </div>
+                    <h4 className="text-sm font-extrabold text-rose-500 tracking-tight">Resume Ingestion Failed</h4>
+                    <p className="text-xs text-slate-500 leading-relaxed max-w-sm mx-auto">{ingestionError}</p>
+                    <div className="flex gap-2 justify-center pt-2">
+                      <Button
+                        onClick={() => {
+                          if (file) {
+                            startIngestion(file);
+                          } else {
+                            setStep(2);
+                          }
+                        }}
+                        className="px-4 py-2.5 bg-[#0F4A3C] hover:bg-[#0B3A2E] text-white font-bold text-xs rounded-xl shadow-sm hover:shadow-lg transition-all cursor-pointer"
+                      >
+                        Retry Upload
+                      </Button>
+                      <Button
+                        onClick={() => {
+                          setFile(null);
+                          setStep(2);
+                        }}
+                        className="px-4 py-2.5 bg-slate-100 dark:bg-white/5 hover:bg-slate-200 dark:hover:bg-white/10 text-slate-800 dark:text-slate-200 font-bold text-xs rounded-xl transition-all shadow-sm cursor-pointer"
+                      >
+                        Choose Different File
+                      </Button>
+                    </div>
+                  </div>
+                )}
               </motion.div>
             )}
 
