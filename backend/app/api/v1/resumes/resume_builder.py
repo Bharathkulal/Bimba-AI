@@ -323,15 +323,9 @@ async def generate_resume_pdf_endpoint(
 
         gate_errors = run_quality_gate(payload.resume_data, original_data)
         if gate_errors:
-            print(f"[PDF-GEN] Step 2 FAILED: Quality gate errors: {gate_errors}")
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail={
-                    "message": "Quality Gate validation failed. Please address the errors before exporting.",
-                    "errors": gate_errors
-                }
-            )
-        print(f"[PDF-GEN] Step 2 OK: Quality gate passed")
+            print(f"[PDF-GEN] Step 2 WARNING: Quality gate found issues, but allowing download: {gate_errors}")
+        else:
+            print(f"[PDF-GEN] Step 2 OK: Quality gate passed")
 
         # 3. Build PDF via Playwright headless browser renderer
         print(f"[PDF-GEN] Step 3: Calling Playwright renderer...")

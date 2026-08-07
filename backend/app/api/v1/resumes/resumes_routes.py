@@ -1284,10 +1284,16 @@ async def upload_resume_file(
         from app.services.upload_service import UploadService
         from app.core.exceptions import PipelineException
         from fastapi.responses import JSONResponse
-        
+        from fastapi.concurrency import run_in_threadpool
+        import logging
+        logger = logging.getLogger("bimba_ai_pipeline")
+
         content = await file.read()
         service = UploadService(db)
-        result = service.process_upload(content, file.filename, student.id)
+        
+        logger.info("[RESUME] ABOUT TO RETURN API RESPONSE")
+        result = await run_in_threadpool(service.process_upload, content, file.filename, student.id)
+        logger.info("[RESUME] API RESPONSE RETURNED")
         return result
     except Exception as e:
         # If the exception is PipelineException, we still want to catch it 
@@ -1697,6 +1703,7 @@ def improve_and_validate_resume(db, prompt, resume_id, user_id, original_normali
         if not isinstance(improved_json, dict):
             improved_json = {}
     except Exception as e:
+        from app.core.logging_service import log_error
         log_error("IMPROVER", "AI suggestion failed, using merge fallback", e)
         improved_json = {}
 

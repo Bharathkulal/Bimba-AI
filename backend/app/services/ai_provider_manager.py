@@ -128,7 +128,11 @@ class AIProviderManager:
                     
                     print("\n========== STEP 4 ==========")
                     print(f"{provider_name} Response")
-                    print(response_text)
+                    try:
+                        print(response_text)
+                    except UnicodeEncodeError:
+                        import sys
+                        print(response_text.encode(sys.stdout.encoding or 'utf-8', errors='replace').decode(sys.stdout.encoding or 'utf-8'))
                     print("=============================\n")
                     
                     log_stage("AI", "SUCCESS", f"Parsed successfully using {provider_name}", model=model, attempt=attempt+1)

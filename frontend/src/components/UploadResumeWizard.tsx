@@ -6,7 +6,7 @@ import {
   Search, ShieldAlert, Award, FileCode, CheckCircle, ExternalLink, Filter, MapPin,
   TrendingUp, Activity, FileEdit, UserCheck, Play, Zap, Info, ArrowLeft, Send, Sparkle,
   Trash2, Plus, Eye, ListOrdered, FileUp, SparklesIcon, CheckSquare, Save,
-  Undo, Redo, ZoomIn, ZoomOut, Maximize2, RotateCcw, Columns, Type, Palette, Layout, Settings2, Layers
+  Undo, Redo, ZoomIn, ZoomOut, Maximize2, RotateCcw, Columns, Type, Palette, Layout, Settings2, Layers, AlertCircle
 } from 'lucide-react';
 import { apiClient } from '../services/api';
 import { jobsService, type JobListItem } from '../services/jobs';
@@ -99,10 +99,10 @@ const StepProgressBar = ({ currentStep, totalSteps, stepName }: { currentStep: n
             <div key={p.name} className="flex flex-col items-center gap-1 text-center relative">
               <div className="flex flex-col items-center gap-0.5">
                 <div className={`w-5 h-5 rounded-full flex items-center justify-center text-[9px] font-black border transition-all ${isCompleted
-                    ? 'bg-emerald-500 border-emerald-500 text-white'
-                    : isActive
-                      ? 'border-emerald-500 text-emerald-500 bg-emerald-500/10 shadow-[0_0_8px_rgba(16,185,129,0.25)]'
-                      : 'border-slate-200 dark:border-white/10 text-slate-400'
+                  ? 'bg-emerald-500 border-emerald-500 text-white'
+                  : isActive
+                    ? 'border-emerald-500 text-emerald-500 bg-emerald-500/10 shadow-[0_0_8px_rgba(16,185,129,0.25)]'
+                    : 'border-slate-200 dark:border-white/10 text-slate-400'
                   }`}>
                   {isCompleted ? '✓' : idx + 1}
                 </div>
@@ -117,10 +117,10 @@ const StepProgressBar = ({ currentStep, totalSteps, stepName }: { currentStep: n
                   <div
                     key={s}
                     className={`w-1 h-1 rounded-full transition-all ${s === currentStep
-                        ? 'bg-emerald-500 scale-125 shadow-[0_0_6px_rgba(16,185,129,0.5)]'
-                        : s < currentStep
-                          ? 'bg-emerald-500'
-                          : 'bg-slate-200 dark:bg-white/10'
+                      ? 'bg-emerald-500 scale-125 shadow-[0_0_6px_rgba(16,185,129,0.5)]'
+                      : s < currentStep
+                        ? 'bg-emerald-500'
+                        : 'bg-slate-200 dark:bg-white/10'
                       }`}
                   />
                 ))}
@@ -193,7 +193,10 @@ export const UploadResumeWizard: React.FC<UploadResumeWizardProps> = ({
   const [completedTasks, setCompletedTasks] = useState<string[]>([]);
   const [isParsing, setIsParsing] = useState<boolean>(false);
   const [apiCompleted, setApiCompleted] = useState<boolean>(false);
+
   const [uploadError, setUploadError] = useState<string>('');
+  const [ingestionError, setIngestionError] = useState<string | null>(null);
+  const abortControllerRef = useRef<AbortController | null>(null);
 
   // Conversational Interview (Step 5)
   const [messages, setMessages] = useState<ChatMessage[]>([]);
@@ -459,10 +462,19 @@ export const UploadResumeWizard: React.FC<UploadResumeWizardProps> = ({
     setActiveTaskIdx(0);
     setCompletedTasks([]);
     setUploadError('');
+    setIngestionError(null);
+
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+    }
+    const controller = new AbortController();
+    abortControllerRef.current = controller;
+
 
     try {
       const formData = new FormData();
       formData.append('file', targetFile);
+
 
       let uploadRes;
       let retries = 0;
@@ -471,7 +483,8 @@ export const UploadResumeWizard: React.FC<UploadResumeWizardProps> = ({
         try {
           uploadRes = await apiClient.post('/api/resume-studio/upload', formData, {
             headers: { 'Content-Type': 'multipart/form-data' },
-            timeout: 120000 // 2 min timeout for large files + OCR
+            timeout: 120000, // 2 min timeout for large files + OCR
+            signal: controller.signal
           });
           break; // Success
         } catch (e: any) {
@@ -484,9 +497,8 @@ export const UploadResumeWizard: React.FC<UploadResumeWizardProps> = ({
           throw e; // Rethrow if not a 5xx error or out of retries
         }
       }
-
-      const parsed = uploadRes.data.parsed_data || {};
-      const newId = uploadRes.data.resume_id;
+      const parsed = uploadRes!.data.parsed_data || {};
+      const newId = uploadRes!.data.resume_id;
       setParsedData(parsed);
       setResumeId(newId);
 
@@ -551,6 +563,10 @@ export const UploadResumeWizard: React.FC<UploadResumeWizardProps> = ({
 
       setApiCompleted(true);
     } catch (e: any) {
+      if (e.name === 'CanceledError' || e.code === 'ERR_CANCELED') {
+        console.log("Upload cancelled by user");
+        return;
+      }
       console.error('Ingestion error details:', e);
       let errorMsg = '';
       if (e.response) {
@@ -577,9 +593,14 @@ export const UploadResumeWizard: React.FC<UploadResumeWizardProps> = ({
         errorMsg = `Request configuration error: ${e.message}`;
       }
 
+
       setUploadError(errorMsg);
       setFile(null);
       setStep(2); // Keep them on the upload step to see the error
+
+      setIngestionError(errorMsg);
+      setIsParsing(false);
+
     }
   };
 
@@ -883,8 +904,8 @@ export const UploadResumeWizard: React.FC<UploadResumeWizardProps> = ({
   return (
     <div className={`fixed inset-0 z-50 overflow-hidden text-left bg-white dark:bg-[#111827] flex flex-col`}>
       <div className={`w-screen h-screen flex flex-col ${isDark
-          ? 'bg-[#111827] text-white'
-          : 'bg-white text-slate-800'
+        ? 'bg-[#111827] text-white'
+        : 'bg-white text-slate-800'
         }`}>
 
         {/* Header bar */}
@@ -938,14 +959,14 @@ export const UploadResumeWizard: React.FC<UploadResumeWizardProps> = ({
                   <Button onClick={() => setStep(2)} className="btn-glow-green text-xs font-bold py-3 px-6 flex items-center gap-2">
                     <FileUp size={14} /> Upload Resume
                   </Button>
-                  <Button 
+                  <Button
                     onClick={() => {
                       if (onSwitchToScratch) {
                         onSwitchToScratch();
                       } else {
                         createNewResumeDraft();
                       }
-                    }} 
+                    }}
                     className="bg-[#0F4A3C] hover:bg-[#0B3A2E] text-white text-xs font-bold py-3 px-6 flex items-center gap-2 rounded-xl transition-all shadow-sm hover:shadow-lg cursor-pointer"
                   >
                     <Plus size={14} className="text-white" /> Build New Resume
@@ -963,7 +984,7 @@ export const UploadResumeWizard: React.FC<UploadResumeWizardProps> = ({
                     Upload your resume to instantly run our unified career parser. Supported formats include PDF, DOC, DOCX, and TXT.
                   </p>
                 </div>
-                
+
                 {uploadError && (
                   <div className="bg-rose-50 border border-rose-200 text-rose-600 rounded-xl p-3 text-xs font-bold text-left flex items-start gap-2 shadow-sm">
                     <AlertCircle size={16} className="shrink-0 mt-0.5" />
@@ -1004,25 +1025,73 @@ export const UploadResumeWizard: React.FC<UploadResumeWizardProps> = ({
               <motion.div key="step3" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="max-w-md mx-auto w-full flex flex-col gap-5 py-12">
                 <div className="flex items-center justify-between text-xs font-bold">
                   <span className="flex items-center gap-1.5 text-slate-800 dark:text-slate-200">
-                    <RefreshCw size={12} className="animate-spin text-emerald-400" /> Active AI Parsing Heuristics
+                    <RefreshCw size={12} className={`text-emerald-400 ${!ingestionError ? 'animate-spin' : ''}`} /> Active AI Parsing Heuristics
                   </span>
                   <span className="text-emerald-400 font-extrabold">{Math.round((completedTasks.length / processingTasks.length) * 100)}%</span>
                 </div>
                 <div className="w-full bg-slate-100 dark:bg-white/10 h-1.5 rounded-full overflow-hidden">
                   <div className="bg-gradient-to-r from-emerald-500 to-teal-400 h-full transition-all duration-500" style={{ width: `${(completedTasks.length / processingTasks.length) * 100}%` }} />
                 </div>
-                <div className="flex flex-col gap-3 mt-2 text-xs bg-slate-50/50 dark:bg-white/5 p-5 rounded-2xl border border-slate-100 dark:border-white/5 shadow-sm">
-                  {processingTasks.map((task, idx) => (
-                    <div key={idx} className={`flex items-center justify-between ${idx < completedTasks.length ? 'text-slate-450 font-medium' : idx === completedTasks.length ? 'text-emerald-500 font-extrabold animate-pulse' : 'text-slate-400 dark:text-slate-600'}`}>
-                      <span>{task}</span>
-                      {idx < completedTasks.length ? (
-                        <CheckCircle2 size={14} className="text-emerald-500" />
-                      ) : (
-                        <div className={`w-3 h-3 rounded-full border-2 ${idx === completedTasks.length ? 'border-emerald-500 border-t-transparent animate-spin' : 'border-slate-350 dark:border-white/10'}`} />
-                      )}
+
+                {!ingestionError ? (
+                  <>
+                    <div className="flex flex-col gap-3 mt-2 text-xs bg-slate-50/50 dark:bg-white/5 p-5 rounded-2xl border border-slate-100 dark:border-white/5 shadow-sm">
+                      {processingTasks.map((task, idx) => (
+                        <div key={idx} className={`flex items-center justify-between ${idx < completedTasks.length ? 'text-slate-450 font-medium' : idx === completedTasks.length ? 'text-emerald-500 font-extrabold animate-pulse' : 'text-slate-400 dark:text-slate-600'}`}>
+                          <span>{task}</span>
+                          {idx < completedTasks.length ? (
+                            <CheckCircle2 size={14} className="text-emerald-500" />
+                          ) : (
+                            <div className={`w-3 h-3 rounded-full border-2 ${idx === completedTasks.length ? 'border-emerald-500 border-t-transparent animate-spin' : 'border-slate-350 dark:border-white/10'}`} />
+                          )}
+                        </div>
+                      ))}
                     </div>
-                  ))}
-                </div>
+                    <Button
+                      onClick={() => {
+                        if (abortControllerRef.current) {
+                          abortControllerRef.current.abort();
+                        }
+                        setIsParsing(false);
+                        setStep(2);
+                      }}
+                      className="px-4 py-2.5 bg-slate-100 dark:bg-white/5 hover:bg-slate-200 dark:hover:bg-white/10 text-slate-800 dark:text-slate-200 font-bold text-xs rounded-xl transition-all shadow-sm max-w-[140px] mx-auto cursor-pointer"
+                    >
+                      Cancel Ingestion
+                    </Button>
+                  </>
+                ) : (
+                  <div className="mt-2 p-5 border border-rose-500/20 bg-rose-500/5 rounded-2xl text-center space-y-4 shadow-sm">
+                    <div className="w-12 h-12 rounded-xl bg-rose-500/10 text-rose-500 flex items-center justify-center border border-rose-500/20 shadow-md mx-auto animate-bounce">
+                      <AlertTriangle size={24} />
+                    </div>
+                    <h4 className="text-sm font-extrabold text-rose-500 tracking-tight">Resume Ingestion Failed</h4>
+                    <p className="text-xs text-slate-500 leading-relaxed max-w-sm mx-auto">{ingestionError}</p>
+                    <div className="flex gap-2 justify-center pt-2">
+                      <Button
+                        onClick={() => {
+                          if (file) {
+                            startIngestion(file);
+                          } else {
+                            setStep(2);
+                          }
+                        }}
+                        className="px-4 py-2.5 bg-[#0F4A3C] hover:bg-[#0B3A2E] text-white font-bold text-xs rounded-xl shadow-sm hover:shadow-lg transition-all cursor-pointer"
+                      >
+                        Retry Upload
+                      </Button>
+                      <Button
+                        onClick={() => {
+                          setFile(null);
+                          setStep(2);
+                        }}
+                        className="px-4 py-2.5 bg-slate-100 dark:bg-white/5 hover:bg-slate-200 dark:hover:bg-white/10 text-slate-800 dark:text-slate-200 font-bold text-xs rounded-xl transition-all shadow-sm cursor-pointer"
+                      >
+                        Choose Different File
+                      </Button>
+                    </div>
+                  </div>
+                )}
               </motion.div>
             )}
 
@@ -1042,8 +1111,8 @@ export const UploadResumeWizard: React.FC<UploadResumeWizardProps> = ({
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-h-[60vh] overflow-y-auto pr-2">
                   {/* 1. Personal Information Card */}
                   <Card className={`p-5 flex flex-col gap-3 transition-all ${isSectionLowConfidence('personal_info')
-                      ? 'border-amber-400 dark:border-amber-600 ring-2 ring-amber-400/20 bg-amber-500/5'
-                      : 'border-slate-200 dark:border-white/10'
+                    ? 'border-amber-400 dark:border-amber-600 ring-2 ring-amber-400/20 bg-amber-500/5'
+                    : 'border-slate-200 dark:border-white/10'
                     }`}>
                     <div className="flex justify-between items-center border-b pb-2">
                       <span className="text-xs font-bold text-emerald-500 uppercase flex items-center gap-1.5">
@@ -1107,8 +1176,8 @@ export const UploadResumeWizard: React.FC<UploadResumeWizardProps> = ({
 
                   {/* 2. Professional Summary Card */}
                   <Card className={`p-5 flex flex-col gap-3 transition-all ${isSectionLowConfidence('summary')
-                      ? 'border-amber-400 dark:border-amber-600 ring-2 ring-amber-400/20 bg-amber-500/5'
-                      : 'border-slate-200 dark:border-white/10'
+                    ? 'border-amber-400 dark:border-amber-600 ring-2 ring-amber-400/20 bg-amber-500/5'
+                    : 'border-slate-200 dark:border-white/10'
                     }`}>
                     <div className="flex justify-between items-center border-b pb-2">
                       <span className="text-xs font-bold text-emerald-500 uppercase flex items-center gap-1.5">
@@ -1643,17 +1712,17 @@ export const UploadResumeWizard: React.FC<UploadResumeWizardProps> = ({
               </motion.div>
             )}
             {step === 5 && (
-              <motion.div 
-                key="step5" 
-                initial={{ opacity: 0, y: 10 }} 
-                animate={{ opacity: 1, y: 0 }} 
+              <motion.div
+                key="step5"
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -10 }}
                 className="flex flex-col text-left w-full bg-[#F5F5F3] p-4 rounded-3xl border border-[#E5E5E2] h-[calc(100vh-210px)] overflow-hidden justify-between"
               >
                 <div className="grid grid-cols-1 lg:grid-cols-[22%_38%_40%] gap-4 w-full h-[calc(100vh-270px)] items-stretch relative overflow-hidden">
-                  
+
                   <div className="w-full h-full overflow-y-auto">
-                    <TemplateSidebar 
+                    <TemplateSidebar
                       selectedTemplate={selectedTemplate}
                       onSelectTemplate={(id, color) => {
                         setSelectedTemplate(id);
@@ -1663,7 +1732,7 @@ export const UploadResumeWizard: React.FC<UploadResumeWizardProps> = ({
                   </div>
 
                   <div className="w-full h-full overflow-y-auto">
-                    <CustomizationPanel 
+                    <CustomizationPanel
                       selectedColor={selectedColor}
                       setSelectedColor={setSelectedColor}
                       headerAlignment={headerAlignment}
@@ -1688,7 +1757,7 @@ export const UploadResumeWizard: React.FC<UploadResumeWizardProps> = ({
                   </div>
 
                   <div className="w-full h-full flex flex-col bg-white border border-[#E5E5E2] rounded-2xl overflow-hidden relative">
-                    <PreviewToolbar 
+                    <PreviewToolbar
                       zoom={zoom}
                       setZoom={setZoom}
                       onDownload={async () => {
@@ -1715,14 +1784,14 @@ export const UploadResumeWizard: React.FC<UploadResumeWizardProps> = ({
                         }
                       }}
                     />
-                    
+
                     <div className="flex-grow p-6 bg-[#F5F5F3] flex flex-col items-center justify-start relative overflow-y-auto min-h-0">
                       <div className="absolute top-4 left-4 z-20 bg-[#E2ECE9] border border-[#0F4A3C]/20 px-2 py-0.5 rounded text-[9px] font-black uppercase text-[#0F4A3C] select-none">
                         ATS 98%
                       </div>
 
                       <div className="w-full flex justify-center shadow-sm">
-                        <ResumePreview 
+                        <ResumePreview
                           parsedData={parsedData}
                           selectedColor={selectedColor}
                           selectedFont={selectedFont}
@@ -1740,7 +1809,7 @@ export const UploadResumeWizard: React.FC<UploadResumeWizardProps> = ({
                     </div>
 
                     <div className="shrink-0 flex justify-center items-center gap-4 py-2 border-t border-[#E5E5E2] bg-white">
-                      <button 
+                      <button
                         onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
                         className="px-2 py-0.5 bg-white border border-[#E5E5E2] text-[9px] font-extrabold uppercase rounded text-[#6B6B68] hover:bg-slate-50 transition-colors cursor-pointer"
                       >
@@ -1749,7 +1818,7 @@ export const UploadResumeWizard: React.FC<UploadResumeWizardProps> = ({
                       <span className="text-[10px] font-extrabold text-[#1A1A1A]">
                         Page {currentPage} of 1
                       </span>
-                      <button 
+                      <button
                         onClick={() => setCurrentPage(prev => Math.min(1, prev + 1))}
                         className="px-2 py-0.5 bg-white border border-[#E5E5E2] text-[9px] font-extrabold uppercase rounded text-[#6B6B68] hover:bg-slate-50 transition-colors cursor-pointer"
                       >
@@ -1761,7 +1830,7 @@ export const UploadResumeWizard: React.FC<UploadResumeWizardProps> = ({
                 </div>
 
                 {/* Bottom Navigation */}
-                <BottomNavigation 
+                <BottomNavigation
                   onBack={() => setStep(4)}
                   onSkip={() => setStep(6)}
                   onContinue={() => setStep(6)}
@@ -1875,8 +1944,8 @@ export const UploadResumeWizard: React.FC<UploadResumeWizardProps> = ({
                         key={tab.id}
                         onClick={() => setActiveStep6Tab(tab.id as any)}
                         className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${activeStep6Tab === tab.id
-                            ? 'bg-emerald-500 text-white shadow-sm'
-                            : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200/50 dark:hover:bg-white/10'
+                          ? 'bg-emerald-500 text-white shadow-sm'
+                          : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200/50 dark:hover:bg-white/10'
                           }`}
                       >
                         {tab.label}
@@ -2262,10 +2331,10 @@ export const UploadResumeWizard: React.FC<UploadResumeWizardProps> = ({
                               </div>
                               {priority && (
                                 <span className={`text-[9px] font-black px-2 py-0.5 rounded-full uppercase shrink-0 ${priority.toLowerCase() === 'high'
-                                    ? 'bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-500/20'
-                                    : priority.toLowerCase() === 'low'
-                                      ? 'bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20'
-                                      : 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20'
+                                  ? 'bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-500/20'
+                                  : priority.toLowerCase() === 'low'
+                                    ? 'bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20'
+                                    : 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20'
                                   }`}>
                                   {priority}
                                 </span>
