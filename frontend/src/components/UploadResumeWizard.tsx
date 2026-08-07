@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { 
+import {
   UploadCloud, FileText, CheckCircle2, ChevronRight, AlertTriangle, Sparkles,
-  ArrowRight, Check, X, HelpCircle, Download, Briefcase, RefreshCw, 
+  ArrowRight, Check, X, HelpCircle, Download, Briefcase, RefreshCw,
   Search, ShieldAlert, Award, FileCode, CheckCircle, ExternalLink, Filter, MapPin,
   TrendingUp, Activity, FileEdit, UserCheck, Play, Zap, Info, ArrowLeft, Send, Sparkle,
   Trash2, Plus, Eye, ListOrdered, FileUp, SparklesIcon, CheckSquare, Save,
@@ -29,7 +29,7 @@ const ATSScoreRing = ({ score }: { score: number }) => {
   const normalizedRadius = radius - stroke * 2;
   const circumference = normalizedRadius * 2 * Math.PI;
   const strokeDashoffset = circumference - (score / 100) * circumference;
-  
+
   let color = "text-emerald-500";
   if (score < 60) color = "text-rose-500";
   else if (score < 85) color = "text-amber-500";
@@ -63,54 +63,72 @@ const ATSScoreRing = ({ score }: { score: number }) => {
 };
 
 const StepProgressBar = ({ currentStep, totalSteps, stepName }: { currentStep: number, totalSteps: number, stepName: string }) => {
-  const [expanded, setExpanded] = useState(false);
   const percentage = (currentStep / totalSteps) * 100;
-  
+
+  // Phase mapping
+  const phases = [
+    { name: "Import", steps: [1, 2, 3] },
+    { name: "Build", steps: [4, 5] },
+    { name: "Coach & Polish", steps: [6, 7, 8, 9] },
+    { name: "Finalize", steps: [10, 11, 12, 13] }
+  ];
+
+  const currentPhaseIdx = Math.max(0, phases.findIndex(p => p.steps.includes(currentStep)));
+
   return (
-    <div className="w-full bg-white dark:bg-[#111827] border border-slate-200/60 dark:border-white/5 p-4 rounded-xl shadow-md mb-4 transition-all">
-      <div className="flex justify-between items-center">
-        <div className="flex items-center gap-2.5">
-          <span className="text-xs font-black text-[#1a3d2e] dark:text-emerald-400">Step {currentStep} of {totalSteps}</span>
-          <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">— {stepName}</span>
+    <div className="w-full bg-white dark:bg-[#111827] border border-slate-200/60 dark:border-white/5 p-5 rounded-2xl shadow-sm mb-4 transition-all">
+      <div className="flex justify-between items-center mb-4">
+        <div className="flex flex-wrap items-center gap-3">
+          <span className="text-xs font-black text-emerald-500 bg-emerald-500/10 px-2.5 py-1 rounded-full uppercase tracking-wider">Phase {currentPhaseIdx + 1}: {phases[currentPhaseIdx]?.name || 'Optimize'}</span>
+          <span className="text-xs font-bold text-slate-555 dark:text-slate-450">— Step {currentStep} of {totalSteps}: {stepName}</span>
         </div>
-        <button 
-          onClick={() => setExpanded(!expanded)}
-          className="text-[10px] font-extrabold uppercase tracking-widest text-[#1a3d2e] dark:text-emerald-400 hover:underline cursor-pointer"
-        >
-          {expanded ? 'Hide all steps' : 'View all steps'}
-        </button>
-      </div>
-      
-      <div className="w-full h-1.5 bg-slate-100 dark:bg-white/5 rounded-full overflow-hidden mt-2.5">
-        <div className="h-full bg-[#1a3d2e] dark:bg-emerald-500 transition-all duration-500" style={{ width: `${percentage}%` }}></div>
+        <div className="text-[11px] font-black text-slate-400 dark:text-slate-550">{Math.round(percentage)}% Complete</div>
       </div>
 
-      {expanded && (
-        <div className="grid grid-cols-5 gap-2 mt-4 pt-4 border-t border-slate-100 dark:border-white/5">
-          {[
-            'Welcome', 'Extraction', 'Snapshot', 'Templates', 'Interview',
-            'Completion', 'ATS Audit', 'Improvements', 'Quality', 'Export & Jobs'
-          ].map((name, i) => {
-            const stepNum = i + 1;
-            const isCompleted = stepNum < currentStep;
-            const isActive = stepNum === currentStep;
-            return (
-              <div key={name} className="flex flex-col gap-1 text-left">
-                <span className={`text-[9px] font-black uppercase tracking-wider ${
-                  isActive ? 'text-[#1a3d2e] dark:text-emerald-400' : isCompleted ? 'text-emerald-500' : 'text-slate-400'
-                }`}>
-                  Step {stepNum}
-                </span>
-                <span className={`text-[10px] font-semibold truncate ${
-                  isActive ? 'text-slate-800 dark:text-white font-extrabold' : 'text-slate-400'
-                }`}>
-                  {name}
+      {/* Progress Bar */}
+      <div className="w-full h-1.5 bg-slate-100 dark:bg-white/5 rounded-full overflow-hidden mb-6">
+        <div className="h-full bg-gradient-to-r from-emerald-500 to-teal-400 transition-all duration-500" style={{ width: `${percentage}%` }}></div>
+      </div>
+
+      {/* 4 Phases Indicators */}
+      <div className="grid grid-cols-4 gap-4">
+        {phases.map((p, idx) => {
+          const isCompleted = idx < currentPhaseIdx;
+          const isActive = idx === currentPhaseIdx;
+          return (
+            <div key={p.name} className="flex flex-col items-center gap-1.5 text-center relative">
+              <div className="flex flex-col items-center gap-1">
+                <div className={`w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-black border transition-all ${isCompleted
+                    ? 'bg-emerald-500 border-emerald-500 text-white'
+                    : isActive
+                      ? 'border-emerald-500 text-emerald-500 bg-emerald-500/10 shadow-[0_0_8px_rgba(16,185,129,0.25)]'
+                      : 'border-slate-200 dark:border-white/10 text-slate-400'
+                  }`}>
+                  {isCompleted ? '✓' : idx + 1}
+                </div>
+                <span className={`text-[11px] font-extrabold tracking-tight truncate ${isActive ? 'text-slate-900 dark:text-white font-black' : isCompleted ? 'text-emerald-500' : 'text-slate-400'
+                  }`}>
+                  {p.name}
                 </span>
               </div>
-            );
-          })}
-        </div>
-      )}
+              {/* Stepper Dot track underneath */}
+              <div className="flex gap-1.5 justify-center items-center">
+                {p.steps.map(s => (
+                  <div
+                    key={s}
+                    className={`w-1.5 h-1.5 rounded-full transition-all ${s === currentStep
+                        ? 'bg-emerald-500 scale-125 shadow-[0_0_6px_rgba(16,185,129,0.5)]'
+                        : s < currentStep
+                          ? 'bg-emerald-500'
+                          : 'bg-slate-200 dark:bg-white/10'
+                      }`}
+                  />
+                ))}
+              </div>
+            </div>
+          );
+        })}
+      </div>
     </div>
   );
 };
@@ -154,7 +172,7 @@ export const UploadResumeWizard: React.FC<UploadResumeWizardProps> = ({
   // 12-Step flow controller
   const [step, setStep] = useState<number>(initialStep || (initialFile ? 2 : 1));
   const [file, setFile] = useState<File | null>(initialFile);
-  
+
   // Real DB Data Models
   const [parsedData, setParsedData] = useState<any>({
     personal_info: { name: '', email: '', phone: '', address: '', linkedin: '', github: '', portfolio: '' },
@@ -199,8 +217,8 @@ export const UploadResumeWizard: React.FC<UploadResumeWizardProps> = ({
 
       const role = parsedData.personal_info?.title || parsedData.target_role || 'Software Engineer';
       const rawSkills = parsedData.technicalSkills || parsedData.skills || ['Full Stack Development', 'Software Engineering'];
-      const skillsList = Array.isArray(rawSkills) 
-        ? rawSkills.map(s => typeof s === 'string' ? s : (s.name || String(s))) 
+      const skillsList = Array.isArray(rawSkills)
+        ? rawSkills.map(s => typeof s === 'string' ? s : (s.name || String(s)))
         : [String(rawSkills)];
 
       if (targetId) {
@@ -441,13 +459,13 @@ export const UploadResumeWizard: React.FC<UploadResumeWizardProps> = ({
     try {
       const formData = new FormData();
       formData.append('file', targetFile);
-      
+
       // Do NOT set Content-Type manually — axios auto-adds the multipart boundary
       const uploadRes = await apiClient.post('/api/resume-studio/upload', formData, {
         headers: { 'Content-Type': 'multipart/form-data' },
         timeout: 120000 // 2 min timeout for large files + OCR
       });
-      
+
       const parsed = uploadRes.data.parsed_data || {};
       const newId = uploadRes.data.resume_id;
       setParsedData(parsed);
@@ -539,7 +557,7 @@ export const UploadResumeWizard: React.FC<UploadResumeWizardProps> = ({
       } else {
         errorMsg = `Request configuration error: ${e.message}`;
       }
-      
+
       alert(`Ingestion failed: ${errorMsg}`);
       setFile(null);
       setStep(1);
@@ -746,7 +764,7 @@ export const UploadResumeWizard: React.FC<UploadResumeWizardProps> = ({
       if (resumeId) {
         await saveResumeToDb(parsedData);
       }
-      
+
       const analyzeRes = await apiClient.post('/api/resume-studio/analyze-direct', {
         parsedData
       });
@@ -844,27 +862,22 @@ export const UploadResumeWizard: React.FC<UploadResumeWizardProps> = ({
   };
 
   return (
-    <div className={`fixed inset-0 z-50 backdrop-blur-xl flex items-center justify-center p-4 md:p-6 overflow-y-auto text-left ${
-      isDark ? 'bg-[#0B121F]/90' : 'bg-slate-900/40'
-    }`}>
-      <div className={`w-full max-w-7xl rounded-[28px] border overflow-hidden flex flex-col h-[90vh] ${
-        isDark 
-          ? 'border-white/10 shadow-[0_0_50px_rgba(16,185,129,0.15)] bg-[#111827] text-white' 
-          : 'border-slate-100 shadow-2xl shadow-slate-200/50 bg-white text-slate-800'
-      }`}>
-        
-        {/* Header bar */}
-        <div className={`flex items-center justify-between px-6 py-4 border-b backdrop-blur-md ${
-          isDark ? 'border-white/10 bg-[#1F2937]/30' : 'border-slate-100 bg-slate-50'
+    <div className={`fixed inset-0 z-50 overflow-hidden text-left bg-white dark:bg-[#111827] flex flex-col`}>
+      <div className={`w-screen h-screen flex flex-col ${isDark
+          ? 'bg-[#111827] text-white'
+          : 'bg-white text-slate-805'
         }`}>
+
+        {/* Header bar */}
+        <div className={`flex items-center justify-between px-6 py-4 border-b backdrop-blur-md ${isDark ? 'border-white/10 bg-[#1F2937]/30' : 'border-slate-100 bg-slate-50'
+          }`}>
           <div className="flex items-center gap-3">
             <div className="w-8 h-8 rounded-lg bg-gradient-to-tr from-emerald-600 to-teal-400 text-white flex items-center justify-center font-black">
               B
             </div>
             <div>
-              <h3 className={`font-extrabold text-sm tracking-tight flex items-center gap-1.5 ${
-                isDark ? 'text-white' : 'text-slate-900'
-              }`}>
+              <h3 className={`font-extrabold text-sm tracking-tight flex items-center gap-1.5 ${isDark ? 'text-white' : 'text-slate-900'
+                }`}>
                 Bimba AI Resume Suite <Sparkles size={13} className="text-emerald-400" />
               </h3>
               <p className={`text-[10px] ${isDark ? 'text-slate-400' : 'text-slate-500 font-bold'}`}>Step {step} of 13 — Conversational Career Optimizer</p>
@@ -877,19 +890,19 @@ export const UploadResumeWizard: React.FC<UploadResumeWizardProps> = ({
 
         {/* Step Progress Bar */}
         <div className="px-6 py-3 border-b dark:border-white/10 bg-slate-50/50 dark:bg-[#111827]">
-          <StepProgressBar 
-            currentStep={getActiveStep() + 1} 
-            totalSteps={10} 
+          <StepProgressBar
+            currentStep={getActiveStep() + 1}
+            totalSteps={10}
             stepName={
               ['Welcome', 'Extraction', 'Snapshot', 'Templates', 'Interview', 'Completion', 'ATS Audit', 'Improvements', 'Quality', 'Export & Jobs'][getActiveStep()] || 'Optimizer'
-            } 
+            }
           />
         </div>
 
         {/* 12-Step Content Renderer */}
         <div className="flex-grow overflow-hidden flex flex-col h-full p-6 md:p-8 overflow-y-auto">
           <AnimatePresence mode="wait">
-            
+
             {/* Step 1: Welcome Screen */}
             {step === 1 && (
               <motion.div key="step1" initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -15 }} className="max-w-2xl mx-auto text-center flex flex-col items-center justify-center gap-6 py-12">
@@ -915,25 +928,27 @@ export const UploadResumeWizard: React.FC<UploadResumeWizardProps> = ({
 
             {/* Step 2: Upload Resume */}
             {step === 2 && (
-              <motion.div key="step2" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="max-w-xl mx-auto w-full text-center flex flex-col gap-6 py-6">
+              <motion.div key="step2" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="max-w-xl mx-auto w-full text-center flex flex-col gap-6 py-6">
                 <div>
-                  <h2 className="text-xl font-black">Upload Your Document</h2>
-                  <p className="text-xs text-slate-500 mt-1">Supports PDF, DOC, DOCX, TXT, RTF, HTML, Google Drive, and Dropbox</p>
+                  <h2 className="text-2xl font-black tracking-tight">Upload Your Document</h2>
+                  <p className="text-xs text-slate-505 dark:text-slate-400 mt-1.5 leading-relaxed">
+                    Upload your resume to instantly run our unified career parser. Supported formats include PDF, DOC, DOCX, and TXT.
+                  </p>
                 </div>
 
-                <div 
+                <div
                   onDragOver={(e) => e.preventDefault()}
                   onDrop={handleFileDrop}
                   onClick={() => fileInputRef.current?.click()}
-                  className="border-2 border-dashed border-slate-200 dark:border-white/10 hover:border-emerald-500 bg-slate-50/50 dark:bg-white/5 hover:bg-emerald-500/5 rounded-2xl p-12 flex flex-col items-center justify-center gap-4 cursor-pointer transition-all duration-300 w-full"
+                  className="border-2 border-dashed border-slate-200 dark:border-white/10 hover:border-emerald-500 bg-slate-50/30 dark:bg-white/5 hover:bg-emerald-500/5 rounded-2xl p-16 flex flex-col items-center justify-center gap-4 cursor-pointer transition-all duration-300 w-full shadow-inner hover:shadow-[0_0_25px_rgba(16,185,129,0.08)]"
                 >
                   <input type="file" ref={fileInputRef} onChange={handleFileSelect} accept=".pdf,.doc,.docx,.txt,.rtf,.html" className="hidden" />
-                  <div className="w-12 h-12 rounded-full bg-emerald-500/10 text-emerald-500 flex items-center justify-center border border-emerald-500/20">
-                    <UploadCloud size={24} />
+                  <div className="w-14 h-14 rounded-2xl bg-emerald-500/10 text-emerald-500 flex items-center justify-center border border-emerald-500/20 shadow-md">
+                    <UploadCloud size={28} />
                   </div>
                   <div className="text-center text-xs">
-                    <p className="font-bold">Drag & drop files here, or click to browse</p>
-                    <p className="text-[10px] text-slate-500 mt-1">Maximum file size: 20MB</p>
+                    <p className="font-extrabold text-sm text-slate-800 dark:text-slate-200">Drag & drop files here, or click to browse</p>
+                    <p className="text-[10px] text-slate-450 mt-1.5">Maximum file size: 20MB</p>
                   </div>
                 </div>
 
@@ -951,19 +966,25 @@ export const UploadResumeWizard: React.FC<UploadResumeWizardProps> = ({
 
             {/* Step 3: AI Resume Parsing Progress */}
             {step === 3 && (
-              <motion.div key="step3" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="max-w-md mx-auto w-full flex flex-col gap-4 py-12">
+              <motion.div key="step3" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="max-w-md mx-auto w-full flex flex-col gap-5 py-12">
                 <div className="flex items-center justify-between text-xs font-bold">
-                  <span className="flex items-center gap-1.5"><RefreshCw size={12} className="animate-spin text-emerald-400" /> Active AI Parsing Heuristics</span>
-                  <span className="text-emerald-400">{Math.round((completedTasks.length / processingTasks.length) * 100)}%</span>
+                  <span className="flex items-center gap-1.5 text-slate-800 dark:text-slate-200">
+                    <RefreshCw size={12} className="animate-spin text-emerald-400" /> Active AI Parsing Heuristics
+                  </span>
+                  <span className="text-emerald-400 font-extrabold">{Math.round((completedTasks.length / processingTasks.length) * 100)}%</span>
                 </div>
                 <div className="w-full bg-slate-100 dark:bg-white/10 h-1.5 rounded-full overflow-hidden">
-                  <div className="bg-emerald-500 h-full transition-all duration-500" style={{ width: `${(completedTasks.length / processingTasks.length) * 100}%` }} />
+                  <div className="bg-gradient-to-r from-emerald-500 to-teal-400 h-full transition-all duration-500" style={{ width: `${(completedTasks.length / processingTasks.length) * 100}%` }} />
                 </div>
-                <div className="flex flex-col gap-2 mt-2 text-xs">
+                <div className="flex flex-col gap-3 mt-2 text-xs bg-slate-50/50 dark:bg-white/5 p-5 rounded-2xl border border-slate-100 dark:border-white/5 shadow-sm">
                   {processingTasks.map((task, idx) => (
-                    <div key={idx} className={`flex items-center justify-between ${idx < completedTasks.length ? 'text-slate-400' : idx === completedTasks.length ? 'text-emerald-400 font-semibold animate-pulse' : 'text-slate-600'}`}>
+                    <div key={idx} className={`flex items-center justify-between ${idx < completedTasks.length ? 'text-slate-450 font-medium' : idx === completedTasks.length ? 'text-emerald-500 font-extrabold animate-pulse' : 'text-slate-400 dark:text-slate-600'}`}>
                       <span>{task}</span>
-                      {idx < completedTasks.length && <CheckCircle2 size={13} className="text-emerald-500" />}
+                      {idx < completedTasks.length ? (
+                        <CheckCircle2 size={14} className="text-emerald-500" />
+                      ) : (
+                        <div className={`w-3 h-3 rounded-full border-2 ${idx === completedTasks.length ? 'border-emerald-500 border-t-transparent animate-spin' : 'border-slate-350 dark:border-white/10'}`} />
+                      )}
                     </div>
                   ))}
                 </div>
@@ -984,12 +1005,11 @@ export const UploadResumeWizard: React.FC<UploadResumeWizardProps> = ({
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-h-[60vh] overflow-y-auto pr-2">
-                              {/* 1. Personal Information Card */}
-                  <Card className={`p-5 flex flex-col gap-3 transition-all ${
-                    isSectionLowConfidence('personal_info')
+                  {/* 1. Personal Information Card */}
+                  <Card className={`p-5 flex flex-col gap-3 transition-all ${isSectionLowConfidence('personal_info')
                       ? 'border-amber-400 dark:border-amber-600 ring-2 ring-amber-400/20 bg-amber-500/5'
                       : 'border-slate-200 dark:border-white/10'
-                  }`}>
+                    }`}>
                     <div className="flex justify-between items-center border-b pb-2">
                       <span className="text-xs font-bold text-emerald-500 uppercase flex items-center gap-1.5">
                         Personal Information
@@ -999,11 +1019,11 @@ export const UploadResumeWizard: React.FC<UploadResumeWizardProps> = ({
                           </span>
                         )}
                       </span>
-                      <button 
-                        onClick={() => toggleEditCard('personal_info')} 
+                      <button
+                        onClick={() => toggleEditCard('personal_info')}
                         className="text-[10px] font-bold text-slate-400 hover:text-emerald-500 cursor-pointer flex items-center gap-1"
                       >
-                        {editingCards['personal_info'] ? <><Save size={11} className="text-emerald-500"/> Save</> : <><FileEdit size={11}/> Edit</>}
+                        {editingCards['personal_info'] ? <><Save size={11} className="text-emerald-500" /> Save</> : <><FileEdit size={11} /> Edit</>}
                       </button>
                     </div>
                     {isSectionLowConfidence('personal_info') && (
@@ -1049,13 +1069,12 @@ export const UploadResumeWizard: React.FC<UploadResumeWizardProps> = ({
                       </div>
                     )}
                   </Card>
- 
+
                   {/* 2. Professional Summary Card */}
-                  <Card className={`p-5 flex flex-col gap-3 transition-all ${
-                    isSectionLowConfidence('summary')
+                  <Card className={`p-5 flex flex-col gap-3 transition-all ${isSectionLowConfidence('summary')
                       ? 'border-amber-400 dark:border-amber-600 ring-2 ring-amber-400/20 bg-amber-500/5'
                       : 'border-slate-200 dark:border-white/10'
-                  }`}>
+                    }`}>
                     <div className="flex justify-between items-center border-b pb-2">
                       <span className="text-xs font-bold text-emerald-500 uppercase flex items-center gap-1.5">
                         <Sparkles size={13} /> Professional Summary
@@ -1074,11 +1093,11 @@ export const UploadResumeWizard: React.FC<UploadResumeWizardProps> = ({
                           {isGeneratingSummary ? <RefreshCw size={11} className="animate-spin text-emerald-500" /> : <Sparkles size={11} />}
                           {parsedData.summary ? 'Re-generate AI Summary' : 'Auto-Generate AI Summary'}
                         </button>
-                        <button 
-                          onClick={() => toggleEditCard('summary')} 
+                        <button
+                          onClick={() => toggleEditCard('summary')}
                           className="text-[10px] font-bold text-slate-400 hover:text-emerald-500 cursor-pointer flex items-center gap-1"
                         >
-                          {editingCards['summary'] ? <><Save size={11} className="text-emerald-500"/> Save</> : <><FileEdit size={11}/> Edit</>}
+                          {editingCards['summary'] ? <><Save size={11} className="text-emerald-500" /> Save</> : <><FileEdit size={11} /> Edit</>}
                         </button>
                       </div>
                     </div>
@@ -1096,8 +1115,8 @@ export const UploadResumeWizard: React.FC<UploadResumeWizardProps> = ({
                             Resumes with a 95%+ ATS professional summary receive 3x higher recruiter response rates.
                           </p>
                         </div>
-                        <Button 
-                          onClick={handleGenerateSummary} 
+                        <Button
+                          onClick={handleGenerateSummary}
                           disabled={isGeneratingSummary}
                           className="btn-glow-green text-xs font-bold py-2 px-3.5 shrink-0 flex items-center gap-1.5"
                         >
@@ -1115,11 +1134,11 @@ export const UploadResumeWizard: React.FC<UploadResumeWizardProps> = ({
                   <Card className="p-5 flex flex-col gap-3">
                     <div className="flex justify-between items-center border-b pb-2">
                       <span className="text-xs font-bold text-emerald-500 uppercase">Career Objective</span>
-                      <button 
-                        onClick={() => toggleEditCard('objective')} 
+                      <button
+                        onClick={() => toggleEditCard('objective')}
                         className="text-[10px] font-bold text-slate-400 hover:text-emerald-500 cursor-pointer flex items-center gap-1"
                       >
-                        {editingCards['objective'] ? <><Save size={11} className="text-emerald-500"/> Save</> : <><FileEdit size={11}/> Edit</>}
+                        {editingCards['objective'] ? <><Save size={11} className="text-emerald-500" /> Save</> : <><FileEdit size={11} /> Edit</>}
                       </button>
                     </div>
                     {editingCards['objective'] ? (
@@ -1134,8 +1153,8 @@ export const UploadResumeWizard: React.FC<UploadResumeWizardProps> = ({
                     <div className="flex justify-between items-center border-b pb-2">
                       <span className="text-xs font-bold text-emerald-500 uppercase">Education</span>
                       <div className="flex items-center gap-2">
-                        <button onClick={() => handleAddItemToSection('education', { institution: 'University', degree: 'Degree', passing_year: '2025', cgpa_percentage: '', location: '' })} className="text-[10px] font-bold text-emerald-500 hover:text-emerald-600 cursor-pointer flex items-center gap-0.5"><Plus size={11}/> Add Item</button>
-                        <button onClick={() => toggleEditCard('education')} className="text-[10px] font-bold text-slate-400 hover:text-emerald-500 cursor-pointer flex items-center gap-1">{editingCards['education'] ? <><Save size={11} className="text-emerald-500"/> Save</> : <><FileEdit size={11}/> Edit</>}</button>
+                        <button onClick={() => handleAddItemToSection('education', { institution: 'University', degree: 'Degree', passing_year: '2025', cgpa_percentage: '', location: '' })} className="text-[10px] font-bold text-emerald-500 hover:text-emerald-600 cursor-pointer flex items-center gap-0.5"><Plus size={11} /> Add Item</button>
+                        <button onClick={() => toggleEditCard('education')} className="text-[10px] font-bold text-slate-400 hover:text-emerald-500 cursor-pointer flex items-center gap-1">{editingCards['education'] ? <><Save size={11} className="text-emerald-500" /> Save</> : <><FileEdit size={11} /> Edit</>}</button>
                       </div>
                     </div>
                     <div className="text-xs space-y-2">
@@ -1166,7 +1185,7 @@ export const UploadResumeWizard: React.FC<UploadResumeWizardProps> = ({
                                 ))}
                               </div>
                             )}
-                            <button onClick={() => handleDeleteItemFromSection('education', idx)} className="text-rose-500 hover:text-rose-600 p-1 cursor-pointer shrink-0"><Trash2 size={12}/></button>
+                            <button onClick={() => handleDeleteItemFromSection('education', idx)} className="text-rose-500 hover:text-rose-600 p-1 cursor-pointer shrink-0"><Trash2 size={12} /></button>
                           </div>
                         ))
                       ) : <p className="text-slate-450">No education entries found.</p>}
@@ -1178,8 +1197,8 @@ export const UploadResumeWizard: React.FC<UploadResumeWizardProps> = ({
                     <div className="flex justify-between items-center border-b pb-2">
                       <span className="text-xs font-bold text-emerald-500 uppercase">Experience</span>
                       <div className="flex items-center gap-2">
-                        <button onClick={() => handleAddItemToSection('experience', { company: 'Company Name', position: 'Role Title', duration: '2024 - Present', description: '' })} className="text-[10px] font-bold text-emerald-500 hover:text-emerald-600 cursor-pointer flex items-center gap-0.5"><Plus size={11}/> Add Item</button>
-                        <button onClick={() => toggleEditCard('experience')} className="text-[10px] font-bold text-slate-400 hover:text-emerald-500 cursor-pointer flex items-center gap-1">{editingCards['experience'] ? <><Save size={11} className="text-emerald-500"/> Save</> : <><FileEdit size={11}/> Edit</>}</button>
+                        <button onClick={() => handleAddItemToSection('experience', { company: 'Company Name', position: 'Role Title', duration: '2024 - Present', description: '' })} className="text-[10px] font-bold text-emerald-500 hover:text-emerald-600 cursor-pointer flex items-center gap-0.5"><Plus size={11} /> Add Item</button>
+                        <button onClick={() => toggleEditCard('experience')} className="text-[10px] font-bold text-slate-400 hover:text-emerald-500 cursor-pointer flex items-center gap-1">{editingCards['experience'] ? <><Save size={11} className="text-emerald-500" /> Save</> : <><FileEdit size={11} /> Edit</>}</button>
                       </div>
                     </div>
                     <div className="text-xs space-y-2">
@@ -1213,7 +1232,7 @@ export const UploadResumeWizard: React.FC<UploadResumeWizardProps> = ({
                                 ))}
                               </div>
                             )}
-                            <button onClick={() => handleDeleteItemFromSection('experience', idx)} className="text-rose-500 hover:text-rose-600 p-1 cursor-pointer shrink-0"><Trash2 size={12}/></button>
+                            <button onClick={() => handleDeleteItemFromSection('experience', idx)} className="text-rose-500 hover:text-rose-600 p-1 cursor-pointer shrink-0"><Trash2 size={12} /></button>
                           </div>
                         ))
                       ) : <p className="text-slate-450">No experience entries found.</p>}
@@ -1225,8 +1244,8 @@ export const UploadResumeWizard: React.FC<UploadResumeWizardProps> = ({
                     <div className="flex justify-between items-center border-b pb-2">
                       <span className="text-xs font-bold text-emerald-500 uppercase">Projects</span>
                       <div className="flex items-center gap-2">
-                        <button onClick={() => handleAddItemToSection('projects', { name: 'Project Title', tech_stack: 'React, Node', description: '' })} className="text-[10px] font-bold text-emerald-500 hover:text-emerald-600 cursor-pointer flex items-center gap-0.5"><Plus size={11}/> Add Item</button>
-                        <button onClick={() => toggleEditCard('projects')} className="text-[10px] font-bold text-slate-400 hover:text-emerald-500 cursor-pointer flex items-center gap-1">{editingCards['projects'] ? <><Save size={11} className="text-emerald-500"/> Save</> : <><FileEdit size={11}/> Edit</>}</button>
+                        <button onClick={() => handleAddItemToSection('projects', { name: 'Project Title', tech_stack: 'React, Node', description: '' })} className="text-[10px] font-bold text-emerald-500 hover:text-emerald-600 cursor-pointer flex items-center gap-0.5"><Plus size={11} /> Add Item</button>
+                        <button onClick={() => toggleEditCard('projects')} className="text-[10px] font-bold text-slate-400 hover:text-emerald-500 cursor-pointer flex items-center gap-1">{editingCards['projects'] ? <><Save size={11} className="text-emerald-500" /> Save</> : <><FileEdit size={11} /> Edit</>}</button>
                       </div>
                     </div>
                     <div className="text-xs space-y-2">
@@ -1259,7 +1278,7 @@ export const UploadResumeWizard: React.FC<UploadResumeWizardProps> = ({
                                 ))}
                               </div>
                             )}
-                            <button onClick={() => handleDeleteItemFromSection('projects', idx)} className="text-rose-500 hover:text-rose-600 p-1 cursor-pointer shrink-0"><Trash2 size={12}/></button>
+                            <button onClick={() => handleDeleteItemFromSection('projects', idx)} className="text-rose-500 hover:text-rose-600 p-1 cursor-pointer shrink-0"><Trash2 size={12} /></button>
                           </div>
                         ))
                       ) : <p className="text-slate-450">No projects found.</p>}
@@ -1271,8 +1290,8 @@ export const UploadResumeWizard: React.FC<UploadResumeWizardProps> = ({
                     <div className="flex justify-between items-center border-b pb-2">
                       <span className="text-xs font-bold text-emerald-500 uppercase">Technical Skills</span>
                       <div className="flex items-center gap-2">
-                        <button onClick={() => handleAddItemToSection('technicalSkills', 'New Skill')} className="text-[10px] font-bold text-emerald-500 hover:text-emerald-600 cursor-pointer flex items-center gap-0.5"><Plus size={11}/> Add Item</button>
-                        <button onClick={() => toggleEditCard('technicalSkills')} className="text-[10px] font-bold text-slate-400 hover:text-emerald-500 cursor-pointer flex items-center gap-1">{editingCards['technicalSkills'] ? <><Save size={11} className="text-emerald-500"/> Save</> : <><FileEdit size={11}/> Edit</>}</button>
+                        <button onClick={() => handleAddItemToSection('technicalSkills', 'New Skill')} className="text-[10px] font-bold text-emerald-500 hover:text-emerald-600 cursor-pointer flex items-center gap-0.5"><Plus size={11} /> Add Item</button>
+                        <button onClick={() => toggleEditCard('technicalSkills')} className="text-[10px] font-bold text-slate-400 hover:text-emerald-500 cursor-pointer flex items-center gap-1">{editingCards['technicalSkills'] ? <><Save size={11} className="text-emerald-500" /> Save</> : <><FileEdit size={11} /> Edit</>}</button>
                       </div>
                     </div>
                     <div className="flex flex-wrap gap-1.5">
@@ -1283,7 +1302,7 @@ export const UploadResumeWizard: React.FC<UploadResumeWizardProps> = ({
                           ) : (
                             <span>{typeof skill === 'object' ? skill.name : skill}</span>
                           )}
-                          <button onClick={() => handleDeleteItemFromSection('technicalSkills', idx)} className="text-rose-500 hover:text-rose-600 cursor-pointer ml-1"><X size={10}/></button>
+                          <button onClick={() => handleDeleteItemFromSection('technicalSkills', idx)} className="text-rose-500 hover:text-rose-600 cursor-pointer ml-1"><X size={10} /></button>
                         </div>
                       ))}
                     </div>
@@ -1294,8 +1313,8 @@ export const UploadResumeWizard: React.FC<UploadResumeWizardProps> = ({
                     <div className="flex justify-between items-center border-b pb-2">
                       <span className="text-xs font-bold text-emerald-500 uppercase">Soft Skills</span>
                       <div className="flex items-center gap-2">
-                        <button onClick={() => handleAddItemToSection('softSkills', 'Leadership')} className="text-[10px] font-bold text-emerald-500 hover:text-emerald-600 cursor-pointer flex items-center gap-0.5"><Plus size={11}/> Add Item</button>
-                        <button onClick={() => toggleEditCard('softSkills')} className="text-[10px] font-bold text-slate-400 hover:text-emerald-500 cursor-pointer flex items-center gap-1">{editingCards['softSkills'] ? <><Save size={11} className="text-emerald-500"/> Save</> : <><FileEdit size={11}/> Edit</>}</button>
+                        <button onClick={() => handleAddItemToSection('softSkills', 'Leadership')} className="text-[10px] font-bold text-emerald-500 hover:text-emerald-600 cursor-pointer flex items-center gap-0.5"><Plus size={11} /> Add Item</button>
+                        <button onClick={() => toggleEditCard('softSkills')} className="text-[10px] font-bold text-slate-400 hover:text-emerald-500 cursor-pointer flex items-center gap-1">{editingCards['softSkills'] ? <><Save size={11} className="text-emerald-500" /> Save</> : <><FileEdit size={11} /> Edit</>}</button>
                       </div>
                     </div>
                     <div className="flex flex-wrap gap-1.5">
@@ -1306,7 +1325,7 @@ export const UploadResumeWizard: React.FC<UploadResumeWizardProps> = ({
                           ) : (
                             <span>{skill}</span>
                           )}
-                          <button onClick={() => handleDeleteItemFromSection('softSkills', idx)} className="text-rose-500 hover:text-rose-600 cursor-pointer ml-1"><X size={10}/></button>
+                          <button onClick={() => handleDeleteItemFromSection('softSkills', idx)} className="text-rose-500 hover:text-rose-600 cursor-pointer ml-1"><X size={10} /></button>
                         </div>
                       ))}
                     </div>
@@ -1317,8 +1336,8 @@ export const UploadResumeWizard: React.FC<UploadResumeWizardProps> = ({
                     <div className="flex justify-between items-center border-b pb-2">
                       <span className="text-xs font-bold text-emerald-500 uppercase">Certifications</span>
                       <div className="flex items-center gap-2">
-                        <button onClick={() => handleAddItemToSection('certifications', { name: 'Certificate Name', organization: 'Issuer', issue_date: '2024' })} className="text-[10px] font-bold text-emerald-500 hover:text-emerald-600 cursor-pointer flex items-center gap-0.5"><Plus size={11}/> Add Item</button>
-                        <button onClick={() => toggleEditCard('certifications')} className="text-[10px] font-bold text-slate-400 hover:text-emerald-500 cursor-pointer flex items-center gap-1">{editingCards['certifications'] ? <><Save size={11} className="text-emerald-500"/> Save</> : <><FileEdit size={11}/> Edit</>}</button>
+                        <button onClick={() => handleAddItemToSection('certifications', { name: 'Certificate Name', organization: 'Issuer', issue_date: '2024' })} className="text-[10px] font-bold text-emerald-500 hover:text-emerald-600 cursor-pointer flex items-center gap-0.5"><Plus size={11} /> Add Item</button>
+                        <button onClick={() => toggleEditCard('certifications')} className="text-[10px] font-bold text-slate-400 hover:text-emerald-500 cursor-pointer flex items-center gap-1">{editingCards['certifications'] ? <><Save size={11} className="text-emerald-500" /> Save</> : <><FileEdit size={11} /> Edit</>}</button>
                       </div>
                     </div>
                     <div className="text-xs space-y-2">
@@ -1350,7 +1369,7 @@ export const UploadResumeWizard: React.FC<UploadResumeWizardProps> = ({
                               ))}
                             </div>
                           )}
-                          <button onClick={() => handleDeleteItemFromSection('certifications', idx)} className="text-rose-500 hover:text-rose-600 p-1 cursor-pointer shrink-0"><Trash2 size={12}/></button>
+                          <button onClick={() => handleDeleteItemFromSection('certifications', idx)} className="text-rose-500 hover:text-rose-600 p-1 cursor-pointer shrink-0"><Trash2 size={12} /></button>
                         </div>
                       ))}
                     </div>
@@ -1361,8 +1380,8 @@ export const UploadResumeWizard: React.FC<UploadResumeWizardProps> = ({
                     <div className="flex justify-between items-center border-b pb-2">
                       <span className="text-xs font-bold text-emerald-500 uppercase">Internships</span>
                       <div className="flex items-center gap-2">
-                        <button onClick={() => handleAddItemToSection('internships', { company: 'Company', role: 'Intern Role', duration: 'Summer 2024', description: '' })} className="text-[10px] font-bold text-emerald-500 hover:text-emerald-600 cursor-pointer flex items-center gap-0.5"><Plus size={11}/> Add Item</button>
-                        <button onClick={() => toggleEditCard('internships')} className="text-[10px] font-bold text-slate-400 hover:text-emerald-500 cursor-pointer flex items-center gap-1">{editingCards['internships'] ? <><Save size={11} className="text-emerald-500"/> Save</> : <><FileEdit size={11}/> Edit</>}</button>
+                        <button onClick={() => handleAddItemToSection('internships', { company: 'Company', role: 'Intern Role', duration: 'Summer 2024', description: '' })} className="text-[10px] font-bold text-emerald-500 hover:text-emerald-600 cursor-pointer flex items-center gap-0.5"><Plus size={11} /> Add Item</button>
+                        <button onClick={() => toggleEditCard('internships')} className="text-[10px] font-bold text-slate-400 hover:text-emerald-500 cursor-pointer flex items-center gap-1">{editingCards['internships'] ? <><Save size={11} className="text-emerald-500" /> Save</> : <><FileEdit size={11} /> Edit</>}</button>
                       </div>
                     </div>
                     <div className="text-xs space-y-2">
@@ -1394,7 +1413,7 @@ export const UploadResumeWizard: React.FC<UploadResumeWizardProps> = ({
                               ))}
                             </div>
                           )}
-                          <button onClick={() => handleDeleteItemFromSection('internships', idx)} className="text-rose-500 hover:text-rose-600 p-1 cursor-pointer shrink-0"><Trash2 size={12}/></button>
+                          <button onClick={() => handleDeleteItemFromSection('internships', idx)} className="text-rose-500 hover:text-rose-600 p-1 cursor-pointer shrink-0"><Trash2 size={12} /></button>
                         </div>
                       ))}
                     </div>
@@ -1405,8 +1424,8 @@ export const UploadResumeWizard: React.FC<UploadResumeWizardProps> = ({
                     <div className="flex justify-between items-center border-b pb-2">
                       <span className="text-xs font-bold text-emerald-500 uppercase">Achievements & Awards</span>
                       <div className="flex items-center gap-2">
-                        <button onClick={() => handleAddItemToSection('achievements', '1st Place Hackathon')} className="text-[10px] font-bold text-emerald-500 hover:text-emerald-600 cursor-pointer flex items-center gap-0.5"><Plus size={11}/> Add Item</button>
-                        <button onClick={() => toggleEditCard('achievements')} className="text-[10px] font-bold text-slate-400 hover:text-emerald-500 cursor-pointer flex items-center gap-1">{editingCards['achievements'] ? <><Save size={11} className="text-emerald-500"/> Save</> : <><FileEdit size={11}/> Edit</>}</button>
+                        <button onClick={() => handleAddItemToSection('achievements', '1st Place Hackathon')} className="text-[10px] font-bold text-emerald-500 hover:text-emerald-600 cursor-pointer flex items-center gap-0.5"><Plus size={11} /> Add Item</button>
+                        <button onClick={() => toggleEditCard('achievements')} className="text-[10px] font-bold text-slate-400 hover:text-emerald-500 cursor-pointer flex items-center gap-1">{editingCards['achievements'] ? <><Save size={11} className="text-emerald-500" /> Save</> : <><FileEdit size={11} /> Edit</>}</button>
                       </div>
                     </div>
                     <div className="text-xs space-y-1.5">
@@ -1419,7 +1438,7 @@ export const UploadResumeWizard: React.FC<UploadResumeWizardProps> = ({
                             ) : (
                               <span>• {displayText}</span>
                             )}
-                            <button onClick={() => handleDeleteItemFromSection('achievements', idx)} className="text-rose-500 hover:text-rose-600 p-1 cursor-pointer shrink-0"><Trash2 size={12}/></button>
+                            <button onClick={() => handleDeleteItemFromSection('achievements', idx)} className="text-rose-500 hover:text-rose-600 p-1 cursor-pointer shrink-0"><Trash2 size={12} /></button>
                           </div>
                         );
                       })}
@@ -1431,8 +1450,8 @@ export const UploadResumeWizard: React.FC<UploadResumeWizardProps> = ({
                     <div className="flex justify-between items-center border-b pb-2">
                       <span className="text-xs font-bold text-emerald-500 uppercase">Hobbies & Interests</span>
                       <div className="flex items-center gap-2">
-                        <button onClick={() => handleAddItemToSection('hobbies', 'New Hobby')} className="text-[10px] font-bold text-emerald-500 hover:text-emerald-600 cursor-pointer flex items-center gap-0.5"><Plus size={11}/> Add Item</button>
-                        <button onClick={() => toggleEditCard('hobbies')} className="text-[10px] font-bold text-slate-400 hover:text-emerald-500 cursor-pointer flex items-center gap-1">{editingCards['hobbies'] ? <><Save size={11} className="text-emerald-500"/> Save</> : <><FileEdit size={11}/> Edit</>}</button>
+                        <button onClick={() => handleAddItemToSection('hobbies', 'New Hobby')} className="text-[10px] font-bold text-emerald-500 hover:text-emerald-600 cursor-pointer flex items-center gap-0.5"><Plus size={11} /> Add Item</button>
+                        <button onClick={() => toggleEditCard('hobbies')} className="text-[10px] font-bold text-slate-400 hover:text-emerald-500 cursor-pointer flex items-center gap-1">{editingCards['hobbies'] ? <><Save size={11} className="text-emerald-500" /> Save</> : <><FileEdit size={11} /> Edit</>}</button>
                       </div>
                     </div>
                     <div className="flex flex-wrap gap-1.5">
@@ -1445,7 +1464,7 @@ export const UploadResumeWizard: React.FC<UploadResumeWizardProps> = ({
                             ) : (
                               <span>{displayText}</span>
                             )}
-                            <button onClick={() => handleDeleteItemFromSection('hobbies', idx)} className="text-rose-500 hover:text-rose-600 cursor-pointer ml-1"><X size={10}/></button>
+                            <button onClick={() => handleDeleteItemFromSection('hobbies', idx)} className="text-rose-500 hover:text-rose-600 cursor-pointer ml-1"><X size={10} /></button>
                           </div>
                         );
                       })}
@@ -1457,8 +1476,8 @@ export const UploadResumeWizard: React.FC<UploadResumeWizardProps> = ({
                     <div className="flex justify-between items-center border-b pb-2">
                       <span className="text-xs font-bold text-emerald-500 uppercase">Languages</span>
                       <div className="flex items-center gap-2">
-                        <button onClick={() => handleAddItemToSection('languages', 'English (Fluent)')} className="text-[10px] font-bold text-emerald-500 hover:text-emerald-600 cursor-pointer flex items-center gap-0.5"><Plus size={11}/> Add Item</button>
-                        <button onClick={() => toggleEditCard('languages')} className="text-[10px] font-bold text-slate-400 hover:text-emerald-500 cursor-pointer flex items-center gap-1">{editingCards['languages'] ? <><Save size={11} className="text-emerald-500"/> Save</> : <><FileEdit size={11}/> Edit</>}</button>
+                        <button onClick={() => handleAddItemToSection('languages', 'English (Fluent)')} className="text-[10px] font-bold text-emerald-500 hover:text-emerald-600 cursor-pointer flex items-center gap-0.5"><Plus size={11} /> Add Item</button>
+                        <button onClick={() => toggleEditCard('languages')} className="text-[10px] font-bold text-slate-400 hover:text-emerald-500 cursor-pointer flex items-center gap-1">{editingCards['languages'] ? <><Save size={11} className="text-emerald-500" /> Save</> : <><FileEdit size={11} /> Edit</>}</button>
                       </div>
                     </div>
                     <div className="flex flex-wrap gap-1.5">
@@ -1469,7 +1488,7 @@ export const UploadResumeWizard: React.FC<UploadResumeWizardProps> = ({
                           ) : (
                             <span>{lang}</span>
                           )}
-                          <button onClick={() => handleDeleteItemFromSection('languages', idx)} className="text-rose-500 hover:text-rose-600 cursor-pointer ml-1"><X size={10}/></button>
+                          <button onClick={() => handleDeleteItemFromSection('languages', idx)} className="text-rose-500 hover:text-rose-600 cursor-pointer ml-1"><X size={10} /></button>
                         </div>
                       ))}
                     </div>
@@ -1480,8 +1499,8 @@ export const UploadResumeWizard: React.FC<UploadResumeWizardProps> = ({
                     <div className="flex justify-between items-center border-b pb-2">
                       <span className="text-xs font-bold text-emerald-500 uppercase">Portfolio & Web Links</span>
                       <div className="flex items-center gap-2">
-                        <button onClick={() => handleAddItemToSection('portfolioLinks', 'https://portfolio.me')} className="text-[10px] font-bold text-emerald-500 hover:text-emerald-600 cursor-pointer flex items-center gap-0.5"><Plus size={11}/> Add Item</button>
-                        <button onClick={() => toggleEditCard('portfolioLinks')} className="text-[10px] font-bold text-slate-400 hover:text-emerald-500 cursor-pointer flex items-center gap-1">{editingCards['portfolioLinks'] ? <><Save size={11} className="text-emerald-500"/> Save</> : <><FileEdit size={11}/> Edit</>}</button>
+                        <button onClick={() => handleAddItemToSection('portfolioLinks', 'https://portfolio.me')} className="text-[10px] font-bold text-emerald-500 hover:text-emerald-600 cursor-pointer flex items-center gap-0.5"><Plus size={11} /> Add Item</button>
+                        <button onClick={() => toggleEditCard('portfolioLinks')} className="text-[10px] font-bold text-slate-400 hover:text-emerald-500 cursor-pointer flex items-center gap-1">{editingCards['portfolioLinks'] ? <><Save size={11} className="text-emerald-500" /> Save</> : <><FileEdit size={11} /> Edit</>}</button>
                       </div>
                     </div>
                     <div className="text-xs space-y-1.5">
@@ -1492,7 +1511,7 @@ export const UploadResumeWizard: React.FC<UploadResumeWizardProps> = ({
                           ) : (
                             <a href={link} target="_blank" rel="noreferrer" className="text-emerald-600 hover:underline truncate">{link}</a>
                           )}
-                          <button onClick={() => handleDeleteItemFromSection('portfolioLinks', idx)} className="text-rose-500 hover:text-rose-600 p-1 cursor-pointer shrink-0"><Trash2 size={12}/></button>
+                          <button onClick={() => handleDeleteItemFromSection('portfolioLinks', idx)} className="text-rose-500 hover:text-rose-600 p-1 cursor-pointer shrink-0"><Trash2 size={12} /></button>
                         </div>
                       ))}
                     </div>
@@ -1503,8 +1522,8 @@ export const UploadResumeWizard: React.FC<UploadResumeWizardProps> = ({
                     <div className="flex justify-between items-center border-b pb-2">
                       <span className="text-xs font-bold text-emerald-500 uppercase">Publications</span>
                       <div className="flex items-center gap-2">
-                        <button onClick={() => handleAddItemToSection('publications', { title: 'Paper Title', publisher: 'IEEE / Journal', year: '2024' })} className="text-[10px] font-bold text-emerald-500 hover:text-emerald-600 cursor-pointer flex items-center gap-0.5"><Plus size={11}/> Add Item</button>
-                        <button onClick={() => toggleEditCard('publications')} className="text-[10px] font-bold text-slate-400 hover:text-emerald-500 cursor-pointer flex items-center gap-1">{editingCards['publications'] ? <><Save size={11} className="text-emerald-500"/> Save</> : <><FileEdit size={11}/> Edit</>}</button>
+                        <button onClick={() => handleAddItemToSection('publications', { title: 'Paper Title', publisher: 'IEEE / Journal', year: '2024' })} className="text-[10px] font-bold text-emerald-500 hover:text-emerald-600 cursor-pointer flex items-center gap-0.5"><Plus size={11} /> Add Item</button>
+                        <button onClick={() => toggleEditCard('publications')} className="text-[10px] font-bold text-slate-400 hover:text-emerald-500 cursor-pointer flex items-center gap-1">{editingCards['publications'] ? <><Save size={11} className="text-emerald-500" /> Save</> : <><FileEdit size={11} /> Edit</>}</button>
                       </div>
                     </div>
                     <div className="text-xs space-y-2">
@@ -1521,7 +1540,7 @@ export const UploadResumeWizard: React.FC<UploadResumeWizardProps> = ({
                               <p className="text-[10px] text-slate-400">{pub.publisher} • {pub.year}</p>
                             </div>
                           )}
-                          <button onClick={() => handleDeleteItemFromSection('publications', idx)} className="text-rose-500 hover:text-rose-600 p-1 cursor-pointer shrink-0"><Trash2 size={12}/></button>
+                          <button onClick={() => handleDeleteItemFromSection('publications', idx)} className="text-rose-500 hover:text-rose-600 p-1 cursor-pointer shrink-0"><Trash2 size={12} /></button>
                         </div>
                       ))}
                     </div>
@@ -1532,8 +1551,8 @@ export const UploadResumeWizard: React.FC<UploadResumeWizardProps> = ({
                     <div className="flex justify-between items-center border-b pb-2">
                       <span className="text-xs font-bold text-emerald-500 uppercase">Volunteer Experience</span>
                       <div className="flex items-center gap-2">
-                        <button onClick={() => handleAddItemToSection('volunteerExperience', { organization: 'NGO / Org', role: 'Volunteer', duration: '2024' })} className="text-[10px] font-bold text-emerald-500 hover:text-emerald-600 cursor-pointer flex items-center gap-0.5"><Plus size={11}/> Add Item</button>
-                        <button onClick={() => toggleEditCard('volunteerExperience')} className="text-[10px] font-bold text-slate-400 hover:text-emerald-500 cursor-pointer flex items-center gap-1">{editingCards['volunteerExperience'] ? <><Save size={11} className="text-emerald-500"/> Save</> : <><FileEdit size={11}/> Edit</>}</button>
+                        <button onClick={() => handleAddItemToSection('volunteerExperience', { organization: 'NGO / Org', role: 'Volunteer', duration: '2024' })} className="text-[10px] font-bold text-emerald-500 hover:text-emerald-600 cursor-pointer flex items-center gap-0.5"><Plus size={11} /> Add Item</button>
+                        <button onClick={() => toggleEditCard('volunteerExperience')} className="text-[10px] font-bold text-slate-400 hover:text-emerald-500 cursor-pointer flex items-center gap-1">{editingCards['volunteerExperience'] ? <><Save size={11} className="text-emerald-500" /> Save</> : <><FileEdit size={11} /> Edit</>}</button>
                       </div>
                     </div>
                     <div className="text-xs space-y-2">
@@ -1550,7 +1569,7 @@ export const UploadResumeWizard: React.FC<UploadResumeWizardProps> = ({
                               <p className="text-[10px] text-slate-400">{vol.duration}</p>
                             </div>
                           )}
-                          <button onClick={() => handleDeleteItemFromSection('volunteerExperience', idx)} className="text-rose-500 hover:text-rose-600 p-1 cursor-pointer shrink-0"><Trash2 size={12}/></button>
+                          <button onClick={() => handleDeleteItemFromSection('volunteerExperience', idx)} className="text-rose-500 hover:text-rose-600 p-1 cursor-pointer shrink-0"><Trash2 size={12} /></button>
                         </div>
                       ))}
                     </div>
@@ -1561,8 +1580,8 @@ export const UploadResumeWizard: React.FC<UploadResumeWizardProps> = ({
                     <div className="flex justify-between items-center border-b pb-2">
                       <span className="text-xs font-bold text-emerald-500 uppercase">References</span>
                       <div className="flex items-center gap-2">
-                        <button onClick={() => handleAddItemToSection('references', { name: 'Reference Name', title: 'Professor / Manager', company: 'Org', email: '' })} className="text-[10px] font-bold text-emerald-500 hover:text-emerald-600 cursor-pointer flex items-center gap-0.5"><Plus size={11}/> Add Item</button>
-                        <button onClick={() => toggleEditCard('references')} className="text-[10px] font-bold text-slate-400 hover:text-emerald-500 cursor-pointer flex items-center gap-1">{editingCards['references'] ? <><Save size={11} className="text-emerald-500"/> Save</> : <><FileEdit size={11}/> Edit</>}</button>
+                        <button onClick={() => handleAddItemToSection('references', { name: 'Reference Name', title: 'Professor / Manager', company: 'Org', email: '' })} className="text-[10px] font-bold text-emerald-500 hover:text-emerald-600 cursor-pointer flex items-center gap-0.5"><Plus size={11} /> Add Item</button>
+                        <button onClick={() => toggleEditCard('references')} className="text-[10px] font-bold text-slate-400 hover:text-emerald-500 cursor-pointer flex items-center gap-1">{editingCards['references'] ? <><Save size={11} className="text-emerald-500" /> Save</> : <><FileEdit size={11} /> Edit</>}</button>
                       </div>
                     </div>
                     <div className="text-xs space-y-2">
@@ -1579,7 +1598,7 @@ export const UploadResumeWizard: React.FC<UploadResumeWizardProps> = ({
                               <p className="text-[10px] text-slate-400">{ref.title} {ref.company ? `@ ${ref.company}` : ''}</p>
                             </div>
                           )}
-                          <button onClick={() => handleDeleteItemFromSection('references', idx)} className="text-rose-500 hover:text-rose-600 p-1 cursor-pointer shrink-0"><Trash2 size={12}/></button>
+                          <button onClick={() => handleDeleteItemFromSection('references', idx)} className="text-rose-500 hover:text-rose-600 p-1 cursor-pointer shrink-0"><Trash2 size={12} /></button>
                         </div>
                       ))}
                     </div>
@@ -1588,21 +1607,21 @@ export const UploadResumeWizard: React.FC<UploadResumeWizardProps> = ({
                 </div>
               </motion.div>
             )}
-              {/* S            {/* Step 5: Premium Resume Template Studio */}
+            {/* S            {/* Step 5: Premium Resume Template Studio */}
             {step === 5 && (
-              <motion.div 
-                key="step5" 
-                initial={{ opacity: 0, y: 10 }} 
-                animate={{ opacity: 1, y: 0 }} 
+              <motion.div
+                key="step5"
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -10 }}
-                className="flex flex-col text-left w-full h-[65vh] overflow-hidden bg-transparent"
+                className="flex flex-col text-left w-full bg-[#F5F5F3] p-6 rounded-3xl border border-[#E5E5E2]"
               >
-                {/* 3-Column Layout: TemplateSidebar | ResumePreview + AISuggestionBanner + PreviewToolbar | CustomizationPanel */}
-                <div className="flex-grow flex flex-col md:flex-row gap-6 overflow-hidden h-full relative">
-                  
+                {/* 3-Column Grid Layout: proportions 22% / 38% / 40% */}
+                <div className="grid grid-cols-1 lg:grid-cols-[22%_38%_40%] gap-6 w-full items-stretch relative">
+
                   {/* Left Column: Template Gallery Sidebar */}
-                  <div className="hidden lg:block shrink-0">
-                    <TemplateSidebar 
+                  <div className="w-full">
+                    <TemplateSidebar
                       selectedTemplate={selectedTemplate}
                       onSelectTemplate={(id, color) => {
                         setSelectedTemplate(id);
@@ -1611,9 +1630,35 @@ export const UploadResumeWizard: React.FC<UploadResumeWizardProps> = ({
                     />
                   </div>
 
-                  {/* Center Column: Live Preview Area */}
-                  <div className="flex-grow flex flex-col gap-4 overflow-hidden h-full relative bg-slate-50/20 border border-slate-200/60 rounded-2xl p-4">
-                    <PreviewToolbar 
+                  {/* Center Column: Customization Properties Panel */}
+                  <div className="w-full">
+                    <CustomizationPanel
+                      selectedColor={selectedColor}
+                      setSelectedColor={setSelectedColor}
+                      headerAlignment={headerAlignment}
+                      setHeaderAlignment={setHeaderAlignment}
+                      selectedFont={selectedFont}
+                      setSelectedFont={setSelectedFont}
+                      selectedFontSize={selectedFontSize}
+                      setSelectedFontSize={setSelectedFontSize}
+                      selectedHeadingSize={selectedHeadingSize}
+                      setSelectedHeadingSize={setSelectedHeadingSize}
+                      selectedSpacing={selectedSpacing}
+                      setSelectedSpacing={setSelectedSpacing}
+                      layoutColumns={layoutColumns}
+                      setLayoutColumns={setLayoutColumns}
+                      selectedMargin={selectedMargin}
+                      setSelectedMargin={setSelectedMargin}
+                      sectionDividerStyle={sectionDividerStyle}
+                      setSectionDividerStyle={setSectionDividerStyle}
+                      enabledSections={enabledSections}
+                      setEnabledSections={setEnabledSections}
+                    />
+                  </div>
+
+                  {/* Right Column: Live Preview Area */}
+                  <div className="w-full flex flex-col bg-white border border-[#E5E5E2] rounded-2xl overflow-hidden relative">
+                    <PreviewToolbar
                       zoom={zoom}
                       setZoom={setZoom}
                       onDownload={async () => {
@@ -1640,79 +1685,56 @@ export const UploadResumeWizard: React.FC<UploadResumeWizardProps> = ({
                         }
                       }}
                     />
-                    
-                    <AISuggestionBanner 
-                      onOptimize={() => {
-                        setShowAutoSavedToast(true);
-                        setTimeout(() => setShowAutoSavedToast(false), 2005);
-                      }}
-                    />
 
-                    <ResumePreview 
-                      parsedData={parsedData}
-                      selectedColor={selectedColor}
-                      selectedFont={selectedFont}
-                      selectedFontSize={selectedFontSize}
-                      selectedHeadingSize={selectedHeadingSize}
-                      selectedSpacing={selectedSpacing}
-                      selectedMargin={selectedMargin}
-                      layoutColumns={layoutColumns}
-                      sectionDividerStyle={sectionDividerStyle}
-                      enabledSections={enabledSections}
-                      headerAlignment={headerAlignment}
-                      zoom={zoom}
-                    />
+                    {/* Document Preview Wrapper with Mat Background and Pinned AI Badge */}
+                    <div className="flex-grow p-8 bg-[#F5F5F3] flex flex-col items-center justify-start relative min-h-[500px]">
+                      {/* Pinned ATS Suggestion Badge */}
+                      <div className="absolute top-4 left-4 z-20 bg-[#E2ECE9] border border-[#0F4A3C]/20 px-2 py-0.5 rounded text-[9px] font-black uppercase text-[#0F4A3C] select-none">
+                        ATS 98%
+                      </div>
+
+                      <div className="w-full flex justify-center shadow-sm">
+                        <ResumePreview
+                          parsedData={parsedData}
+                          selectedColor={selectedColor}
+                          selectedFont={selectedFont}
+                          selectedFontSize={selectedFontSize}
+                          selectedHeadingSize={selectedHeadingSize}
+                          selectedSpacing={selectedSpacing}
+                          selectedMargin={selectedMargin}
+                          layoutColumns={layoutColumns}
+                          sectionDividerStyle={sectionDividerStyle}
+                          enabledSections={enabledSections}
+                          headerAlignment={headerAlignment}
+                          zoom={zoom}
+                        />
+                      </div>
+                    </div>
 
                     {/* Simple page pagination display */}
-                    <div className="shrink-0 flex justify-center items-center gap-4 py-1 border-t border-slate-100">
-                      <button 
+                    <div className="shrink-0 flex justify-center items-center gap-4 py-2 border-t border-[#E5E5E2] bg-white">
+                      <button
                         onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
-                        className="px-2 py-0.5 bg-slate-50 border border-slate-200 text-[9px] font-black uppercase rounded text-slate-500 hover:bg-slate-100 transition-colors cursor-pointer"
+                        className="px-2 py-0.5 bg-white border border-[#E5E5E2] text-[9px] font-extrabold uppercase rounded text-[#6B6B68] hover:bg-slate-50 transition-colors cursor-pointer"
                       >
                         Previous Page
                       </button>
-                      <span className="text-[10px] font-black text-slate-500">
+                      <span className="text-[10px] font-extrabold text-[#1A1A1A]">
                         Page {currentPage} of 1
                       </span>
-                      <button 
+                      <button
                         onClick={() => setCurrentPage(prev => Math.min(1, prev + 1))}
-                        className="px-2 py-0.5 bg-slate-50 border border-slate-200 text-[9px] font-black uppercase rounded text-slate-500 hover:bg-slate-100 transition-colors cursor-pointer"
+                        className="px-2 py-0.5 bg-white border border-[#E5E5E2] text-[9px] font-extrabold uppercase rounded text-[#6B6B68] hover:bg-slate-50 transition-colors cursor-pointer"
                       >
                         Next Page
                       </button>
                     </div>
                   </div>
 
-                  {/* Right Column: Customization Properties Panel */}
-                  <div className="hidden md:block shrink-0">
-                    <CustomizationPanel 
-                      selectedColor={selectedColor}
-                      setSelectedColor={setSelectedColor}
-                      headerAlignment={headerAlignment}
-                      setHeaderAlignment={setHeaderAlignment}
-                      selectedFont={selectedFont}
-                      setSelectedFont={setSelectedFont}
-                      selectedFontSize={selectedFontSize}
-                      setSelectedFontSize={setSelectedFontSize}
-                      selectedHeadingSize={selectedHeadingSize}
-                      setSelectedHeadingSize={setSelectedHeadingSize}
-                      selectedSpacing={selectedSpacing}
-                      setSelectedSpacing={setSelectedSpacing}
-                      layoutColumns={layoutColumns}
-                      setLayoutColumns={setLayoutColumns}
-                      selectedMargin={selectedMargin}
-                      setSelectedMargin={setSelectedMargin}
-                      sectionDividerStyle={sectionDividerStyle}
-                      setSectionDividerStyle={setSectionDividerStyle}
-                      enabledSections={enabledSections}
-                      setEnabledSections={setEnabledSections}
-                    />
-                  </div>
-
                 </div>
 
                 {/* Bottom Navigation */}
-                <BottomNavigation 
+                <BottomNavigation
                   onBack={() => setStep(4)}
                   onSkip={() => setStep(6)}
                   onContinue={() => setStep(6)}
@@ -1723,9 +1745,9 @@ export const UploadResumeWizard: React.FC<UploadResumeWizardProps> = ({
             {/* Auto-saved Toast Notification */}
             <AnimatePresence>
               {showAutoSavedToast && (
-                <motion.div 
-                  initial={{ opacity: 0, y: 50 }} 
-                  animate={{ opacity: 1, y: 0 }} 
+                <motion.div
+                  initial={{ opacity: 0, y: 50 }}
+                  animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: 50 }}
                   className="fixed bottom-20 left-1/2 transform -translate-x-1/2 bg-[#1a3d2e] text-white text-[11px] font-bold px-4 py-2.5 rounded-xl shadow-lg z-[9999] flex items-center gap-1.5"
                 >
@@ -1767,8 +1789,8 @@ export const UploadResumeWizard: React.FC<UploadResumeWizardProps> = ({
                 </div>
 
                 <div className="p-4 border-t border-slate-200 dark:border-white/10 bg-white/5 flex gap-2">
-                  <input 
-                    type="text" 
+                  <input
+                    type="text"
                     value={userInput}
                     onChange={(e) => setUserInput(e.target.value)}
                     onKeyDown={(e) => e.key === 'Enter' && handleSendMessage()}
@@ -1795,8 +1817,8 @@ export const UploadResumeWizard: React.FC<UploadResumeWizardProps> = ({
                       Refine showcase projects, certifications, and custom section highlights before ATS heuristic auditing.
                     </p>
                   </div>
-                  <Button 
-                    onClick={() => runAnalysis(8)} 
+                  <Button
+                    onClick={() => runAnalysis(8)}
                     disabled={isAnalyzing}
                     className="btn-glow-green text-xs font-bold py-2.5 px-5 flex items-center gap-2 shrink-0 cursor-pointer disabled:opacity-50"
                   >
@@ -1825,16 +1847,14 @@ export const UploadResumeWizard: React.FC<UploadResumeWizardProps> = ({
                       <button
                         key={tab.id}
                         onClick={() => setActiveStep6Tab(tab.id as any)}
-                        className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
-                          activeStep6Tab === tab.id
+                        className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${activeStep6Tab === tab.id
                             ? 'bg-emerald-500 text-white shadow-sm'
                             : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200/50 dark:hover:bg-white/10'
-                        }`}
+                          }`}
                       >
                         {tab.label}
-                        <span className={`px-1.5 py-0.2 rounded-full text-[9px] font-black ${
-                          activeStep6Tab === tab.id ? 'bg-white/20 text-white' : 'bg-slate-200 dark:bg-white/10 text-slate-500 dark:text-slate-400'
-                        }`}>
+                        <span className={`px-1.5 py-0.2 rounded-full text-[9px] font-black ${activeStep6Tab === tab.id ? 'bg-white/20 text-white' : 'bg-slate-200 dark:bg-white/10 text-slate-500 dark:text-slate-400'
+                          }`}>
                           {tab.count}
                         </span>
                       </button>
@@ -1865,7 +1885,7 @@ export const UploadResumeWizard: React.FC<UploadResumeWizardProps> = ({
 
                 {/* Section Content Cards */}
                 <div className="space-y-6 max-h-[50vh] overflow-y-auto pr-1">
-                  
+
                   {/* 1. Projects Section */}
                   {(activeStep6Tab === 'all' || activeStep6Tab === 'projects') && (
                     <Card className="p-5 flex flex-col gap-4 border-slate-200 dark:border-white/10">
@@ -2214,13 +2234,12 @@ export const UploadResumeWizard: React.FC<UploadResumeWizardProps> = ({
                                 </div>
                               </div>
                               {priority && (
-                                <span className={`text-[9px] font-black px-2 py-0.5 rounded-full uppercase shrink-0 ${
-                                  priority.toLowerCase() === 'high' 
-                                    ? 'bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-500/20' 
+                                <span className={`text-[9px] font-black px-2 py-0.5 rounded-full uppercase shrink-0 ${priority.toLowerCase() === 'high'
+                                    ? 'bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-500/20'
                                     : priority.toLowerCase() === 'low'
                                       ? 'bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20'
                                       : 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20'
-                                }`}>
+                                  }`}>
                                   {priority}
                                 </span>
                               )}
@@ -2261,8 +2280,8 @@ export const UploadResumeWizard: React.FC<UploadResumeWizardProps> = ({
 
                 <div className="max-h-[60vh] overflow-y-auto pr-1">
                   {resumeId ? (
-                    <ResumeImprovement 
-                      resumeId={resumeId} 
+                    <ResumeImprovement
+                      resumeId={resumeId}
                       onChangesApplied={async () => {
                         try {
                           const profileRes = await apiClient.get(`/api/resume-studio/profile/${resumeId}`);
@@ -2277,11 +2296,11 @@ export const UploadResumeWizard: React.FC<UploadResumeWizardProps> = ({
                   ) : (
                     <div className="text-center py-12 flex flex-col items-center gap-3">
                       <p className="text-xs text-slate-400 font-semibold">Initializing resume draft for AI improvements...</p>
-                      <Button 
+                      <Button
                         onClick={async () => {
                           const newId = await saveResumeToDb(parsedData);
                           if (newId) setResumeId(newId);
-                        }} 
+                        }}
                         className="btn-glow-green text-xs font-bold py-2.5 px-5"
                       >
                         Initialize AI Improvements
@@ -2350,7 +2369,7 @@ export const UploadResumeWizard: React.FC<UploadResumeWizardProps> = ({
                     </div>
 
                     <div className="flex flex-col gap-2 mt-4">
-                      <button 
+                      <button
                         onClick={() => {
                           const n = prompt("Enter new resume name:", parsedData.name || "AI Enhanced Resume");
                           if (n) handleRenameResume(n);
@@ -2359,7 +2378,7 @@ export const UploadResumeWizard: React.FC<UploadResumeWizardProps> = ({
                       >
                         Rename Resume
                       </button>
-                      <button 
+                      <button
                         onClick={() => {
                           const v = prompt("Enter version name:", "Final Clean Copy");
                           if (v) handleSaveVersion(v);
@@ -2373,9 +2392,9 @@ export const UploadResumeWizard: React.FC<UploadResumeWizardProps> = ({
 
                   <Card className="p-5 flex flex-col gap-4 md:col-span-2 border-slate-200 dark:border-white/5">
                     <span className="text-xs font-extrabold uppercase text-slate-450">Available Downloads</span>
-                    
+
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                      <button 
+                      <button
                         onClick={() => handleDownload('pdf')}
                         className="p-4 border border-slate-200 dark:border-white/10 rounded-2xl hover:border-emerald-500 hover:bg-emerald-500/5 transition-all text-center flex flex-col items-center justify-center gap-2 cursor-pointer"
                       >
@@ -2383,7 +2402,7 @@ export const UploadResumeWizard: React.FC<UploadResumeWizardProps> = ({
                         <span className="text-xs font-bold">Download PDF</span>
                       </button>
 
-                      <button 
+                      <button
                         onClick={() => handleDownload('docx')}
                         className="p-4 border border-slate-200 dark:border-white/10 rounded-2xl hover:border-emerald-500 hover:bg-emerald-500/5 transition-all text-center flex flex-col items-center justify-center gap-2 cursor-pointer"
                       >
@@ -2391,7 +2410,7 @@ export const UploadResumeWizard: React.FC<UploadResumeWizardProps> = ({
                         <span className="text-xs font-bold">Download DOCX</span>
                       </button>
 
-                      <button 
+                      <button
                         onClick={() => handleDownload('txt')}
                         className="p-4 border border-slate-200 dark:border-white/10 rounded-2xl hover:border-emerald-500 hover:bg-emerald-500/5 transition-all text-center flex flex-col items-center justify-center gap-2 cursor-pointer"
                       >
@@ -2460,9 +2479,9 @@ export const UploadResumeWizard: React.FC<UploadResumeWizardProps> = ({
                           <span className="text-[9px] text-slate-450">Posted: {job.posted_date || 'Recent'}</span>
                           <div className="flex items-center gap-1.5">
                             {job.apply_url ? (
-                              <a 
-                                href={job.apply_url} 
-                                target="_blank" 
+                              <a
+                                href={job.apply_url}
+                                target="_blank"
                                 rel="noreferrer"
                                 className="px-3 py-1 bg-emerald-650 hover:bg-emerald-700 text-white font-black text-[9px] rounded-lg"
                               >
@@ -2473,7 +2492,7 @@ export const UploadResumeWizard: React.FC<UploadResumeWizardProps> = ({
                                 No Link
                               </button>
                             )}
-                            <button 
+                            <button
                               onClick={async () => {
                                 await jobsService.saveJob({
                                   job_id: job.id,
@@ -2519,7 +2538,7 @@ export const UploadResumeWizard: React.FC<UploadResumeWizardProps> = ({
                   <Button onClick={() => handleDownload('pdf')} className="w-full btn-glow-green text-xs font-bold py-2.5 flex items-center justify-center gap-1.5">
                     Download PDF
                   </Button>
-                  <Button 
+                  <Button
                     onClick={() => {
                       onSuccess(resumeId || 0);
                       onClose();
@@ -2538,9 +2557,8 @@ export const UploadResumeWizard: React.FC<UploadResumeWizardProps> = ({
 
         {/* Navigation Footer */}
         {step > 1 && step < 13 && step !== 3 && step !== 5 && (
-          <div className={`px-6 py-4 border-t flex items-center justify-between shrink-0 ${
-            isDark ? 'border-white/10 bg-[#1F2937]/30' : 'border-slate-100 bg-slate-50'
-          }`}>
+          <div className={`px-6 py-4 border-t flex items-center justify-between shrink-0 ${isDark ? 'border-white/10 bg-[#1F2937]/30' : 'border-slate-100 bg-slate-50'
+            }`}>
             <button
               onClick={() => {
                 if (step === 4) setStep(2);
@@ -2550,7 +2568,7 @@ export const UploadResumeWizard: React.FC<UploadResumeWizardProps> = ({
             >
               <ArrowLeft size={14} /> Back
             </button>
-            
+
             <button
               onClick={() => {
                 if (step === 2) setStep(4);
@@ -2566,9 +2584,8 @@ export const UploadResumeWizard: React.FC<UploadResumeWizardProps> = ({
         {/* Modal Section-Editing Overlays (Side Panels) */}
         {editSectionType && (
           <div className="fixed inset-0 bg-black/60 backdrop-blur-md z-[60] flex items-center justify-end p-0">
-            <div className={`w-full max-w-lg h-full p-6 flex flex-col justify-between border-l ${
-              isDark ? 'bg-[#111827] text-white border-white/10' : 'bg-white text-slate-800 border-slate-200'
-            }`}>
+            <div className={`w-full max-w-lg h-full p-6 flex flex-col justify-between border-l ${isDark ? 'bg-[#111827] text-white border-white/10' : 'bg-white text-slate-800 border-slate-200'
+              }`}>
               <div className="flex justify-between items-center border-b pb-4">
                 <h4 className="text-sm font-black uppercase">Edit {editSectionType}</h4>
                 <button onClick={() => setEditSectionType(null)} className="p-1 rounded hover:bg-slate-550/10"><X size={16} /></button>
@@ -2579,9 +2596,9 @@ export const UploadResumeWizard: React.FC<UploadResumeWizardProps> = ({
                   <>
                     <div>
                       <label className="block mb-1 font-bold">Full Name</label>
-                      <input 
-                        type="text" 
-                        value={parsedData.personal_info?.name || ''} 
+                      <input
+                        type="text"
+                        value={parsedData.personal_info?.name || ''}
                         onChange={(e) => setParsedData({
                           ...parsedData,
                           personal_info: { ...parsedData.personal_info, name: e.target.value }
@@ -2591,9 +2608,9 @@ export const UploadResumeWizard: React.FC<UploadResumeWizardProps> = ({
                     </div>
                     <div>
                       <label className="block mb-1 font-bold">Email</label>
-                      <input 
-                        type="text" 
-                        value={parsedData.personal_info?.email || ''} 
+                      <input
+                        type="text"
+                        value={parsedData.personal_info?.email || ''}
                         onChange={(e) => setParsedData({
                           ...parsedData,
                           personal_info: { ...parsedData.personal_info, email: e.target.value }
@@ -2605,7 +2622,7 @@ export const UploadResumeWizard: React.FC<UploadResumeWizardProps> = ({
                 )}
                 {editSectionType === 'education' && (
                   <div className="space-y-4">
-                    <Button 
+                    <Button
                       onClick={() => {
                         const updatedEdu = [...(parsedData.education || [])];
                         updatedEdu.push({ id: Date.now(), institution: 'New Institution', degree: 'Degree', year: '2026' });
@@ -2617,7 +2634,7 @@ export const UploadResumeWizard: React.FC<UploadResumeWizardProps> = ({
                     </Button>
                     {(parsedData.education || []).map((edu: any, idx: number) => (
                       <div key={edu.id || idx} className="p-3 border border-white/10 rounded-xl space-y-2 relative">
-                        <button 
+                        <button
                           onClick={() => {
                             const updated = parsedData.education.filter((_: any, i: number) => i !== idx);
                             setParsedData({ ...parsedData, education: updated });
@@ -2628,9 +2645,9 @@ export const UploadResumeWizard: React.FC<UploadResumeWizardProps> = ({
                         </button>
                         <div>
                           <label className="block mb-0.5 font-semibold text-[10px]">Institution</label>
-                          <input 
-                            type="text" 
-                            value={edu.institution || ''} 
+                          <input
+                            type="text"
+                            value={edu.institution || ''}
                             onChange={(e) => {
                               const updated = [...parsedData.education];
                               updated[idx].institution = e.target.value;
@@ -2641,9 +2658,9 @@ export const UploadResumeWizard: React.FC<UploadResumeWizardProps> = ({
                         </div>
                         <div>
                           <label className="block mb-0.5 font-semibold text-[10px]">Degree</label>
-                          <input 
-                            type="text" 
-                            value={edu.degree || ''} 
+                          <input
+                            type="text"
+                            value={edu.degree || ''}
                             onChange={(e) => {
                               const updated = [...parsedData.education];
                               updated[idx].degree = e.target.value;
@@ -2658,7 +2675,7 @@ export const UploadResumeWizard: React.FC<UploadResumeWizardProps> = ({
                 )}
                 {editSectionType === 'projects' && (
                   <div className="space-y-4">
-                    <Button 
+                    <Button
                       onClick={() => {
                         const updatedProjects = [...(parsedData.projects || [])];
                         updatedProjects.push({ id: Date.now(), title: 'New Project', description: 'Describe impact here.', tech_stack: '' });
@@ -2670,7 +2687,7 @@ export const UploadResumeWizard: React.FC<UploadResumeWizardProps> = ({
                     </Button>
                     {(parsedData.projects || []).map((proj: any, idx: number) => (
                       <div key={proj.id || idx} className="p-3 border border-white/10 rounded-xl space-y-2 relative">
-                        <button 
+                        <button
                           onClick={() => {
                             const updated = parsedData.projects.filter((_: any, i: number) => i !== idx);
                             setParsedData({ ...parsedData, projects: updated });
@@ -2681,9 +2698,9 @@ export const UploadResumeWizard: React.FC<UploadResumeWizardProps> = ({
                         </button>
                         <div>
                           <label className="block mb-0.5 font-semibold text-[10px]">Project Title</label>
-                          <input 
-                            type="text" 
-                            value={proj.title || ''} 
+                          <input
+                            type="text"
+                            value={proj.title || ''}
                             onChange={(e) => {
                               const updated = [...parsedData.projects];
                               updated[idx].title = e.target.value;
@@ -2694,8 +2711,8 @@ export const UploadResumeWizard: React.FC<UploadResumeWizardProps> = ({
                         </div>
                         <div>
                           <label className="block mb-0.5 font-semibold text-[10px]">Description / Key Achievements</label>
-                          <textarea 
-                            value={proj.description || ''} 
+                          <textarea
+                            value={proj.description || ''}
                             onChange={(e) => {
                               const updated = [...parsedData.projects];
                               updated[idx].description = e.target.value;
@@ -2711,7 +2728,7 @@ export const UploadResumeWizard: React.FC<UploadResumeWizardProps> = ({
                 )}
                 {editSectionType === 'certifications' && (
                   <div className="space-y-4">
-                    <Button 
+                    <Button
                       onClick={() => {
                         const updated = [...(parsedData.certifications || [])];
                         updated.push('New Certification');
@@ -2723,7 +2740,7 @@ export const UploadResumeWizard: React.FC<UploadResumeWizardProps> = ({
                     </Button>
                     {(parsedData.certifications || []).map((cert: string, idx: number) => (
                       <div key={idx} className="p-3 border border-white/10 rounded-xl space-y-2 relative">
-                        <button 
+                        <button
                           onClick={() => {
                             const updated = parsedData.certifications.filter((_: any, i: number) => i !== idx);
                             setParsedData({ ...parsedData, certifications: updated });
@@ -2734,9 +2751,9 @@ export const UploadResumeWizard: React.FC<UploadResumeWizardProps> = ({
                         </button>
                         <div>
                           <label className="block mb-0.5 font-semibold text-[10px]">Certification Title</label>
-                          <input 
-                            type="text" 
-                            value={cert} 
+                          <input
+                            type="text"
+                            value={cert}
                             onChange={(e) => {
                               const updated = [...parsedData.certifications];
                               updated[idx] = e.target.value;
@@ -2751,7 +2768,7 @@ export const UploadResumeWizard: React.FC<UploadResumeWizardProps> = ({
                 )}
                 {editSectionType === 'custom' && (
                   <div className="space-y-4">
-                    <Button 
+                    <Button
                       onClick={() => {
                         setCustomSections([...customSections, { id: Date.now(), title: 'Custom Section', content: '' }]);
                       }}
@@ -2761,7 +2778,7 @@ export const UploadResumeWizard: React.FC<UploadResumeWizardProps> = ({
                     </Button>
                     {customSections.map((sec: any, idx: number) => (
                       <div key={sec.id || idx} className="p-3 border border-white/10 rounded-xl space-y-2 relative">
-                        <button 
+                        <button
                           onClick={() => {
                             setCustomSections(customSections.filter((_: any, i: number) => i !== idx));
                           }}
@@ -2771,9 +2788,9 @@ export const UploadResumeWizard: React.FC<UploadResumeWizardProps> = ({
                         </button>
                         <div>
                           <label className="block mb-0.5 font-semibold text-[10px]">Section Title</label>
-                          <input 
-                            type="text" 
-                            value={sec.title} 
+                          <input
+                            type="text"
+                            value={sec.title}
                             onChange={(e) => {
                               const updated = [...customSections];
                               updated[idx].title = e.target.value;
@@ -2784,8 +2801,8 @@ export const UploadResumeWizard: React.FC<UploadResumeWizardProps> = ({
                         </div>
                         <div>
                           <label className="block mb-0.5 font-semibold text-[10px]">Content</label>
-                          <textarea 
-                            value={sec.content} 
+                          <textarea
+                            value={sec.content}
                             onChange={(e) => {
                               const updated = [...customSections];
                               updated[idx].content = e.target.value;
@@ -2801,7 +2818,7 @@ export const UploadResumeWizard: React.FC<UploadResumeWizardProps> = ({
                 )}
               </div>
 
-              <Button 
+              <Button
                 onClick={async () => {
                   await saveResumeToDb(parsedData);
                   setEditSectionType(null);
@@ -2821,13 +2838,11 @@ export const UploadResumeWizard: React.FC<UploadResumeWizardProps> = ({
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              className={`absolute inset-0 z-50 backdrop-blur-xl flex flex-col items-center justify-center p-6 text-center transition-all ${
-                isDark ? 'bg-[#0B121F]/90 text-white' : 'bg-slate-900/60 backdrop-blur-lg text-slate-800'
-              }`}
+              className={`absolute inset-0 z-50 backdrop-blur-xl flex flex-col items-center justify-center p-6 text-center transition-all ${isDark ? 'bg-[#0B121F]/90 text-white' : 'bg-slate-900/60 backdrop-blur-lg text-slate-800'
+                }`}
             >
-              <div className={`rounded-3xl p-8 max-w-md w-full shadow-2xl border flex flex-col items-center gap-5 ${
-                isDark ? 'bg-[#111827] border-emerald-500/30 text-white' : 'bg-white border-slate-200 text-slate-900'
-              }`}>
+              <div className={`rounded-3xl p-8 max-w-md w-full shadow-2xl border flex flex-col items-center gap-5 ${isDark ? 'bg-[#111827] border-emerald-500/30 text-white' : 'bg-white border-slate-200 text-slate-900'
+                }`}>
                 <div className="relative flex items-center justify-center">
                   <div className="w-16 h-16 rounded-full bg-emerald-500/10 border-2 border-emerald-500/40 flex items-center justify-center text-emerald-500 animate-pulse">
                     <Sparkles size={32} className="animate-spin" style={{ animationDuration: '4s' }} />

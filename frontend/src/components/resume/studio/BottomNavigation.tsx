@@ -13,29 +13,29 @@ export const BottomNavigation: React.FC<BottomNavigationProps> = ({
   onContinue
 }) => {
   return (
-    <div className="h-[60px] border-t border-slate-200/80 flex justify-between items-center px-4 bg-white rounded-xl shadow-xs mt-4 shrink-0">
+    <div className="h-[60px] border-t border-[#E5E5E2] flex justify-between items-center px-4 bg-white rounded-b-2xl mt-4 shrink-0 select-none">
       <button 
         onClick={onBack}
-        className="px-4 py-2 hover:bg-slate-100 rounded-xl text-xs font-bold text-slate-655 cursor-pointer flex items-center gap-1.5 transition-all"
+        className="text-[#6B6B68] hover:text-[#1A1A1A] text-xs font-bold cursor-pointer flex items-center gap-1.5 transition-all bg-transparent border-0"
       >
-        <ArrowLeft size={14} /> Back to Snapshot
+        <ArrowLeft size={14} /> Back
       </button>
 
-      <span className="text-[10px] font-bold text-slate-400">All Changes Saved</span>
+      <span className="text-[10px] font-semibold text-[#6B6B68]">All changes saved</span>
 
       <div className="flex items-center gap-4">
         <button 
           onClick={onSkip}
-          className="text-slate-455 hover:text-slate-600 text-xs font-bold transition-colors cursor-pointer"
+          className="text-[#6B6B68] hover:text-[#1A1A1A] text-xs font-bold transition-colors cursor-pointer bg-transparent border-0"
         >
           Skip Step
         </button>
 
         <button 
           onClick={onContinue} 
-          className="bg-[#14532D] hover:bg-[#0f3d21] text-white text-xs font-bold py-2.5 px-6 rounded-xl shadow-md flex items-center gap-1.5 cursor-pointer transition-all border-0"
+          className="bg-[#0F4A3C] hover:bg-[#0c3a2f] text-white text-xs font-bold py-2.5 px-6 rounded-lg flex items-center gap-1.5 cursor-pointer transition-all border-0"
         >
-          Continue to Interview <ChevronRight size={14} />
+          Continue <ChevronRight size={14} />
         </button>
       </div>
     </div>

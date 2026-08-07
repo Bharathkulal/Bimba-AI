@@ -53,27 +53,26 @@ export const CustomizationPanel: React.FC<CustomizationPanelProps> = ({
 
   const tabs = [
     { id: 'theme', label: 'Theme' },
-    { id: 'typography', label: 'Typography' },
+    { id: 'typography', label: 'Type' },
     { id: 'layout', label: 'Layout' },
     { id: 'sections', label: 'Sections' }
   ];
 
   return (
-    <div className="w-[340px] bg-white border border-slate-200/80 rounded-2xl flex flex-col h-full overflow-hidden shadow-sm text-left">
-      <div className="p-4 border-b border-slate-100 shrink-0">
-        <h3 className="font-extrabold text-slate-800 text-sm">Customize Style</h3>
-        <p className="text-[9px] text-slate-400 font-bold mt-0.5">Adjust color, font, spacing, and segments.</p>
+    <div className="w-full bg-white border border-[#E5E5E2] rounded-2xl flex flex-col h-full overflow-hidden text-left">
+      <div className="p-4 border-b border-[#E5E5E2] shrink-0">
+        <h3 className="font-extrabold text-[#1A1A1A] text-sm">Style</h3>
       </div>
 
-      <div className="grid grid-cols-4 gap-1 p-2 bg-slate-50 shrink-0">
+      <div className="flex gap-4 px-4 border-b border-[#E5E5E2] bg-white shrink-0">
         {tabs.map(tab => (
           <button
             key={tab.id}
             onClick={() => setActiveTab(tab.id as any)}
-            className={`py-1.5 rounded-lg text-[9px] font-black uppercase tracking-wider transition-all cursor-pointer ${
+            className={`py-2 text-[11px] font-extrabold transition-all cursor-pointer border-b-2 ${
               activeTab === tab.id
-                ? 'bg-[#14532D] text-white shadow-sm'
-                : 'text-slate-550 hover:bg-slate-100 hover:text-slate-700'
+                ? 'border-[#0F4A3C] text-[#0F4A3C]'
+                : 'border-transparent text-[#6B6B68] hover:text-[#1A1A1A]'
             }`}
           >
             {tab.label}

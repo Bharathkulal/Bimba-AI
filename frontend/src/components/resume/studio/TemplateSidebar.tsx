@@ -244,16 +244,20 @@ export const TemplateSidebar: React.FC<TemplateSidebarProps> = ({
     });
   };
 
+  const filteredTemplates = templates.filter(t => 
+    t.name.toLowerCase().includes(search.toLowerCase())
+  );
+
   return (
-    <div className="w-[280px] bg-white border border-slate-200/80 rounded-2xl p-4 flex flex-col h-full overflow-hidden shadow-sm text-left">
+    <div className="w-full bg-white border border-[#E5E5E2] rounded-2xl p-4 flex flex-col h-full overflow-hidden text-left">
       <div className="shrink-0 mb-3">
-        <h3 className="font-extrabold text-slate-800 text-sm">Choose Template</h3>
-        <p className="text-[9px] text-slate-400 font-bold">Choose a 100% ATS-friendly template.</p>
+        <h3 className="font-extrabold text-[#1A1A1A] text-sm">Choose Template</h3>
+        <p className="text-[10px] text-[#6B6B68] font-semibold mt-0.5">Select a 100% ATS-friendly template.</p>
       </div>
 
       {/* Search box */}
-      <div className="relative mb-3 shrink-0">
-        <span className="absolute inset-y-0 left-2.5 flex items-center text-slate-400">
+      <div className="relative mb-4 shrink-0">
+        <span className="absolute inset-y-0 left-2.5 flex items-center text-[#6B6B68]">
           <Search size={12} />
         </span>
         <input
@@ -261,46 +265,25 @@ export const TemplateSidebar: React.FC<TemplateSidebarProps> = ({
           placeholder="Search templates..."
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          className="w-full pl-8 pr-3 py-1.5 bg-slate-50 border border-slate-200 rounded-xl text-[10px] font-bold focus:outline-none focus:ring-1 focus:ring-emerald-500 transition-all placeholder-slate-400"
+          className="w-full pl-8 pr-3 py-1.5 bg-white border border-[#E5E5E2] rounded-lg text-[10px] font-semibold focus:outline-none focus:border-[#0F4A3C] transition-all placeholder-[#6B6B68]"
         />
       </div>
 
-      {/* Accordion Categories */}
-      <div className="flex-grow overflow-y-auto space-y-2 pr-0.5 scrollbar-thin">
-        {categories.map(category => {
-          const filteredItems = getFilteredTemplates(category);
-          if (filteredItems.length === 0 && search) return null;
-
-          const isExpanded = expandedCategories[category] || !!search;
-
-          return (
-            <div key={category} className="border border-slate-100 rounded-xl overflow-hidden bg-slate-50/20">
-              <button
-                onClick={() => toggleCategory(category)}
-                className="w-full px-3 py-2 flex items-center justify-between bg-slate-50 hover:bg-slate-100/75 transition-colors cursor-pointer text-left"
-              >
-                <span className="text-[10px] font-black uppercase tracking-wider text-slate-600">{category}</span>
-                {isExpanded ? <ChevronDown size={12} className="text-slate-400" /> : <ChevronRight size={12} className="text-slate-400" />}
-              </button>
-              
-              {isExpanded && (
-                <div className="p-2.5 grid grid-cols-1 gap-2.5 bg-white border-t border-slate-100">
-                  {filteredItems.map(template => (
-                    <TemplateCard
-                      key={template.id}
-                      template={template}
-                      isSelected={selectedTemplate === template.id}
-                      onSelect={() => onSelectTemplate(template.id, template.color)}
-                    />
-                  ))}
-                  {filteredItems.length === 0 && (
-                    <div className="text-[9px] text-slate-400 text-center py-2 font-bold">No templates in this category</div>
-                  )}
-                </div>
-              )}
-            </div>
-          );
-        })}
+      {/* 2-Column Template Grid */}
+      <div className="flex-grow overflow-y-auto pr-0.5 scrollbar-thin">
+        <div className="grid grid-cols-2 gap-2.5">
+          {filteredTemplates.map(template => (
+            <TemplateCard
+              key={template.id}
+              template={template}
+              isSelected={selectedTemplate === template.id}
+              onSelect={() => onSelectTemplate(template.id, template.color)}
+            />
+          ))}
+        </div>
+        {filteredTemplates.length === 0 && (
+          <div className="text-[10px] text-[#6B6B68] text-center py-8 font-bold">No templates found</div>
+        )}
       </div>
     </div>
   );

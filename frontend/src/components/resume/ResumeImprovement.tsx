@@ -10,6 +10,38 @@ interface ResumeImprovementProps {
   onChangesApplied?: () => void;
 }
 
+const diffWords = (orig: string, imp: string) => {
+  if (!orig) return { origHtml: '', impHtml: <span>{imp}</span> };
+  
+  const origWords = orig.split(/\s+/);
+  const impWords = imp.split(/\s+/);
+  
+  const origSet = new Set(origWords.map(w => w.toLowerCase().replace(/[^a-z0-9]/g, '')));
+  const impSet = new Set(impWords.map(w => w.toLowerCase().replace(/[^a-z0-9]/g, '')));
+  
+  const origHtml = origWords.map((word, idx) => {
+    const cleanWord = word.toLowerCase().replace(/[^a-z0-9]/g, '');
+    const isRemoved = !impSet.has(cleanWord);
+    return (
+      <span key={idx} className={isRemoved ? 'text-rose-500 line-through mr-1 font-semibold' : 'mr-1'}>
+        {word}
+      </span>
+    );
+  });
+
+  const impHtml = impWords.map((word, idx) => {
+    const cleanWord = word.toLowerCase().replace(/[^a-z0-9]/g, '');
+    const isAdded = !origSet.has(cleanWord);
+    return (
+      <span key={idx} className={isAdded ? 'text-emerald-600 dark:text-emerald-450 underline decoration-emerald-500/50 mr-1 font-extrabold' : 'mr-1'}>
+        {word}
+      </span>
+    );
+  });
+
+  return { origHtml, impHtml };
+};
+
 export const ResumeImprovement: React.FC<ResumeImprovementProps> = ({
   resumeId,
   onChangesApplied
@@ -88,23 +120,30 @@ export const ResumeImprovement: React.FC<ResumeImprovementProps> = ({
         className="flex flex-col gap-4 bg-white dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-2xl p-5 shadow-sm"
       >
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {/* Before */}
-          <div className="flex flex-col gap-2 p-3.5 bg-rose-50 dark:bg-rose-500/5 border border-rose-200/60 dark:border-rose-500/10 rounded-xl">
-            <span className="text-[9px] font-black uppercase tracking-wider text-rose-500">Original Content</span>
-            <p className="text-xs text-slate-700 dark:text-slate-300 leading-relaxed font-medium">
-              {item.original || "Empty or missing content"}
-            </p>
-          </div>
+          {(() => {
+            const { origHtml, impHtml } = diffWords(item.original || '', item.improved || '');
+            return (
+              <>
+                {/* Before */}
+                <div className="flex flex-col gap-2 p-3.5 bg-rose-50 dark:bg-rose-500/5 border border-rose-200/60 dark:border-rose-500/10 rounded-xl">
+                  <span className="text-[9px] font-black uppercase tracking-wider text-rose-500">Original Content</span>
+                  <p className="text-xs text-slate-700 dark:text-slate-300 leading-relaxed font-medium">
+                    {item.original ? origHtml : "Empty or missing content"}
+                  </p>
+                </div>
 
-          {/* After */}
-          <div className="flex flex-col gap-2 p-3.5 bg-emerald-50 dark:bg-emerald-500/5 border border-emerald-200/60 dark:border-emerald-500/10 rounded-xl">
-            <span className="text-[9px] font-black uppercase tracking-wider text-emerald-600 dark:text-emerald-400 flex items-center gap-1">
-              <Zap size={11} /> AI-Polished Version
-            </span>
-            <p className="text-xs text-slate-900 dark:text-white leading-relaxed font-bold">
-              {item.improved}
-            </p>
-          </div>
+                {/* After */}
+                <div className="flex flex-col gap-2 p-3.5 bg-emerald-50 dark:bg-emerald-500/5 border border-emerald-200/60 dark:border-emerald-500/10 rounded-xl">
+                  <span className="text-[9px] font-black uppercase tracking-wider text-emerald-600 dark:text-emerald-450 flex items-center gap-1">
+                    <Zap size={11} /> AI-Polished Version
+                  </span>
+                  <p className="text-xs text-slate-900 dark:text-white leading-relaxed font-medium">
+                    {impHtml}
+                  </p>
+                </div>
+              </>
+            );
+          })()}
         </div>
 
         {/* Reason card */}

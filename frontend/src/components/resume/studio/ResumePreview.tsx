@@ -228,7 +228,7 @@ export const ResumePreview: React.FC<ResumePreviewProps> = ({
   };
 
   return (
-    <div className="flex-grow overflow-auto p-4 flex items-start justify-center bg-slate-50/50 rounded-2xl border border-slate-200/40 shadow-inner scrollbar-thin max-h-[85vh]">
+    <div className="w-full min-h-[500px] flex-grow overflow-auto p-4 flex items-start justify-center bg-slate-50/50 rounded-2xl border border-slate-200/40 shadow-inner scrollbar-thin">
       <div className="relative" style={{ width: '210mm', height: `${297 * (zoom / 100)}mm`, overflow: 'hidden' }}>
         <div 
           id="resume-studio-canvas"

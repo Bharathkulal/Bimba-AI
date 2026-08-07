@@ -403,8 +403,8 @@ export const CreateFromScratchWizard: React.FC<CreateFromScratchWizardProps> = (
   };
 
   return (
-    <div className="fixed inset-0 z-[80] flex items-center justify-center bg-slate-950/55 p-4 backdrop-blur-sm">
-      <div className="flex h-[85vh] w-[min(1560px,calc(100vw-32px))] flex-col overflow-hidden rounded-[28px] border border-white/80 bg-[#F8F7F2] text-left shadow-2xl">
+    <div className="fixed inset-0 z-[80] flex flex-col bg-[#F8F7F2]">
+      <div className="flex h-screen w-screen flex-col overflow-hidden bg-[#F8F7F2] text-left">
         <header className="bg-white px-5 py-4 sm:px-7">
           <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
             <div className="flex items-center gap-4">
