@@ -465,6 +465,12 @@ export const DashboardDesktop: React.FC = () => {
             setWizardInitialStep(2);
             fetchDashboardOverview();
           }}
+          onSwitchToScratch={() => {
+            setShowWizard(false);
+            setWizardFile(null);
+            setWizardInitialStep(2);
+            setShowScratchWizard(true);
+          }}
           isDark={isDark}
         />
       )}

@@ -76,17 +76,17 @@ const StepProgressBar = ({ currentStep, totalSteps, stepName }: { currentStep: n
   const currentPhaseIdx = Math.max(0, phases.findIndex(p => p.steps.includes(currentStep)));
 
   return (
-    <div className="w-full bg-white dark:bg-[#111827] border border-slate-200/60 dark:border-white/5 p-5 rounded-2xl shadow-sm mb-4 transition-all">
-      <div className="flex justify-between items-center mb-4">
-        <div className="flex flex-wrap items-center gap-3">
-          <span className="text-xs font-black text-emerald-500 bg-emerald-500/10 px-2.5 py-1 rounded-full uppercase tracking-wider">Phase {currentPhaseIdx + 1}: {phases[currentPhaseIdx]?.name || 'Optimize'}</span>
-          <span className="text-xs font-bold text-slate-555 dark:text-slate-450">— Step {currentStep} of {totalSteps}: {stepName}</span>
+    <div className="w-full bg-white dark:bg-[#111827] border border-slate-200/60 dark:border-white/5 py-3.5 px-5 rounded-2xl shadow-sm mb-3 transition-all">
+      <div className="flex justify-between items-center mb-2.5">
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="text-[10px] font-black text-emerald-500 bg-emerald-500/10 px-2 py-0.5 rounded-full uppercase tracking-wider">Phase {currentPhaseIdx + 1}: {phases[currentPhaseIdx]?.name || 'Optimize'}</span>
+          <span className="text-[10px] font-bold text-slate-555 dark:text-slate-450">— Step {currentStep} of {totalSteps}: {stepName}</span>
         </div>
-        <div className="text-[11px] font-black text-slate-400 dark:text-slate-550">{Math.round(percentage)}% Complete</div>
+        <div className="text-[10px] font-black text-slate-400 dark:text-slate-550">{Math.round(percentage)}% Complete</div>
       </div>
 
       {/* Progress Bar */}
-      <div className="w-full h-1.5 bg-slate-100 dark:bg-white/5 rounded-full overflow-hidden mb-6">
+      <div className="w-full h-1 bg-slate-100 dark:bg-white/5 rounded-full overflow-hidden mb-4">
         <div className="h-full bg-gradient-to-r from-emerald-500 to-teal-400 transition-all duration-500" style={{ width: `${percentage}%` }}></div>
       </div>
 
@@ -96,9 +96,9 @@ const StepProgressBar = ({ currentStep, totalSteps, stepName }: { currentStep: n
           const isCompleted = idx < currentPhaseIdx;
           const isActive = idx === currentPhaseIdx;
           return (
-            <div key={p.name} className="flex flex-col items-center gap-1.5 text-center relative">
-              <div className="flex flex-col items-center gap-1">
-                <div className={`w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-black border transition-all ${isCompleted
+            <div key={p.name} className="flex flex-col items-center gap-1 text-center relative">
+              <div className="flex flex-col items-center gap-0.5">
+                <div className={`w-5 h-5 rounded-full flex items-center justify-center text-[9px] font-black border transition-all ${isCompleted
                     ? 'bg-emerald-500 border-emerald-500 text-white'
                     : isActive
                       ? 'border-emerald-500 text-emerald-500 bg-emerald-500/10 shadow-[0_0_8px_rgba(16,185,129,0.25)]'
@@ -106,17 +106,17 @@ const StepProgressBar = ({ currentStep, totalSteps, stepName }: { currentStep: n
                   }`}>
                   {isCompleted ? '✓' : idx + 1}
                 </div>
-                <span className={`text-[11px] font-extrabold tracking-tight truncate ${isActive ? 'text-slate-900 dark:text-white font-black' : isCompleted ? 'text-emerald-500' : 'text-slate-400'
+                <span className={`text-[10px] font-extrabold tracking-tight truncate ${isActive ? 'text-slate-900 dark:text-white font-black' : isCompleted ? 'text-emerald-500' : 'text-slate-400'
                   }`}>
                   {p.name}
                 </span>
               </div>
               {/* Stepper Dot track underneath */}
-              <div className="flex gap-1.5 justify-center items-center">
+              <div className="flex gap-1 justify-center items-center">
                 {p.steps.map(s => (
                   <div
                     key={s}
-                    className={`w-1.5 h-1.5 rounded-full transition-all ${s === currentStep
+                    className={`w-1 h-1 rounded-full transition-all ${s === currentStep
                         ? 'bg-emerald-500 scale-125 shadow-[0_0_6px_rgba(16,185,129,0.5)]'
                         : s < currentStep
                           ? 'bg-emerald-500'
@@ -139,6 +139,7 @@ interface UploadResumeWizardProps {
   isDark: boolean;
   initialFile?: File | null;
   initialStep?: number;
+  onSwitchToScratch?: () => void;
 }
 
 const standardFields: { [key: string]: string[] } = {
@@ -167,7 +168,8 @@ export const UploadResumeWizard: React.FC<UploadResumeWizardProps> = ({
   onSuccess,
   isDark,
   initialFile = null,
-  initialStep = 1
+  initialStep = 1,
+  onSwitchToScratch
 }) => {
   // 12-Step flow controller
   const [step, setStep] = useState<number>(initialStep || (initialFile ? 2 : 1));
@@ -865,7 +867,7 @@ export const UploadResumeWizard: React.FC<UploadResumeWizardProps> = ({
     <div className={`fixed inset-0 z-50 overflow-hidden text-left bg-white dark:bg-[#111827] flex flex-col`}>
       <div className={`w-screen h-screen flex flex-col ${isDark
           ? 'bg-[#111827] text-white'
-          : 'bg-white text-slate-805'
+          : 'bg-white text-slate-800'
         }`}>
 
         {/* Header bar */}
@@ -919,8 +921,17 @@ export const UploadResumeWizard: React.FC<UploadResumeWizardProps> = ({
                   <Button onClick={() => setStep(2)} className="btn-glow-green text-xs font-bold py-3 px-6 flex items-center gap-2">
                     <FileUp size={14} /> Upload Resume
                   </Button>
-                  <Button onClick={createNewResumeDraft} variant="secondary" className="text-xs font-bold py-3 px-6 flex items-center gap-2">
-                    <Plus size={14} /> Build New Resume
+                  <Button 
+                    onClick={() => {
+                      if (onSwitchToScratch) {
+                        onSwitchToScratch();
+                      } else {
+                        createNewResumeDraft();
+                      }
+                    }} 
+                    className="bg-[#0F4A3C] hover:bg-[#0B3A2E] text-white text-xs font-bold py-3 px-6 flex items-center gap-2 rounded-xl transition-all shadow-sm hover:shadow-lg cursor-pointer"
+                  >
+                    <Plus size={14} className="text-white" /> Build New Resume
                   </Button>
                 </div>
               </motion.div>
@@ -928,10 +939,10 @@ export const UploadResumeWizard: React.FC<UploadResumeWizardProps> = ({
 
             {/* Step 2: Upload Resume */}
             {step === 2 && (
-              <motion.div key="step2" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="max-w-xl mx-auto w-full text-center flex flex-col gap-6 py-6">
+              <motion.div key="step2" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="max-w-xl mx-auto w-full text-center flex flex-col gap-4 py-2">
                 <div>
-                  <h2 className="text-2xl font-black tracking-tight">Upload Your Document</h2>
-                  <p className="text-xs text-slate-505 dark:text-slate-400 mt-1.5 leading-relaxed">
+                  <h2 className="text-xl font-black tracking-tight">Upload Your Document</h2>
+                  <p className="text-xs text-slate-505 dark:text-slate-400 mt-1 leading-relaxed">
                     Upload your resume to instantly run our unified career parser. Supported formats include PDF, DOC, DOCX, and TXT.
                   </p>
                 </div>
@@ -940,15 +951,15 @@ export const UploadResumeWizard: React.FC<UploadResumeWizardProps> = ({
                   onDragOver={(e) => e.preventDefault()}
                   onDrop={handleFileDrop}
                   onClick={() => fileInputRef.current?.click()}
-                  className="border-2 border-dashed border-slate-200 dark:border-white/10 hover:border-emerald-500 bg-slate-50/30 dark:bg-white/5 hover:bg-emerald-500/5 rounded-2xl p-16 flex flex-col items-center justify-center gap-4 cursor-pointer transition-all duration-300 w-full shadow-inner hover:shadow-[0_0_25px_rgba(16,185,129,0.08)]"
+                  className="border-2 border-dashed border-slate-200 dark:border-white/10 hover:border-emerald-500 bg-slate-50/30 dark:bg-white/5 hover:bg-emerald-500/5 rounded-2xl py-8 px-6 flex flex-col items-center justify-center gap-3 cursor-pointer transition-all duration-300 w-full shadow-inner hover:shadow-[0_0_25px_rgba(16,185,129,0.08)]"
                 >
                   <input type="file" ref={fileInputRef} onChange={handleFileSelect} accept=".pdf,.doc,.docx,.txt,.rtf,.html" className="hidden" />
-                  <div className="w-14 h-14 rounded-2xl bg-emerald-500/10 text-emerald-500 flex items-center justify-center border border-emerald-500/20 shadow-md">
-                    <UploadCloud size={28} />
+                  <div className="w-12 h-12 rounded-xl bg-emerald-500/10 text-emerald-500 flex items-center justify-center border border-emerald-500/20 shadow-md">
+                    <UploadCloud size={24} />
                   </div>
                   <div className="text-center text-xs">
                     <p className="font-extrabold text-sm text-slate-800 dark:text-slate-200">Drag & drop files here, or click to browse</p>
-                    <p className="text-[10px] text-slate-450 mt-1.5">Maximum file size: 20MB</p>
+                    <p className="text-[10px] text-slate-450 mt-1">Maximum file size: 20MB</p>
                   </div>
                 </div>
 
@@ -1607,21 +1618,18 @@ export const UploadResumeWizard: React.FC<UploadResumeWizardProps> = ({
                 </div>
               </motion.div>
             )}
-            {/* S            {/* Step 5: Premium Resume Template Studio */}
             {step === 5 && (
-              <motion.div
-                key="step5"
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
+              <motion.div 
+                key="step5" 
+                initial={{ opacity: 0, y: 10 }} 
+                animate={{ opacity: 1, y: 0 }} 
                 exit={{ opacity: 0, y: -10 }}
-                className="flex flex-col text-left w-full bg-[#F5F5F3] p-6 rounded-3xl border border-[#E5E5E2]"
+                className="flex flex-col text-left w-full bg-[#F5F5F3] p-4 rounded-3xl border border-[#E5E5E2] h-[calc(100vh-210px)] overflow-hidden justify-between"
               >
-                {/* 3-Column Grid Layout: proportions 22% / 38% / 40% */}
-                <div className="grid grid-cols-1 lg:grid-cols-[22%_38%_40%] gap-6 w-full items-stretch relative">
-
-                  {/* Left Column: Template Gallery Sidebar */}
-                  <div className="w-full">
-                    <TemplateSidebar
+                <div className="grid grid-cols-1 lg:grid-cols-[22%_38%_40%] gap-4 w-full h-[calc(100vh-270px)] items-stretch relative overflow-hidden">
+                  
+                  <div className="w-full h-full overflow-y-auto">
+                    <TemplateSidebar 
                       selectedTemplate={selectedTemplate}
                       onSelectTemplate={(id, color) => {
                         setSelectedTemplate(id);
@@ -1630,9 +1638,8 @@ export const UploadResumeWizard: React.FC<UploadResumeWizardProps> = ({
                     />
                   </div>
 
-                  {/* Center Column: Customization Properties Panel */}
-                  <div className="w-full">
-                    <CustomizationPanel
+                  <div className="w-full h-full overflow-y-auto">
+                    <CustomizationPanel 
                       selectedColor={selectedColor}
                       setSelectedColor={setSelectedColor}
                       headerAlignment={headerAlignment}
@@ -1656,9 +1663,8 @@ export const UploadResumeWizard: React.FC<UploadResumeWizardProps> = ({
                     />
                   </div>
 
-                  {/* Right Column: Live Preview Area */}
-                  <div className="w-full flex flex-col bg-white border border-[#E5E5E2] rounded-2xl overflow-hidden relative">
-                    <PreviewToolbar
+                  <div className="w-full h-full flex flex-col bg-white border border-[#E5E5E2] rounded-2xl overflow-hidden relative">
+                    <PreviewToolbar 
                       zoom={zoom}
                       setZoom={setZoom}
                       onDownload={async () => {
@@ -1685,16 +1691,14 @@ export const UploadResumeWizard: React.FC<UploadResumeWizardProps> = ({
                         }
                       }}
                     />
-
-                    {/* Document Preview Wrapper with Mat Background and Pinned AI Badge */}
-                    <div className="flex-grow p-8 bg-[#F5F5F3] flex flex-col items-center justify-start relative min-h-[500px]">
-                      {/* Pinned ATS Suggestion Badge */}
+                    
+                    <div className="flex-grow p-6 bg-[#F5F5F3] flex flex-col items-center justify-start relative overflow-y-auto min-h-0">
                       <div className="absolute top-4 left-4 z-20 bg-[#E2ECE9] border border-[#0F4A3C]/20 px-2 py-0.5 rounded text-[9px] font-black uppercase text-[#0F4A3C] select-none">
                         ATS 98%
                       </div>
 
                       <div className="w-full flex justify-center shadow-sm">
-                        <ResumePreview
+                        <ResumePreview 
                           parsedData={parsedData}
                           selectedColor={selectedColor}
                           selectedFont={selectedFont}
@@ -1711,9 +1715,8 @@ export const UploadResumeWizard: React.FC<UploadResumeWizardProps> = ({
                       </div>
                     </div>
 
-                    {/* Simple page pagination display */}
                     <div className="shrink-0 flex justify-center items-center gap-4 py-2 border-t border-[#E5E5E2] bg-white">
-                      <button
+                      <button 
                         onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
                         className="px-2 py-0.5 bg-white border border-[#E5E5E2] text-[9px] font-extrabold uppercase rounded text-[#6B6B68] hover:bg-slate-50 transition-colors cursor-pointer"
                       >
@@ -1722,7 +1725,7 @@ export const UploadResumeWizard: React.FC<UploadResumeWizardProps> = ({
                       <span className="text-[10px] font-extrabold text-[#1A1A1A]">
                         Page {currentPage} of 1
                       </span>
-                      <button
+                      <button 
                         onClick={() => setCurrentPage(prev => Math.min(1, prev + 1))}
                         className="px-2 py-0.5 bg-white border border-[#E5E5E2] text-[9px] font-extrabold uppercase rounded text-[#6B6B68] hover:bg-slate-50 transition-colors cursor-pointer"
                       >
@@ -1734,7 +1737,7 @@ export const UploadResumeWizard: React.FC<UploadResumeWizardProps> = ({
                 </div>
 
                 {/* Bottom Navigation */}
-                <BottomNavigation
+                <BottomNavigation 
                   onBack={() => setStep(4)}
                   onSkip={() => setStep(6)}
                   onContinue={() => setStep(6)}
@@ -1774,7 +1777,7 @@ export const UploadResumeWizard: React.FC<UploadResumeWizardProps> = ({
                       <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 text-[10px] font-bold ${msg.sender === 'ai' ? 'bg-emerald-500/10 text-emerald-450 border border-emerald-500/20' : 'bg-white/10 text-white'}`}>
                         {msg.sender === 'ai' ? 'AI' : 'Me'}
                       </div>
-                      <div className={`p-4 rounded-2xl text-xs leading-relaxed ${msg.sender === 'ai' ? 'bg-slate-50 dark:bg-white/5 border border-slate-205 dark:border-white/5 text-slate-800 dark:text-slate-200 text-left' : 'bg-emerald-500 text-white font-semibold'}`}>
+                      <div className={`p-4 rounded-2xl text-xs leading-relaxed ${msg.sender === 'ai' ? 'bg-slate-50 dark:bg-white/5 border border-slate-205 dark:border-white/5 text-slate-800 dark:text-slate-200 text-left' : 'bg-[#0F4A3C] !text-white font-semibold text-left'}`}>
                         {msg.text}
                       </div>
                     </div>

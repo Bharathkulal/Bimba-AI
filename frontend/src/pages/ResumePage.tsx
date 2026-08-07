@@ -662,6 +662,11 @@ export const ResumePage: React.FC = () => {
             setWizardFile(null);
             fetchResumeData();
           }}
+          onSwitchToScratch={() => {
+            setShowWizard(false);
+            setWizardFile(null);
+            setShowScratchWizard(true);
+          }}
           isDark={isDark}
         />
       )}
