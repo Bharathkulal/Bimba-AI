@@ -123,6 +123,8 @@ def get_next_sequence(collection_name: str) -> int:
         upsert=True,
         return_document=ReturnDocument.AFTER
     )
+    if counter is None:
+        return 1
     return counter["seq"]
 
 def get_next_sequence_batch(collection_name: str, count: int) -> int:
@@ -137,6 +139,8 @@ def get_next_sequence_batch(collection_name: str, count: int) -> int:
         upsert=True,
         return_document=ReturnDocument.AFTER
     )
+    if counter is None:
+        return 1
     return counter["seq"] - count + 1
 
 def create_indexes():
@@ -183,3 +187,4 @@ def create_indexes():
     db.career_interviews.create_index([("resumeId", ASCENDING)])
     
     print("MongoDB indexes created successfully!")
+    # Force Pylance diagnostics refresh

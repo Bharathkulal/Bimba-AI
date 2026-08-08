@@ -2,15 +2,18 @@ from typing import Dict, Any
 from datetime import datetime, timezone
 import json
 import pymongo.errors
+# Force Pylance diagnostics refresh
 from app.core.exceptions import DatabaseException
 from app.core.logging_service import log_stage, log_error
 from app.core.mongodb import get_next_sequence, get_next_sequence_batch
+import time
+import logging
 
 class ResumeRepository:
     def __init__(self, db: Any):
         self.db = db
 
-    def save_parsed_resume(self, student_id: int, parsed_data: Dict[str, Any], filepath: str, cloudinary_url: str = None, public_id: str = None) -> int:
+    def save_parsed_resume(self, student_id: int, parsed_data: Dict[str, Any], filepath: str, cloudinary_url: str | None = None, public_id: str | None = None) -> int:
         log_stage("DATABASE", "START", "Initiating saving of parsed resume doc to database")
         
         # 1. Validate DB Connection health
@@ -19,43 +22,37 @@ class ResumeRepository:
             self.db.client.admin.command('ping')
         except pymongo.errors.ConnectionFailure as e:
             log_error("DATABASE", "Database connection lost or offline", e)
-            raise DatabaseException(f"MongoDB connection failed: {str(e)}")
+            raise DatabaseException("Database connection failure") from e
             
-        import time
-        import logging
+        t_start = time.perf_counter()
+        next_id = get_next_sequence("resumes")
+        
+        # Determine roll number/metadata for sequence logging
+        student = self.db.students.find_one({"id": student_id})
+        roll_number = student.get("roll_number") if student else None
+        
         logger = logging.getLogger("bimba_ai_pipeline")
-
-        logger.info("[RESUME] Mongo compilation START")
-        compilation_start = time.perf_counter()
-
-        # 2. Get Auto-incrementing IDs
-        try:
-            t_ids_start = time.perf_counter()
-            next_id = get_next_sequence("resumes")
-            logger.info("[RESUME] Building metadata")
-            logger.info("[RESUME] Metadata/resumes sequence ID retrieved in %.4fs", time.perf_counter() - t_ids_start)
-        except Exception as e:
-            log_error("DATABASE", "Failed to retrieve next sequence ID counters", e)
-            raise DatabaseException(f"Counter sequence generation failed: {str(e)}")
-            
-        # Structure nested items safely using batch sequence generator
+        logger.info("[RESUME] Beginning transaction save logic for roll: %s", roll_number)
+        
+        # Heuristic preprocessing for unique integer ID batch sequencing
         # 1. Education
         t_edu_start = time.perf_counter()
-        logger.info("[RESUME] Building education")
+        logger.info("[RESUME] Building education details")
         edu_list = parsed_data.get("education", []) or []
         edu_to_gen = sum(1 for edu in edu_list if not (isinstance(edu, dict) and edu.get("id")))
         start_edu_id = get_next_sequence_batch("resume_education", edu_to_gen) if edu_to_gen > 0 else 0
         
         education_list = []
         for idx, edu in enumerate(edu_list):
+            edu_dict: Dict[str, Any] = {}
             if isinstance(edu, str):
-                edu = {"degree": edu, "institution": "", "year": ""}
-            elif not isinstance(edu, dict):
-                edu = {}
-            if not edu.get("id"):
-                edu["id"] = start_edu_id
+                edu_dict = {"degree": edu, "institution": "", "year": ""}
+            elif isinstance(edu, dict):
+                edu_dict = dict(edu)
+            if not edu_dict.get("id"):
+                edu_dict["id"] = start_edu_id
                 start_edu_id += 1
-            education_list.append(edu)
+            education_list.append(edu_dict)
         education = education_list
         logger.info("[RESUME] Education section compiled in %.4fs", time.perf_counter() - t_edu_start)
                 
@@ -68,14 +65,15 @@ class ResumeRepository:
         
         experience_list = []
         for exp in exp_list:
+            exp_dict: Dict[str, Any] = {}
             if isinstance(exp, str):
-                exp = {"position": "", "company": "", "duration": "", "description": exp}
-            elif not isinstance(exp, dict):
-                exp = {}
-            if not exp.get("id"):
-                exp["id"] = start_exp_id
+                exp_dict = {"position": "", "company": "", "duration": "", "description": exp}
+            elif isinstance(exp, dict):
+                exp_dict = dict(exp)
+            if not exp_dict.get("id"):
+                exp_dict["id"] = start_exp_id
                 start_exp_id += 1
-            experience_list.append(exp)
+            experience_list.append(exp_dict)
         experience = experience_list
         logger.info("[RESUME] Experience section compiled in %.4fs", time.perf_counter() - t_exp_start)
                 
@@ -84,7 +82,7 @@ class ResumeRepository:
         logger.info("[RESUME] Building internships")
         internships = parsed_data.get("internships", []) or []
         logger.info("[RESUME] Internships compiled in %.4fs", time.perf_counter() - t_intern_start)
-
+ 
         # 4. Projects
         t_proj_start = time.perf_counter()
         logger.info("[RESUME] Building projects")
@@ -94,14 +92,15 @@ class ResumeRepository:
         
         projects_list = []
         for proj in proj_list:
+            proj_dict: Dict[str, Any] = {}
             if isinstance(proj, str):
-                proj = {"title": "", "technologies": "", "description": proj}
-            elif not isinstance(proj, dict):
-                proj = {}
-            if not proj.get("id"):
-                proj["id"] = start_proj_id
+                proj_dict = {"title": "", "technologies": "", "description": proj}
+            elif isinstance(proj, dict):
+                proj_dict = dict(proj)
+            if not proj_dict.get("id"):
+                proj_dict["id"] = start_proj_id
                 start_proj_id += 1
-            projects_list.append(proj)
+            projects_list.append(proj_dict)
         projects = projects_list
         logger.info("[RESUME] Projects section compiled in %.4fs", time.perf_counter() - t_proj_start)
                 
@@ -114,14 +113,15 @@ class ResumeRepository:
         
         skills_list = []
         for skill in skill_list:
+            skill_dict: Dict[str, Any] = {}
             if isinstance(skill, str):
-                skill = {"name": skill}
-            elif not isinstance(skill, dict):
-                skill = {}
-            if not skill.get("id"):
-                skill["id"] = start_skill_id
+                skill_dict = {"name": skill}
+            elif isinstance(skill, dict):
+                skill_dict = dict(skill)
+            if not skill_dict.get("id"):
+                skill_dict["id"] = start_skill_id
                 start_skill_id += 1
-            skills_list.append(skill)
+            skills_list.append(skill_dict)
         skills = skills_list
         logger.info("[RESUME] Skills section compiled in %.4fs", time.perf_counter() - t_skill_start)
 
