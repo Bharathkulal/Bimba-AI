@@ -107,12 +107,11 @@ pydantic-settings==2.14.2
 pydantic_core==2.46.4
 pydeck==0.9.2
 pydot==4.0.1
-pygame==2.6.1
 Pygments==2.20.0
 pyjokes==0.8.3
 PyJWT==2.13.0
 PyMatting==1.1.15
-pymongo==4.5.0
+pymongo==4.17.0
 PyMuPDF==1.28.2
 PyMuPDFb==1.28.2
 pyparsing==3.3.2

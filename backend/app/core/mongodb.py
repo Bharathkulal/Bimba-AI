@@ -1,7 +1,7 @@
 import os
 from typing import Any
 from bson import ObjectId
-from pymongo import MongoClient, ASCENDING
+from pymongo import MongoClient, ASCENDING, ReturnDocument
 
 from app.core.config import settings
 
@@ -121,7 +121,7 @@ def get_next_sequence(collection_name: str) -> int:
         {"_id": collection_name},
         {"$inc": {"seq": 1}},
         upsert=True,
-        return_document=True
+        return_document=ReturnDocument.AFTER
     )
     return counter["seq"]
 
@@ -135,7 +135,7 @@ def get_next_sequence_batch(collection_name: str, count: int) -> int:
         {"_id": collection_name},
         {"$inc": {"seq": count}},
         upsert=True,
-        return_document=True
+        return_document=ReturnDocument.AFTER
     )
     return counter["seq"] - count + 1
 

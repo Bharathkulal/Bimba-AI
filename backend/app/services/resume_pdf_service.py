@@ -874,6 +874,11 @@ def build_pdf_story(resume_data: Dict[str, Any], template: str = "harvard", db: 
   # Auto-append fallback sections if not explicitly configured in sections_to_render but contain content
   rendered_types = {sec.get("type", "").lower() for sec in sections_to_render}
   for fallback_sec in [
+    {"type": "achievements", "title": "Achievements"},
+    {"type": "languages", "title": "Languages"},
+    {"type": "hobbies", "title": "Hobbies & Interests"},
+    {"type": "internships", "title": "Internships"},
+    {"type": "publications", "title": "Publications"},
     {"type": "volunteer", "title": "Volunteer Experience"},
     {"type": "leadership", "title": "Leadership"},
     {"type": "awards", "title": "Awards"},
@@ -898,6 +903,16 @@ def build_pdf_story(resume_data: Dict[str, Any], template: str = "harvard", db: 
       elif ftype == "activities" and resume_data.get("activities"):
         has_content = True
       elif ftype == "custom_sections" and resume_data.get("custom_sections"):
+        has_content = True
+      elif ftype == "achievements" and resume_data.get("achievements"):
+        has_content = True
+      elif ftype == "languages" and resume_data.get("languages"):
+        has_content = True
+      elif ftype == "hobbies" and resume_data.get("hobbies"):
+        has_content = True
+      elif ftype == "internships" and resume_data.get("internships"):
+        has_content = True
+      elif ftype == "publications" and resume_data.get("publications"):
         has_content = True
         
       if has_content:
@@ -941,3 +956,7 @@ def build_pdf_story(resume_data: Dict[str, Any], template: str = "harvard", db: 
   pdf_bytes = pdf_buffer.getvalue()
   pdf_buffer.close()
   return pdf_bytes
+
+def generate_pdf_resume(resume_data: Dict[str, Any], template: str = "harvard", db: Any = None) -> io.BytesIO:
+  pdf_bytes = build_pdf_story(resume_data, template=template, db=db)
+  return io.BytesIO(pdf_bytes)

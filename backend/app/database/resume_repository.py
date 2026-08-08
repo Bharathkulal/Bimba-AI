@@ -168,6 +168,8 @@ class ResumeRepository:
             "certificates": parsed_data.get("certifications", []) or parsed_data.get("certificates", []),
             "achievements_list": json.dumps(parsed_data.get("achievements", [])),
             "hobbies": parsed_data.get("hobbies", []),
+            "languages": parsed_data.get("languages", []),
+            "custom_sections": parsed_data.get("custom_sections", []),
             
             "created_at": datetime.now(timezone.utc),
             "updated_at": datetime.now(timezone.utc),

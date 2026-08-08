@@ -364,6 +364,7 @@ def sync_resume_profile(id: int, student_id: int, payload: dict, db: Any):
             "volunteerExperience": payload.get("volunteerExperience") or [],
             "references": payload.get("references") or [],
             "hobbies": payload.get("hobbies") or [],
+            "custom_sections": payload.get("custom_sections") or [],
             "lastUpdated": datetime.now(timezone.utc).isoformat()
         }
         db.resume_profiles.update_one(
@@ -401,6 +402,7 @@ def get_resume_profile(resume_id: int, student: Student = Depends(get_current_st
             "volunteerExperience": r_data.get("volunteerExperience", []),
             "references": r_data.get("references", []),
             "hobbies": r_data.get("hobbies", []),
+            "custom_sections": r_data.get("custom_sections", []),
             "lastUpdated": datetime.utcnow().isoformat()
         }
     from app.core.mongodb import MongoModel
@@ -1645,11 +1647,27 @@ def get_normalized_resume_dict(resume: dict) -> dict:
         if not val or not isinstance(val, list):
             for fk in fallback_keys:
                 f_val = resume.get(fk)
-                if f_val and isinstance(f_val, list):
-                    return f_val
+                if f_val:
+                    if isinstance(f_val, list):
+                        return f_val
+                    if isinstance(f_val, str):
+                        try:
+                            parsed_list = json.loads(f_val)
+                            if isinstance(parsed_list, list):
+                                return parsed_list
+                        except Exception:
+                            pass
             r_val = resume.get(key)
-            if r_val and isinstance(r_val, list):
-                return r_val
+            if r_val:
+                if isinstance(r_val, list):
+                    return r_val
+                if isinstance(r_val, str):
+                    try:
+                        parsed_list = json.loads(r_val)
+                        if isinstance(parsed_list, list):
+                            return parsed_list
+                    except Exception:
+                        pass
             return []
         return val
 
@@ -1686,6 +1704,7 @@ def get_normalized_resume_dict(resume: dict) -> dict:
         "hobbies": get_list("hobbies", ["interests"]),
         "softSkills": get_list("softSkills", ["soft_skills"]),
         "internships": get_list("internships"),
+        "custom_sections": get_list("custom_sections"),
     }
     return normalized
 
@@ -2345,13 +2364,23 @@ def validate_resume_endpoint(
     pdf_result = {"isValid": True, "errors": [], "warnings": []}
     try:
         # Mock structural profile for pdf generator
-        pdf_stream = generate_pdf_resume({
-            "master": payload.get("personal_info") or {},
+        full_resume_data = {
+            "personal_info": payload.get("personal_info") or {},
+            "summary": payload.get("summary") or "",
+            "objective": payload.get("objective") or "",
             "education": payload.get("education") or [],
             "experience": payload.get("experience") or [],
             "projects": payload.get("projects") or [],
-            "skills": [{"name": s} if isinstance(s, str) else s for s in (payload.get("skills") or [])]
-        })
+            "skills": [{"name": s} if isinstance(s, str) else s for s in (payload.get("skills") or [])],
+            "certifications": payload.get("certifications") or payload.get("certificates") or [],
+            "achievements": payload.get("achievements") or [],
+            "languages": payload.get("languages") or [],
+            "hobbies": payload.get("hobbies") or [],
+            "internships": payload.get("internships") or [],
+            "publications": payload.get("publications") or [],
+            "custom_sections": payload.get("custom_sections") or []
+        }
+        pdf_stream = generate_pdf_resume(full_resume_data, template=resume_doc.get("template_id") or "harvard", db=db)
         pdf_bytes = pdf_stream.getvalue()
         pdf_result = PDFValidator.validate_pdf_content(pdf_bytes, original_page_count=original_data.get("page_count", 1))
     except Exception as e:

@@ -178,12 +178,23 @@ export const UploadResumeWizard: React.FC<UploadResumeWizardProps> = ({
   // Real DB Data Models
   const [parsedData, setParsedData] = useState<any>({
     personal_info: { name: '', email: '', phone: '', address: '', linkedin: '', github: '', portfolio: '' },
+    summary: '',
+    objective: '',
     education: [],
     experience: [],
     projects: [],
     skills: [],
+    softSkills: [],
     certifications: [],
-    hobbies: []
+    internships: [],
+    achievements: [],
+    languages: [],
+    portfolioLinks: [],
+    publications: [],
+    volunteerExperience: [],
+    references: [],
+    hobbies: [],
+    custom_sections: []
   });
   const [analysisData, setAnalysisData] = useState<any>(null);
   const [resumeId, setResumeId] = useState<number | null>(null);
@@ -697,7 +708,8 @@ export const UploadResumeWizard: React.FC<UploadResumeWizardProps> = ({
       publications: data.publications || [],
       volunteerExperience: data.volunteerExperience || [],
       references: data.references || [],
-      hobbies: data.hobbies || []
+      hobbies: data.hobbies || [],
+      custom_sections: data.custom_sections || []
     };
     try {
       await apiClient.put(`/api/resume-studio/profile/${targetId}`, payload);
@@ -1713,6 +1725,15 @@ export const UploadResumeWizard: React.FC<UploadResumeWizardProps> = ({
                       <div className="flex justify-between items-center border-b pb-2">
                         <span className="text-xs font-bold text-emerald-500 uppercase">{customSec.section_name}</span>
                         <div className="flex items-center gap-2">
+                          <button
+                            onClick={() => {
+                              const newContent = [...(customSec.content || []), "New Item"];
+                              handleUpdateScalarField('custom_sections', parsedData.custom_sections.map((c: any, i: number) => i === secIdx ? { ...c, content: newContent } : c));
+                            }}
+                            className="text-[10px] font-bold text-emerald-500 hover:text-emerald-600 cursor-pointer flex items-center gap-0.5"
+                          >
+                            <Plus size={11} /> Add Item
+                          </button>
                           <button onClick={() => toggleEditCard(`custom_${secIdx}`)} className="text-[10px] font-bold text-slate-400 hover:text-emerald-500 cursor-pointer flex items-center gap-1">
                             {editingCards[`custom_${secIdx}`] ? <><Save size={11} className="text-emerald-500" /> Save</> : <><FileEdit size={11} /> Edit</>}
                           </button>
@@ -1733,6 +1754,7 @@ export const UploadResumeWizard: React.FC<UploadResumeWizardProps> = ({
                                     handleUpdateScalarField('custom_sections', parsedData.custom_sections.map((c: any, i: number) => i === secIdx ? { ...c, content: newContent } : c));
                                   }}
                                   className="w-full p-1 border border-slate-200 rounded text-xs"
+                                  style={{ color: '#000' }}
                                 />
                               ) : (
                                 <span>• {displayText}</span>
@@ -1753,6 +1775,25 @@ export const UploadResumeWizard: React.FC<UploadResumeWizardProps> = ({
                     </Card>
                   ))}
 
+                  {/* Add Custom Section Button */}
+                  <div className="md:col-span-2 flex justify-center py-4">
+                    <button
+                      onClick={() => {
+                        const newSecName = prompt("Enter Custom Section Name:");
+                        if (newSecName && newSecName.trim()) {
+                          const updatedCustomSecs = [...(parsedData.custom_sections || [])];
+                          updatedCustomSecs.push({
+                            section_name: newSecName.trim(),
+                            content: ["New item (click edit to change)"]
+                          });
+                          handleUpdateScalarField('custom_sections', updatedCustomSecs);
+                        }
+                      }}
+                      className="text-xs font-bold py-2.5 px-4 flex items-center gap-1.5 bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 hover:bg-emerald-500/20 rounded-xl cursor-pointer transition-all"
+                    >
+                      <Plus size={14} /> Add Custom Section
+                    </button>
+                  </div>
                 </div>
               </motion.div>
             )}
