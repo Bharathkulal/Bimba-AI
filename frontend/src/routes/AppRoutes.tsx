@@ -2,6 +2,7 @@ import React, { useEffect, useState, lazy, Suspense } from 'react';
 import { BrowserRouter, Routes, Route, Navigate, Outlet } from 'react-router-dom';
 import { useUserStore } from '../store/userStore';
 import { apiClient } from '../services/api';
+import { ErrorBoundary } from '../components/ErrorBoundary';
 
 // Layouts
 import { DefaultLayout } from '../layouts/DefaultLayout';
@@ -155,94 +156,96 @@ const SuspenseLoader: React.FC = () => (
 
 export const AppRoutes: React.FC = () => {
   return (
-    <BrowserRouter>
-      <Suspense fallback={<SuspenseLoader />}>
-        <Routes>
-          {/* Guest Routes */}
-          <Route element={<GuestRoute />}>
-            <Route element={<DefaultLayout />}>
-              <Route path="/" element={<LandingPage />} />
-              <Route path="/login" element={<Login />} />
+    <ErrorBoundary>
+      <BrowserRouter>
+        <Suspense fallback={<SuspenseLoader />}>
+          <Routes>
+            {/* Guest Routes */}
+            <Route element={<GuestRoute />}>
+              <Route element={<DefaultLayout />}>
+                <Route path="/" element={<LandingPage />} />
+                <Route path="/login" element={<Login />} />
+              </Route>
             </Route>
-          </Route>
 
-          {/* Dashboard Layout */}
-          <Route element={<ProtectedRoute />}>
-            <Route element={<DashboardLayout />}>
-              <Route path="/dashboard" element={<Dashboard />} />
-              <Route path="/resume" element={<ResumePage />} />
-              <Route path="/resume-builder" element={<ResumeBuilder />} />
-              <Route path="/profile" element={<Profile />} />
-              <Route path="/settings" element={<Settings />} />
-              <Route path="/notifications" element={<Notifications />} />
-              <Route path="/companies" element={<Companies />} />
-              
-              {/* Jobs Routes */}
-              <Route path="/jobs" element={<JobsDashboard />} />
-              <Route path="/jobs/:id" element={<JobDetails />} />
-              <Route path="/jobs/saved" element={<SavedJobs />} />
-              <Route path="/jobs/applications" element={<Applications />} />
+            {/* Dashboard Layout */}
+            <Route element={<ProtectedRoute />}>
+              <Route element={<DashboardLayout />}>
+                <Route path="/dashboard" element={<Dashboard />} />
+                <Route path="/resume" element={<ResumePage />} />
+                <Route path="/resume-builder" element={<ResumeBuilder />} />
+                <Route path="/profile" element={<Profile />} />
+                <Route path="/settings" element={<Settings />} />
+                <Route path="/notifications" element={<Notifications />} />
+                <Route path="/companies" element={<Companies />} />
+                
+                {/* Jobs Routes */}
+                <Route path="/jobs" element={<JobsDashboard />} />
+                <Route path="/jobs/:id" element={<JobDetails />} />
+                <Route path="/jobs/saved" element={<SavedJobs />} />
+                <Route path="/jobs/applications" element={<Applications />} />
+              </Route>
             </Route>
-          </Route>
 
-          {/* Admin Portal Layout */}
-          <Route element={<AdminGuestRoute />}>
-            <Route path="/admin/login" element={<AdminLogin />} />
-          </Route>
-          
-          {/* Placement Login Layout */}
-          <Route element={<PlacementGuestRoute />}>
-            <Route path="/placement/login" element={<PlacementLogin />} />
-          </Route>
-          
-          <Route element={<AdminProtectedRoute />}>
-            <Route element={<AdminLayout />}>
-               <Route path="/admin/dashboard" element={<AdminDashboardOverview />} />
-              <Route path="/admin/students" element={<StudentsModule />} />
-              <Route path="/admin/resumes" element={<ResumeModule />} />
-              <Route path="/admin/datasets" element={<DatasetsModule />} />
-              <Route path="/admin/departments" element={<DepartmentsModule />} />
-              <Route path="/admin/subjects" element={<SubjectsModule />} />
-              <Route path="/admin/announcements" element={<AnnouncementsModule />} />
-              <Route path="/admin/email" element={<EmailModule />} />
-              <Route path="/admin/reports" element={<ReportsModule />} />
-              <Route path="/admin/backups" element={<BackupsModule />} />
-              <Route path="/admin/admins" element={<AdminRolesModule />} />
-              <Route path="/admin/monitor" element={<MonitorModule />} />
-              <Route path="/admin/notifications" element={<MonitorModule />} />
-              <Route path="/admin/templates" element={<TemplatesModule />} />
-
-              <Route path="/admin/ai" element={<AiGatewayModule />} />
-              <Route path="/admin/analytics" element={<ReportsModule />} />
-              <Route path="/admin/security" element={<SecurityModule />} />
-              <Route path="/admin/logs" element={<LogsModule />} />
-              <Route path="/admin/settings" element={<SettingsModule />} />
-              <Route path="/admin/jobs" element={<JobsModule />} />
-              <Route path="/admin/companies" element={<CompaniesModule />} />
+            {/* Admin Portal Layout */}
+            <Route element={<AdminGuestRoute />}>
+              <Route path="/admin/login" element={<AdminLogin />} />
             </Route>
-          </Route>
-
-          {/* Placement Portal Layout */}
-          <Route element={<PlacementProtectedRoute />}>
-            <Route element={<PlacementLayout />}>
-              <Route path="/placement" element={<PlacementDashboard />} />
-              <Route path="/placement/students" element={<StudentManagement />} />
-              <Route path="/placement/drives" element={<DriveManagement />} />
-              <Route path="/placement/companies" element={<CompanyManagement />} />
-              <Route path="/placement/resume-verification" element={<ResumeVerification />} />
-              <Route path="/placement/applications" element={<ApplicationsManagement />} />
-              <Route path="/placement/announcements" element={<AnnouncementsManagement />} />
-              <Route path="/placement/reports" element={<ReportsManagement />} />
-              <Route path="/placement/profile" element={<PlacementProfile />} />
-              <Route path="/placement/settings" element={<PlacementSettings />} />
+            
+            {/* Placement Login Layout */}
+            <Route element={<PlacementGuestRoute />}>
+              <Route path="/placement/login" element={<PlacementLogin />} />
             </Route>
-          </Route>
+            
+            <Route element={<AdminProtectedRoute />}>
+              <Route element={<AdminLayout />}>
+                 <Route path="/admin/dashboard" element={<AdminDashboardOverview />} />
+                <Route path="/admin/students" element={<StudentsModule />} />
+                <Route path="/admin/resumes" element={<ResumeModule />} />
+                <Route path="/admin/datasets" element={<DatasetsModule />} />
+                <Route path="/admin/departments" element={<DepartmentsModule />} />
+                <Route path="/admin/subjects" element={<SubjectsModule />} />
+                <Route path="/admin/announcements" element={<AnnouncementsModule />} />
+                <Route path="/admin/email" element={<EmailModule />} />
+                <Route path="/admin/reports" element={<ReportsModule />} />
+                <Route path="/admin/backups" element={<BackupsModule />} />
+                <Route path="/admin/admins" element={<AdminRolesModule />} />
+                <Route path="/admin/monitor" element={<MonitorModule />} />
+                <Route path="/admin/notifications" element={<MonitorModule />} />
+                <Route path="/admin/templates" element={<TemplatesModule />} />
 
-          {/* 404 Route */}
-          <Route path="*" element={<NotFound />} />
-        </Routes>
-      </Suspense>
-    </BrowserRouter>
+                <Route path="/admin/ai" element={<AiGatewayModule />} />
+                <Route path="/admin/analytics" element={<ReportsModule />} />
+                <Route path="/admin/security" element={<SecurityModule />} />
+                <Route path="/admin/logs" element={<LogsModule />} />
+                <Route path="/admin/settings" element={<SettingsModule />} />
+                <Route path="/admin/jobs" element={<JobsModule />} />
+                <Route path="/admin/companies" element={<CompaniesModule />} />
+              </Route>
+            </Route>
+
+            {/* Placement Portal Layout */}
+            <Route element={<PlacementProtectedRoute />}>
+              <Route element={<PlacementLayout />}>
+                <Route path="/placement" element={<PlacementDashboard />} />
+                <Route path="/placement/students" element={<StudentManagement />} />
+                <Route path="/placement/drives" element={<DriveManagement />} />
+                <Route path="/placement/companies" element={<CompanyManagement />} />
+                <Route path="/placement/resume-verification" element={<ResumeVerification />} />
+                <Route path="/placement/applications" element={<ApplicationsManagement />} />
+                <Route path="/placement/announcements" element={<AnnouncementsManagement />} />
+                <Route path="/placement/reports" element={<ReportsManagement />} />
+                <Route path="/placement/profile" element={<PlacementProfile />} />
+                <Route path="/placement/settings" element={<PlacementSettings />} />
+              </Route>
+            </Route>
+
+            {/* 404 Route */}
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+        </Suspense>
+      </BrowserRouter>
+    </ErrorBoundary>
   );
 };
 export default AppRoutes;
