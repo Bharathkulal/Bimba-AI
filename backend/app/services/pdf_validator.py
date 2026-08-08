@@ -43,7 +43,18 @@ class PDFValidator:
             }
 
         try:
-            doc = _pymupdf.open(stream=pdf_bytes, filetype="pdf")
+            try:
+                doc = _pymupdf.open(stream=pdf_bytes, filetype="pdf")
+            except Exception as stream_err:
+                print(f"[PDF-VALIDATOR] WARNING: PDF validation failed with stream error: {stream_err}")
+                errors.append(f"Generated PDF contains corrupt structure: {stream_err}")
+                return {
+                    "isValid": False,
+                    "errors": errors,
+                    "warnings": warnings,
+                    "pageCount": 0
+                }
+
             page_count = len(doc)
 
             # 1. Page count checks
@@ -94,7 +105,7 @@ class PDFValidator:
                 "pageCount": 0
             }
         except Exception as e:
-            # Any other error opening/parsing the PDF — also degrade gracefully
+            # Any other error parsing/reading the open document — degrade gracefully
             print(f"[PDF-VALIDATOR] WARNING: PDF validation failed with {type(e).__name__}: {e}")
             print(f"[PDF-VALIDATOR] Skipping validation — PDF will still be returned to user.")
             return {
