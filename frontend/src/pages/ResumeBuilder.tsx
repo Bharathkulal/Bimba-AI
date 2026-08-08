@@ -1,15 +1,8 @@
 import React from 'react';
-import { ResponsiveComponent } from '../components/ResponsiveComponent';
-import { ResumeBuilderDesktop } from './resume/ResumeBuilderDesktop';
-import { ResumeBuilderMobile } from './resume/ResumeBuilderMobile';
+import { ResumeBuilderFlow } from '../components/resume-builder/ResumeBuilderFlow';
 
 export const ResumeBuilder: React.FC = () => {
-  return (
-    <ResponsiveComponent
-      desktop={<ResumeBuilderDesktop />}
-      mobile={<ResumeBuilderMobile />}
-    />
-  );
+  return <ResumeBuilderFlow />;
 };
 
 export default ResumeBuilder;
