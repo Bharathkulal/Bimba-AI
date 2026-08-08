@@ -163,6 +163,9 @@ interface ChatMessage {
   text: string;
 }
 
+const PROGRESS_STEP_DELAY = 150;
+const COMPLETION_DELAY = 600;
+
 export const UploadResumeWizard: React.FC<UploadResumeWizardProps> = ({
   onClose,
   onSuccess,
@@ -205,9 +208,24 @@ export const UploadResumeWizard: React.FC<UploadResumeWizardProps> = ({
   const [isParsing, setIsParsing] = useState<boolean>(false);
   const [apiCompleted, setApiCompleted] = useState<boolean>(false);
 
+  const [backendState, setBackendState] = useState<'idle' | 'uploading' | 'processing' | 'completed' | 'failed'>('idle');
+  const isRequestActiveRef = useRef<boolean>(false);
+  const isMountedRef = useRef<boolean>(true);
+
   const [uploadError, setUploadError] = useState<string>('');
   const [ingestionError, setIngestionError] = useState<string | null>(null);
   const abortControllerRef = useRef<AbortController | null>(null);
+
+  // Track component mount status
+  useEffect(() => {
+    isMountedRef.current = true;
+    return () => {
+      isMountedRef.current = false;
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort();
+      }
+    };
+  }, []);
 
   // Conversational Interview (Step 5)
   const [messages, setMessages] = useState<ChatMessage[]>([]);
@@ -401,28 +419,50 @@ export const UploadResumeWizard: React.FC<UploadResumeWizardProps> = ({
   useEffect(() => {
     if (!isParsing) return;
 
-    if (activeTaskIdx < processingTasks.length - 1) {
-      // Tasks 1 to 6: Increment on a realistic timer (1000ms each)
-      const timer = setTimeout(() => {
-        setCompletedTasks(prev => [...prev, processingTasks[activeTaskIdx]]);
-        setActiveTaskIdx(prev => prev + 1);
-      }, 1000);
-      return () => clearTimeout(timer);
-    } else if (activeTaskIdx === processingTasks.length - 1) {
-      // Task 7: Only complete when the actual API request finishes
-      if (apiCompleted) {
-        setCompletedTasks(prev => [...prev, processingTasks[activeTaskIdx]]);
-        setActiveTaskIdx(prev => prev + 1);
+    if (backendState === 'completed') {
+      if (activeTaskIdx < processingTasks.length) {
+        console.log(`[ResumeWizard] Fast-forwarding UI step ${activeTaskIdx} -> ${activeTaskIdx + 1}`);
+        const timer = setTimeout(() => {
+          if (!isMountedRef.current) return;
+          setCompletedTasks(prev => {
+            const next = [...prev];
+            if (!next.includes(processingTasks[activeTaskIdx])) {
+              next.push(processingTasks[activeTaskIdx]);
+            }
+            return next;
+          });
+          setActiveTaskIdx(prev => prev + 1);
+        }, PROGRESS_STEP_DELAY);
+        return () => clearTimeout(timer);
+      } else {
+        console.log('[ResumeWizard] Ingestion transition scheduled');
+        const timer = setTimeout(() => {
+          if (!isMountedRef.current) return;
+          setIsParsing(false);
+          setStep(4);
+        }, COMPLETION_DELAY);
+        return () => clearTimeout(timer);
       }
-    } else if (activeTaskIdx === processingTasks.length && apiCompleted) {
-      // Transition to next page after a brief organic delay
-      const timer = setTimeout(() => {
-        setIsParsing(false);
-        setStep(4);
-      }, 600);
-      return () => clearTimeout(timer);
+    } else if (backendState === 'failed') {
+      console.log('[ResumeWizard] Processing failed state - holding progress timers.');
+    } else {
+      if (activeTaskIdx < processingTasks.length - 1) {
+        console.log(`[ResumeWizard] Normal UI step progression ${activeTaskIdx} -> ${activeTaskIdx + 1}`);
+        const timer = setTimeout(() => {
+          if (!isMountedRef.current) return;
+          setCompletedTasks(prev => {
+            const next = [...prev];
+            if (!next.includes(processingTasks[activeTaskIdx])) {
+              next.push(processingTasks[activeTaskIdx]);
+            }
+            return next;
+          });
+          setActiveTaskIdx(prev => prev + 1);
+        }, 1000);
+        return () => clearTimeout(timer);
+      }
     }
-  }, [isParsing, activeTaskIdx, apiCompleted]);
+  }, [isParsing, activeTaskIdx, backendState]);
 
   useEffect(() => {
     if (step === 12) {
@@ -454,22 +494,32 @@ export const UploadResumeWizard: React.FC<UploadResumeWizardProps> = ({
   };
 
   const startIngestion = async (targetFile: File) => {
+    if (isRequestActiveRef.current) {
+      console.warn('[ResumeWizard] Double submission blocked: upload request already active.');
+      return;
+    }
+    isRequestActiveRef.current = true;
+
     const ext = targetFile.name.split('.').pop()?.toLowerCase();
     const allowed = ['pdf', 'doc', 'docx', 'txt', 'rtf', 'html'];
     if (!ext || !allowed.includes(ext)) {
       alert(`Unsupported file format (.${ext}). Please upload PDF, DOC, DOCX, TXT, RTF, or HTML.`);
       setFile(null);
+      isRequestActiveRef.current = false;
       return;
     }
     if (targetFile.size > 20 * 1024 * 1024) {
       alert("File size exceeds limit of 20MB.");
       setFile(null);
+      isRequestActiveRef.current = false;
       return;
     }
 
+    console.log('[ResumeWizard] Upload started');
     setStep(3); // Step 3: Parsing Progress
     setIsParsing(true);
     setApiCompleted(false);
+    setBackendState('uploading');
     setActiveTaskIdx(0);
     setCompletedTasks([]);
     setUploadError('');
@@ -481,11 +531,9 @@ export const UploadResumeWizard: React.FC<UploadResumeWizardProps> = ({
     const controller = new AbortController();
     abortControllerRef.current = controller;
 
-
     try {
       const formData = new FormData();
       formData.append('file', targetFile);
-
 
       let uploadRes;
       let retries = 0;
@@ -495,7 +543,16 @@ export const UploadResumeWizard: React.FC<UploadResumeWizardProps> = ({
           uploadRes = await apiClient.post('/api/resume-studio/upload', formData, {
             headers: { 'Content-Type': 'multipart/form-data' },
             timeout: 120000, // 2 min timeout for large files + OCR
-            signal: controller.signal
+            signal: controller.signal,
+            onUploadProgress: (progressEvent) => {
+              if (!isMountedRef.current) return;
+              const percentCompleted = Math.round((progressEvent.loaded * 100) / (progressEvent.total || 1));
+              console.log(`[ResumeWizard] Upload progress: ${percentCompleted}%`);
+              if (percentCompleted >= 100) {
+                setBackendState('processing');
+                console.log('[ResumeWizard] Backend processing started');
+              }
+            }
           });
           break; // Success
         } catch (e: any) {
@@ -508,6 +565,14 @@ export const UploadResumeWizard: React.FC<UploadResumeWizardProps> = ({
           throw e; // Rethrow if not a 5xx error or out of retries
         }
       }
+
+      if (!isMountedRef.current) return;
+
+      // Validate API Response
+      if (!uploadRes || !uploadRes.data || !uploadRes.data.success || !uploadRes.data.resume_id) {
+        throw new Error("Invalid or incomplete parsing response returned by backend.");
+      }
+
       const parsed = uploadRes!.data.parsed_data || {};
       const newId = uploadRes!.data.resume_id;
       setParsedData(parsed);
@@ -572,8 +637,15 @@ export const UploadResumeWizard: React.FC<UploadResumeWizardProps> = ({
         { sender: 'ai', text: queue[0]?.text || "Let's review the dynamic suggestions to maximize your ATS matches." }
       ]);
 
+      console.log('[ResumeWizard] Backend completed');
+      setBackendState('completed');
       setApiCompleted(true);
     } catch (e: any) {
+      if (!isMountedRef.current) return;
+      
+      console.log('[ResumeWizard] Processing failed');
+      setBackendState('failed');
+
       if (e.name === 'CanceledError' || e.code === 'ERR_CANCELED') {
         console.log("Upload cancelled by user");
         return;
@@ -601,9 +673,8 @@ export const UploadResumeWizard: React.FC<UploadResumeWizardProps> = ({
           errorMsg = 'Backend server unavailable or network connection failed. Please ensure uvicorn is running on port 8000.';
         }
       } else {
-        errorMsg = `Request configuration error: ${e.message}`;
+        errorMsg = `Request configuration/validation error: ${e.message}`;
       }
-
 
       setUploadError(errorMsg);
       setFile(null);
@@ -611,7 +682,8 @@ export const UploadResumeWizard: React.FC<UploadResumeWizardProps> = ({
 
       setIngestionError(errorMsg);
       setIsParsing(false);
-
+    } finally {
+      isRequestActiveRef.current = false;
     }
   };
 
@@ -1006,11 +1078,20 @@ export const UploadResumeWizard: React.FC<UploadResumeWizardProps> = ({
 
                 <div
                   onDragOver={(e) => e.preventDefault()}
-                  onDrop={handleFileDrop}
-                  onClick={() => fileInputRef.current?.click()}
-                  className="border-2 border-dashed border-slate-200 dark:border-white/10 hover:border-emerald-500 bg-slate-50/30 dark:bg-white/5 hover:bg-emerald-500/5 rounded-2xl py-8 px-6 flex flex-col items-center justify-center gap-3 cursor-pointer transition-all duration-300 w-full shadow-inner hover:shadow-[0_0_25px_rgba(16,185,129,0.08)]"
+                  onDrop={(e) => {
+                    if (isRequestActiveRef.current) return;
+                    handleFileDrop(e);
+                  }}
+                  onClick={() => {
+                    if (isRequestActiveRef.current) return;
+                    fileInputRef.current?.click();
+                  }}
+                  className={`border-2 border-dashed border-slate-200 dark:border-white/10 hover:border-emerald-500 bg-slate-50/30 dark:bg-white/5 hover:bg-emerald-500/5 rounded-2xl py-8 px-6 flex flex-col items-center justify-center gap-3 cursor-pointer transition-all duration-300 w-full shadow-inner hover:shadow-[0_0_25px_rgba(16,185,129,0.08)] ${isRequestActiveRef.current ? 'opacity-50 pointer-events-none' : ''}`}
                 >
-                  <input type="file" ref={fileInputRef} onChange={handleFileSelect} accept=".pdf,.doc,.docx,.txt,.rtf,.html" className="hidden" />
+                  <input type="file" ref={fileInputRef} onChange={(e) => {
+                    if (isRequestActiveRef.current) return;
+                    handleFileSelect(e);
+                  }} accept=".pdf,.doc,.docx,.txt,.rtf,.html" className="hidden" />
                   <div className="w-12 h-12 rounded-xl bg-emerald-500/10 text-emerald-500 flex items-center justify-center border border-emerald-500/20 shadow-md">
                     <UploadCloud size={24} />
                   </div>

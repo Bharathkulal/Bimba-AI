@@ -23,9 +23,12 @@ const diffWords = (orig: string, imp: string) => {
     const cleanWord = word.toLowerCase().replace(/[^a-z0-9]/g, '');
     const isRemoved = !impSet.has(cleanWord);
     return (
-      <span key={idx} className={isRemoved ? 'text-rose-500 line-through mr-1 font-semibold' : 'mr-1'}>
-        {word}
-      </span>
+      <React.Fragment key={idx}>
+        <span className={isRemoved ? 'text-rose-500 line-through font-semibold' : ''}>
+          {word}
+        </span>
+        {" "}
+      </React.Fragment>
     );
   });
 
@@ -33,9 +36,12 @@ const diffWords = (orig: string, imp: string) => {
     const cleanWord = word.toLowerCase().replace(/[^a-z0-9]/g, '');
     const isAdded = !origSet.has(cleanWord);
     return (
-      <span key={idx} className={isAdded ? 'text-emerald-600 dark:text-emerald-450 underline decoration-emerald-500/50 mr-1 font-extrabold' : 'mr-1'}>
-        {word}
-      </span>
+      <React.Fragment key={idx}>
+        <span className={isAdded ? 'text-emerald-600 dark:text-emerald-450 underline decoration-emerald-500/50 font-extrabold' : ''}>
+          {word}
+        </span>
+        {" "}
+      </React.Fragment>
     );
   });
 
