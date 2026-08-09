@@ -29,6 +29,19 @@ export const ResumePreview: React.FC<ResumePreviewProps> = ({
   headerAlignment,
   zoom
 }) => {
+  // DEBUG: log parsedData summary before rendering
+  try {
+    // eslint-disable-next-line no-console
+    console.debug('[DEBUG RESUME FRONTEND] ResumePreview parsedData summary', {
+      education_count: Array.isArray(parsedData?.education) ? parsedData.education.length : 0,
+      certifications_count: Array.isArray(parsedData?.certifications) ? parsedData.certifications.length : 0,
+      education_sample: parsedData?.education?.slice(0,2) || [],
+      certifications_sample: parsedData?.certifications?.slice(0,2) || []
+    });
+  } catch (e) {
+    // eslint-disable-next-line no-console
+    console.debug('[DEBUG RESUME FRONTEND] Failed to log parsedData summary', e);
+  }
   const p = parsedData.personal_info || {};
   const name = p.name || 'Your Full Name';
   const email = p.email || '';

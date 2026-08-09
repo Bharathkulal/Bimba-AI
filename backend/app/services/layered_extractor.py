@@ -48,13 +48,64 @@ class LayeredExtractor:
 
         extracted_pages_text = []
         pages_metadata = []
+        raw_pages = []
+        all_blocks = []
         method_log = ["PyMuPDF"]
         ocr_performed_pages = 0
         easyocr_reader = None
 
         for idx, page in enumerate(doc):
             # Step 1: Extract selectable text layer
-            page_text = page.get_text().strip()
+            # Use page.get_text('dict') to obtain block-level structure and spans
+            try:
+                page_dict = page.get_text("dict")
+            except Exception:
+                page_dict = None
+
+            page_text = ""
+            page_blocks = []
+            if page_dict and isinstance(page_dict, dict):
+                for b in page_dict.get("blocks", []):
+                    # Each block may contain lines -> spans
+                    block_text = ""
+                    spans = []
+                    for line in b.get("lines", []):
+                        for span in line.get("spans", []):
+                            span_text = span.get("text", "").strip()
+                            if span_text:
+                                block_text += (span_text + " ")
+                                spans.append({
+                                    "text": span_text,
+                                    "font": span.get("font", ""),
+                                    "size": span.get("size", 0)
+                                })
+                    block_text = block_text.strip()
+                    if block_text:
+                        # bbox is [x0, y0, x1, y1] in pymupdf dict
+                        bbox = b.get("bbox", None)
+                        bbox_obj = None
+                        if bbox and isinstance(bbox, (list, tuple)) and len(bbox) == 4:
+                            x0, y0, x1, y1 = bbox
+                            bbox_obj = {
+                                "x": float(x0),
+                                "y": float(y0),
+                                "width": float(x1 - x0),
+                                "height": float(y1 - y0)
+                            }
+
+                        block = {
+                            "id": f"p{idx+1}_b{len(page_blocks)+1}",
+                            "page": idx+1,
+                            "text": block_text,
+                            "bbox": bbox_obj,
+                            "block_type": b.get("type", "text"),
+                            "spans": spans
+                        }
+                        page_blocks.append(block)
+                        all_blocks.append(block)
+                        page_text += (block_text + "\n")
+            else:
+                page_text = page.get_text().strip()
             
             # Step 2: Compute text confidence density
             words_count = len(page_text.split())
@@ -73,6 +124,12 @@ class LayeredExtractor:
                     "confidence": float(round(confidence, 2)),
                     "source": "PyMuPDF",
                     "text": page_text
+                })
+                raw_pages.append({
+                    "page_number": idx + 1,
+                    "width": float(page.rect.width),
+                    "height": float(page.rect.height),
+                    "blocks": page_blocks
                 })
                 continue
             
@@ -121,6 +178,12 @@ class LayeredExtractor:
                     "source": page_source,
                     "text": page_ocr_text
                 })
+                raw_pages.append({
+                    "page_number": idx + 1,
+                    "width": float(page.rect.width),
+                    "height": float(page.rect.height),
+                    "blocks": page_blocks or [{"id": f"p{idx+1}_ocr", "page": idx+1, "text": page_ocr_text, "bbox": None, "spans": []}]
+                })
                 if "OCR" not in method_log:
                     method_log.append("OCR")
             else:
@@ -130,6 +193,12 @@ class LayeredExtractor:
                     "confidence": float(round(confidence, 2)),
                     "source": "PyMuPDF (Low Confidence)",
                     "text": page_text
+                })
+                raw_pages.append({
+                    "page_number": idx + 1,
+                    "width": float(page.rect.width),
+                    "height": float(page.rect.height),
+                    "blocks": page_blocks
                 })
 
         # Merge results from all pages
@@ -154,7 +223,12 @@ class LayeredExtractor:
             "pages": pages_count or 1,
             "confidence": float(round(final_confidence, 2)),
             "method": " + ".join(method_log),
-            "pages_metadata": pages_metadata
+            "pages_metadata": pages_metadata,
+            "raw_document": {
+                "pages": raw_pages,
+                "blocks": all_blocks,
+                "source": "pymupdf",
+            }
         }
 
     @staticmethod

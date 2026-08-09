@@ -170,7 +170,7 @@ export const UploadResumeMobile: React.FC<UploadResumeMobileProps> = ({
       if (res.data && res.data.id) {
         setResumeId(res.data.id);
         setEditedData({
-          personal_info: { name: '', email: '', phone: '', address: '', linkedin: '', github: '', portfolio: '', title: '' },
+          personal_info: { name: '', email: '', phone: '', location: '' },
           summary: '',
           objective: '',
           education: [],

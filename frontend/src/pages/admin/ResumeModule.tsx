@@ -39,21 +39,22 @@ const MOCK_PREVIEW_RESUME = {
     { name: "MongoDB", level: 4 },
     { name: "Docker", level: 4 }
   ],
-  certificateList: [
-    { name: "AWS Certified Solutions Architect", organization: "Amazon Web Services", issue_date: "Jan 2025" }
-  ],
+  
   achievements: {
     hackathons: "Winner of Global AI Builders Hackathon 2025",
     awards: "Employee of the Year at Bimba AI",
     soft_skills: "Technical Leadership, Agile Methodologies, System Design"
   },
-  sectionVisibility: {
+    sectionVisibility: {
     experience: true,
     projects: true,
     skills: true,
-    certificates: true,
+    certifications: true,
     achievements: true
-  }
+  },
+  certifications: [
+    { name: "AWS Certified Solutions Architect", organization: "Amazon Web Services", issue_date: "Jan 2025" }
+  ]
 };
 
 export const ResumeModule: React.FC = () => {
@@ -775,7 +776,7 @@ export const ResumeModule: React.FC = () => {
                     experienceList={MOCK_PREVIEW_RESUME.experienceList}
                     projectList={MOCK_PREVIEW_RESUME.projectList}
                     skillList={MOCK_PREVIEW_RESUME.skillList}
-                    certificateList={MOCK_PREVIEW_RESUME.certificateList}
+                    certifications={MOCK_PREVIEW_RESUME.certifications}
                     achievements={MOCK_PREVIEW_RESUME.achievements}
                     sectionVisibility={MOCK_PREVIEW_RESUME.sectionVisibility}
                     templateId={previewTemplate.slug}

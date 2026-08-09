@@ -44,8 +44,28 @@ class UploadService:
             # Do not save physical local backup anymore, keep it in Cloudinary only.
             filepath = ""
                 
-            # 2. Extract Text via OCRService
-            extracted_text = self.ocr_service.extract_text(file_content, filename)
+            # 2. Extract Text via OCRService (returns structured extraction dict)
+            raw_extraction = self.ocr_service.extract_text(file_content, filename)
+            extracted_text = raw_extraction.get("text", "") if isinstance(raw_extraction, dict) else str(raw_extraction)
+
+            # DEBUG: log raw extraction summary (avoid printing secrets)
+            try:
+                print("[DEBUG RESUME 1] RAW EXTRACTION SUMMARY:")
+                if isinstance(raw_extraction, dict):
+                    pages = raw_extraction.get("pages", 0)
+                    pmeta = raw_extraction.get("pages_metadata", [])
+                    raw_doc = raw_extraction.get("raw_document", {})
+                    blocks = len(raw_doc.get("blocks", [])) if isinstance(raw_doc, dict) else 0
+                    print({
+                        "pages_extracted": pages,
+                        "pages_with_meta": len(pmeta),
+                        "raw_blocks": blocks,
+                        "method": raw_extraction.get("method")
+                    })
+                else:
+                    print("raw_extraction is not a dict; length of text:", len(extracted_text))
+            except Exception as e:
+                print("[DEBUG RESUME 1] Failed to log raw extraction:", e)
             
             # 3. AI Parsing / Falling Back
             prompt = RESUME_PARSE_PROMPT.replace("{resume_text}", extracted_text)
@@ -57,9 +77,32 @@ class UploadService:
                 
                 # 3. Request LLM structured parsing manager fallback chain
                 raw_response = self.ai_manager.call_llm(prompt, feature="Resume Ingestion Parsing", response_format="json_object")
-                
+
+                # DEBUG: log raw AI response (trimmed)
+                try:
+                    print("[DEBUG RESUME 2] AI/PARSER RAW RESPONSE (trimmed):")
+                    print(str(raw_response)[:4000])
+                except Exception as e:
+                    print("[DEBUG RESUME 2] Failed to log AI response:", e)
+
                 # 4. JSON / Schema Verification
                 parsed_data = self.parser.parse_and_validate(raw_response)
+
+                # DEBUG: parsed_data summary
+                try:
+                    print("[DEBUG RESUME 3] PARSED DATA KEYS:")
+                    print({
+                        "education_count": len(parsed_data.get("education", [])) if parsed_data.get("education") is not None else 0,
+                        "certifications_count": len(parsed_data.get("certifications", [])) if parsed_data.get("certifications") is not None else 0,
+                        "experience_count": len(parsed_data.get("experience", [])) if parsed_data.get("experience") is not None else 0,
+                    })
+                    # Print first items for inspection
+                    print({
+                        "education_sample": parsed_data.get("education", [])[:2],
+                        "certifications_sample": parsed_data.get("certifications", [])[:2]
+                    })
+                except Exception as e:
+                    print("[DEBUG RESUME 3] Failed to log parsed data:", e)
             except Exception as ai_err:
                 log_error("UPLOAD", "AI LLM parsing failed or rate-limited; falling back to heuristic extraction", ai_err)
                 try:
@@ -169,7 +212,8 @@ class UploadService:
                 parsed_data=parsed_data,
                 filepath=filepath,
                 cloudinary_url=cloudinary_url,
-                public_id=public_id
+                public_id=public_id,
+                raw_extraction_data=(raw_extraction if isinstance(raw_extraction, dict) else None)
             )
 
             logger.info("INGESTION: Document validation completed")

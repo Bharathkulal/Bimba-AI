@@ -141,7 +141,7 @@ export const TemplateRenderer: React.FC<TemplateRendererProps> = ({ templateJson
         ) : null;
 
       case 'certifications':
-        return resumeData.certifications?.length || resumeData.certificateList?.length ? (
+        return resumeData.certifications?.length ? (
           <ResumeSection 
             title={sec.title || 'Certifications'} 
             colors={colors} 
@@ -150,7 +150,7 @@ export const TemplateRenderer: React.FC<TemplateRendererProps> = ({ templateJson
             spacing={sec.spacing}
           >
             <CertificationSection 
-              items={resumeData.certifications || resumeData.certificateList} 
+              items={resumeData.certifications} 
               colors={colors} 
               fonts={fonts} 
             />

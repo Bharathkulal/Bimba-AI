@@ -9,7 +9,7 @@ interface ResumePreviewSheetProps {
   experienceList: any[];
   projectList: any[];
   skillList: any[];
-  certificateList?: any[];
+  certifications?: any[];
   achievements?: any;
   sectionVisibility?: any;
   templateId: string;
@@ -23,6 +23,7 @@ export const ResumePreviewSheet: React.FC<ResumePreviewSheetProps> = ({
   experienceList = [],
   projectList = [],
   skillList = [],
+  certifications = [],
   templateId = 'harvard'
 }) => {
   const { templatesList } = useResumeBuilderStore();
@@ -51,6 +52,12 @@ export const ResumePreviewSheet: React.FC<ResumePreviewSheetProps> = ({
       degree: edu.degree,
       institution: edu.institution || edu.school,
       year: edu.passing_year || edu.year
+    }))
+    ,
+    certifications: certifications.map((c: any) => ({
+      name: c.name || c.title || '',
+      organization: c.organization || c.issuer || c.issuer_name || '',
+      issue_date: c.issue_date || c.year || c.date || ''
     }))
   };
 

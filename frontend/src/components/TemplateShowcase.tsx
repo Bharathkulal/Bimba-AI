@@ -34,21 +34,22 @@ const MOCK_STUDENT_RESUME = {
     { name: "Design Systems", level: 4 },
     { name: "HTML/CSS/JS", level: 4 }
   ],
-  certificateList: [
-    { name: "Certified Scrum Master", organization: "Scrum Alliance" }
-  ],
+  
   achievements: {
     hackathons: "Linear Design Hackathon Winner 2021",
     awards: "Stripe Design Innovation Award 2023",
     soft_skills: "Collaborative Leadership, Fast Prototyping"
   },
-  sectionVisibility: {
-    experience: true,
-    projects: true,
-    skills: true,
-    certificates: true,
-    achievements: true
-  }
+    sectionVisibility: {
+      experience: true,
+      projects: true,
+      skills: true,
+      certifications: true,
+      achievements: true
+    },
+    certifications: [
+      { name: "Certified Scrum Master", organization: "Scrum Alliance" }
+    ]
 };
 
 const getMockResumeForTemplate = (slug: string) => {
@@ -80,7 +81,7 @@ const getMockResumeForTemplate = (slug: string) => {
           { name: "PostgreSQL", level: 4 },
           { name: "AWS Services", level: 4 }
         ],
-        certificateList: [
+        certifications: [
           { name: "AWS Certified Developer", organization: "Amazon Web Services" }
         ],
         achievements: {
@@ -92,7 +93,7 @@ const getMockResumeForTemplate = (slug: string) => {
           experience: true,
           projects: true,
           skills: true,
-          certificates: true,
+          certifications: true,
           achievements: true
         }
       };
@@ -124,7 +125,7 @@ const getMockResumeForTemplate = (slug: string) => {
           { name: "Python (Pandas)", level: 4 },
           { name: "SQL / Excel", level: 5 }
         ],
-        certificateList: [
+        certifications: [
           { name: "CFA Charterholder", organization: "CFA Institute" }
         ],
         achievements: {
@@ -136,7 +137,7 @@ const getMockResumeForTemplate = (slug: string) => {
           experience: true,
           projects: true,
           skills: true,
-          certificates: true,
+          certifications: true,
           achievements: true
         }
       };
@@ -167,7 +168,7 @@ const getMockResumeForTemplate = (slug: string) => {
           { name: "Supply Chain Logistics", level: 4 },
           { name: "Process Optimization", level: 5 }
         ],
-        certificateList: [
+        certifications: [
           { name: "Six Sigma Black Belt", organization: "ASQ" }
         ],
         achievements: {
@@ -179,7 +180,7 @@ const getMockResumeForTemplate = (slug: string) => {
           experience: true,
           projects: true,
           skills: true,
-          certificates: true,
+          certifications: true,
           achievements: true
         }
       };
@@ -391,7 +392,7 @@ export const TemplateShowcase: React.FC = () => {
                             experienceList={resumeData.experienceList}
                             projectList={resumeData.projectList}
                             skillList={resumeData.skillList}
-                            certificateList={resumeData.certificateList}
+                            certifications={resumeData.certifications}
                             achievements={resumeData.achievements}
                             sectionVisibility={resumeData.sectionVisibility}
                             templateId={tpl.slug}
@@ -524,7 +525,7 @@ export const TemplateShowcase: React.FC = () => {
                     experienceList={getMockResumeForTemplate(previewingTemplate.slug).experienceList}
                     projectList={getMockResumeForTemplate(previewingTemplate.slug).projectList}
                     skillList={getMockResumeForTemplate(previewingTemplate.slug).skillList}
-                    certificateList={getMockResumeForTemplate(previewingTemplate.slug).certificateList}
+                    certifications={getMockResumeForTemplate(previewingTemplate.slug).certifications}
                     achievements={getMockResumeForTemplate(previewingTemplate.slug).achievements}
                     sectionVisibility={getMockResumeForTemplate(previewingTemplate.slug).sectionVisibility}
                     templateId={previewingTemplate.slug}

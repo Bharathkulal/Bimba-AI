@@ -120,6 +120,21 @@ export const ResumeBuilderProvider: React.FC<{ children: React.ReactNode }> = ({
       const load = async () => {
         try {
           const res = await apiClient.get(`/api/resume-studio/profile/${resumeId}`);
+          // DEBUG: log API response received for profile
+          try {
+            // print lightweight summary
+            // eslint-disable-next-line no-console
+            console.debug('[DEBUG RESUME FRONTEND] profile API response summary', {
+              resumeId: resumeId,
+              education_count: Array.isArray(res.data?.education) ? res.data.education.length : 0,
+              certifications_count: Array.isArray(res.data?.certifications) ? res.data.certifications.length : 0,
+              education_sample: res.data?.education?.slice(0,2) || [],
+              certifications_sample: res.data?.certifications?.slice(0,2) || []
+            });
+          } catch (e) {
+            // eslint-disable-next-line no-console
+            console.debug('[DEBUG RESUME FRONTEND] Failed to log profile response', e);
+          }
           setParsedDataState(res.data);
           await fetchBuilderData(resumeId);
         } catch (e) {

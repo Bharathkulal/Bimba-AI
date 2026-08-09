@@ -13,7 +13,13 @@ class ResumeRepository:
     def __init__(self, db: Any):
         self.db = db
 
-    def save_parsed_resume(self, student_id: int, parsed_data: Dict[str, Any], filepath: str, cloudinary_url: str | None = None, public_id: str | None = None) -> int:
+    def save_parsed_resume(self, student_id: int, parsed_data: Dict[str, Any], filepath: str, cloudinary_url: str | None = None, public_id: str | None = None, raw_extraction_data: Dict[str, Any] | None = None) -> int:
+        # Canonicalize parsed data to avoid cross-section ambiguity
+        try:
+            from app.services.resume_canonicalizer import canonicalize_parsed_data
+            parsed_data = canonicalize_parsed_data(parsed_data or {})
+        except Exception:
+            pass
         log_stage("DATABASE", "START", "Initiating saving of parsed resume doc to database")
         
         # 1. Validate DB Connection health
@@ -165,11 +171,15 @@ class ResumeRepository:
             "experience": experience,
             "projects": projects,
             "skills": skills,
-            "certificates": parsed_data.get("certifications", []) or parsed_data.get("certificates", []),
+            "certifications": parsed_data.get("certifications", []),
             "achievements_list": json.dumps(parsed_data.get("achievements", [])),
             "hobbies": parsed_data.get("hobbies", []),
             "languages": parsed_data.get("languages", []),
             "custom_sections": parsed_data.get("custom_sections", []),
+            # Preserve raw extraction and original parsed data for auditing and re-processing
+            "raw_extraction": raw_extraction_data or {},
+            "original_parsed_data": parsed_data,
+            "extraction_version": "1.1",
             
             "created_at": datetime.now(timezone.utc),
             "updated_at": datetime.now(timezone.utc),
@@ -200,6 +210,19 @@ class ResumeRepository:
             import sys
             safe_str = json.dumps(sanitized_doc, indent=2)
             print(safe_str.encode(sys.stdout.encoding or 'utf-8', errors='replace').decode(sys.stdout.encoding or 'utf-8'))
+        # DEBUG: Also print parsed_data education/certifications counts
+        try:
+            pd = parsed_data if 'parsed_data' in locals() else None
+            if pd:
+                print("[DEBUG RESUME 4] parsed_data education/certifications summary:")
+                print({
+                    'education_count': len(pd.get('education', [])) if pd.get('education') is not None else 0,
+                    'certifications_count': len(pd.get('certifications', [])) if pd.get('certifications') is not None else 0,
+                    'education_sample': pd.get('education', [])[:2],
+                    'certifications_sample': pd.get('certifications', [])[:2]
+                })
+        except Exception as e:
+            print('[DEBUG RESUME 4] Failed to print parsed_data debug:', e)
         logger.info("[RESUME] Mongo validation COMPLETE")
 
         logger.info("[RESUME] Mongo save START")

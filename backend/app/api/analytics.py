@@ -83,7 +83,7 @@ def get_dashboard_analytics(student: Student = Depends(get_current_student), db:
             exp_exists = len(r.get("experience", [])) > 0 or r.get("resume_type") == "Fresher"
             proj_exists = len(r.get("projects", [])) > 0
             skill_exists = len(r.get("skills", [])) > 0
-            cert_exists = len(r.get("certificates", [])) > 0
+            cert_exists = len(r.get("certifications", [])) > 0
             
             sections = [
                 bool(r.get("phone") or r.get("address") or r.get("linkedin")),  # personal info
@@ -245,7 +245,7 @@ def get_ats_analytics(student: Student = Depends(get_current_student), db: Any =
     exp_exists = len(best_resume.get("experience", [])) > 0 or best_resume.get("resume_type") == "Fresher"
     proj_exists = len(best_resume.get("projects", [])) > 0
     skill_exists = len(best_resume.get("skills", [])) > 0
-    cert_exists = len(best_resume.get("certificates", [])) > 0
+    cert_exists = len(best_resume.get("certifications", [])) > 0
 
     section_breakdown = {
         "personalInfo": 95 if (best_resume.get("phone") or best_resume.get("address") or best_resume.get("linkedin")) else 0,
@@ -378,7 +378,7 @@ def get_resumes_analytics(student: Student = Depends(get_current_student), db: A
         exp_exists = len(r.get("experience", [])) > 0 or r.get("resume_type") == "Fresher"
         proj_exists = len(r.get("projects", [])) > 0
         skill_exists = len(r.get("skills", [])) > 0
-        cert_exists = len(r.get("certificates", [])) > 0
+        cert_exists = len(r.get("certifications", [])) > 0
 
         sections = {
             "Personal Info": bool(r.get("phone") or r.get("address") or r.get("linkedin")),

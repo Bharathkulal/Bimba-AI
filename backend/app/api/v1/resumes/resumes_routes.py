@@ -182,8 +182,8 @@ def get_resume_detail(id: int, student: Student = Depends(get_current_student), 
         "career_readiness": readiness
     }
     
-    # Backward compatibility fallbacks
-    for k in ["education", "experience", "projects", "skills", "certificates"]:
+    # Backward compatibility fallbacks (canonical keys only)
+    for k in ["education", "experience", "projects", "skills", "certifications"]:
         if k not in response:
             response[k] = resume.get(k) or []
             
@@ -211,6 +211,18 @@ def get_resume_detail(id: int, student: Student = Depends(get_current_student), 
             "summary": resume.get("summary") or "",
             "updated_at": resume.updated_at if isinstance(resume.updated_at, str) else (resume.updated_at.isoformat() if resume.updated_at else datetime.utcnow().isoformat())
         }
+    # DEBUG: log API response summary before returning
+    try:
+        print('[DEBUG RESUME 5] API RESPONSE SUMMARY (get_resume_detail):')
+        print({
+            'resumeId': response.get('id'),
+            'education_count': len(response.get('education', [])),
+            'certifications_count': len(response.get('certifications', [])),
+            'education_sample': response.get('education', [])[:2],
+            'certifications_sample': response.get('certifications', [])[:2]
+        })
+    except Exception as e:
+        print('[DEBUG RESUME 5] Failed to print API response debug:', e)
     return response
 
 @router.post("/create")
@@ -266,8 +278,9 @@ def create_resume(payload: dict, student: Student = Depends(get_current_student)
         resume_doc["resume"]["projects"] = []
     if "skills" not in resume_doc["resume"]:
         resume_doc["resume"]["skills"] = []
-    if "certificates" not in resume_doc["resume"]:
-        resume_doc["resume"]["certificates"] = []
+    # Ensure canonical `certifications` key exists; migrate legacy `certificates` if present
+    if "certifications" not in resume_doc["resume"]:
+        resume_doc["resume"]["certifications"] = resume_doc["resume"].pop("certificates", [])
     if "master" not in resume_doc["resume"]:
         resume_doc["resume"]["master"] = {
             "name": resume_doc["name"],
@@ -374,6 +387,18 @@ def sync_resume_profile(id: int, student_id: int, payload: dict, db: Any):
         )
     except Exception as e:
         print(f"[sync_resume_profile error] {e}")
+    # DEBUG: log profile_doc mapping summary
+    try:
+        print("[DEBUG RESUME 6] PROFILE DOC MAPPING SUMMARY:")
+        print({
+            'resumeId': id,
+            'education_count': len(profile_doc.get('education', [])),
+            'certifications_count': len(profile_doc.get('certifications', [])),
+            'education_sample': profile_doc.get('education', [])[:2],
+            'certifications_sample': profile_doc.get('certifications', [])[:2]
+        })
+    except Exception as e:
+        print('[DEBUG RESUME 6] Failed to print profile_doc debug:', e)
 
 @router.get("/profile/{resume_id}")
 def get_resume_profile(resume_id: int, student: Student = Depends(get_current_student), db: Any = Depends(get_db)):
@@ -406,6 +431,18 @@ def get_resume_profile(resume_id: int, student: Student = Depends(get_current_st
             "lastUpdated": datetime.utcnow().isoformat()
         }
     from app.core.mongodb import MongoModel
+    # DEBUG: log profile_doc retrieved from DB
+    try:
+        print('[DEBUG RESUME 7] PROFILE DOC FROM DB:')
+        print({
+            'resumeId': profile_doc.get('resumeId'),
+            'education_count': len(profile_doc.get('education', [])),
+            'certifications_count': len(profile_doc.get('certifications', [])),
+            'education_sample': profile_doc.get('education', [])[:2],
+            'certifications_sample': profile_doc.get('certifications', [])[:2]
+        })
+    except Exception as e:
+        print('[DEBUG RESUME 7] Failed to print profile_doc from DB debug:', e)
     return MongoModel(profile_doc)
 
 @router.put("/profile/{resume_id}")
@@ -484,7 +521,7 @@ def duplicate_resume(id: int, student: Student = Depends(get_current_student), d
     resume_data = resume.get("resume", {}).copy()
     
     # Map raw lists ensuring nested child item IDs exist
-    for key in ["education", "experience", "projects", "skills", "certificates", "certifications"]:
+    for key in ["education", "experience", "projects", "skills", "certifications"]:
         if key in resume_data and isinstance(resume_data[key], list):
             new_list = []
             for item in resume_data[key]:
@@ -643,12 +680,13 @@ def delete_skill(skill_id: int, student: Student = Depends(get_current_student),
 @router.post("/{id}/certificate")
 def add_certificate(id: int, payload: dict, student: Student = Depends(get_current_student), db: Any = Depends(get_db)):
     verify_ownership(id, student.id, db)
-    dynamic_add_item(id, "certificates", payload, "resume_certificate", db)
+    # use canonical `certifications` key
+    dynamic_add_item(id, "certifications", payload, "resume_certificate", db)
     return {"success": True}
 
 @router.delete("/certificate/{cert_id}")
 def delete_certificate(cert_id: int, student: Student = Depends(get_current_student), db: Any = Depends(get_db)):
-    dynamic_delete_item("certificates", cert_id, student.id, db)
+    dynamic_delete_item("certifications", cert_id, student.id, db)
     return {"success": True}
 
 # --- AI OPERATION ENDPOINTS ---
@@ -897,7 +935,7 @@ def get_pdf_export(id: int, inline: bool = False, student: Student = Depends(get
     experience = resume.get("experience", [])
     projects = resume.get("projects", [])
     skills = resume.get("skills", [])
-    certificates = resume.get("certificates", [])
+    certifications = resume.get("certifications", [])
     
     # Log download action
     db.resume_downloads.insert_one({
@@ -1140,7 +1178,7 @@ def get_public_resume(id: int, db: Any = Depends(get_db)):
     }
     
     # Backward compatibility fallbacks
-    for k in ["education", "experience", "projects", "skills", "certificates"]:
+    for k in ["education", "experience", "projects", "skills", "certifications"]:
         if k not in response:
             response[k] = resume.get(k) or []
             
@@ -1978,7 +2016,7 @@ def get_docx_export_endpoint(
     experience = resume.get("experience", [])
     projects = resume.get("projects", [])
     skills = resume.get("skills", [])
-    certificates = resume.get("certificates", [])
+    certifications = resume.get("certifications", [])
     
     resume_data = {
         "master": {
@@ -2004,7 +2042,7 @@ def get_docx_export_endpoint(
         "experience": [{"company": exp.get("company"), "position": exp.get("position"), "duration": exp.get("duration"), "description": exp.get("description")} for exp in experience],
         "projects": [{"name": p.get("name"), "tech_stack": p.get("tech_stack"), "description": p.get("description"), "duration": p.get("duration")} for p in projects],
         "skills": [{"category": s.get("category"), "name": s.get("name"), "level": s.get("level")} for s in skills],
-        "certificates": [{"name": c.get("name"), "organization": c.get("organization"), "issue_date": c.get("issue_date")} for c in certificates]
+            "certifications": [{"name": c.get("name"), "organization": c.get("organization"), "issue_date": c.get("issue_date")} for c in certifications]
     }
     
     db.resume_downloads.insert_one({

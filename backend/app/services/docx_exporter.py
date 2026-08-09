@@ -248,10 +248,10 @@ def generate_docx_resume(resume_data: dict) -> io.BytesIO:
             items_run.font.color.rgb = COLOR_TEXT
 
     # 7. Certifications
-    certificates = resume_data.get("certificates", [])
-    if certificates:
+    certifications = resume_data.get("certifications", [])
+    if certifications:
         add_section_heading("Certifications")
-        for cert in certificates:
+        for cert in certifications:
             p = doc.add_paragraph()
             p.paragraph_format.space_after = Pt(4)
             
