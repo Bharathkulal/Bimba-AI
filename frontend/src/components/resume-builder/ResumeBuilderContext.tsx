@@ -130,6 +130,23 @@ export const ResumeBuilderProvider: React.FC<{ children: React.ReactNode }> = ({
     }
   }, [resumeId, fetchBuilderData]);
 
+  // Check query params and restore session
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const urlId = params.get('id');
+    if (urlId) {
+      const parsedUrlId = parseInt(urlId, 10);
+      if (parsedUrlId && parsedUrlId !== resumeId) {
+        setResumeId(parsedUrlId);
+      }
+      if (currentStep < 4) {
+        setStep(4);
+      }
+    } else if (resumeId && currentStep < 4) {
+      setStep(4);
+    }
+  }, [resumeId, currentStep]);
+
   const triggerAutosave = async (updatedData: Partial<ResumeBuilderData>) => {
     if (!resumeId || !parsedData) return;
     setIsAutosaving(true);
