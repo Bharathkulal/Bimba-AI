@@ -81,6 +81,14 @@ export const UploadResumeMobile: React.FC<UploadResumeMobileProps> = () => {
     }
   }, [hookResumeId]);
 
+  // Auto-initialize scratch resume if URL mode is 'scratch'
+  const modeParam = searchParams.get('mode');
+  useEffect(() => {
+    if (modeParam === 'scratch' && !resumeId && !queryResumeId && !isSaving) {
+      handleCreateFromScratch();
+    }
+  }, [modeParam, resumeId, queryResumeId]);
+
   const resetUpload = () => {
     setResumeId(null);
     setLocalUploadState(null);
