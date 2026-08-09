@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, Plus, Trash2, X, AlertCircle, Sparkles, CheckCircle2, ChevronRight } from 'lucide-react';
-import { useResumeForm } from './hooks/useResumeForm';
+import { useResumeForm } from '../hooks/useResumeForm';
 import { StepProgressBar } from './components/StepProgressBar';
 import { StickyActionBar } from './components/StickyActionBar';
-import { TemplateRegistry } from '../../components/resume/templates';
+import { TemplateRegistry } from '../../../components/resume/templates';
 
 interface CreateFromScratchMobileProps {
   onBackToUpload: () => void;

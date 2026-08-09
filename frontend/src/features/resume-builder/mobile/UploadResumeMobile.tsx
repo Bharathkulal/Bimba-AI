@@ -3,8 +3,8 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import { AlertCircle, AlertTriangle, ArrowLeft, Check, Plus, Trash2, ChevronLeft, ChevronRight, FileText, Loader2, Sparkles, Download, CheckCircle2 } from 'lucide-react';
 import { useResumeUpload } from '../hooks/useResumeUpload';
 import { MobileFileDropZone } from './components/MobileFileDropZone';
-import { apiClient } from '../../services/api';
-import type { ResumeBuilderData, ExperienceItem, EducationItem } from '../../store/resumeBuilderStore';
+import { apiClient } from '../../../services/api';
+import type { ResumeBuilderData, ExperienceItem, EducationItem } from '../../../store/resumeBuilderStore';
 
 interface UploadResumeMobileProps {
   onSwitchToScratch: () => void;
