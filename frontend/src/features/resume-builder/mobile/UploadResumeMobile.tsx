@@ -336,6 +336,19 @@ export const UploadResumeMobile: React.FC<UploadResumeMobileProps> = ({ onSwitch
               </div>
             )}
 
+            {/* Extraction Incomplete Warning */}
+            {(editedData as any).extraction_incomplete && (
+              <div className="p-4 bg-rose-50 dark:bg-rose-500/10 border border-rose-200 dark:border-rose-500/20 rounded-2xl flex items-start gap-2.5">
+                <AlertTriangle size={18} className="text-rose-600 dark:text-rose-450 shrink-0 mt-0.5" />
+                <div className="text-xs text-left">
+                  <h4 className="font-extrabold text-slate-900 dark:text-rose-400">Incomplete Extraction Warning</h4>
+                  <p className="text-slate-500 dark:text-slate-400 mt-1 font-semibold leading-relaxed">
+                    {(editedData as any).extraction_incomplete_reason || 'Parsed content density is low compared to the source file text layer. Please review carefully.'}
+                  </p>
+                </div>
+              </div>
+            )}
+
             {/* Form Fields Accordion Groups */}
             <AccordionSection title="Personal Information" isLowConfidence={isSectionLowConfidence('personal_info')}>
               <div className="flex flex-col gap-3.5 text-left">

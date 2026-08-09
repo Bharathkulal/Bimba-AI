@@ -448,10 +448,31 @@ def update_resume(id: int, payload: dict, student: Student = Depends(get_current
 
 @router.delete("/{id}")
 def delete_resume(id: int, student: Student = Depends(get_current_student), db: Any = Depends(get_db)):
-    verify_ownership(id, student.id, db)
+    resume_doc = db.resumes.find_one({"id": id})
+    if not resume_doc:
+        raise HTTPException(status_code=404, detail="Resume not found")
+    resume = ResumeMaster(resume_doc)
+    if resume.student_id != student.id:
+        raise HTTPException(status_code=403, detail="Access denied: You do not own this resume")
+
+    # Clean up Cloudinary file if present
+    public_id = resume_doc.get("public_id")
+    if not public_id and isinstance(resume_doc.get("resume"), dict):
+        public_id = resume_doc["resume"].get("cloudinary", {}).get("public_id")
+    if public_id:
+        try:
+            from app.services.cloudinary_service import delete_file
+            delete_file(public_id)
+        except Exception as e:
+            print(f"Failed to delete Cloudinary file: {e}")
+
     db.resumes.delete_one({"id": id})
+    db.resume_profiles.delete_one({"resumeId": id})
+    db.resume_uploads.delete_many({"resumeId": id})
+    db.resume_extractions.delete_many({"resumeId": id})
     db.resume_ats.delete_many({"resume_id": id})
     db.career_readiness.delete_many({"resume_id": id})
+    db.career_interviews.delete_many({"resumeId": id})
     db.resume_versions.delete_many({"resume_id": id})
     return {"success": True}
 

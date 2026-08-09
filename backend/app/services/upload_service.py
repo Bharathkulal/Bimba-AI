@@ -120,6 +120,28 @@ class UploadService:
                 if sec not in parsed_data or parsed_data[sec] is None:
                     parsed_data[sec] = ""
 
+            # Post-extraction validation: compare word counts to verify complete extraction
+            def count_words(val: Any) -> int:
+                if isinstance(val, str):
+                    return len(val.split())
+                elif isinstance(val, list):
+                    return sum(count_words(item) for item in val)
+                elif isinstance(val, dict):
+                    return sum(count_words(item) for item in val.values())
+                return 0
+
+            extracted_word_count = len(extracted_text.split())
+            parsed_word_count = count_words(parsed_data)
+            
+            parsed_data["extraction_incomplete"] = False
+            parsed_data["extraction_incomplete_reason"] = ""
+            
+            if extracted_word_count > 30:
+                ratio = parsed_word_count / extracted_word_count
+                if ratio < 0.65:
+                    parsed_data["extraction_incomplete"] = True
+                    parsed_data["extraction_incomplete_reason"] = f"Extraction validation alert: parsed content density is only {ratio*100:.1f}%. The document text might not be fully parsed."
+
             # 5. Database Save Operations
             warnings = []
             cloudinary_url = None

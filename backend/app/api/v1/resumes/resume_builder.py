@@ -323,7 +323,14 @@ async def generate_resume_pdf_endpoint(
 
         gate_errors = run_quality_gate(payload.resume_data, original_data)
         if gate_errors:
-            print(f"[PDF-GEN] Step 2 WARNING: Quality gate found issues, but allowing download: {gate_errors}")
+            print(f"[PDF-GEN] Step 2 FAILED: Quality gate found validation errors: {gate_errors}")
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail={
+                    "message": "Resume data validation failed.",
+                    "errors": gate_errors
+                }
+            )
         else:
             print(f"[PDF-GEN] Step 2 OK: Quality gate passed")
 
@@ -360,13 +367,50 @@ async def generate_resume_pdf_endpoint(
         if not isinstance(orig_pages, int):
             orig_pages = 1
         pdf_val = PDFValidator.validate_pdf_content(pdf_bytes, original_page_count=orig_pages)
+        
+        # Lossless Data Verification Diff Check
+        try:
+            import pymupdf
+            doc = pymupdf.open(stream=pdf_bytes, filetype="pdf")
+            pdf_text = "".join(page.get_text() for page in doc).lower()
+            doc.close()
+            
+            # Check candidate name
+            name = payload.resume_data.get("personal_info", {}).get("name", "")
+            if name and name.lower() not in pdf_text:
+                pdf_val["errors"].append(f"Lossless check error: Name '{name}' is missing in the compiled PDF.")
+                pdf_val["isValid"] = False
+                
+            # Check companies
+            for exp in payload.resume_data.get("experience", []):
+                comp = exp.get("company", "")
+                if comp and comp.lower() not in pdf_text:
+                    pdf_val["errors"].append(f"Lossless check error: Experience company '{comp}' is missing in the compiled PDF.")
+                    pdf_val["isValid"] = False
+                    
+            # Check projects
+            for proj in payload.resume_data.get("projects", []):
+                title = proj.get("title") or proj.get("name")
+                if title and title.lower() not in pdf_text:
+                    pdf_val["errors"].append(f"Lossless check error: Project title '{title}' is missing in the compiled PDF.")
+                    pdf_val["isValid"] = False
+
+            # Check education
+            for edu in payload.resume_data.get("education", []):
+                inst = edu.get("institution", "")
+                if inst and inst.lower() not in pdf_text:
+                    pdf_val["errors"].append(f"Lossless check error: Education institution '{inst}' is missing in the compiled PDF.")
+                    pdf_val["isValid"] = False
+        except Exception as ve:
+            print(f"[PDF-GEN] Verification check exception: {ve}")
+
         print(f"[PDF-GEN] Step 4: Validation result: isValid={pdf_val['isValid']}, errors={pdf_val.get('errors', [])}, warnings={pdf_val.get('warnings', [])}")
         if not pdf_val["isValid"]:
             print(f"[PDF-GEN] Step 4 FAILED: PDF validation errors: {pdf_val['errors']}")
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail={
-                    "message": "Generated PDF readability checks failed.",
+                    "message": "Generated PDF readability/lossless checks failed.",
                     "errors": pdf_val["errors"]
                 }
             )

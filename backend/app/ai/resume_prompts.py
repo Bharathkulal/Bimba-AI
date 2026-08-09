@@ -31,6 +31,7 @@ Extract all available sections:
 24. custom_sections (list of objects representing ANY OTHER sections present in the resume that do not map to standard fields. Each custom section object must have "section_name" (string) and "content" (array of strings or details)).
 
 CRITICAL RULES:
+- EXTRACT VERBATIM: Do not paraphrase, do not shorten, do not summarize, do not omit any line, and preserve exact wording, spelling, punctuation, and formatting structure of the source text. Every single bullet point, date, number, punctuation mark, and abbreviation must be extracted exactly as it appears in the source.
 - Return ONLY a valid JSON object matching the exact schema below.
 - Do NOT add markdown code wrappers (no ```json).
 - NEVER silently discard any section or information from the uploaded resume. Any heading/section not explicitly matching one of the standard schema fields (1-23) MUST be captured under "custom_sections" with its original header name and all related text/bullet points as content.
