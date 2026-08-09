@@ -414,6 +414,25 @@ async def generate_resume_pdf_endpoint(
         })
         print(f"[PDF-GEN] Step 6 OK: Metadata saved (gen_id={gen_id})")
 
+        # 7. Log successful download in download_logs and activity_logs
+        try:
+            from datetime import datetime
+            db.download_logs.insert_one({
+                "id": get_next_sequence("download_logs"),
+                "student_id": student.id,
+                "format": "PDF",
+                "created_at": datetime.utcnow()
+            })
+            db.activity_logs.insert_one({
+                "id": get_next_sequence("activity_logs"),
+                "student_id": student.id,
+                "activity": "Downloaded Resume: PDF Format",
+                "created_at": datetime.utcnow()
+            })
+            print("[PDF-GEN] Step 7 OK: Successful download logged in download_logs and activity_logs")
+        except Exception as log_err:
+            print(f"[PDF-GEN] Step 7 WARNING: Failed to insert download/activity log: {log_err}")
+
         import base64
         pdf_base64 = base64.b64encode(pdf_bytes).decode('utf-8')
         print(f"[PDF-GEN] COMPLETE: PDF generated successfully ({len(pdf_base64)} base64 chars)")

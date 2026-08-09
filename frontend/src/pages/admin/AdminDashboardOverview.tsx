@@ -7,23 +7,81 @@ import {
 import { Button } from '../../components/Button';
 import { Card } from '../../components/Card';
 import { adminService } from '../../services/admin';
-import type { AdminDashboardData } from '../../services/admin';
+import type { AdminDashboardData, AdminAnalyticsDashboardData } from '../../services/admin';
+import { 
+  ResponsiveContainer, AreaChart, Area, XAxis, YAxis, Tooltip, CartesianGrid,
+  BarChart, Bar, LineChart, Line
+} from 'recharts';
+
+const CustomTooltip = ({ active, payload, label }: any) => {
+  if (active && payload && payload.length) {
+    return (
+      <div className="bg-white dark:bg-[#0f172a] border border-slate-200 dark:border-white/10 rounded-xl p-3 shadow-xl text-left">
+        <p className="text-[10px] text-slate-500 dark:text-slate-400 font-bold uppercase tracking-wider">{label}</p>
+        <p className="text-sm font-black text-slate-900 dark:text-white mt-1">
+          {payload[0].name}: <span className="text-[#10b981]">{payload[0].value}</span>
+        </p>
+      </div>
+    );
+  }
+  return null;
+};
+
+const RenderChart = ({ title, isLoading, data, children, emptyMessage }: { 
+  title: string; 
+  isLoading: boolean; 
+  data: any[] | undefined; 
+  children: React.ReactNode;
+  emptyMessage?: string;
+}) => {
+  const hasData = data && data.length > 0 && data.some(d => Object.values(d).some(v => typeof v === 'number' && v > 0));
+
+  return (
+    <div className="border border-border p-4 rounded-xl bg-slate-50/30 flex flex-col h-[180px] text-left">
+      <p className="text-[9.5px] font-bold text-slate-400 uppercase tracking-wide mb-2">{title}</p>
+      <div className="flex-grow flex items-center justify-center relative w-full h-[120px]">
+        {isLoading ? (
+          <div className="absolute inset-0 flex items-center justify-center">
+            <div className="w-6 h-6 border-2 border-[#111111]/30 border-t-transparent rounded-full animate-spin" />
+          </div>
+        ) : !hasData ? (
+          <div className="absolute inset-0 flex flex-col items-center justify-center text-center p-4">
+            <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">{emptyMessage || "No data available yet"}</span>
+            <span className="text-[9px] text-slate-500 mt-1">Metrics will sync as platform activity increases.</span>
+          </div>
+        ) : (
+          <ResponsiveContainer width="100%" height="100%">
+            {children as any}
+          </ResponsiveContainer>
+        )}
+      </div>
+    </div>
+  );
+};
 
 export const AdminDashboardOverview: React.FC = () => {
   const navigate = useNavigate();
   const [stats, setStats] = useState<AdminDashboardData | null>(null);
+  const [analyticsData, setAnalyticsData] = useState<AdminAnalyticsDashboardData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [isAnalyticsLoading, setIsAnalyticsLoading] = useState(true);
   const [syncing, setSyncing] = useState(false);
 
   const fetchStats = async () => {
     try {
       setIsLoading(true);
-      const data = await adminService.getDashboard();
-      setStats(data);
+      setIsAnalyticsLoading(true);
+      const [statsData, analytics] = await Promise.all([
+        adminService.getDashboard(),
+        adminService.getAnalyticsDashboard()
+      ]);
+      setStats(statsData);
+      setAnalyticsData(analytics);
     } catch (err) {
       console.error("Failed to load dashboard metrics:", err);
     } finally {
       setIsLoading(false);
+      setIsAnalyticsLoading(false);
     }
   };
 
@@ -170,48 +228,54 @@ export const AdminDashboardOverview: React.FC = () => {
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
               {/* Chart 1: Resume Growth */}
-              <div className="border border-border p-3.5 rounded-xl bg-slate-50/30">
-                <p className="text-[9.5px] font-bold text-slate-400 uppercase tracking-wide">Resume Growth Trend</p>
-                <div className="h-28 flex items-end mt-2">
-                  <svg className="w-full h-full" viewBox="0 0 200 100">
-                    <path d="M0 80 Q50 40, 100 65 T200 15" fill="none" stroke="#111111" strokeWidth="2.2" />
-                    <path d="M0 80 Q50 40, 100 65 T200 15 L200 100 L0 100 Z" fill="rgba(34, 197, 94, 0.08)" />
-                  </svg>
-                </div>
-              </div>
+              <RenderChart title="Resume Growth Trend" isLoading={isAnalyticsLoading} data={analyticsData?.resume_growth} emptyMessage="No resumes created yet">
+                <AreaChart data={analyticsData?.resume_growth} margin={{ top: 5, right: 5, left: -25, bottom: 0 }}>
+                  <defs>
+                    <linearGradient id="colorResume" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#111111" stopOpacity={0.2}/>
+                      <stop offset="95%" stopColor="#111111" stopOpacity={0}/>
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid strokeDasharray="3 3" stroke="rgba(0,0,0,0.03)" vertical={false} />
+                  <XAxis dataKey="month" stroke="rgba(0,0,0,0.4)" fontSize={8} tickLine={false} />
+                  <YAxis stroke="rgba(0,0,0,0.4)" fontSize={8} tickLine={false} />
+                  <Tooltip content={<CustomTooltip />} />
+                  <Area type="monotone" dataKey="count" name="Resumes" stroke="#111111" strokeWidth={1.8} fillOpacity={1} fill="url(#colorResume)" />
+                </AreaChart>
+              </RenderChart>
 
               {/* Chart 2: ATS Score Trend */}
-              <div className="border border-border p-3.5 rounded-xl bg-slate-50/30">
-                <p className="text-[9.5px] font-bold text-slate-400 uppercase tracking-wide">ATS Score keyword Distribution</p>
-                <div className="h-28 flex items-end mt-2">
-                  <svg className="w-full h-full" viewBox="0 0 200 100">
-                    <path d="M0 60 L40 50 L80 70 L120 30 L160 40 L200 20" fill="none" stroke="#F59E0B" strokeWidth="2.2" />
-                  </svg>
-                </div>
-              </div>
+              <RenderChart title="ATS Score keyword Distribution" isLoading={isAnalyticsLoading} data={analyticsData?.ats_score_distribution} emptyMessage="No ATS reports scored yet">
+                <LineChart data={analyticsData?.ats_score_distribution} margin={{ top: 5, right: 5, left: -25, bottom: 0 }}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="rgba(0,0,0,0.03)" vertical={false} />
+                  <XAxis dataKey="month" stroke="rgba(0,0,0,0.4)" fontSize={8} tickLine={false} />
+                  <YAxis stroke="rgba(0,0,0,0.4)" fontSize={8} tickLine={false} />
+                  <Tooltip content={<CustomTooltip />} />
+                  <Line type="monotone" dataKey="avg_score" name="Avg ATS Score" stroke="#F59E0B" strokeWidth={2} dot={{ r: 2 }} activeDot={{ r: 4 }} />
+                </LineChart>
+              </RenderChart>
 
               {/* Chart 3: Student Registrations */}
-              <div className="border border-border p-3.5 rounded-xl bg-slate-50/30">
-                <p className="text-[9.5px] font-bold text-slate-400 uppercase tracking-wide">Student Profile Registrations</p>
-                <div className="h-28 flex items-end justify-around gap-2 mt-2 px-2">
-                  {[45, 60, 35, 70, 50, 95].map((val, idx) => (
-                    <div key={idx} className="flex flex-col items-center flex-1">
-                      <div className="w-3.5 -[#111111] rounded-t" style={{ height: `${val * 0.7}px` }} />
-                      <span className="text-[8px] text-slate-500 mt-1">M{idx+1}</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
+              <RenderChart title="Student Profile Registrations" isLoading={isAnalyticsLoading} data={analyticsData?.registrations} emptyMessage="No student signups yet">
+                <BarChart data={analyticsData?.registrations} margin={{ top: 5, right: 5, left: -25, bottom: 0 }}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="rgba(0,0,0,0.03)" vertical={false} />
+                  <XAxis dataKey="month" stroke="rgba(0,0,0,0.4)" fontSize={8} tickLine={false} />
+                  <YAxis stroke="rgba(0,0,0,0.4)" fontSize={8} tickLine={false} />
+                  <Tooltip content={<CustomTooltip />} />
+                  <Bar dataKey="count" name="Registrations" fill="#111111" radius={[3, 3, 0, 0]} maxBarSize={20} />
+                </BarChart>
+              </RenderChart>
 
               {/* Chart 4: Resume Downloads */}
-              <div className="border border-border p-3.5 rounded-xl bg-slate-50/30">
-                <p className="text-[9.5px] font-bold text-slate-400 uppercase tracking-wide">Resume Download Volume</p>
-                <div className="h-28 flex items-end mt-2">
-                  <svg className="w-full h-full" viewBox="0 0 200 100">
-                    <path d="M0 90 L30 50 L60 80 L90 30 L120 70 L150 20 L200 40" fill="none" stroke="#111111" strokeWidth="2.2" />
-                  </svg>
-                </div>
-              </div>
+              <RenderChart title="Resume Download Volume" isLoading={isAnalyticsLoading} data={analyticsData?.download_volume} emptyMessage="No resume downloads yet">
+                <LineChart data={analyticsData?.download_volume} margin={{ top: 5, right: 5, left: -25, bottom: 0 }}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="rgba(0,0,0,0.03)" vertical={false} />
+                  <XAxis dataKey="month" stroke="rgba(0,0,0,0.4)" fontSize={8} tickLine={false} />
+                  <YAxis stroke="rgba(0,0,0,0.4)" fontSize={8} tickLine={false} />
+                  <Tooltip content={<CustomTooltip />} />
+                  <Line type="monotone" dataKey="count" name="Downloads" stroke="#111111" strokeWidth={2} dot={{ r: 2 }} activeDot={{ r: 4 }} />
+                </LineChart>
+              </RenderChart>
             </div>
           </Card>
         </div>
