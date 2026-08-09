@@ -5,6 +5,8 @@ import { ResumeBuilderFlow } from '../../components/resume-builder/ResumeBuilder
 import { UploadResumeMobile } from './mobile/UploadResumeMobile';
 import { CreateFromScratchMobile } from './mobile/CreateFromScratchMobile';
 
+import { ResumeBuilderProvider } from '../../components/resume-builder/ResumeBuilderContext';
+
 export const ResumeBuilderRouter: React.FC = () => {
   const isMobile = useIsMobileViewport();
   const [searchParams, setSearchParams] = useSearchParams();
@@ -21,7 +23,9 @@ export const ResumeBuilderRouter: React.FC = () => {
   }
 
   return (
-    <UploadResumeMobile onSwitchToScratch={() => {}} />
+    <ResumeBuilderProvider>
+      <UploadResumeMobile onSwitchToScratch={() => {}} />
+    </ResumeBuilderProvider>
   );
 };
 

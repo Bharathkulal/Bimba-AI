@@ -166,8 +166,6 @@ interface ChatMessage {
 const PROGRESS_STEP_DELAY = 150;
 const COMPLETION_DELAY = 600;
 
-import { UploadResumeMobile } from '../features/resume-builder/mobile/UploadResumeMobile';
-
 export const UploadResumeWizard: React.FC<UploadResumeWizardProps> = ({
   onClose,
   onSuccess,
@@ -176,23 +174,9 @@ export const UploadResumeWizard: React.FC<UploadResumeWizardProps> = ({
   initialStep = 1,
   onSwitchToScratch
 }) => {
-  const [isMobile, setIsMobile] = useState(false);
-  useEffect(() => {
-    const handleResize = () => {
-      setIsMobile(window.innerWidth < 768);
-    };
-    handleResize();
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
-  }, []);
-
   // 12-Step flow controller
   const [step, setStep] = useState<number>(initialStep || (initialFile ? 2 : 1));
   const [file, setFile] = useState<File | null>(initialFile);
-
-  if (isMobile) {
-    return <UploadResumeMobile onSwitchToScratch={onSwitchToScratch || (() => {})} />;
-  }
 
   // Real DB Data Models
   const [parsedData, setParsedData] = useState<any>({

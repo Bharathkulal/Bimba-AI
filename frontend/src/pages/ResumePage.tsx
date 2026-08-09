@@ -23,10 +23,14 @@ import { ResumeHealthDashboard } from '../components/resume/ResumeHealthDashboar
 import { ResumeImprovement } from '../components/resume/ResumeImprovement';
 import { ResumeBuilder } from '../components/resume/ResumeBuilder';
 import { CreateFromScratchWizard } from '../components/resume/CreateFromScratchWizard';
+import { useIsMobileViewport } from '../features/resume-builder/hooks/useIsMobileViewport';
+import { UploadResumeMobile } from '../features/resume-builder/mobile/UploadResumeMobile';
+import { ResumeBuilderProvider } from '../components/resume-builder/ResumeBuilderContext';
 
 export const ResumePage: React.FC = () => {
   const navigate = useNavigate();
   const user = useUserStore((state) => state.user);
+  const isMobile = useIsMobileViewport();
 
   const getDisplayName = () => {
     if (!user) return 'Student';
@@ -650,42 +654,71 @@ export const ResumePage: React.FC = () => {
       </div>
 
       {showWizard && (
-        <UploadResumeWizard 
-          initialFile={wizardFile}
-          onClose={() => {
-            setShowWizard(false);
-            setWizardFile(null);
-            fetchResumeData();
-          }}
-          onSuccess={() => {
-            setShowWizard(false);
-            setWizardFile(null);
-            fetchResumeData();
-          }}
-          onSwitchToScratch={() => {
-            setShowWizard(false);
-            setWizardFile(null);
-            setShowScratchWizard(true);
-          }}
-          isDark={isDark}
-        />
+        isMobile ? (
+          <ResumeBuilderProvider>
+            <UploadResumeMobile 
+              onSwitchToScratch={() => {
+                setShowWizard(false);
+                setShowScratchWizard(true);
+              }}
+              onClose={() => {
+                setShowWizard(false);
+                setWizardFile(null);
+                fetchResumeData();
+              }}
+            />
+          </ResumeBuilderProvider>
+        ) : (
+          <UploadResumeWizard 
+            initialFile={wizardFile}
+            onClose={() => {
+              setShowWizard(false);
+              setWizardFile(null);
+              fetchResumeData();
+            }}
+            onSuccess={() => {
+              setShowWizard(false);
+              setWizardFile(null);
+              fetchResumeData();
+            }}
+            onSwitchToScratch={() => {
+              setShowWizard(false);
+              setWizardFile(null);
+              setShowScratchWizard(true);
+            }}
+            isDark={isDark}
+          />
+        )
       )}
 
       {showScratchWizard && (
-        <CreateFromScratchWizard
-          initialContact={{
-            name: displayName === 'Student' ? '' : displayName,
-            email: user?.personal_email || '',
-            phone: (user as any)?.phone || '',
-            location: (user as any)?.address || ''
-          }}
-          onClose={() => setShowScratchWizard(false)}
-          onSuccess={() => {
-            setShowScratchWizard(false);
-            fetchResumeData();
-          }}
-          isDark={isDark}
-        />
+        isMobile ? (
+          <ResumeBuilderProvider>
+            <UploadResumeMobile 
+              onSwitchToScratch={() => {}}
+              initialMode="scratch"
+              onClose={() => {
+                setShowScratchWizard(false);
+                fetchResumeData();
+              }}
+            />
+          </ResumeBuilderProvider>
+        ) : (
+          <CreateFromScratchWizard
+            initialContact={{
+              name: displayName === 'Student' ? '' : displayName,
+              email: user?.personal_email || '',
+              phone: (user as any)?.phone || '',
+              location: (user as any)?.address || ''
+            }}
+            onClose={() => setShowScratchWizard(false)}
+            onSuccess={() => {
+              setShowScratchWizard(false);
+              fetchResumeData();
+            }}
+            isDark={isDark}
+          />
+        )
       )}
 
       {activeAnalysisResumeId !== null && (() => {
