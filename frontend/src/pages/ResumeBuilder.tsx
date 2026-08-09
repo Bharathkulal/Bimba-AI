@@ -1,8 +1,8 @@
 import React from 'react';
-import { ResumeBuilderFlow } from '../components/resume-builder/ResumeBuilderFlow';
+import { ResumeBuilderRouter } from '../features/resume-builder/ResumeBuilderRouter';
 
 export const ResumeBuilder: React.FC = () => {
-  return <ResumeBuilderFlow />;
+  return <ResumeBuilderRouter />;
 };
 
 export default ResumeBuilder;
