@@ -234,6 +234,110 @@ def get_admin_dashboard(admin: AdminUser = Depends(get_current_admin), db: Any =
         "averageAtsScore": avg_ats
     }
 
+@router.get("/analytics/dashboard")
+def get_admin_analytics_dashboard(admin: AdminUser = Depends(get_current_admin), db: Any = Depends(get_db)):
+    from collections import defaultdict
+    
+    # 1. Resume Growth Trend: count of created resumes per month
+    resume_growth_map = defaultdict(int)
+    for r in db.resumes.find({}, {"created_at": 1}):
+        dt = r.get("created_at")
+        if not dt:
+            continue
+        if isinstance(dt, str):
+            try:
+                dt = datetime.fromisoformat(dt.replace("Z", "+00:00"))
+            except Exception:
+                continue
+        month_str = dt.strftime("%Y-%m")
+        resume_growth_map[month_str] += 1
+    
+    # 2. ATS Score Keyword Distribution: average ATS scores per month
+    ats_map = defaultdict(list)
+    for r in db.resumes.find({}, {"created_at": 1, "ats_score": 1}):
+        dt = r.get("created_at")
+        score = r.get("ats_score")
+        if not dt or score is None:
+            continue
+        if isinstance(dt, str):
+            try:
+                dt = datetime.fromisoformat(dt.replace("Z", "+00:00"))
+            except Exception:
+                continue
+        try:
+            score_val = float(score)
+        except (ValueError, TypeError):
+            continue
+        month_str = dt.strftime("%Y-%m")
+        ats_map[month_str].append(score_val)
+        
+    # 3. Student Registrations: count of students signed up per month
+    reg_map = defaultdict(int)
+    for s in db.students.find({}, {"created_at": 1}):
+        dt = s.get("created_at")
+        if not dt:
+            continue
+        if isinstance(dt, str):
+            try:
+                dt = datetime.fromisoformat(dt.replace("Z", "+00:00"))
+            except Exception:
+                continue
+        month_str = dt.strftime("%Y-%m")
+        reg_map[month_str] += 1
+
+    # 4. Resume Download Volume: count of download log events per month
+    download_map = defaultdict(int)
+    for dl in db.download_logs.find({}, {"created_at": 1}):
+        dt = dl.get("created_at")
+        if not dt:
+            continue
+        if isinstance(dt, str):
+            try:
+                dt = datetime.fromisoformat(dt.replace("Z", "+00:00"))
+            except Exception:
+                continue
+        month_str = dt.strftime("%Y-%m")
+        download_map[month_str] += 1
+
+    # Ensure last 6 months are continuous
+    now = datetime.utcnow()
+    default_months = []
+    for i in range(5, -1, -1):
+        year = now.year
+        month = now.month - i
+        while month <= 0:
+            month += 12
+            year -= 1
+        default_months.append(f"{year:04d}-{month:02d}")
+
+    def fill_missing(data_map, val_type="count"):
+        result = []
+        for m in default_months:
+            if val_type == "avg_score":
+                scores = data_map.get(m, [])
+                avg = round(sum(scores) / len(scores), 1) if scores else 0
+                result.append({"month": m, "avg_score": avg})
+            else:
+                result.append({"month": m, "count": data_map.get(m, 0)})
+        
+        # Include any historical months outside default range
+        for m in sorted(data_map.keys()):
+            if m not in default_months:
+                if val_type == "avg_score":
+                    scores = data_map[m]
+                    avg = round(sum(scores) / len(scores), 1) if scores else 0
+                    result.append({"month": m, "avg_score": avg})
+                else:
+                    result.append({"month": m, "count": data_map[m]})
+        return sorted(result, key=lambda x: x["month"])
+
+    return {
+        "resume_growth": fill_missing(resume_growth_map, "count"),
+        "ats_score_distribution": fill_missing(ats_map, "avg_score"),
+        "registrations": fill_missing(reg_map, "count"),
+        "download_volume": fill_missing(download_map, "count")
+    }
+
 @router.get("/users")
 def get_admin_users(admin: AdminUser = Depends(get_current_admin), db: Any = Depends(get_db)):
     students = list(db.students.find({}))

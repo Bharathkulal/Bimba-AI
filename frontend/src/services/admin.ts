@@ -21,6 +21,13 @@ export interface AdminDashboardData {
   averageAtsScore: number;
 }
 
+export interface AdminAnalyticsDashboardData {
+  resume_growth: Array<{ month: string; count: number }>;
+  ats_score_distribution: Array<{ month: string; avg_score: number }>;
+  registrations: Array<{ month: string; count: number }>;
+  download_volume: Array<{ month: string; count: number }>;
+}
+
 export interface AdminUserData {
   id: number;
   roll_number: string;
@@ -194,6 +201,11 @@ export const adminService = {
 
   getDashboard: async (): Promise<AdminDashboardData> => {
     const res = await apiClient.get<AdminDashboardData>('/api/admin/dashboard');
+    return res.data;
+  },
+
+  getAnalyticsDashboard: async (): Promise<AdminAnalyticsDashboardData> => {
+    const res = await apiClient.get<AdminAnalyticsDashboardData>('/api/admin/analytics/dashboard');
     return res.data;
   },
 
