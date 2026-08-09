@@ -316,7 +316,7 @@ def build_pdf_story(resume_data: Dict[str, Any], template: str = "harvard", db: 
   
   tpl_cfg = TEMPLATE_CONFIGS.get(template, {})
   contact_parts = [email_val, phone_val, loc_val]
-  separator = tpl_cfg.get("contact_separator", "  |  ")
+  separator = "  •  "
   contact_str = separator.join([part for part in contact_parts if part])
   
   if tpl_cfg.get("name_uppercase"):
@@ -327,15 +327,14 @@ def build_pdf_story(resume_data: Dict[str, Any], template: str = "harvard", db: 
   story.append(Paragraph(contact_str, subtitle_style))
 
   # Divider border line underneath header
-  if template in ["harvard", "stanford", "microsoft", "reactive"]:
-    rule_table = Table([[""]], colWidths=[532], rowHeights=[2])
-    rule_table.setStyle(TableStyle([
-      ('BACKGROUND', (0,0), (-1,-1), primary_color),
-      ('BOTTOMPADDING', (0,0), (-1,-1), 0),
-      ('TOPPADDING', (0,0), (-1,-1), 0),
-    ]))
-    story.append(rule_table)
-    story.append(Spacer(1, 10))
+  rule_table = Table([[""]], colWidths=[532], rowHeights=[1.5])
+  rule_table.setStyle(TableStyle([
+    ('BACKGROUND', (0,0), (-1,-1), primary_color),
+    ('BOTTOMPADDING', (0,0), (-1,-1), 0),
+    ('TOPPADDING', (0,0), (-1,-1), 0),
+  ]))
+  story.append(rule_table)
+  story.append(Spacer(1, 10))
 
   # --- Section Flowable Generators ---
   def make_summary_flowables(sec):
@@ -357,28 +356,14 @@ def build_pdf_story(resume_data: Dict[str, Any], template: str = "harvard", db: 
       degree = clean_unicode(edu.get("degree", "Degree"))
       school = clean_unicode(edu.get("institution", "University"))
       year = clean_unicode(edu.get("passing_year") or edu.get("year") or "")
-      cgpa = clean_unicode(edu.get("cgpa_percentage") or edu.get("cgpa") or edu.get("percentage") or "")
-      achievements = clean_unicode(edu.get("achievements") or "")
+      location = clean_unicode(edu.get("location") or "Georgia, United States")
       
-      edu_left = f"<b>{school}</b><br/>{degree}"
-      if cgpa:
-        edu_left += f" — CGPA/Grade: {cgpa}"
-      if achievements:
-        edu_left += f" | {achievements}"
-        
-      edu_table = Table(
-        [[Paragraph(edu_left, body_style), Paragraph(str(year), ParagraphStyle('RightText', parent=body_style, alignment=TA_RIGHT))]],
-        colWidths=[380, 152] if (custom_tpl and custom_tpl.get("layout") in ["two-column", "sidebar"]) else [420, 112]
-      )
-      edu_table.setStyle(TableStyle([
-        ('VALIGN', (0,0), (-1,-1), 'TOP'),
-        ('BOTTOMPADDING', (0,0), (-1,-1), 0),
-        ('TOPPADDING', (0,0), (-1,-1), 0),
-        ('LEFTPADDING', (0,0), (-1,-1), 0),
-        ('RIGHTPADDING', (0,0), (-1,-1), 0),
-      ]))
-      flowables.append(KeepTogether([edu_table]))
-      flowables.append(Spacer(1, 4))
+      edu_block = [
+        Paragraph(f"<b>{degree} - {year}</b>", body_style),
+        Paragraph(f"{school} - {location}", ParagraphStyle('SchoolSub', parent=body_style, textColor=secondary_color)),
+        Spacer(1, 3)
+      ]
+      flowables.append(KeepTogether(edu_block))
     return flowables
 
   def make_experience_flowables(sec):
@@ -390,27 +375,19 @@ def build_pdf_story(resume_data: Dict[str, Any], template: str = "harvard", db: 
       job_title = clean_unicode(exp.get("position", "Developer"))
       company = clean_unicode(exp.get("company", "Company"))
       duration = clean_unicode(exp.get("duration", ""))
+      location = clean_unicode(exp.get("location") or "United States")
       
-      exp_header = f"<b>{job_title}</b> — {company}"
+      exp_header = f"<b>{company} - {location} - {duration}</b>"
       
-      exp_header_table = Table(
-        [[Paragraph(exp_header, body_style), Paragraph(duration, ParagraphStyle('RightText', parent=body_style, alignment=TA_RIGHT))]],
-        colWidths=[380, 152] if (custom_tpl and custom_tpl.get("layout") in ["two-column", "sidebar"]) else [420, 112]
-      )
-      exp_header_table.setStyle(TableStyle([
-        ('VALIGN', (0,0), (-1,-1), 'TOP'),
-        ('BOTTOMPADDING', (0,0), (-1,-1), 0),
-        ('TOPPADDING', (0,0), (-1,-1), 0),
-        ('LEFTPADDING', (0,0), (-1,-1), 0),
-        ('RIGHTPADDING', (0,0), (-1,-1), 0),
-      ]))
-      
-      exp_block = [exp_header_table]
+      exp_block = [
+        Paragraph(exp_header, body_style),
+        Paragraph(f"<b>{job_title}</b>", ParagraphStyle('SubHeader', parent=body_style, fontName=title_font, spaceAfter=2))
+      ]
       
       desc = exp.get("description", "")
       if desc:
         bullets = [b.strip() for b in re.split(r'[\*\u2022•\n]', desc) if b.strip()]
-        if len(bullets) > 1:
+        if len(bullets) > 0:
           for bullet in bullets:
             exp_block.append(Paragraph(f"• {clean_unicode(bullet)}", bullet_style))
         else:

@@ -75,7 +75,7 @@ export const PlacementProfile: React.FC = () => {
         {/* Profile Card */}
         <Card className="lg:col-span-1 flex flex-col gap-5">
           <div className="flex items-center gap-4 border-b border-slate-100 dark:border-white/5 pb-4">
-            <div className="w-12 h-12 rounded-2xl bg-emerald-650 flex items-center justify-center text-white font-black text-lg shadow-sm">
+            <div className="w-12 h-12 rounded-2xl bg-emerald-600 flex items-center justify-center text-white font-black text-lg shadow-sm">
               P
             </div>
             <div>

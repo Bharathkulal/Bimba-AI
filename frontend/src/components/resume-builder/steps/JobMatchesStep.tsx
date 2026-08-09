@@ -107,7 +107,17 @@ export const JobMatchesStep: React.FC = () => {
 
                 <div className="flex justify-end border-t border-slate-100 dark:border-white/5 pt-2 mt-1">
                   <Button
-                    onClick={() => window.open(job.url || job.apply_url, '_blank')}
+                    onClick={() => {
+                      let url = job.url || job.apply_url || '';
+                      if (url.includes('google.com/url?') || url.includes('google.co.in/url?')) {
+                        try {
+                          const u = new URL(url);
+                          const q = u.searchParams.get('q') || u.searchParams.get('url');
+                          if (q) url = q;
+                        } catch (_) {}
+                      }
+                      window.open(url, '_blank');
+                    }}
                     size="sm"
                     className="font-bold text-[10px] py-1.5 px-4 flex items-center gap-1 cursor-pointer"
                     icon={<ExternalLink size={11} />}

@@ -2743,10 +2743,20 @@ export const UploadResumeWizard: React.FC<UploadResumeWizardProps> = ({
                           <div className="flex items-center gap-1.5">
                             {job.apply_url ? (
                               <a
-                                href={job.apply_url}
+                                href={(() => {
+                                  const url = job.apply_url;
+                                  if (url.includes('google.com/url?') || url.includes('google.co.in/url?')) {
+                                    try {
+                                      const u = new URL(url);
+                                      const q = u.searchParams.get('q');
+                                      if (q) return q;
+                                    } catch (_) {}
+                                  }
+                                  return url;
+                                })()}
                                 target="_blank"
                                 rel="noreferrer"
-                                className="px-3 py-1 bg-emerald-650 hover:bg-emerald-700 text-white font-black text-[9px] rounded-lg"
+                                className="px-3 py-1 bg-emerald-600 hover:bg-emerald-700 text-white font-black text-[9px] rounded-lg"
                               >
                                 Apply Now
                               </a>
