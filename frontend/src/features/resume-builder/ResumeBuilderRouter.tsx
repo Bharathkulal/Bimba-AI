@@ -20,24 +20,8 @@ export const ResumeBuilderRouter: React.FC = () => {
     return <ResumeBuilderFlow />;
   }
 
-  const handleSwitchToScratch = () => {
-    setMobileMode('scratch');
-    const newParams = new URLSearchParams(searchParams);
-    newParams.set('mode', 'scratch');
-    setSearchParams(newParams);
-  };
-
-  const handleBackToUpload = () => {
-    setMobileMode('upload');
-    const newParams = new URLSearchParams(searchParams);
-    newParams.delete('mode');
-    setSearchParams(newParams);
-  };
-
-  return mobileMode === 'upload' ? (
-    <UploadResumeMobile onSwitchToScratch={handleSwitchToScratch} />
-  ) : (
-    <CreateFromScratchMobile onBackToUpload={handleBackToUpload} />
+  return (
+    <UploadResumeMobile onSwitchToScratch={() => {}} />
   );
 };
 
