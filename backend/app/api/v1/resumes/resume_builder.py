@@ -180,9 +180,9 @@ def get_resume_builder_data(
             "softSkills": profile_doc.get("softSkills") or [],
             "experience": profile_doc.get("experience") or [
                 {
-                    "position": exp.get("position") or exp.get("role") or "",
-                    "company": exp.get("company") or "",
-                    "duration": exp.get("duration") or exp.get("year") or "",
+                    "position": exp.get("position") or exp.get("job_title") or exp.get("title") or exp.get("role") or "",
+                    "company": exp.get("company") or exp.get("organization") or exp.get("name") or "",
+                    "duration": exp.get("duration") or exp.get("year") or exp.get("start_date") or "",
                     "description": exp.get("description") or ""
                 } if isinstance(exp, dict) else {
                     "position": "",
@@ -247,9 +247,11 @@ def run_quality_gate(resume_data: dict, original_data: dict) -> List[str]:
             errors.append(f"Education item {idx+1}: Degree name is empty.")
             
     for idx, exp in enumerate(resume_data.get("experience", [])):
-        if not exp.get("company") or str(exp.get("company")).strip() == "":
+        company = exp.get("company") or exp.get("organization") or exp.get("name")
+        position = exp.get("position") or exp.get("job_title") or exp.get("title") or exp.get("role")
+        if not company or str(company).strip() == "":
             errors.append(f"Experience item {idx+1}: Company name is empty.")
-        if not exp.get("position") or str(exp.get("position")).strip() == "":
+        if not position or str(position).strip() == "":
             errors.append(f"Experience item {idx+1}: Position title is empty.")
             
     for idx, proj in enumerate(resume_data.get("projects", [])):

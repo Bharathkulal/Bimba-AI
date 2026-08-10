@@ -55,6 +55,11 @@ export class ErrorBoundary extends Component<Props, State> {
               <p className="text-xs text-slate-500 dark:text-slate-400 font-semibold leading-relaxed">
                 An unexpected application rendering error occurred. You can retry the operation or return to the main dashboard.
               </p>
+              {this.state.error?.message && (
+                <div className="mt-2 p-2.5 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-600 dark:text-rose-400 text-[11px] font-mono text-left break-all max-h-32 overflow-y-auto">
+                  {this.state.error.message}
+                </div>
+              )}
             </div>
 
             <div className="flex items-center gap-3 w-full">

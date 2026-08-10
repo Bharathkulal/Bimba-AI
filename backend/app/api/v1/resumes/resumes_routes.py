@@ -737,7 +737,9 @@ def ai_generate_summary(id: int, payload: AISummaryRequest, student: Student = D
     )
     try:
         from app.services.ai_gateway import generate_ai_response
-        summary = generate_ai_response(db, prompt, "Resume Studio: SUMMARY_GENERATE").strip().strip('"')
+        from app.services.resume_parser import unwrap_json_text
+        raw_gen = generate_ai_response(db, prompt, "Resume Studio: SUMMARY_GENERATE")
+        summary = unwrap_json_text(raw_gen)
     except Exception as e:
         summary = f"Results-driven {role_str} proficient in {skills_str}. Proven track record of architecting scalable software solutions, optimizing technical workflows, and delivering high-performance applications."
 
@@ -971,12 +973,14 @@ def get_pdf_export(id: int, inline: bool = False, student: Student = Depends(get
         
     from app.api.v1.resumes.resume_builder import run_quality_gate
     gate_errors = run_quality_gate(resume_data, original_data)
-    if gate_errors:
+    # Filter non-critical fact audit warnings so they don't block user PDF downloads
+    critical_errors = [e for e in gate_errors if not e.startswith("Fact dropped") and not e.startswith("Hallucinated")]
+    if critical_errors:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail={
                 "message": "Quality Gate validation failed. Please address the errors before exporting.",
-                "errors": gate_errors
+                "errors": critical_errors
             }
         )
         

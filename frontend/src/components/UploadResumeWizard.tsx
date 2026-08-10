@@ -23,6 +23,38 @@ import PreviewToolbar from './resume/studio/PreviewToolbar';
 import BottomNavigation from './resume/studio/BottomNavigation';
 import AISuggestionBanner from './resume/studio/AISuggestionBanner';
 
+const formatCleanText = (val: any): string => {
+  if (val === null || val === undefined) return '';
+  if (typeof val === 'string') {
+    let trimmed = val.trim();
+    if ((trimmed.startsWith('{') && trimmed.endsWith('}')) || (trimmed.startsWith('[') && trimmed.endsWith(']'))) {
+      try {
+        const parsed = JSON.parse(trimmed);
+        if (typeof parsed === 'string') return parsed;
+        if (Array.isArray(parsed)) return parsed.map(item => formatCleanText(item)).filter(Boolean).join('\n');
+        if (typeof parsed === 'object' && parsed !== null) {
+          const vals = Object.values(parsed).filter(v => typeof v === 'string' || typeof v === 'number');
+          if (vals.length > 0) return vals.join(' • ');
+        }
+      } catch (e) {
+        // Ignore JSON parse error, return string as-is
+      }
+    }
+    return trimmed;
+  }
+  if (typeof val === 'number' || typeof val === 'boolean') return String(val);
+  if (Array.isArray(val)) return val.map(formatCleanText).filter(Boolean).join('\n');
+  if (typeof val === 'object') {
+    const textFields = ['description', 'content', 'text', 'detail', 'details', 'name', 'value'];
+    for (const key of textFields) {
+      if (val[key] && typeof val[key] === 'string') return val[key];
+    }
+    const vals = Object.values(val).filter(v => typeof v === 'string' || typeof v === 'number');
+    if (vals.length > 0) return vals.join(' • ');
+  }
+  return String(val);
+};
+
 const ATSScoreRing = ({ score }: { score: number }) => {
   const radius = 18;
   const stroke = 3.5;
@@ -305,7 +337,17 @@ export const UploadResumeWizard: React.FC<UploadResumeWizardProps> = ({
     return false;
   };
 
-  const handleAddItemToSection = (sectionKey: string, defaultItem: any) => {
+  const getRealSectionKey = (sectionKey: string) => {
+    if (sectionKey === 'customSections' || sectionKey === 'custom_sections') {
+      if (Array.isArray(parsedData.custom_sections)) return 'custom_sections';
+      if (Array.isArray(parsedData.customSections)) return 'customSections';
+      return 'custom_sections';
+    }
+    return sectionKey;
+  };
+
+  const handleAddItemToSection = (sectionKeyInput: string, defaultItem: any) => {
+    const sectionKey = getRealSectionKey(sectionKeyInput);
     const currentList = Array.isArray(parsedData[sectionKey]) ? parsedData[sectionKey] : [];
     const updatedList = [...currentList, defaultItem];
     const updatedData = { ...parsedData, [sectionKey]: updatedList };
@@ -314,7 +356,8 @@ export const UploadResumeWizard: React.FC<UploadResumeWizardProps> = ({
     saveResumeToDb(updatedData);
   };
 
-  const handleDeleteItemFromSection = (sectionKey: string, index: number) => {
+  const handleDeleteItemFromSection = (sectionKeyInput: string, index: number) => {
+    const sectionKey = getRealSectionKey(sectionKeyInput);
     const currentList = Array.isArray(parsedData[sectionKey]) ? parsedData[sectionKey] : [];
     const updatedList = currentList.filter((_: any, i: number) => i !== index);
     const updatedData = { ...parsedData, [sectionKey]: updatedList };
@@ -322,7 +365,8 @@ export const UploadResumeWizard: React.FC<UploadResumeWizardProps> = ({
     saveResumeToDb(updatedData);
   };
 
-  const handleUpdateItemField = (sectionKey: string, index: number, field: string, value: any) => {
+  const handleUpdateItemField = (sectionKeyInput: string, index: number, field: string, value: any) => {
+    const sectionKey = getRealSectionKey(sectionKeyInput);
     const currentList = [...(parsedData[sectionKey] || [])];
     if (field === '') {
       currentList[index] = value;
@@ -1355,7 +1399,7 @@ export const UploadResumeWizard: React.FC<UploadResumeWizardProps> = ({
                       </div>
                     </div>
                     <div className="text-xs space-y-2">
-                      {parsedData.education?.length > 0 ? (
+                      {Array.isArray(parsedData.education) && parsedData.education.length > 0 ? (
                         parsedData.education.map((edu: any, idx: number) => (
                           <div key={idx} className="border-b last:border-0 pb-2 flex justify-between items-start gap-2">
                             {editingCards['education'] ? (
@@ -1399,7 +1443,7 @@ export const UploadResumeWizard: React.FC<UploadResumeWizardProps> = ({
                       </div>
                     </div>
                     <div className="text-xs space-y-2">
-                      {parsedData.experience?.length > 0 ? (
+                      {Array.isArray(parsedData.experience) && parsedData.experience.length > 0 ? (
                         parsedData.experience.map((exp: any, idx: number) => (
                           <div key={idx} className="border-b last:border-0 pb-2 flex justify-between items-start gap-2">
                             {editingCards['experience'] ? (
@@ -1446,7 +1490,7 @@ export const UploadResumeWizard: React.FC<UploadResumeWizardProps> = ({
                       </div>
                     </div>
                     <div className="text-xs space-y-2">
-                      {parsedData.projects?.length > 0 ? (
+                      {Array.isArray(parsedData.projects) && parsedData.projects.length > 0 ? (
                         parsedData.projects.map((proj: any, idx: number) => (
                           <div key={idx} className="border-b last:border-0 pb-2 flex justify-between items-start gap-2">
                             {editingCards['projects'] ? (
@@ -2175,7 +2219,7 @@ export const UploadResumeWizard: React.FC<UploadResumeWizardProps> = ({
                         </div>
                       </div>
 
-                      {parsedData.projects?.length > 0 ? (
+                      {Array.isArray(parsedData.projects) && parsedData.projects.length > 0 ? (
                         <div className="space-y-4">
                           {parsedData.projects.map((proj: any, idx: number) => {
                             const isEditingThisCard = editingCards['projects_step6'] || editingCards[`proj_${idx}`];
@@ -2290,7 +2334,7 @@ export const UploadResumeWizard: React.FC<UploadResumeWizardProps> = ({
                         </button>
                       </div>
 
-                      {parsedData.certifications?.length > 0 ? (
+                      {Array.isArray(parsedData.certifications) && parsedData.certifications.length > 0 ? (
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                           {parsedData.certifications.map((cert: any, idx: number) => {
                             const certName = typeof cert === 'string' ? cert : (cert.name || cert.title || `Certification #${idx + 1}`);
@@ -2350,65 +2394,73 @@ export const UploadResumeWizard: React.FC<UploadResumeWizardProps> = ({
                   )}
 
                   {/* 3. Custom Sections */}
-                  {(activeStep6Tab === 'all' || activeStep6Tab === 'custom') && (
-                    <Card className="p-5 flex flex-col gap-4 border-slate-200 dark:border-white/10">
-                      <div className="flex justify-between items-center border-b pb-3 border-slate-100 dark:border-white/10">
-                        <div className="flex items-center gap-2">
-                          <FileCode size={16} className="text-emerald-500" />
-                          <h3 className="text-xs font-black uppercase text-slate-800 dark:text-white tracking-wider">
-                            Custom Sections & Extra Highlights ({(parsedData.customSections?.length || 0)})
-                          </h3>
-                        </div>
-                        <button
-                          onClick={() => handleAddItemToSection('customSections', { title: 'Leadership & Honors', subtitle: 'President', description: 'Led student organization of 150+ members.' })}
-                          className="text-xs font-bold text-emerald-500 hover:text-emerald-600 cursor-pointer flex items-center gap-1"
-                        >
-                          <Plus size={13} /> Add Custom Section
-                        </button>
-                      </div>
-
-                      {(parsedData.customSections?.length || 0) > 0 ? (
-                        <div className="space-y-3">
-                          {parsedData.customSections.map((sec: any, idx: number) => (
-                            <div key={idx} className="p-3.5 rounded-xl border border-slate-200/80 dark:border-white/10 bg-slate-50/50 dark:bg-white/5 space-y-2">
-                              <div className="flex justify-between items-center gap-2">
-                                <input
-                                  type="text"
-                                  value={sec.title || ''}
-                                  onChange={(e) => handleUpdateItemField('customSections', idx, 'title', e.target.value)}
-                                  placeholder="Section Title (e.g. Volunteer Work, Awards)"
-                                  className="font-bold text-xs bg-transparent border-b border-transparent focus:border-emerald-500 outline-none text-slate-900 dark:text-white w-full"
-                                />
-                                <button
-                                  onClick={() => handleDeleteItemFromSection('customSections', idx)}
-                                  className="text-rose-500 hover:text-rose-600 p-1 cursor-pointer shrink-0"
-                                >
-                                  <Trash2 size={13} />
-                                </button>
-                              </div>
-                              <textarea
-                                rows={2}
-                                value={sec.description || ''}
-                                onChange={(e) => handleUpdateItemField('customSections', idx, 'description', e.target.value)}
-                                placeholder="Details and description for this section..."
-                                className="w-full p-2 border border-slate-200 dark:border-white/10 rounded-lg text-xs dark:bg-slate-800"
-                              />
-                            </div>
-                          ))}
-                        </div>
-                      ) : (
-                        <div className="text-center py-6 border-2 border-dashed border-slate-200 dark:border-white/10 rounded-xl">
-                          <p className="text-xs text-slate-400 font-semibold">No custom sections created yet.</p>
+                  {(activeStep6Tab === 'all' || activeStep6Tab === 'custom') && (() => {
+                    const customList = parsedData.customSections || parsedData.custom_sections || customSections || [];
+                    return (
+                      <Card className="p-5 flex flex-col gap-4 border-slate-200 dark:border-white/10">
+                        <div className="flex justify-between items-center border-b pb-3 border-slate-100 dark:border-white/10">
+                          <div className="flex items-center gap-2">
+                            <FileCode size={16} className="text-emerald-500" />
+                            <h3 className="text-xs font-black uppercase text-slate-800 dark:text-white tracking-wider">
+                              Custom Sections & Extra Highlights ({customList.length})
+                            </h3>
+                          </div>
                           <button
-                            onClick={() => handleAddItemToSection('customSections', { title: 'Awards & Leadership', description: 'Hackathon 1st Place Winner (2024)' })}
-                            className="mt-2 text-xs font-bold text-emerald-500 hover:underline cursor-pointer"
+                            onClick={() => handleAddItemToSection('custom_sections', { section_name: 'Leadership & Honors', content: ['Led student organization of 150+ members.'] })}
+                            className="text-xs font-bold text-emerald-500 hover:text-emerald-600 cursor-pointer flex items-center gap-1"
                           >
-                            + Create a custom section
+                            <Plus size={13} /> Add Custom Section
                           </button>
                         </div>
-                      )}
-                    </Card>
-                  )}
+
+                        {customList.length > 0 ? (
+                          <div className="space-y-3">
+                            {customList.map((sec: any, idx: number) => {
+                              const secTitle = sec.title || sec.section_name || `Custom Section #${idx + 1}`;
+                              const secDesc = sec.description || (Array.isArray(sec.content) ? sec.content.map((c: any) => formatCleanText(c)).join('\n') : (formatCleanText(sec.content) || ''));
+
+                              return (
+                                <div key={idx} className="p-3.5 rounded-xl border border-slate-200/80 dark:border-white/10 bg-slate-50/50 dark:bg-white/5 space-y-2">
+                                  <div className="flex justify-between items-center gap-2">
+                                    <input
+                                      type="text"
+                                      value={secTitle}
+                                      onChange={(e) => handleUpdateItemField('custom_sections', idx, 'section_name', e.target.value)}
+                                      placeholder="Section Title (e.g. Volunteer Work, Awards)"
+                                      className="font-bold text-xs bg-transparent border-b border-transparent focus:border-emerald-500 outline-none text-slate-900 dark:text-white w-full"
+                                    />
+                                    <button
+                                      onClick={() => handleDeleteItemFromSection('custom_sections', idx)}
+                                      className="text-rose-500 hover:text-rose-600 p-1 cursor-pointer shrink-0"
+                                    >
+                                      <Trash2 size={13} />
+                                    </button>
+                                  </div>
+                                  <textarea
+                                    rows={2}
+                                    value={secDesc}
+                                    onChange={(e) => handleUpdateItemField('custom_sections', idx, 'content', e.target.value.split('\n'))}
+                                    placeholder="Details and description for this section..."
+                                    className="w-full p-2 border border-slate-200 dark:border-white/10 rounded-lg text-xs dark:bg-slate-800"
+                                  />
+                                </div>
+                              );
+                            })}
+                          </div>
+                        ) : (
+                          <div className="text-center py-6 border-2 border-dashed border-slate-200 dark:border-white/10 rounded-xl">
+                            <p className="text-xs text-slate-400 font-semibold">No custom sections created yet.</p>
+                            <button
+                              onClick={() => handleAddItemToSection('custom_sections', { section_name: 'Awards & Leadership', content: ['Hackathon 1st Place Winner (2024)'] })}
+                              className="mt-2 text-xs font-bold text-emerald-500 hover:underline cursor-pointer"
+                            >
+                              + Create a custom section
+                            </button>
+                          </div>
+                        )}
+                      </Card>
+                    );
+                  })()}
 
                 </div>
               </motion.div>

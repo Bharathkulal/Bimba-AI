@@ -1,11 +1,23 @@
 import io
-import pymupdf
-import pdfplumber
 import docx
 import re
 from typing import Dict, Any, List
 from app.core.exceptions import OCRException
 from app.core.logging_service import log_stage, log_error
+
+try:
+    import pymupdf
+except ImportError:
+    try:
+        import fitz as pymupdf
+    except ImportError:
+        pymupdf = None
+
+try:
+    import pdfplumber
+except ImportError:
+    pdfplumber = None
+
 
 class LayeredExtractor:
     @staticmethod
@@ -68,18 +80,43 @@ class LayeredExtractor:
     def _extract_pdf(file_content: bytes, filename: str) -> Dict[str, Any]:
         log_stage("EXTRACTOR", "START", f"Running layered extraction for {filename}")
         
-        try:
-            doc = pymupdf.open(stream=file_content, filetype="pdf")
-            pages_count = len(doc)
-        except Exception as e:
-            log_error("EXTRACTOR", "Failed to open PDF file", e)
-            return {
-                "text": "",
-                "pages": 1,
-                "confidence": 0.0,
-                "method": "failed",
-                "pages_metadata": []
-            }
+        pages_count = 1
+        doc = None
+        if pymupdf is not None:
+            try:
+                doc = pymupdf.open(stream=file_content, filetype="pdf")
+                pages_count = len(doc)
+            except Exception as e:
+                log_error("EXTRACTOR", "Failed to open PDF file with PyMuPDF", e)
+                doc = None
+
+        if doc is None:
+            try:
+                import pypdf
+                reader = pypdf.PdfReader(io.BytesIO(file_content))
+                extracted = []
+                for p in reader.pages:
+                    txt = p.extract_text() or ""
+                    if txt:
+                        extracted.append(txt)
+                full_text = "\n".join(extracted)
+                return {
+                    "text": full_text.strip(),
+                    "pages": len(reader.pages),
+                    "confidence": 0.8,
+                    "method": "pypdf_fallback",
+                    "pages_metadata": [{"text": full_text}]
+                }
+            except Exception as pe:
+                log_error("EXTRACTOR", "pypdf fallback failed", pe)
+                return {
+                    "text": "",
+                    "pages": 1,
+                    "confidence": 0.0,
+                    "method": "failed",
+                    "pages_metadata": []
+                }
+
 
         # Attempt to pre-extract tables via pdfplumber
         table_bboxes_by_page = {}

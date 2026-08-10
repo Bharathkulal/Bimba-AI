@@ -63,6 +63,4 @@ class ResumeDocument(BaseModel):
     unclassified_content: List[str] = Field(default_factory=list)
     raw_extraction: Optional[Dict[str, Any]] = None
     original_parsed_data: Optional[Dict[str, Any]] = None
-    extraction_version: Optional[str] = "1.0"
-
-*** End Patch
+    extraction_version: Optional[str] = "1.0"
