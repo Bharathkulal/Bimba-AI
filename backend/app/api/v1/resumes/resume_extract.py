@@ -157,29 +157,23 @@ async def extract_resume_data_endpoint(
             if cleaned.endswith("```"):
                 cleaned = cleaned[:-3]
             parsed_json = json.loads(cleaned.strip())
-            if isinstance(parsed_json, dict) and (parsed_json.get("personal_info") or parsed_json.get("education") or parsed_json.get("technicalSkills")):
-                p_info = parsed_json.get("personal_info") or {}
-                extracted_data = {
-                    "name": p_info.get("name") or "Candidate Name",
-                    "email": p_info.get("email") or "",
-                    "phone": p_info.get("phone") or "",
-                    "location": p_info.get("address") or "",
-                    "title": p_info.get("title") or "Software Engineer",
-                    "summary": parsed_json.get("summary") or parsed_json.get("objective") or "",
-                    "education": parsed_json.get("education") or [],
-                    "experience": parsed_json.get("experience") or [],
-                    "projects": parsed_json.get("projects") or [],
-                    "skills": parsed_json.get("technicalSkills") or parsed_json.get("skills") or [],
-                    "soft_skills": parsed_json.get("softSkills") or [],
-                    "certifications": parsed_json.get("certifications") or [],
-                    "languages": parsed_json.get("languages") or [],
-                    "achievements": parsed_json.get("achievements") or []
-                }
+            if isinstance(parsed_json, dict) and (
+                parsed_json.get("personal_info") or 
+                parsed_json.get("personal_information") or 
+                parsed_json.get("education") or 
+                parsed_json.get("technicalSkills") or
+                parsed_json.get("skills")
+            ):
+                from app.services.zero_loss_engine import ZeroLossEngine
+                extracted_data = ZeroLossEngine.normalize_to_internal_model(parsed_json)
     except Exception as ai_err:
         print(f"[Resume AI Extraction Warning]: {ai_err}")
 
     if not extracted_data:
-        extracted_data = extract_structured_data(raw_text_str)
+        from app.services.zero_loss_engine import ZeroLossEngine
+        raw_structured = extract_structured_data(raw_text_str)
+        extracted_data = ZeroLossEngine.normalize_to_internal_model(raw_structured)
+
 
     # 5. Save/Update extraction data in MongoDB
     existing_analysis = db.resume_analysis.find_one({

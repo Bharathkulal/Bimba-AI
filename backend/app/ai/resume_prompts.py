@@ -1,175 +1,130 @@
 # Modular AI prompt templates for Resume Intelligence Platform
 
 RESUME_PARSE_PROMPT = """
-You are an expert AI Resume Parser. Your task is to extract all content from the following resume text and parse it into a clean, structured JSON format.
-This parser must work universally across all degrees, majors, and formats.
-
-Extract all available sections:
-1. personal_info (name, email, phone, address, linkedin, github, portfolio, title)
-2. summary (professional summary / profile summary / about me)
-3. objective (career objective)
-4. education (institution, degree, field_of_study, passing_year, cgpa_percentage, location, achievements)
-5. experience (company, position, duration, location, description, achievements)
-6. internships (company, role, duration, location, description, achievements)
-7. projects (name, description, tech_stack, role, duration, github_link, live_demo)
-8. skills (list of all generic skills)
-9. technicalSkills (list of technical skills / programming languages / frameworks / databases)
-10. softSkills (list of soft skills / interpersonal skills)
-11. tools (list of tools / software / platforms)
-12. languages (list of languages spoken/known)
-13. certifications (name, organization, issue_date, credential_id, credential_url, description)
-14. achievements (list of achievements, awards, hackathons, honors)
-15. awards (list of awards or distinctions)
-16. research_papers (title, authors, journal/conference, year, url, description)
-17. publications (title, publisher, year, url, description)
-18. leadership (organization, role, duration, description)
-19. volunteerExperience (organization, role, duration, description)
-20. activities (list of extra-curricular activities / club participations)
-21. portfolioLinks (list of links / urls)
-22. references (name, title, company, email, phone, relationship)
-23. hobbies (list of hobbies / interests)
-24. custom_sections (list of objects representing ANY OTHER sections present in the resume that do not map to standard fields. Each custom section object must have "section_name" (string) and "content" (array of strings or details)).
+You are the Resume Intelligence Engine of Bimba AI.
+Your job is to process an uploaded resume while maintaining 100% factual and informational fidelity to the original document.
+The uploaded resume text is the absolute SOURCE OF TRUTH.
+Your primary responsibility is NOT to summarize the resume.
+Your primary responsibility is: Extract -> Preserve -> Structure -> Validate -> Enhance -> Re-validate -> Generate.
 
 CRITICAL RULES:
-- EXTRACT VERBATIM: Do not paraphrase, do not shorten, do not summarize, do not omit any line, and preserve exact wording, spelling, punctuation, and formatting structure of the source text. Every single bullet point, date, number, punctuation mark, and abbreviation must be extracted exactly as it appears in the source.
-- Return ONLY a valid JSON object matching the exact schema below.
-- Do NOT add markdown code wrappers (no ```json).
-- NEVER silently discard any section or information from the uploaded resume. Any heading/section not explicitly matching one of the standard schema fields (1-23) MUST be captured under "custom_sections" with its original header name and all related text/bullet points as content.
-- IF A SECTION IS MISSING IN THE RESUME, YOU MUST RETURN AN EMPTY ARRAY [] FOR LIST FIELDS AND AN EMPTY STRING "" FOR TEXT FIELDS. NEVER RETURN NULL OR OMIT KEYS.
-- Combine wrapped descriptions under the same parent section or item (e.g. projects, experiences) rather than breaking them up.
+- ZERO INFORMATION LOSS: Keep every single experience, project, education entry, certification, award, skill, and language. Do not delete information because it appears unimportant.
+- DO NOT SUMMARIZE: Do not summarize factual information or combine separate facts. All details must remain individually recoverable.
+- NO HALLUCINATIONS: Do not invent details, guess missing information, correct information without explicit evidence, or add geographic location details not present in the source.
+- SUPPORT CUSTOM/UNKNOWN SECTIONS: Any section/heading not matching the standard fields must be captured under "additional_sections".
+- SOURCE FACT REGISTRY: Create a list of every factual item in "source_content.all_facts" with unique fact_ids.
 
 Schema:
 {
-  "personal_info": {
+  "personal_information": {
     "name": "string",
+    "date_of_birth": "string",
+    "gender": "string",
+    "nationality": "string",
+    "mother_tongue": "string"
+  },
+  "contact_information": {
     "email": "string",
     "phone": "string",
     "address": "string",
     "linkedin": "string",
     "github": "string",
-    "portfolio": "string",
-    "title": "string"
+    "portfolio": "string"
   },
-  "summary": "string",
   "objective": "string",
-  "education": [
-    {
-      "institution": "string",
-      "degree": "string",
-      "field_of_study": "string",
-      "passing_year": "string",
-      "cgpa_percentage": "string",
-      "location": "string",
-      "achievements": "string"
-    }
-  ],
-  "experience": [
+  "work_experience": [
     {
       "company": "string",
-      "position": "string",
-      "duration": "string",
       "location": "string",
-      "description": "string",
-      "achievements": "string"
+      "job_title": "string",
+      "start_date": "string",
+      "end_date": "string",
+      "responsibilities": ["string"],
+      "technologies": ["string"]
     }
   ],
+  "education": [
+    {
+      "degree": "string",
+      "field_of_study": "string",
+      "institution": "string",
+      "location": "string",
+      "cgpa_percentage": "string",
+      "year": "string"
+    }
+  ],
+  "skills": {
+    "programming_languages": ["string"],
+    "frontend": ["string"],
+    "backend": ["string"],
+    "databases": ["string"],
+    "frameworks": ["string"],
+    "tools": ["string"],
+    "cloud": ["string"],
+    "machine_learning": ["string"],
+    "other": ["string"]
+  },
   "internships": [
     {
       "company": "string",
       "role": "string",
       "duration": "string",
       "location": "string",
-      "description": "string",
-      "achievements": "string"
+      "description": "string"
     }
   ],
   "projects": [
     {
-      "name": "string",
+      "title": "string",
       "description": "string",
       "tech_stack": "string",
-      "role": "string",
-      "duration": "string",
-      "github_link": "string",
-      "live_demo": "string"
+      "duration": "string"
     }
   ],
-  "skills": ["string"],
-  "technicalSkills": ["string"],
-  "softSkills": ["string"],
-  "tools": ["string"],
-  "languages": ["string"],
   "certifications": [
     {
       "name": "string",
       "organization": "string",
-      "issue_date": "string",
-      "credential_id": "string",
-      "credential_url": "string",
       "description": "string"
     }
   ],
+  "research_projects": [],
+  "publications": [],
+  "research_articles": [],
   "achievements": ["string"],
+  "leadership": [],
+  "personal_skills": ["string"],
+  "hobbies_interests": ["string"],
+  "languages": ["string"],
   "awards": ["string"],
-  "research_papers": [
-    {
-      "title": "string",
-      "authors": "string",
-      "journal": "string",
-      "year": "string",
-      "url": "string",
-      "description": "string"
-    }
-  ],
-  "publications": [
-    {
-      "title": "string",
-      "publisher": "string",
-      "year": "string",
-      "url": "string",
-      "description": "string"
-    }
-  ],
-  "leadership": [
-    {
-      "organization": "string",
-      "role": "string",
-      "duration": "string",
-      "description": "string"
-    }
-  ],
-  "volunteerExperience": [
-    {
-      "organization": "string",
-      "role": "string",
-      "duration": "string",
-      "description": "string"
-    }
-  ],
-  "activities": ["string"],
-  "portfolioLinks": ["string"],
-  "references": [
-    {
-      "name": "string",
-      "title": "string",
-      "company": "string",
-      "email": "string",
-      "phone": "string",
-      "relationship": "string"
-    }
-  ],
-  "hobbies": ["string"],
-  "custom_sections": [
+  "extracurricular_activities": [],
+  "additional_sections": [
     {
       "section_name": "string",
       "content": ["string"]
     }
-  ]
+  ],
+  "source_content": {
+    "all_sections": ["string"],
+    "all_facts": [
+      {
+        "fact_id": "FACT-001",
+        "category": "string",
+        "field": "string",
+        "value": "string",
+        "source_text": "string",
+        "source_page": 1
+      }
+    ]
+  }
 }
+
+Return ONLY valid JSON matching this schema. Do not output any markdown code blocks (e.g. no ```json).
 
 Resume Text:
 {resume_text}
 """
+
 
 RESUME_ANALYZE_PROMPT = """
 You are a senior recruiter and ATS (Applicant Tracking System) optimizer. Analyze the following resume (represented in structured JSON) and compute a series of scores (0 to 100) and specific, actionable recommendations.

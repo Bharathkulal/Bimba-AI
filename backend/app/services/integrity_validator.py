@@ -1,4 +1,5 @@
 from typing import Dict, Any, List
+from app.services.zero_loss_engine import ZeroLossEngine
 
 class IntegrityValidationError(Exception):
     def __init__(self, message: str, details: Dict[str, Any]):
@@ -10,12 +11,25 @@ class ResumeIntegrityValidator:
     def validate(original: Dict[str, Any], current: Dict[str, Any]) -> Dict[str, Any]:
         """
         Validates that no critical section items or values are silently lost/deleted.
-        Compares item counts in experience, education, projects, certifications, etc.
+        Compares item counts in experience, education, projects, certifications, etc.,
+        and executes detailed fact-level verification via the ZeroLossEngine.
         """
         errors = []
         warnings = []
         
-        # 1. Standard List sections to check counts
+        # 1. ZeroLossEngine Fact Verification
+        try:
+            original_norm = ZeroLossEngine.normalize_to_internal_model(original)
+            orig_facts = original_norm.get("source_content", {}).get("all_facts", [])
+            val_report = ZeroLossEngine.validate_facts(orig_facts, current)
+            
+            if val_report["validation_status"] == "FAIL":
+                for fact in val_report["missing_details"]:
+                    errors.append(f"Fact dropped or modified: '{fact['value']}' in category '{fact['category']}'")
+        except Exception as e:
+            warnings.append(f"ZeroLossEngine fact validation skipped: {str(e)}")
+
+        # 2. Standard List sections to check counts
         list_sections = {
             "education": "Education Nodes",
             "experience": "Work History/Experience",
@@ -46,7 +60,7 @@ class ResumeIntegrityValidator:
                 msg = f"{name} count dropped from {orig_len} to {curr_len}."
                 errors.append(msg)
                 
-        # 2. String Arrays sections
+        # 3. String Arrays sections
         string_sections = {
             "skills": "Skills Profile",
             "technicalSkills": "Technical Skills",
@@ -93,7 +107,7 @@ class ResumeIntegrityValidator:
             elif orig_set - curr_set:
                 warnings.append(f"Missing items in {name}: {', '.join(list(orig_set - curr_set)[:5])}")
 
-        # 3. Check personal info fields
+        # 4. Check personal info fields
         orig_pi = original.get("personal_info", {}) or {}
         curr_pi = current.get("personal_info", {}) or {}
         if isinstance(orig_pi, dict) and isinstance(curr_pi, dict):
@@ -101,7 +115,7 @@ class ResumeIntegrityValidator:
                 if orig_pi.get(k) and not curr_pi.get(k):
                     errors.append(f"Personal Information field '{k}' was cleared.")
 
-        # 4. Text/String sections
+        # 5. Text/String sections
         text_sections = {
             "summary": "Professional Summary",
             "objective": "Objective"
@@ -118,3 +132,4 @@ class ResumeIntegrityValidator:
             "errors": errors,
             "warnings": warnings
         }
+
