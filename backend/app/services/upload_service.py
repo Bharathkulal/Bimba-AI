@@ -202,12 +202,14 @@ class UploadService:
                         "custom_sections": heuristic.get("custom_sections", [])
                     }
                 except Exception as fallback_err:
+                    import traceback
+                    tb_str = traceback.format_exc()
                     log_error("UPLOAD", "Heuristic fallback also failed", fallback_err)
                     raise PipelineException(
                         step="Resume Ingestion Parsing",
                         provider="Core System",
                         message="Resume ingestion failed to extract structured text.",
-                        details=str(ai_err),
+                        details=f"AI Error: {str(ai_err)} | Heuristic Traceback: {tb_str}",
                         status_code=502
                     )
 

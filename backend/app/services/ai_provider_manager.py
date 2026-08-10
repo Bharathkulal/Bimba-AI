@@ -19,7 +19,10 @@ class AIProviderManager:
 
     def _validate_api_key(self, provider_info: Dict[str, Any]) -> str:
         # First check if api_key is configured directly in the DB provider document
-        api_key = provider_info.get("api_key", "").strip()
+        api_key = provider_info.get("api_key")
+        if api_key is None:
+            api_key = ""
+        api_key = str(api_key).strip()
         
         if not api_key:
             env_key = provider_info.get("env_key")

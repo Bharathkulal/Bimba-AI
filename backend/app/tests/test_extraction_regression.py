@@ -187,3 +187,51 @@ def test_extraction_reg_10_zeroloss_validation():
     invalid = {**original, "education": [{"degree": "M.Tech", "institution": "MIT", "cgpa_percentage": ""}]}
     res_inv = ResumeIntegrityValidator.validate(original, invalid)
     assert res_inv["isValid"] is False
+
+def test_validate_api_key_variations(monkeypatch):
+    import dotenv
+    monkeypatch.setattr(dotenv, "load_dotenv", lambda *args, **kwargs: None)
+    monkeypatch.delenv("GEMINI_API_KEY", raising=False)
+    
+    from app.services.ai_provider_manager import AIProviderManager
+    manager = AIProviderManager()
+    
+    # 1. api_key is None, and valid env key is present
+    monkeypatch.setenv("GEMINI_API_KEY", "valid_gemini_key_12345")
+    provider_info = {
+        "provider_name": "Gemini",
+        "slug": "gemini",
+        "env_key": "GEMINI_API_KEY",
+        "api_key": None
+    }
+    key = manager._validate_api_key(provider_info)
+    assert key == "valid_gemini_key_12345"
+
+    # 2. api_key is "", and valid env key is present
+    provider_info["api_key"] = ""
+    key = manager._validate_api_key(provider_info)
+    assert key == "valid_gemini_key_12345"
+
+    # 3. api_key is "   ", and valid env key is present
+    provider_info["api_key"] = "   "
+    key = manager._validate_api_key(provider_info)
+    assert key == "valid_gemini_key_12345"
+
+    # 4. api_key is valid direct key
+    provider_info["api_key"] = "direct_valid_key_12345"
+    key = manager._validate_api_key(provider_info)
+    assert key == "direct_valid_key_12345"
+
+    # 5. api_key is None, and no env key is present
+    monkeypatch.delenv("GEMINI_API_KEY", raising=False)
+    provider_info["api_key"] = None
+    with pytest.raises(ValueError) as excinfo:
+        manager._validate_api_key(provider_info)
+    assert "missing or empty" in str(excinfo.value)
+    
+    # 6. api_key is invalid/placeholder
+    provider_info["api_key"] = "mock_placeholder"
+    with pytest.raises(ValueError) as excinfo:
+        manager._validate_api_key(provider_info)
+    assert "placeholder or mock" in str(excinfo.value)
+
