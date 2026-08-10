@@ -378,6 +378,15 @@ def sync_resume_profile(id: int, student_id: int, payload: dict, db: Any):
             "references": payload.get("references") or [],
             "hobbies": payload.get("hobbies") or [],
             "custom_sections": payload.get("custom_sections") or [],
+            
+            # Zero-Loss fields
+            "research_projects": payload.get("research_projects") or [],
+            "research_articles": payload.get("research_articles") or [],
+            "personal_skills": payload.get("personal_skills") or [],
+            "awards": payload.get("awards") or [],
+            "extracurricular_activities": payload.get("extracurricular_activities") or [],
+            "additional_sections": payload.get("additional_sections") or [],
+            "source_content": payload.get("source_content") or {"all_sections": [], "all_facts": []},
             "lastUpdated": datetime.now(timezone.utc).isoformat()
         }
         db.resume_profiles.update_one(
@@ -387,6 +396,7 @@ def sync_resume_profile(id: int, student_id: int, payload: dict, db: Any):
         )
     except Exception as e:
         print(f"[sync_resume_profile error] {e}")
+
     # DEBUG: log profile_doc mapping summary
     try:
         print("[DEBUG RESUME 6] PROFILE DOC MAPPING SUMMARY:")
@@ -1770,7 +1780,17 @@ def get_normalized_resume_dict(resume: dict) -> dict:
         "softSkills": get_list("softSkills", ["soft_skills"]),
         "internships": get_list("internships"),
         "custom_sections": get_list("custom_sections"),
+        
+        # Zero-Loss fields
+        "research_projects": get_list("research_projects"),
+        "research_articles": get_list("research_articles"),
+        "personal_skills": get_list("personal_skills"),
+        "awards": get_list("awards"),
+        "extracurricular_activities": get_list("extracurricular_activities"),
+        "additional_sections": get_list("additional_sections"),
+        "source_content": resume_data.get("source_content") or resume.get("source_content") or {"all_sections": [], "all_facts": []}
     }
+
     return normalized
 
 def improve_and_validate_resume(db, prompt, resume_id, user_id, original_normalized, roll_number, mode="IMPROVE") -> dict:
@@ -1795,11 +1815,13 @@ def improve_and_validate_resume(db, prompt, resume_id, user_id, original_normali
     merged = {**original_normalized}
     
     # 1. Update personal info if AI suggested anything valid
-    ai_pi = improved_json.get("personal_info")
+    ai_pi = improved_json.get("personal_info") or improved_json.get("personal_information")
     if isinstance(ai_pi, dict):
         for k, v in ai_pi.items():
             if v:
                 merged["personal_info"][k] = v
+                if "personal_information" in merged:
+                    merged["personal_information"][k] = v
 
     # 2. Update summary & objective
     if improved_json.get("summary"):
@@ -1808,7 +1830,11 @@ def improve_and_validate_resume(db, prompt, resume_id, user_id, original_normali
         merged["objective"] = improved_json["objective"]
 
     # 3. Zip and merge list items to preserve original records and IDs
-    list_sections_dict = ["education", "experience", "projects", "certifications", "publications", "internships", "volunteerExperience", "references"]
+    list_sections_dict = [
+        "education", "experience", "projects", "certifications", "publications", 
+        "internships", "volunteerExperience", "references", "research_projects", 
+        "research_articles", "additional_sections"
+    ]
     for sec in list_sections_dict:
         orig_list = original_normalized.get(sec, [])
         imp_list = improved_json.get(sec, [])
@@ -1838,7 +1864,10 @@ def improve_and_validate_resume(db, prompt, resume_id, user_id, original_normali
         merged[sec] = merged_list
 
     # 4. Merge string lists (skills, achievements, languages, hobbies)
-    string_sections = ["skills", "technicalSkills", "softSkills", "achievements", "languages", "hobbies", "portfolioLinks"]
+    string_sections = [
+        "skills", "technicalSkills", "softSkills", "achievements", "languages", 
+        "hobbies", "portfolioLinks", "personal_skills", "awards", "extracurricular_activities"
+    ]
     for sec in string_sections:
         orig_list = original_normalized.get(sec, [])
         imp_list = improved_json.get(sec, [])
@@ -1860,9 +1889,25 @@ def improve_and_validate_resume(db, prompt, resume_id, user_id, original_normali
         merged["technicalSkills"] = t_skills
         merged["skills"] = t_skills
 
+    # 5. Zero-Loss Validation Check
+    from app.services.zero_loss_engine import ZeroLossEngine
+    orig_facts = original_normalized.get("source_content", {}).get("all_facts", [])
+    if not orig_facts:
+        orig_norm = ZeroLossEngine.normalize_to_internal_model(original_normalized)
+        orig_facts = orig_norm.get("source_content", {}).get("all_facts", [])
+        
+    val_report = ZeroLossEngine.validate_facts(orig_facts, merged)
+    if val_report["validation_status"] == "FAIL":
+        missing_values = [f["value"] for f in val_report["missing_details"]]
+        raise HTTPException(
+            status_code=400,
+            detail=f"Factual validation failed. Dropped or modified source details: {', '.join(missing_values[:5])}"
+        )
+
     elapsed = time.time() - start_time
     log_pipeline_stage(f"{mode}_SUCCESS", resume_id, user_id, original_normalized, merged, elapsed=elapsed)
     return merged
+
 
 
 class ImproveRequest(BaseModel):

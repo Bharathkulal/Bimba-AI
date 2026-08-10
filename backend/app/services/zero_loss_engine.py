@@ -129,7 +129,6 @@ class ZeroLossEngine:
             "hobbies": get_clean_list("hobbies") or get_clean_list("hobbies_interests")
         }
 
-
         # Build Source Content Registry
         facts = ZeroLossEngine.build_fact_registry(normalized)
         normalized["source_content"] = {
@@ -152,7 +151,7 @@ class ZeroLossEngine:
             if value is None:
                 return
             val_str = str(value).strip()
-            if not val_str:
+            if not val_str or val_str == "Candidate Name":
                 return
             facts.append({
                 "fact_id": f"FACT-{fact_id_counter:03d}",
@@ -226,11 +225,19 @@ class ZeroLossEngine:
             "hobbies_interests": "hobby_interest",
             "languages": "language",
             "awards": "award",
-            "extracurricular_activities": "extracurricular_activity"
+            "extracurricular_activities": "extracurricular_activity",
+            "publications": "publication",
+            "research_articles": "research_article",
+            "research_projects": "research_project"
         }
         for key, cat_name in list_categories.items():
-            for item in normalized_data.get(key, []):
-                if item: add_fact(cat_name, item)
+            items = normalized_data.get(key, [])
+            for item in items:
+                if isinstance(item, dict):
+                    for f, v in item.items():
+                        if v: add_fact(cat_name, v, f)
+                elif item:
+                    add_fact(cat_name, item)
 
         # Additional sections / Custom sections
         for idx, sec in enumerate(normalized_data.get("additional_sections", [])):
@@ -250,9 +257,8 @@ class ZeroLossEngine:
     def validate_facts(original_facts: List[Dict[str, Any]], current_data: Dict[str, Any]) -> Dict[str, Any]:
         """
         Validates that all original facts are preserved in the current/enhanced resume JSON.
-        Computes completeness score and status.
+        Computes completeness score and status, and detects location hallucinations.
         """
-        # Flatten current data to text representation for matching
         def flatten_to_string(val: Any) -> str:
             if isinstance(val, str):
                 return val.lower()
@@ -264,6 +270,11 @@ class ZeroLossEngine:
 
         current_flat_text = flatten_to_string(current_data)
 
+        # Support user deletion requested filter
+        deleted_list = []
+        if isinstance(current_data, dict) and "user_requested_deletion" in current_data:
+            deleted_list = [str(x).lower().strip() for x in current_data["user_requested_deletion"]]
+
         missing_facts = []
         preserved_count = 0
 
@@ -273,28 +284,71 @@ class ZeroLossEngine:
                 preserved_count += 1
                 continue
 
-            # Check exact or normalized substring presence in current flat text
+            # Skip if explicitly deleted by user
+            if fact.get("field") in deleted_list or val_str.lower() in deleted_list:
+                preserved_count += 1
+                continue
+
             val_lower = val_str.lower()
-            # Clean punctuation and spacing for more flexible checks (e.g. if formatting changed slightly)
             clean_val = re.sub(r'[^a-z0-9]', '', val_lower)
             clean_flat = re.sub(r'[^a-z0-9]', '', current_flat_text)
 
+            # Check matching
             if val_lower in current_flat_text or (clean_val and clean_val in clean_flat):
                 preserved_count += 1
             else:
+                # If it's a long description/text, allow semantic overlap (e.g. tenses, synonyms)
+                words = [w for w in re.findall(r'\b\w{4,}\b', val_lower)]
+                if len(words) >= 3:
+                    matched_words = sum(1 for w in words if w in current_flat_text)
+                    if matched_words / len(words) >= 0.65:
+                        preserved_count += 1
+                        continue
                 missing_facts.append(fact)
+
+        # Hallucination / Invention Check for locations
+        invented_facts = 0
+        original_flat_text = flatten_to_string(original_facts)
+        
+        # Proper nouns check for location fields
+        current_locations = []
+        pi = current_data.get("personal_info") or current_data.get("personal_information") or {}
+        if isinstance(pi, dict):
+            loc = pi.get("location") or pi.get("address") or ""
+            if loc: current_locations.append(str(loc))
+
+        for edu in current_data.get("education", []):
+            if isinstance(edu, dict) and edu.get("location"):
+                current_locations.append(str(edu["location"]))
+        for exp in current_data.get("experience", []):
+            if isinstance(exp, dict) and exp.get("location"):
+                current_locations.append(str(exp["location"]))
+
+        for loc_str in current_locations:
+            # Check if any proper noun/word in current location is NOT in original text
+            words = re.findall(r'\b[A-Z][a-z]+\b', loc_str)
+            for w in words:
+                if w.lower() not in original_flat_text:
+                    # Ignore common layout / generic terms
+                    if w.lower() not in ["india", "state", "city", "street", "road"]:
+                        invented_facts += 1
+                        missing_facts.append({
+                            "fact_id": "FACT-HALLUCINATION",
+                            "category": "location",
+                            "value": f"Hallucinated location term: '{w}' in '{loc_str}'"
+                        })
 
         total_facts = len(original_facts)
         completeness = (preserved_count / total_facts * 100) if total_facts > 0 else 100.0
 
-        status = "PASS" if len(missing_facts) == 0 else "FAIL"
+        status = "PASS" if len(missing_facts) == 0 and invented_facts == 0 else "FAIL"
 
         return {
             "total_source_facts": total_facts,
             "preserved_facts": preserved_count,
             "missing_facts": len(missing_facts),
-            "modified_facts": 0,  # Included in missing/preservation logic
-            "invented_facts": 0,
+            "modified_facts": 0,
+            "invented_facts": invented_facts,
             "validation_status": status,
             "content_completeness": completeness,
             "missing_details": missing_facts

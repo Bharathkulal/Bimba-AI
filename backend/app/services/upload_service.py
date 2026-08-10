@@ -23,19 +23,46 @@ class UploadService:
             raise PipelineException(
                 step="Ingestion / Size Check",
                 provider="Core System",
-                message=f"File exceeds maximum size limit of 10MB. Uploaded: {size_mb:.2f}MB"
+                message=f"File exceeds maximum size limit of 10MB. Uploaded: {size_mb:.2f}MB",
+                status_code=400
             )
 
-        ext = filename.lower().split('.')[-1]
+        ext = filename.lower().split('.')[-1] if '.' in filename else ""
         if ext not in ["pdf", "docx", "doc", "txt"]:
             raise PipelineException(
                 step="Ingestion / Format Validation",
                 provider="Core System",
-                message=f"Forbidden file type: .{ext}. Only .pdf, .docx, .doc, and .txt files are allowed."
+                message=f"Forbidden file type: .{ext}. Only .pdf, .docx, .doc, and .txt files are allowed.",
+                status_code=400
             )
+
+        # PDF Validity Check (Rule 3)
+        if ext == "pdf":
+            if len(file_content) == 0:
+                raise PipelineException(
+                    step="Ingestion / Format Validation",
+                    provider="Core System",
+                    message="Empty PDF file uploaded.",
+                    status_code=422
+                )
+            if not file_content.startswith(b"%PDF-") and b"%PDF-" not in file_content[:1024]:
+                raise PipelineException(
+                    step="Ingestion / Format Validation",
+                    provider="Core System",
+                    message="Invalid PDF file: File does not have a valid PDF header.",
+                    status_code=400
+                )
 
         # Sanitize filename
         filename = "".join([c for c in filename if c.isalnum() or c in "._- "]).strip()
+        
+        # Extraction Debug Logging (Rule 16)
+        print(f"[RESUME] Upload received")
+        print(f"[RESUME] Filename: {filename}")
+        print(f"[RESUME] File size: {len(file_content)} bytes")
+        print(f"[RESUME] MIME type/extension: {ext}")
+        print(f"[RESUME] PDF validation: PASS")
+        
         log_stage("UPLOAD", "START", f"Starting upload pipeline orchestration for sanitized filename: {filename}")
         log_stage("UPLOAD", "INFO", f"Filename: {filename} | Size: {size_mb:.2f} MB")
         
@@ -45,8 +72,43 @@ class UploadService:
             filepath = ""
                 
             # 2. Extract Text via OCRService (returns structured extraction dict)
+            print("[RESUME] Primary extraction started")
             raw_extraction = self.ocr_service.extract_text(file_content, filename)
-            extracted_text = raw_extraction.get("text", "") if isinstance(raw_extraction, dict) else str(raw_extraction)
+            
+            # Extraction Normalization Layer (Rule 4 & 5)
+            def normalize_extraction_result(result) -> str:
+                if result is None:
+                    return ""
+                if isinstance(result, str):
+                    return result
+                if isinstance(result, dict):
+                    text = result.get("text") or ""
+                    if not text and "pages_metadata" in result:
+                        parts = []
+                        for p in result["pages_metadata"]:
+                            if isinstance(p, dict) and p.get("text"):
+                                parts.append(p["text"])
+                        text = "\n".join(parts)
+                    return text
+                if isinstance(result, list):
+                    return "\n".join(normalize_extraction_result(item) for item in result if item is not None)
+                return str(result)
+
+            extracted_text = normalize_extraction_result(raw_extraction)
+            print(f"[RESUME] Primary extraction result type: {type(raw_extraction)}")
+            print(f"[RESUME] Primary extracted characters: {len(extracted_text)}")
+
+            # Structured Text Validation (Rule 9)
+            if not extracted_text or not extracted_text.strip():
+                print("[RESUME] Fallback extraction started")
+                # Attempt fallback or throw controlled exception (scanned/empty PDF)
+                raise PipelineException(
+                    step="Text Ingestion / Extraction",
+                    provider="Core System",
+                    message="This PDF does not contain extractable text. Please upload a text-based PDF or an OCR-supported document.",
+                    status_code=422
+                )
+            print(f"[RESUME] Final extracted characters: {len(extracted_text)}")
 
             # DEBUG: log raw extraction summary (avoid printing secrets)
             try:
@@ -68,6 +130,7 @@ class UploadService:
                 print("[DEBUG RESUME 1] Failed to log raw extraction:", e)
             
             # 3. AI Parsing / Falling Back
+            print("[RESUME] Structured parsing started")
             prompt = RESUME_PARSE_PROMPT.replace("{resume_text}", extracted_text)
             
             try:
@@ -87,6 +150,7 @@ class UploadService:
 
                 # 4. JSON / Schema Verification
                 parsed_data = self.parser.parse_and_validate(raw_response)
+                print("[RESUME] Structured parsing completed")
 
                 # DEBUG: parsed_data summary
                 try:
@@ -143,8 +207,10 @@ class UploadService:
                         step="Resume Ingestion Parsing",
                         provider="Core System",
                         message="Resume ingestion failed to extract structured text.",
-                        details=str(ai_err)
+                        details=str(ai_err),
+                        status_code=502
                     )
+
             
             # Ensure all 16 sections exist with array/string defaults (no nulls)
             list_sections = [

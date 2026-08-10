@@ -176,6 +176,18 @@ class ResumeRepository:
             "hobbies": parsed_data.get("hobbies", []),
             "languages": parsed_data.get("languages", []),
             "custom_sections": parsed_data.get("custom_sections", []),
+            
+            # Zero-Loss fields
+            "research_projects": parsed_data.get("research_projects", []),
+            "publications": parsed_data.get("publications", []),
+            "research_articles": parsed_data.get("research_articles", []),
+            "leadership": parsed_data.get("leadership", []),
+            "personal_skills": parsed_data.get("personal_skills", []),
+            "awards": parsed_data.get("awards", []),
+            "extracurricular_activities": parsed_data.get("extracurricular_activities", []),
+            "additional_sections": parsed_data.get("additional_sections", []),
+            "source_content": parsed_data.get("source_content") or {"all_sections": [], "all_facts": []},
+            
             # Preserve raw extraction and original parsed data for auditing and re-processing
             "raw_extraction": raw_extraction_data or {},
             "original_parsed_data": parsed_data,

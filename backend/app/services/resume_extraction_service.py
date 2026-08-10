@@ -45,7 +45,7 @@ SECTION_TAXONOMY = {
     "certifications": ["certifications and online courses", "certifications & online courses", "certifications", "certificates", "courses", "training", "licenses & certifications", "credentials", "trainings & certifications"],
     "internships": ["internship", "internships", "internship experience", "industrial training"],
     "achievements": ["awards and achievements", "awards & achievements", "achievements", "awards", "honors & awards", "accomplishments"],
-    "publications": ["publications & research papers", "publications and research papers", "publications", "research papers", "patents"],
+    "publications": ["publications & research papers", "publications and research papers", "publications", "research papers", "patents", "research articles", "articles", "research publications"],
     "languages": ["languages", "languages spoken"],
     "hobbies": ["hobbies & interests", "hobbies and interests", "hobbies", "interests", "activities"],
     "portfolio_links": ["links", "urls", "portfolio links", "social links"],
@@ -452,18 +452,37 @@ def parse_education(lines: List[str]) -> List[Dict[str, Any]]:
                 }
             continue
 
-        if any(kw in l_str.lower() for kw in ["institute", "college", "university", "school", "academy"]):
+        is_degree = any(deg in l_str.lower() for deg in ["b.e", "m.tech", "b.tech", "m.sc", "b.sc", "bachelor", "master", "diploma", "pre-university", "s.s.l.c", "puc", "sslc"])
+        is_inst = any(kw in l_str.lower() for kw in ["institute", "college", "university", "school", "academy", "mit", "iit", "iiit"])
+        
+        if is_inst or is_degree:
             if curr_edu:
                 educations.append(curr_edu)
+            
+            # Initial extraction helper
+            cgpa_val = ""
+            cgpa_match = re.search(r'\b(?:cgpa|gpa|percentage|marks|score)?\s*:?\s*(\d{1,2}\.\d{1,2}%?|\d{2}\.\d{2}%?)\b', l_str, re.IGNORECASE)
+            if cgpa_match:
+                cgpa_val = cgpa_match.group(1)
+            elif "%" in l_str:
+                pct_match = re.search(r'\b(\d{2}(?:\.\d{1,2})?%)\b', l_str)
+                if pct_match:
+                    cgpa_val = pct_match.group(1)
+                    
+            year_val = ""
+            year_match = re.search(r'\b(20\d{2}|19\d{2})\b', l_str)
+            if year_match:
+                year_val = year_match.group(1)
+
             curr_edu = {
                 "id": len(educations) + 1,
-                "institution": l_str,
-                "degree": "Degree",
-                "year": "",
-                "cgpa_percentage": ""
+                "institution": l_str if is_inst else "Institution",
+                "degree": l_str if is_degree else "Degree",
+                "year": year_val,
+                "cgpa_percentage": cgpa_val
             }
         elif curr_edu:
-            if any(deg in l_str.lower() for deg in ["b.e", "m.tech", "b.tech", "m.sc", "b.sc", "bachelor", "master", "diploma", "pre-university", "s.s.l.c"]):
+            if any(deg in l_str.lower() for deg in ["b.e", "m.tech", "b.tech", "m.sc", "b.sc", "bachelor", "master", "diploma", "pre-university", "s.s.l.c", "puc", "sslc"]):
                 curr_edu["degree"] = l_str
             elif re.match(r'^\d{4}$', l_str) or DATE_REGEX.search(l_str):
                 curr_edu["year"] = l_str
