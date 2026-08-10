@@ -547,17 +547,7 @@ def extract_structured_data(text: str) -> Dict[str, Any]:
             elif current_sec in sections:
                 sections[current_sec].append(l)
 
-    # Dev-only debug logs: show mapped text blocks to sections
-    print("\n========== DEV DEBUG: SECTION MAPPING ==========")
-    for sec_name, sec_lines in sections.items():
-        if sec_lines:
-            print(f"Section '{sec_name}': mapped {len(sec_lines)} lines.")
-            print("  Preview: " + " | ".join(sec_lines[:3]) + ("..." if len(sec_lines) > 3 else ""))
-    for cust_name, cust_lines in custom_sections.items():
-        if cust_lines:
-            print(f"Custom Section '{cust_name}': mapped {len(cust_lines)} lines.")
-            print("  Preview: " + " | ".join(cust_lines[:3]) + ("..." if len(cust_lines) > 3 else ""))
-    print("================================================\n")
+    # Visual tags clean-up will occur before assignment
 
     # Clean text from visual tags before assignment
     def untag(lines_list):

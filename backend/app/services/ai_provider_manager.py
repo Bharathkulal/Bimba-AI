@@ -107,12 +107,6 @@ class AIProviderManager:
             timeout_val = provider["timeout"]
             attempts = provider["retry_attempts"] if auto_retry else 1
             
-            print("\n========== STEP 3 ==========")
-            print(f"{provider_name} Request")
-            print(f"Prompt Length: {len(prompt)} characters")
-            print(f"Model: {model} | Timeout: {timeout_val}s | Max Attempts: {attempts}")
-            print("=============================\n")
-            
             try:
                 # 1. API Key Validation
                 api_key = self._validate_api_key(provider)
@@ -128,15 +122,6 @@ class AIProviderManager:
             for attempt in range(attempts):
                 try:
                     response_text = self._execute_call(slug, model, api_key, prompt, timeout=timeout_val, response_format=response_format)
-                    
-                    print("\n========== STEP 4 ==========")
-                    print(f"{provider_name} Response")
-                    try:
-                        print(response_text)
-                    except UnicodeEncodeError:
-                        import sys
-                        print(response_text.encode(sys.stdout.encoding or 'utf-8', errors='replace').decode(sys.stdout.encoding or 'utf-8'))
-                    print("=============================\n")
                     
                     log_stage("AI", "SUCCESS", f"Parsed successfully using {provider_name}", model=model, attempt=attempt+1)
                     return response_text

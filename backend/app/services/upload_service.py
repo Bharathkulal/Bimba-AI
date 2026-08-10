@@ -56,15 +56,7 @@ class UploadService:
         # Sanitize filename
         filename = "".join([c for c in filename if c.isalnum() or c in "._- "]).strip()
         
-        # Extraction Debug Logging (Rule 16)
-        print(f"[RESUME] Upload received")
-        print(f"[RESUME] Filename: {filename}")
-        print(f"[RESUME] File size: {len(file_content)} bytes")
-        print(f"[RESUME] MIME type/extension: {ext}")
-        print(f"[RESUME] PDF validation: PASS")
-        
-        log_stage("UPLOAD", "START", f"Starting upload pipeline orchestration for sanitized filename: {filename}")
-        log_stage("UPLOAD", "INFO", f"Filename: {filename} | Size: {size_mb:.2f} MB")
+        log_stage("UPLOAD", "START", f"Starting upload pipeline for: {filename} ({size_mb:.2f} MB, .{ext})")
         
         filepath = ""
         try:
@@ -72,7 +64,7 @@ class UploadService:
             filepath = ""
                 
             # 2. Extract Text via OCRService (returns structured extraction dict)
-            print("[RESUME] Primary extraction started")
+            log_stage("EXTRACTOR", "START", f"Running layered extraction for {filename}")
             raw_extraction = self.ocr_service.extract_text(file_content, filename)
             
             # Extraction Normalization Layer (Rule 4 & 5)
@@ -95,12 +87,11 @@ class UploadService:
                 return str(result)
 
             extracted_text = normalize_extraction_result(raw_extraction)
-            print(f"[RESUME] Primary extraction result type: {type(raw_extraction)}")
-            print(f"[RESUME] Primary extracted characters: {len(extracted_text)}")
+            log_stage("EXTRACTOR", "INFO", f"Extracted {len(extracted_text)} characters (type: {type(raw_extraction).__name__})")
 
             # Structured Text Validation (Rule 9)
             if not extracted_text or not extracted_text.strip():
-                print("[RESUME] Fallback extraction started")
+                log_stage("EXTRACTOR", "WARN", "Extracted text is empty; raising extraction error")
                 # Attempt fallback or throw controlled exception (scanned/empty PDF)
                 raise PipelineException(
                     step="Text Ingestion / Extraction",
@@ -108,65 +99,21 @@ class UploadService:
                     message="This PDF does not contain extractable text. Please upload a text-based PDF or an OCR-supported document.",
                     status_code=422
                 )
-            print(f"[RESUME] Final extracted characters: {len(extracted_text)}")
-
-            # DEBUG: log raw extraction summary (avoid printing secrets)
-            try:
-                print("[DEBUG RESUME 1] RAW EXTRACTION SUMMARY:")
-                if isinstance(raw_extraction, dict):
-                    pages = raw_extraction.get("pages", 0)
-                    pmeta = raw_extraction.get("pages_metadata", [])
-                    raw_doc = raw_extraction.get("raw_document", {})
-                    blocks = len(raw_doc.get("blocks", [])) if isinstance(raw_doc, dict) else 0
-                    print({
-                        "pages_extracted": pages,
-                        "pages_with_meta": len(pmeta),
-                        "raw_blocks": blocks,
-                        "method": raw_extraction.get("method")
-                    })
-                else:
-                    print("raw_extraction is not a dict; length of text:", len(extracted_text))
-            except Exception as e:
-                print("[DEBUG RESUME 1] Failed to log raw extraction:", e)
-            
+            log_stage("EXTRACTOR", "COMPLETED", f"Final extracted characters: {len(extracted_text)}")
             # 3. AI Parsing / Falling Back
-            print("[RESUME] Structured parsing started")
+            log_stage("UPLOAD", "INFO", "Structured AI parsing started")
             prompt = RESUME_PARSE_PROMPT.replace("{resume_text}", extracted_text)
             
             try:
-                print("========== EXTRACTED TEXT ==========")
-                print(extracted_text[:1000])
-                print("====================================")
                 
                 # 3. Request LLM structured parsing manager fallback chain
                 raw_response = self.ai_manager.call_llm(prompt, feature="Resume Ingestion Parsing", response_format="json_object")
 
-                # DEBUG: log raw AI response (trimmed)
-                try:
-                    print("[DEBUG RESUME 2] AI/PARSER RAW RESPONSE (trimmed):")
-                    print(str(raw_response)[:4000])
-                except Exception as e:
-                    print("[DEBUG RESUME 2] Failed to log AI response:", e)
+
 
                 # 4. JSON / Schema Verification
                 parsed_data = self.parser.parse_and_validate(raw_response)
-                print("[RESUME] Structured parsing completed")
-
-                # DEBUG: parsed_data summary
-                try:
-                    print("[DEBUG RESUME 3] PARSED DATA KEYS:")
-                    print({
-                        "education_count": len(parsed_data.get("education", [])) if parsed_data.get("education") is not None else 0,
-                        "certifications_count": len(parsed_data.get("certifications", [])) if parsed_data.get("certifications") is not None else 0,
-                        "experience_count": len(parsed_data.get("experience", [])) if parsed_data.get("experience") is not None else 0,
-                    })
-                    # Print first items for inspection
-                    print({
-                        "education_sample": parsed_data.get("education", [])[:2],
-                        "certifications_sample": parsed_data.get("certifications", [])[:2]
-                    })
-                except Exception as e:
-                    print("[DEBUG RESUME 3] Failed to log parsed data:", e)
+                log_stage("UPLOAD", "INFO", "Structured AI parsing completed")
             except Exception as ai_err:
                 log_error("UPLOAD", "AI LLM parsing failed or rate-limited; falling back to heuristic extraction", ai_err)
                 try:

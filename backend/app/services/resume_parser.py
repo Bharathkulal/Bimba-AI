@@ -34,9 +34,6 @@ def unwrap_json_text(text: Any) -> str:
 class ResumeParser:
     @staticmethod
     def parse_and_validate(raw_ai_text: str) -> Dict[str, Any]:
-        print("\n========== STEP 5 ==========")
-        print("JSON Parsing")
-        
         # 1. Clean markdown formatting
         cleaned = raw_ai_text.strip()
         if cleaned.startswith("```json"):
@@ -50,10 +47,6 @@ class ResumeParser:
         # 2. Repair trailing commas in arrays/objects
         # Remove trailing comma before closing bracket/brace
         cleaned = re.sub(r',\s*([\]}])', r'\1', cleaned)
-        
-        print("Cleaned JSON String Preview:")
-        print(cleaned[:400] + ("..." if len(cleaned) > 400 else ""))
-        print("=============================\n")
         
         # 3. Deserialize JSON
         try:
@@ -74,8 +67,6 @@ class ResumeParser:
                 raise JSONValidationException(f"AI response is not valid JSON: {str(repair_err)}")
                 
         # 4. Map equivalent variations of key names to standard keys
-        print("========== STEP 6 ==========")
-        print("Schema Validation & Full Section Normalization")
         
         standard_keys = {
             "personal_info": ["personal_info", "personalInfo", "contact", "profile", "personal_information", "personal", "basic_info", "info", "contact_information", "contact_info"],
@@ -228,8 +219,4 @@ class ResumeParser:
         if custom_from_unknown:
             normalized["custom_sections"] = normalized.get("custom_sections", []) + custom_from_unknown
 
-        print("Mapped Mappings and Auto-repair Results:")
-        print(f"Required Fields Standardized: {list(normalized.keys())}")
-        print("=============================\n")
-        
         return normalized

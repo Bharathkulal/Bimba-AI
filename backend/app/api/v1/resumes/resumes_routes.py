@@ -211,18 +211,7 @@ def get_resume_detail(id: int, student: Student = Depends(get_current_student), 
             "summary": resume.get("summary") or "",
             "updated_at": resume.updated_at if isinstance(resume.updated_at, str) else (resume.updated_at.isoformat() if resume.updated_at else datetime.utcnow().isoformat())
         }
-    # DEBUG: log API response summary before returning
-    try:
-        print('[DEBUG RESUME 5] API RESPONSE SUMMARY (get_resume_detail):')
-        print({
-            'resumeId': response.get('id'),
-            'education_count': len(response.get('education', [])),
-            'certifications_count': len(response.get('certifications', [])),
-            'education_sample': response.get('education', [])[:2],
-            'certifications_sample': response.get('certifications', [])[:2]
-        })
-    except Exception as e:
-        print('[DEBUG RESUME 5] Failed to print API response debug:', e)
+
     return response
 
 @router.post("/create")
@@ -395,20 +384,8 @@ def sync_resume_profile(id: int, student_id: int, payload: dict, db: Any):
             upsert=True
         )
     except Exception as e:
-        print(f"[sync_resume_profile error] {e}")
-
-    # DEBUG: log profile_doc mapping summary
-    try:
-        print("[DEBUG RESUME 6] PROFILE DOC MAPPING SUMMARY:")
-        print({
-            'resumeId': id,
-            'education_count': len(profile_doc.get('education', [])),
-            'certifications_count': len(profile_doc.get('certifications', [])),
-            'education_sample': profile_doc.get('education', [])[:2],
-            'certifications_sample': profile_doc.get('certifications', [])[:2]
-        })
-    except Exception as e:
-        print('[DEBUG RESUME 6] Failed to print profile_doc debug:', e)
+        import logging
+        logging.getLogger("bimba_ai_pipeline").error(f"[sync_resume_profile error] {e}")
 
 @router.get("/profile/{resume_id}")
 def get_resume_profile(resume_id: int, student: Student = Depends(get_current_student), db: Any = Depends(get_db)):

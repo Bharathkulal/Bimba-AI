@@ -262,6 +262,20 @@ export const adminService = {
     return res.data;
   },
 
+  exportStudents: async (format: string = 'csv'): Promise<Blob> => {
+    const res = await apiClient.get(`/api/admin/students/export?format=${format}`, {
+      responseType: 'blob'
+    });
+    return res.data;
+  },
+
+  downloadStudentTemplate: async (): Promise<Blob> => {
+    const res = await apiClient.get('/api/admin/students/template', {
+      responseType: 'blob'
+    });
+    return res.data;
+  },
+
 
   getResumes: async (): Promise<AdminResumeData[]> => {
     const res = await apiClient.get<AdminResumeData[]>('/api/admin/resumes');

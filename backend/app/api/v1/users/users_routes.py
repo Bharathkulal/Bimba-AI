@@ -652,6 +652,8 @@ async def import_students(file: UploadFile = File(...), admin: AdminUser = Depen
     name_header = None
     roll_header = None
     dob_header = None
+    dept_header = None
+    sem_header = None
     
     for h in actual:
         hl = h.lower().replace(" ", "").replace("_", "").replace("-", "")
@@ -659,21 +661,33 @@ async def import_students(file: UploadFile = File(...), admin: AdminUser = Depen
             name_header = h
         elif "roll" in hl:
             roll_header = h
-        elif "dob" in hl or "dateofbirth" in hl or "birth" in hl:
+        elif "dob" in hl or "dateofbirth" in hl or "birth" in hl or "password" in hl or "pass" in hl:
             dob_header = h
+        elif "dept" in hl or "branch" in hl or "course" in hl:
+            dept_header = h
+        elif "sem" in hl:
+            sem_header = h
             
     for row in reader:
         try:
             name = (row.get(name_header) if name_header else None) or row.get("name") or row.get("student_name") or ""
             roll = (row.get(roll_header) if roll_header else None) or row.get("rollNumber") or row.get("rollnumber") or ""
-            dob = (row.get(dob_header) if dob_header else None) or row.get("dateofbirth") or row.get("dob") or ""
+            dob = (row.get(dob_header) if dob_header else None) or row.get("dateofbirth") or row.get("dob") or row.get("password") or ""
+            dept = (row.get(dept_header) if dept_header else None) or row.get("department") or "CS"
+            sem_val = (row.get(sem_header) if sem_header else None) or row.get("semester") or "1"
             
             name = name.strip()
             roll = roll.strip()
             dob = dob.strip()
+            dept = dept.strip()
+            
+            try:
+                semester = int(float(str(sem_val).strip()))
+            except Exception:
+                semester = 1
             
             if not name or not roll or not dob:
-                errors.append(f"Row skipped: Missing required fields (name, rollnumber, or dateofbirth) for roll {roll or 'Unknown'}")
+                errors.append(f"Row skipped: Missing required fields (name, rollnumber, or password/dob) for roll {roll or 'Unknown'}")
                 continue
                 
             # Check duplicate
@@ -692,8 +706,8 @@ async def import_students(file: UploadFile = File(...), admin: AdminUser = Depen
                 "email": f"{roll.lower()}@bimba.ai",
                 "dob": dob,
                 "phone": "",
-                "department": "CS",
-                "semester": 1,
+                "department": dept or "CS",
+                "semester": semester,
                 "status": "Active",
                 "is_active": True,
                 "password_hash": hashed,

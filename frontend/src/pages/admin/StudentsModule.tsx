@@ -125,12 +125,36 @@ export const StudentsModule: React.FC = () => {
     }
   };
 
-  const handleExport = () => {
-    window.open('/api/admin/students/export?format=csv', '_blank');
+  const handleExport = async () => {
+    try {
+      const blob = await adminService.exportStudents('csv');
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'bimba_students_export.csv';
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      window.URL.revokeObjectURL(url);
+    } catch (err) {
+      alert('Failed to export students.');
+    }
   };
 
-  const handleDownloadTemplate = () => {
-    window.open('/api/admin/students/template', '_blank');
+  const handleDownloadTemplate = async () => {
+    try {
+      const blob = await adminService.downloadStudentTemplate();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'bimba_students_template.csv';
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      window.URL.revokeObjectURL(url);
+    } catch (err) {
+      alert('Failed to download template.');
+    }
   };
 
   const handleDelete = async (roll: string) => {
