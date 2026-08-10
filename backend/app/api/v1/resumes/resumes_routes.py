@@ -1704,6 +1704,12 @@ def get_normalized_resume_dict(resume: dict) -> dict:
     def get_list(key, fallback_keys=[]):
         val = resume_data.get(key)
         if not val or not isinstance(val, list):
+            # Check nested resume_data first for fallbacks
+            for fk in fallback_keys:
+                f_val = resume_data.get(fk)
+                if f_val and isinstance(f_val, list):
+                    return f_val
+            # Check root document keys for fallbacks
             for fk in fallback_keys:
                 f_val = resume.get(fk)
                 if f_val:

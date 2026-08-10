@@ -35,22 +35,23 @@ DATE_REGEX = re.compile(
 )
 
 SECTION_TAXONOMY = {
-    "summary": ["professional summary", "summary", "profile summary", "profile", "about me", "executive summary", "career profile", "about"],
-    "objective": ["career objective", "objective", "career goal"],
-    "experience": ["work experience", "professional experience", "experience", "employment history", "work history", "career history", "employment"],
-    "education": ["education", "academic background", "academic qualification", "educational qualification", "academics"],
-    "projects": ["academic & personal projects", "academic and personal projects", "projects", "personal projects", "key projects", "selected projects", "academic projects"],
-    "technical_skills": ["technical skills", "skills & technologies", "skills", "technologies", "core competencies", "technical proficiencies", "tech stack", "software skills"],
-    "soft_skills": ["soft skills", "interpersonal skills", "key strengths", "competencies"],
-    "certifications": ["certifications and online courses", "certifications & online courses", "certifications", "certificates", "courses", "training"],
-    "internships": ["internships", "internship experience", "industrial training"],
+    "summary": ["professional summary", "summary", "profile summary", "profile", "about me", "executive summary", "career profile", "about", "summary of qualifications", "summary of experience"],
+    "objective": ["career objective", "objective", "career summary", "career goal", "objective & summary"],
+    "experience": ["work experience", "professional experience", "experience", "employment history", "work history", "career history", "employment", "professional background"],
+    "education": ["education", "academic background", "academic qualification", "educational qualification", "academics", "educational qualifications and trainings", "academic profile", "academic qualifications", "academic record"],
+    "projects": ["projects and research", "academic & personal projects", "academic and personal projects", "projects", "personal projects", "key projects", "selected projects", "academic projects"],
+    "technical_skills": ["technical skill set", "technical skills", "skills & technologies", "skills", "technologies", "core competencies", "technical proficiencies", "tech stack", "software skills", "key skills"],
+    "soft_skills": ["personal skills", "soft skills", "interpersonal skills", "key strengths", "competencies", "strengths"],
+    "certifications": ["certifications and online courses", "certifications & online courses", "certifications", "certificates", "courses", "training", "licenses & certifications", "credentials", "trainings & certifications"],
+    "internships": ["internship", "internships", "internship experience", "industrial training"],
     "achievements": ["awards and achievements", "awards & achievements", "achievements", "awards", "honors & awards", "accomplishments"],
     "publications": ["publications & research papers", "publications and research papers", "publications", "research papers", "patents"],
     "languages": ["languages", "languages spoken"],
     "hobbies": ["hobbies & interests", "hobbies and interests", "hobbies", "interests", "activities"],
     "portfolio_links": ["links", "urls", "portfolio links", "social links"],
     "volunteer": ["volunteer experience", "volunteer work", "community service", "volunteering"],
-    "references": ["references", "referees"]
+    "references": ["references", "referees"],
+    "personal_info": ["personal details", "personal information", "personal profile", "contact", "contact information"]
 }
 
 def clean_text_artifacts(raw_text: str) -> str:
@@ -89,7 +90,16 @@ def normalize_text_lines(text: str) -> List[str]:
     text_clean = despace_spaced_text(clean_text_artifacts(text))
     # Replace literal \n embedded in single strings (if any) and normalize line breaks
     text_clean = text_clean.replace("\\n", "\n")
-    lines = [l.strip() for l in text_clean.split("\n")]
+    raw_lines = [l.strip() for l in text_clean.split("\n")]
+    lines = []
+    for l in raw_lines:
+        if not l:
+            lines.append(l)
+            continue
+        # Strip lines matching page numbers or common page break templates
+        if re.match(r'^(page\s+\d+(\s+of\s+\d+)?|\d+\s*/\s*\d+|\d+|---\s*page\s+\d+\s*---)$', l, re.IGNORECASE):
+            continue
+        lines.append(l)
     return lines
 
 def extract_personal_info(lines: List[str]) -> Dict[str, Any]:
@@ -100,8 +110,19 @@ def extract_personal_info(lines: List[str]) -> Dict[str, Any]:
     email = email_match.group(0) if email_match else ""
 
     # 2. robust regex for Phones (handles international and various separators)
-    phone_match = re.search(r'(\+?\d{1,4}[\s-]?)?\(?\d{2,5}\)?[\s-]?\d{3,5}[\s-]?\d{3,5}', text_clean)
-    phone = phone_match.group(0).strip() if phone_match and len(re.sub(r'\D', '', phone_match.group(0))) >= 9 else ""
+    phone = ""
+    for match in re.finditer(r'\+?[\d\s\-\(\)]{8,20}\d', text_clean):
+        val = match.group(0).strip()
+        digits = re.sub(r'\D', '', val)
+        if len(digits) >= 7 and len(digits) <= 15:
+            # Check it doesn't look like a year range
+            if not any(yr in val for yr in ["2020", "2021", "2022", "2023", "2024", "2025", "2026"]):
+                phone = val
+                break
+    # Fallback to the original regex if the above didn't find anything
+    if not phone:
+        phone_match = re.search(r'(\+?\d{1,4}[\s-]?)?\(?\d{2,5}\)?[\s-]?\d{3,5}[\s-]?\d{3,5}', text_clean)
+        phone = phone_match.group(0).strip() if phone_match and len(re.sub(r'\D', '', phone_match.group(0))) >= 7 else ""
 
     # 3. robust regex for Links
     linkedin_match = re.search(r'(linkedin\.com/in/[\w-]+)', text_clean, re.IGNORECASE)
@@ -158,12 +179,14 @@ def extract_personal_info(lines: List[str]) -> Dict[str, Any]:
 
 def detect_section_header(line: str, is_preceded_by_empty: bool = False) -> str:
     """Detects if a line is a section header based on fuzzy matching and visual cues."""
+    if any(tag in line for tag in ["<TABLE>", "</TABLE>", "<TR>", "<TR-HEADER>"]):
+        return None
     l_no_tags = re.sub(r'<[^>]+>', '', line).strip().lower()
     if len(l_no_tags) > 40 or not l_no_tags: # Headers are usually short
         return None
         
     # Check if it has a visual cue from the extractor
-    has_cue = "<H>" in line or "<TR-HEADER>" in line
+    has_cue = "<H>" in line
     
     # Fuzzy match with section taxonomy
     best_match = None
@@ -171,7 +194,9 @@ def detect_section_header(line: str, is_preceded_by_empty: bool = False) -> str:
     
     for sec_key, kw_list in SECTION_TAXONOMY.items():
         for kw in kw_list:
-            if l_no_tags == kw or l_no_tags.startswith(kw):
+            if l_no_tags == kw or l_no_tags.startswith(kw + " ") or l_no_tags.endswith(" " + kw):
+                return sec_key
+            if kw in l_no_tags and len(l_no_tags) - len(kw) < 10:
                 return sec_key
             # Fuzzy match
             ratio = difflib.SequenceMatcher(None, l_no_tags, kw).ratio()
@@ -238,16 +263,43 @@ def parse_experiences(lines: List[str]) -> List[Dict[str, Any]]:
         if is_title_line:
             if curr_exp:
                 experiences.append(curr_exp)
-            parts = re.split(r'[-–—|@]', l_str, maxsplit=1)
-            pos = parts[0].strip()
-            comp = parts[1].strip() if len(parts) > 1 else ""
+            
+            pos = l_str
+            comp = ""
+            if " at " in l_str.lower():
+                idx = l_str.lower().find(" at ")
+                pos = l_str[:idx].strip()
+                comp = l_str[idx + 4:].strip()
+            else:
+                parts = re.split(r'[-–—|@]', l_str, maxsplit=1)
+                pos = parts[0].strip()
+                comp = parts[1].strip() if len(parts) > 1 else ""
+                
+            description = ""
+            date_match = DATE_REGEX.search(comp)
+            dur = "Present"
+            if date_match:
+                dur = date_match.group(0)
+                desc_part = comp[date_match.end():].strip(' -,|()')
+                comp = comp[:date_match.start()].strip(' -,|()')
+                if desc_part:
+                    description = desc_part
+            else:
+                date_match_pos = DATE_REGEX.search(pos)
+                if date_match_pos:
+                    dur = date_match_pos.group(0)
+                    desc_part = pos[date_match_pos.end():].strip(' -,|()')
+                    pos = pos[:date_match_pos.start()].strip(' -,|()')
+                    if desc_part:
+                        description = desc_part
+
             curr_exp = {
                 "id": len(experiences) + 1,
                 "position": pos,
                 "company": comp,
-                "duration": "Present",
+                "duration": dur,
                 "location": "",
-                "description": ""
+                "description": description
             }
         elif is_date_line:
             if not curr_exp:
@@ -322,12 +374,21 @@ def parse_projects(lines: List[str]) -> List[Dict[str, Any]]:
             tech_match = re.search(r'\((.*?)\)', l_str)
             tech = tech_match.group(1).strip() if tech_match else ""
             title_clean = re.sub(r'\(.*?\)', '', l_str).strip(' -,|')
+            
+            description = ""
+            for separator in [":", " - "]:
+                if separator in title_clean:
+                    parts = title_clean.split(separator, 1)
+                    title_clean = parts[0].strip(' -,|')
+                    description = parts[1].strip()
+                    break
+                    
             curr_proj = {
                 "id": len(projects) + 1,
                 "title": title_clean,
                 "tech_stack": tech,
                 "duration": "",
-                "description": ""
+                "description": description
             }
         elif is_dur_line and curr_proj:
             curr_proj["duration"] = l_str
@@ -345,6 +406,7 @@ def parse_projects(lines: List[str]) -> List[Dict[str, Any]]:
 def parse_education(lines: List[str]) -> List[Dict[str, Any]]:
     educations = []
     curr_edu = None
+    col_map = {"inst": 0, "deg": 1, "yr": 2, "cgpa": 3}  # Defaults
 
     for line in lines:
         if "<TABLE>" in line or "</TABLE>" in line:
@@ -354,20 +416,31 @@ def parse_education(lines: List[str]) -> List[Dict[str, Any]]:
         if not l_str:
             continue
 
-        if "<TR>" in line or "<TR-HEADER>" in line:
-            # Table-based education extraction (common in resumes)
-            if "<TR-HEADER>" in line: continue
+        if "<TR-HEADER>" in line:
+            parts = [p.strip().lower() for p in l_str.split("|")]
+            for idx, p in enumerate(parts):
+                if any(k in p for k in ["inst", "college", "school", "university", "academy"]):
+                    col_map["inst"] = idx
+                elif any(k in p for k in ["course", "degree", "qualification", "exam", "program", "stream"]):
+                    col_map["deg"] = idx
+                elif any(k in p for k in ["year", "passing", "date"]):
+                    col_map["yr"] = idx
+                elif any(k in p for k in ["cgpa", "percentage", "marks", "gpa", "grade", "score", "%"]):
+                    col_map["cgpa"] = idx
+            continue
+
+        if "<TR>" in line:
             parts = [p.strip() for p in l_str.split("|")]
             if len(parts) >= 2:
                 if curr_edu: educations.append(curr_edu)
-                # Attempt to map columns semantically
-                inst = parts[0]
-                deg = parts[1] if len(parts) > 1 else ""
-                yr = parts[2] if len(parts) > 2 else ""
-                cgpa = parts[3] if len(parts) > 3 else ""
                 
-                # Check if yr and cgpa are swapped
-                if "%" in yr or "cgpa" in yr.lower():
+                inst = parts[col_map["inst"]] if col_map["inst"] < len(parts) else ""
+                deg = parts[col_map["deg"]] if col_map["deg"] < len(parts) else ""
+                yr = parts[col_map["yr"]] if col_map["yr"] < len(parts) else ""
+                cgpa = parts[col_map["cgpa"]] if col_map["cgpa"] < len(parts) else ""
+                
+                # Check if yr and cgpa are swapped (if we mapped defaults and actual content looks swapped)
+                if col_map["yr"] == 2 and col_map["cgpa"] == 3 and ("%" in yr or "cgpa" in yr.lower()):
                     cgpa, yr = yr, cgpa
                     
                 curr_edu = {
@@ -403,6 +476,27 @@ def parse_education(lines: List[str]) -> List[Dict[str, Any]]:
 
     return educations
 
+def verify_extraction_coverage(source_text: str, structured_data: Dict[str, Any]) -> float:
+    source_words = [w.lower() for w in re.findall(r'\b\w+\b', source_text) if not w.isdigit()]
+    source_word_set = set(source_words)
+    if not source_word_set:
+        return 1.0
+    def collect_words(val):
+        words = []
+        if isinstance(val, str):
+            words.extend([w.lower() for w in re.findall(r'\b\w+\b', val) if not w.isdigit()])
+        elif isinstance(val, list):
+            for item in val:
+                words.extend(collect_words(item))
+        elif isinstance(val, dict):
+            for k, v in val.items():
+                words.extend(collect_words(v))
+        return words
+    structured_words = collect_words(structured_data)
+    structured_word_set = set(structured_words)
+    captured = source_word_set.intersection(structured_word_set)
+    return len(captured) / len(source_word_set) if source_word_set else 1.0
+
 def extract_structured_data(text: str) -> Dict[str, Any]:
     lines = normalize_text_lines(text)
     
@@ -419,6 +513,8 @@ def extract_structured_data(text: str) -> Dict[str, Any]:
             
         is_preceded_by_empty = (i == 0) or (lines[i-1].strip() == "")
         sec_key = detect_section_header(l, is_preceded_by_empty)
+        if sec_key and sec_key.startswith("custom_") and i < 3:
+            sec_key = None
         
         if sec_key:
             current_sec = sec_key
@@ -431,6 +527,18 @@ def extract_structured_data(text: str) -> Dict[str, Any]:
                 custom_sections[current_sec].append(l)
             elif current_sec in sections:
                 sections[current_sec].append(l)
+
+    # Dev-only debug logs: show mapped text blocks to sections
+    print("\n========== DEV DEBUG: SECTION MAPPING ==========")
+    for sec_name, sec_lines in sections.items():
+        if sec_lines:
+            print(f"Section '{sec_name}': mapped {len(sec_lines)} lines.")
+            print("  Preview: " + " | ".join(sec_lines[:3]) + ("..." if len(sec_lines) > 3 else ""))
+    for cust_name, cust_lines in custom_sections.items():
+        if cust_lines:
+            print(f"Custom Section '{cust_name}': mapped {len(cust_lines)} lines.")
+            print("  Preview: " + " | ".join(cust_lines[:3]) + ("..." if len(cust_lines) > 3 else ""))
+    print("================================================\n")
 
     # Clean text from visual tags before assignment
     def untag(lines_list):
@@ -454,14 +562,27 @@ def extract_structured_data(text: str) -> Dict[str, Any]:
     # Certifications
     cert_lines = untag(sections["certifications"])
     certifications = []
-    for i in range(0, len(cert_lines), 2):
-        name_str = cert_lines[i]
-        desc_str = cert_lines[i+1] if i+1 < len(cert_lines) else ""
+    for line in cert_lines:
+        line_clean = line.strip()
+        if not line_clean:
+            continue
+        org = ""
+        name_str = line_clean
+        for keyword in [" by ", " from ", " - ", " | "]:
+            if keyword in line_clean:
+                parts = line_clean.split(keyword, 1)
+                name_str = parts[0].strip()
+                org = parts[1].strip()
+                break
+        paren_match = re.search(r'\((.*?)\)', name_str)
+        if paren_match and not org:
+            org = paren_match.group(1).strip()
+            name_str = re.sub(r'\(.*?\)', '', name_str).strip()
         certifications.append({
             "id": len(certifications)+1, 
             "name": name_str, 
-            "organization": desc_str.split("by")[-1].strip() if "by" in desc_str else "",
-            "description": desc_str
+            "organization": org,
+            "description": line_clean
         })
 
     soft_skills = [s.strip() for s in " ".join(untag(sections["soft_skills"])).split(",") if s.strip()]
@@ -482,6 +603,13 @@ def extract_structured_data(text: str) -> Dict[str, Any]:
                 "section_name": title,
                 "content": untag(v)
             })
+
+    # If there is content in personal_info (like DOB, Gender, Nationality), format as a custom section "Personal Details"
+    if sections.get("personal_info"):
+        formatted_custom_sections.append({
+            "section_name": "Personal Details",
+            "content": untag(sections["personal_info"])
+        })
 
     res = {
         "personal_info": {
@@ -512,7 +640,11 @@ def extract_structured_data(text: str) -> Dict[str, Any]:
         "hobbies": hobbies,
         "custom_sections": formatted_custom_sections
     }
+    
+    coverage = verify_extraction_coverage(text, res)
     res["confidence_metadata"] = calculate_section_confidence(res)
+    res["confidence_metadata"]["coverage_score"] = float(round(coverage, 2))
+    res["confidence_metadata"]["low_coverage_warning"] = bool(coverage < 0.85)
     return res
 
 def calculate_section_confidence(data: Dict[str, Any]) -> Dict[str, Any]:

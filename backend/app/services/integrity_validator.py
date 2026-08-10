@@ -69,8 +69,23 @@ class ResumeIntegrityValidator:
             if not isinstance(curr_list, list):
                 curr_list = []
                 
-            orig_set = set(str(x).lower().strip() for x in orig_list if x)
-            curr_set = set(str(x).lower().strip() for x in curr_list if x)
+            def flatten_to_set(items):
+                s = set()
+                if not items:
+                    return s
+                for item in items:
+                    if isinstance(item, dict):
+                        for val in item.values():
+                            if isinstance(val, list):
+                                s.update(flatten_to_set(val))
+                            elif val:
+                                s.add(str(val).lower().strip())
+                    elif item:
+                        s.add(str(item).lower().strip())
+                return s
+
+            orig_set = flatten_to_set(orig_list)
+            curr_set = flatten_to_set(curr_list)
             
             if len(orig_set) > 0 and len(curr_set) == 0:
                 msg = f"This section was not included: '{name}' was present in the original but is missing now. Please review."

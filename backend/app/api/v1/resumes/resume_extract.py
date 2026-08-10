@@ -133,7 +133,8 @@ async def extract_resume_data_endpoint(
 
     # 3. Extract text from Cloudinary URL
     try:
-        raw_text = await extract_resume_text(cloudinary_url, filename)
+        raw_text_dict = await extract_resume_text(cloudinary_url, filename)
+        raw_text_str = raw_text_dict.get("text", "") if isinstance(raw_text_dict, dict) else str(raw_text_dict)
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
@@ -147,7 +148,7 @@ async def extract_resume_data_endpoint(
         from app.ai.resume_prompts import RESUME_PARSE_PROMPT
 
         ai_manager = AIProviderManager(db)
-        prompt = RESUME_PARSE_PROMPT.replace("{resume_text}", raw_text[:4000])
+        prompt = RESUME_PARSE_PROMPT.replace("{resume_text}", raw_text_str)
         ai_response = ai_manager.call_llm(prompt, provider="groq")
         if ai_response:
             cleaned = ai_response.strip()
@@ -178,7 +179,7 @@ async def extract_resume_data_endpoint(
         print(f"[Resume AI Extraction Warning]: {ai_err}")
 
     if not extracted_data:
-        extracted_data = extract_structured_data(raw_text)
+        extracted_data = extract_structured_data(raw_text_str)
 
     # 5. Save/Update extraction data in MongoDB
     existing_analysis = db.resume_analysis.find_one({

@@ -181,7 +181,7 @@ class UploadService:
             
             if extracted_word_count > 30:
                 ratio = parsed_word_count / extracted_word_count
-                if ratio < 0.65:
+                if ratio < 0.85:
                     parsed_data["extraction_incomplete"] = True
                     parsed_data["extraction_incomplete_reason"] = f"Extraction validation alert: parsed content density is only {ratio*100:.1f}%. The document text might not be fully parsed."
 
