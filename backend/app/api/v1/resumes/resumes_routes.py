@@ -940,13 +940,16 @@ def get_pdf_export(id: int, inline: bool = False, student: Student = Depends(get
         "created_at": datetime.utcnow()
     })
     
-    resume_data = get_normalized_resume_dict(resume)
-    
-    # Run Quality Gate checks
     original_data = {}
     analysis_record = db.resume_analysis.find_one({"resume_id": id, "student_id": student.id})
+    if not analysis_record:
+        analysis_record = db.resume_analysis.find_one({"id": id})
+
     if analysis_record and "extracted_data" in analysis_record:
         original_data = analysis_record["extracted_data"]
+        resume["extracted_data"] = original_data
+
+    resume_data = get_normalized_resume_dict(resume)
         
     from app.api.v1.resumes.resume_builder import run_quality_gate
     gate_errors = run_quality_gate(resume_data, original_data)
@@ -1693,39 +1696,29 @@ def get_normalized_resume_dict(resume: dict) -> dict:
     }
     
     def get_list(key, fallback_keys=[]):
-        val = resume_data.get(key)
-        if not val or not isinstance(val, list):
-            # Check nested resume_data first for fallbacks
-            for fk in fallback_keys:
-                f_val = resume_data.get(fk)
-                if f_val and isinstance(f_val, list):
-                    return f_val
-            # Check root document keys for fallbacks
-            for fk in fallback_keys:
-                f_val = resume.get(fk)
-                if f_val:
-                    if isinstance(f_val, list):
-                        return f_val
-                    if isinstance(f_val, str):
+        all_sources = [
+            resume_data,
+            resume,
+            resume.get("extracted_data", {}) if isinstance(resume.get("extracted_data"), dict) else {},
+            resume.get("raw_extraction", {}) if isinstance(resume.get("raw_extraction"), dict) else {}
+        ]
+        all_keys = [key] + fallback_keys
+        for src in all_sources:
+            if not src:
+                continue
+            for k in all_keys:
+                val = src.get(k)
+                if val:
+                    if isinstance(val, list):
+                        return val
+                    if isinstance(val, str):
                         try:
-                            parsed_list = json.loads(f_val)
+                            parsed_list = json.loads(val)
                             if isinstance(parsed_list, list):
                                 return parsed_list
                         except Exception:
                             pass
-            r_val = resume.get(key)
-            if r_val:
-                if isinstance(r_val, list):
-                    return r_val
-                if isinstance(r_val, str):
-                    try:
-                        parsed_list = json.loads(r_val)
-                        if isinstance(parsed_list, list):
-                            return parsed_list
-                    except Exception:
-                        pass
-            return []
-        return val
+        return []
 
     skills = get_list("skills", ["skills", "technicalSkills"])
     clean_skills = []

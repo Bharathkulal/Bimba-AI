@@ -22,24 +22,31 @@ import { chromium } from 'playwright';
 // ─── Template Imports ────────────────────────────────────────────────────────
 import { renderAtsDynamic } from './templates/ats_dynamic.mjs';
 import { renderClassicSerif } from './templates/classic_serif.mjs';
+import { renderHarvard } from './templates/harvard.mjs';
+import { renderJakes } from './templates/jakes.mjs';
+import { renderStanford } from './templates/stanford.mjs';
+import { renderMicrosoft } from './templates/microsoft.mjs';
+import { renderReactive } from './templates/reactive.mjs';
+import { renderNovoresume } from './templates/novoresume.mjs';
+import { renderFlowcv } from './templates/flowcv.mjs';
+import { renderIndeed } from './templates/indeed.mjs';
+import { renderMinimalistModern } from './templates/minimalist_modern.mjs';
 
 // ─── Template Registry ───────────────────────────────────────────────────────
 // Maps frontend template IDs to their backend HTML render functions.
-// This must stay in sync with frontend's TemplateRegistry in
-// frontend/src/components/resume/templates/index.ts
 const TemplateRenderers = {
-  harvard:             (data, ff, fs) => renderClassicSerif(data, ff, fs),
-  jakes:               (data, ff, fs) => renderClassicSerif(data, ff, fs),
-  stanford:            (data, ff, fs) => renderClassicSerif(data, ff, fs),
-  microsoft:           (data, ff, fs) => renderClassicSerif(data, ff, fs),
-  reactive:            (data, ff, fs) => renderClassicSerif(data, ff, fs),
-  novoresume:          (data, ff, fs) => renderClassicSerif(data, ff, fs),
-  flowcv:              (data, ff, fs) => renderClassicSerif(data, ff, fs),
-  indeed:              (data, ff, fs) => renderClassicSerif(data, ff, fs),
-  'minimalist-modern': (data, ff, fs) => renderClassicSerif(data, ff, fs),
+  harvard:             (data, ff, fs) => renderHarvard(data, ff, fs),
+  jakes:               (data, ff, fs) => renderJakes(data, ff, fs),
+  stanford:            (data, ff, fs) => renderStanford(data, ff, fs),
+  microsoft:           (data, ff, fs) => renderMicrosoft(data, ff, fs),
+  reactive:            (data, ff, fs) => renderReactive(data, ff, fs),
+  novoresume:          (data, ff, fs) => renderNovoresume(data, ff, fs),
+  flowcv:              (data, ff, fs) => renderFlowcv(data, ff, fs),
+  indeed:              (data, ff, fs) => renderIndeed(data, ff, fs),
+  'minimalist-modern': (data, ff, fs) => renderMinimalistModern(data, ff, fs),
   // Fallback / legacy names
   ats_classic:         (data, ff, fs) => renderClassicSerif(data, ff, fs),
-  ats_dynamic:         (data, ff, fs) => renderClassicSerif(data, ff, fs),
+  ats_dynamic:         (data, ff, fs) => renderAtsDynamic(data, ff, fs),
 };
 
 const PORT = 5174;

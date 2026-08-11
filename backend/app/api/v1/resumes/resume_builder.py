@@ -316,10 +316,13 @@ async def generate_resume_pdf_endpoint(
         # 2. Run Quality Gate checks
         print(f"[PDF-GEN] Step 2: Running quality gate checks...")
         original_data = {}
-        analysis_record = db.resume_analysis.find_one({"resume_id": resume_id, "student_id": student.id})
+        analysis_record = db.resume_analysis.find_one({"resume_id": resume_id, "student_id": student.id}) or db.resume_analysis.find_one({"id": resume_id})
         if analysis_record and "extracted_data" in analysis_record:
             original_data = analysis_record["extracted_data"]
             print(f"[PDF-GEN] Step 2: Found analysis record with extracted_data")
+            for k, v in original_data.items():
+                if v and (k not in payload.resume_data or not payload.resume_data[k]):
+                    payload.resume_data[k] = v
         else:
             print(f"[PDF-GEN] Step 2: No analysis record found — using empty original_data (scratch resume)")
 

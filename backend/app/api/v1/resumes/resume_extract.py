@@ -498,12 +498,14 @@ def apply_improvements_endpoint(
     resume_doc = db.resumes.find_one({"id": resume_id})
     r_data = {}
     if resume_doc:
-        r_data = resume_doc.get("resume", {})
-        r_data["summary"] = extracted_data.get("summary", "")
-        r_data["projects"] = extracted_data.get("projects", [])
-        r_data["experience"] = extracted_data.get("experience", [])
-        r_data["skills"] = extracted_data.get("skills", [])
-        r_data["technicalSkills"] = extracted_data.get("skills", [])
+        r_data = resume_doc.get("resume", {}) or {}
+        # Merge all sections from extracted_data into r_data to prevent any data loss
+        for k, v in extracted_data.items():
+            if v or k not in r_data:
+                r_data[k] = v
+        if "skills" in extracted_data:
+            r_data["skills"] = extracted_data["skills"]
+            r_data["technicalSkills"] = extracted_data["skills"]
 
         db.resumes.update_one(
             {"id": resume_id},
@@ -531,15 +533,29 @@ def apply_improvements_endpoint(
     )
 
     # D) resume_profiles
+    profile_update = {
+        "personal_info": extracted_data.get("personal_info", {}),
+        "summary": extracted_data.get("summary", ""),
+        "objective": extracted_data.get("objective", ""),
+        "education": extracted_data.get("education", []),
+        "experience": extracted_data.get("experience", []),
+        "projects": extracted_data.get("projects", []),
+        "skills": extracted_data.get("skills", []),
+        "technicalSkills": extracted_data.get("skills", []),
+        "softSkills": extracted_data.get("soft_skills", extracted_data.get("softSkills", [])),
+        "certifications": extracted_data.get("certifications", []),
+        "achievements": extracted_data.get("achievements", []),
+        "languages": extracted_data.get("languages", []),
+        "publications": extracted_data.get("publications", []),
+        "hobbies": extracted_data.get("hobbies", []),
+        "internships": extracted_data.get("internships", []),
+        "custom_sections": extracted_data.get("custom_sections", []),
+        "portfolioLinks": extracted_data.get("portfolioLinks", []),
+        "lastUpdated": datetime.now(timezone.utc).isoformat()
+    }
     db.resume_profiles.update_one(
         {"resumeId": resume_id},
-        {"$set": {
-            "summary": extracted_data.get("summary", ""),
-            "projects": extracted_data.get("projects", []),
-            "experience": extracted_data.get("experience", []),
-            "technicalSkills": extracted_data.get("skills", []),
-            "lastUpdated": datetime.now(timezone.utc).isoformat()
-        }},
+        {"$set": profile_update},
         upsert=True
     )
 

@@ -353,14 +353,17 @@ def build_pdf_story(resume_data: Dict[str, Any], template: str = "harvard", db: 
       return []
     flowables = [Paragraph(sec.get("title") or "EDUCATION", h1_style)]
     for edu in education:
-      degree = clean_unicode(edu.get("degree", "Degree"))
-      school = clean_unicode(edu.get("institution", "University"))
-      year = clean_unicode(edu.get("passing_year") or edu.get("year") or "")
-      location = clean_unicode(edu.get("location") or "Georgia, United States")
+      degree = clean_unicode(edu.get("degree") or edu.get("field_of_study") or "Degree")
+      school = clean_unicode(edu.get("institution") or edu.get("school") or edu.get("university") or edu.get("name") or "University")
+      year = clean_unicode(edu.get("passing_year") or edu.get("year") or edu.get("date") or (f"{edu.get('start_date', '')} - {edu.get('end_date', '')}".strip(" -")))
+      loc = clean_unicode(edu.get("location") or "")
+      
+      header_str = f"<b>{degree}</b>" + (f" - {year}" if year else "")
+      sub_str = f"{school}" + (f" - {loc}" if loc else "")
       
       edu_block = [
-        Paragraph(f"<b>{degree} - {year}</b>", body_style),
-        Paragraph(f"{school} - {location}", ParagraphStyle('SchoolSub', parent=body_style, textColor=secondary_color)),
+        Paragraph(header_str, body_style),
+        Paragraph(sub_str, ParagraphStyle('SchoolSub', parent=body_style, textColor=secondary_color)),
         Spacer(1, 3)
       ]
       flowables.append(KeepTogether(edu_block))
@@ -372,26 +375,36 @@ def build_pdf_story(resume_data: Dict[str, Any], template: str = "harvard", db: 
       return []
     flowables = [Paragraph(sec.get("title") or "WORK EXPERIENCE", h1_style)]
     for exp in experience:
-      job_title = clean_unicode(exp.get("position", "Developer"))
-      company = clean_unicode(exp.get("company", "Company"))
-      duration = clean_unicode(exp.get("duration", ""))
-      location = clean_unicode(exp.get("location") or "United States")
+      job_title = clean_unicode(exp.get("position") or exp.get("job_title") or exp.get("title") or exp.get("role") or "Developer")
+      company = clean_unicode(exp.get("company") or exp.get("organization") or exp.get("employer") or "Company")
+      duration = clean_unicode(exp.get("duration") or exp.get("dates") or (f"{exp.get('start_date', '')} - {exp.get('end_date', '')}".strip(" -")))
+      location = clean_unicode(exp.get("location") or "")
       
-      exp_header = f"<b>{company} - {location} - {duration}</b>"
+      header_parts = [company]
+      if location:
+        header_parts.append(location)
+      if duration:
+        header_parts.append(duration)
+      exp_header = f"<b>{' - '.join(header_parts)}</b>"
       
       exp_block = [
         Paragraph(exp_header, body_style),
         Paragraph(f"<b>{job_title}</b>", ParagraphStyle('SubHeader', parent=body_style, fontName=title_font, spaceAfter=2))
       ]
       
-      desc = exp.get("description", "")
-      if desc:
-        bullets = [b.strip() for b in re.split(r'[\*\u2022•\n]', desc) if b.strip()]
+      desc_val = exp.get("description") or exp.get("responsibilities") or exp.get("bullets") or exp.get("summary") or ""
+      if isinstance(desc_val, list):
+        for bullet in desc_val:
+          b_str = clean_unicode(str(bullet)).strip()
+          if b_str:
+            exp_block.append(Paragraph(f"• {b_str}", bullet_style))
+      elif isinstance(desc_val, str) and desc_val.strip():
+        bullets = [b.strip() for b in re.split(r'[\*\u2022•\n]', desc_val) if b.strip()]
         if len(bullets) > 0:
           for bullet in bullets:
             exp_block.append(Paragraph(f"• {clean_unicode(bullet)}", bullet_style))
         else:
-          exp_block.append(Paragraph(clean_unicode(desc), body_style))
+          exp_block.append(Paragraph(clean_unicode(desc_val), body_style))
       
       flowables.append(KeepTogether(exp_block))
       flowables.append(Spacer(1, 4))
@@ -404,9 +417,13 @@ def build_pdf_story(resume_data: Dict[str, Any], template: str = "harvard", db: 
     flowables = [Paragraph(sec.get("title") or "ACADEMIC & PERSONAL PROJECTS", h1_style)]
     for proj in projects:
       title = clean_unicode(proj.get("name") or proj.get("title") or "Project Title")
-      tech = clean_unicode(proj.get("tech_stack") or proj.get("technologies") or "")
-      desc = clean_unicode(proj.get("description", ""))
-      duration = clean_unicode(proj.get("duration") or "")
+      tech = proj.get("tech_stack") or proj.get("technologies") or proj.get("tech") or ""
+      if isinstance(tech, list):
+        tech = ", ".join([str(t) for t in tech])
+      tech = clean_unicode(tech)
+      
+      desc_val = proj.get("description") or proj.get("responsibilities") or proj.get("bullets") or ""
+      duration = clean_unicode(proj.get("duration") or proj.get("year") or proj.get("date") or "")
       
       proj_header = f"<b>{title}</b>" + (f" ({tech})" if tech else "")
       
@@ -422,37 +439,47 @@ def build_pdf_story(resume_data: Dict[str, Any], template: str = "harvard", db: 
         ('RIGHTPADDING', (0,0), (-1,-1), 0),
       ]))
       
-      proj_block = [
-        proj_table,
-        Paragraph(desc, body_style) if desc else Spacer(1, 1)
-      ]
+      proj_block = [proj_table]
+      if isinstance(desc_val, list):
+        for b in desc_val:
+          b_str = clean_unicode(str(b)).strip()
+          if b_str:
+            proj_block.append(Paragraph(f"• {b_str}", bullet_style))
+      elif isinstance(desc_val, str) and desc_val.strip():
+        proj_block.append(Paragraph(clean_unicode(desc_val), body_style))
+      
       flowables.append(KeepTogether(proj_block))
       flowables.append(Spacer(1, 4))
     return flowables
 
   def make_skills_flowables(sec):
-    skills = resume_data.get("skills", [])
+    skills = resume_data.get("skills") or resume_data.get("technicalSkills") or []
     if not skills:
       return []
     flowables = [Paragraph(sec.get("title") or "TECHNICAL SKILLS", h1_style)]
     
     if isinstance(skills, list) and skills:
-      for s in skills:
-        if isinstance(s, dict):
+      dict_items = [s for s in skills if isinstance(s, dict)]
+      str_items = [clean_unicode(str(s)) for s in skills if not isinstance(s, dict)]
+      
+      if dict_items:
+        for s in dict_items:
           cat_name = s.get("name") or s.get("category") or "Skills"
           sub_skills = s.get("skills")
           if isinstance(sub_skills, list):
-            skill_str = ", ".join([str(x) for x in sub_skills])
+            skill_str = ", ".join([clean_unicode(str(x)) for x in sub_skills])
           else:
-            skill_str = s.get("skill") or s.get("value") or ""
+            skill_str = clean_unicode(s.get("skill") or s.get("value") or "")
           
           if skill_str:
-            cat_str = f"<b>{clean_unicode(cat_name)}:</b> {clean_unicode(skill_str)}"
+            cat_str = f"<b>{clean_unicode(cat_name)}:</b> {skill_str}"
             flowables.append(Paragraph(cat_str, body_style))
-        else:
-          skills_str = ", ".join([clean_unicode(str(x)) for x in skills])
-          flowables.append(Paragraph(skills_str, body_style))
-          break
+      if str_items:
+        skills_str = ", ".join(str_items)
+        flowables.append(Paragraph(skills_str, body_style))
+    elif isinstance(skills, str):
+      flowables.append(Paragraph(clean_unicode(skills), body_style))
+    
     flowables.append(Spacer(1, 4))
     return flowables
 
