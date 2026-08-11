@@ -18,9 +18,10 @@ export default defineConfig({
         configure: (proxy) => {
           proxy.on('error', (err, _req, res) => {
             console.error('[Vite Proxy Error]', err.message);
-            if (res && !res.headersSent) {
-              res.writeHead(502, { 'Content-Type': 'application/json' });
-              res.end(JSON.stringify({
+            const httpRes = res as any;
+            if (httpRes && !httpRes.headersSent && typeof httpRes.writeHead === 'function') {
+              httpRes.writeHead(502, { 'Content-Type': 'application/json' });
+              httpRes.end(JSON.stringify({
                 error: 'Proxy error',
                 detail: `Vite proxy to backend failed: ${err.message}`,
               }));

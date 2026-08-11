@@ -9,7 +9,7 @@ import { Button } from '../components/Button';
 import { useUserStore } from '../store/userStore';
 import { apiClient } from '../services/api';
 import { DisplayHeading } from '../components/DisplayHeading';
-import { CheckCircle, ShieldAlert, KeyRound, Mail, ArrowRight, Check, ArrowLeft, HelpCircle } from 'lucide-react';
+import { CheckCircle, ShieldAlert, KeyRound, Mail, ArrowRight, Check, ArrowLeft, HelpCircle, Sparkles } from 'lucide-react';
 
 // Validation Schemas
 const loginSchema = z.object({

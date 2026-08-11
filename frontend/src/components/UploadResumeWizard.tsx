@@ -5,7 +5,7 @@ import {
   ArrowRight, Check, X, HelpCircle, Download, Briefcase, RefreshCw,
   Search, ShieldAlert, Award, FileCode, CheckCircle, ExternalLink, Filter, MapPin,
   TrendingUp, Activity, FileEdit, UserCheck, Play, Zap, Info, ArrowLeft, Send, Sparkle,
-  Trash2, Plus, Eye, ListOrdered, FileUp, SparklesIcon, CheckSquare, Save,
+  Trash2, Plus, Eye, ListOrdered, FileUp, CheckSquare, Save,
   Undo, Redo, ZoomIn, ZoomOut, Maximize2, RotateCcw, Columns, Type, Palette, Layout, Settings2, Layers, AlertCircle
 } from 'lucide-react';
 import { apiClient } from '../services/api';
