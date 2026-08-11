@@ -9,7 +9,7 @@ import { Button } from '../components/Button';
 import { useUserStore } from '../store/userStore';
 import { apiClient } from '../services/api';
 import { DisplayHeading } from '../components/DisplayHeading';
-import { CheckCircle, ShieldAlert, Sparkles, KeyRound, Mail, ArrowRight, Copy, Check, ArrowLeft, HelpCircle } from 'lucide-react';
+import { CheckCircle, ShieldAlert, KeyRound, Mail, ArrowRight, Check, ArrowLeft, HelpCircle } from 'lucide-react';
 
 // Validation Schemas
 const loginSchema = z.object({
@@ -53,9 +53,7 @@ export const Login: React.FC = () => {
   const [maskedEmail, setMaskedEmail] = useState('');
   const [devOtp, setDevOtp] = useState<string | null>(null);
 
-  // Copy states for testing credentials
-  const [copiedRoll, setCopiedRoll] = useState(false);
-  const [copiedPass, setCopiedPass] = useState(false);
+
 
   const [apiError, setApiError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -433,50 +431,6 @@ export const Login: React.FC = () => {
           )}
 
         </Card>
-
-        {/* Development Mode Testing Credentials Card */}
-        {true && (
-          <div className="mt-8 flex flex-col gap-4">
-            <div className="bg-white border border-slate-200/80 rounded-2xl p-5 text-slate-600 shadow-sm">
-              <div className="flex items-center justify-between mb-3 border-b border-slate-100 pb-2">
-                <span className="text-xs font-bold text-blue-600 flex items-center gap-1.5 uppercase tracking-wider">
-                  <Sparkles size={14} /> Dev Testing Credentials
-                </span>
-                <span className="text-[10px] bg-blue-50 text-blue-600 font-extrabold px-2 py-0.5 rounded border border-blue-100 uppercase">
-                  Seed Data
-                </span>
-              </div>
-
-              <div className="flex flex-col gap-2.5 text-xs">
-                <div className="flex items-center justify-between">
-                  <span>Roll Number: <strong>BCA24001</strong></span>
-                  <button
-                    onClick={() => copyToClipboard('BCA24001', setCopiedRoll)}
-                    className="p-1 rounded bg-slate-50 border border-slate-250 text-slate-500 hover:text-slate-800 transition-colors cursor-pointer flex items-center gap-1 text-[10px]"
-                  >
-                    {copiedRoll ? <Check size={12} className="-[#111111]" /> : <Copy size={12} />}
-                    <span>{copiedRoll ? 'Copied' : 'Copy'}</span>
-                  </button>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span>Initial Password (DOB): <strong>15-08-2005</strong></span>
-                  <button
-                    onClick={() => copyToClipboard('15-08-2005', setCopiedPass)}
-                    className="p-1 rounded bg-slate-50 border border-slate-250 text-slate-500 hover:text-slate-800 transition-colors cursor-pointer flex items-center gap-1 text-[10px]"
-                  >
-                    {copiedPass ? <Check size={12} className="-[#111111]" /> : <Copy size={12} />}
-                    <span>{copiedPass ? 'Copied' : 'Copy'}</span>
-                  </button>
-                </div>
-                <div className="mt-2.5 pt-2.5 border-t border-slate-100 text-[10px] text-slate-400 leading-relaxed">
-                  <strong>Student Login Flow:</strong><br />
-                  1. Log in immediately with Roll: <code>BCA24001</code> and Pass: <code>15-08-2005</code>.<br />
-                  2. No forced setup or activation. Direct redirection to dashboard.
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
 
       </div>
     </div>

@@ -232,11 +232,6 @@ export const AdminLayout: React.FC = () => {
               <RefreshCw size={13} className={isSyncing ? 'animate-spin' : ''} />
             </button>
 
-            <button className="p-1.8 bg-slate-100/50 hover:bg-slate-100 border border-border text-slate-400 hover:text-slate-900 relative cursor-pointer">
-              <Bell size={13} />
-              <span className="absolute top-1 right-1 w-1.5 h-1.5 rounded-full bg-[#111111]" />
-            </button>
-
             <div className="w-[1px] h-4 bg-border" />
 
             {/* Profile badge */}
