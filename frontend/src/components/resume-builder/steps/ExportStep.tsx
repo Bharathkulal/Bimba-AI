@@ -14,8 +14,12 @@ export const ExportStep: React.FC = () => {
   const handleDownloadPdf = async () => {
     if (!resumeId) return;
     try {
-      await generatePdf(resumeId);
-      alert("PDF download started successfully.");
+      const res = await generatePdf(resumeId);
+      if (res && res.pdf_url) {
+        window.open(res.pdf_url, '_blank');
+      } else {
+        alert("Failed to retrieve compiled PDF download link.");
+      }
     } catch (e) {
       console.error(e);
       alert("Failed to compile layout PDF.");

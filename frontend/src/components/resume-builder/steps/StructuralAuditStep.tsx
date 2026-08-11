@@ -2,11 +2,11 @@ import React from 'react';
 import { useResumeBuilderContext } from '../ResumeBuilderContext';
 import { Card } from '../../Card';
 import { Button } from '../../Button';
-import { CheckCircle2, AlertTriangle, HelpCircle, Eye, Sparkles } from 'lucide-react';
+import { CheckCircle2, AlertTriangle, HelpCircle, Eye, Sparkles, ArrowLeft, ArrowRight } from 'lucide-react';
 import { ResumePreview } from '../../resume/ResumePreview';
 
 export const StructuralAuditStep: React.FC = () => {
-  const { resumeId } = useResumeBuilderContext();
+  const { resumeId, currentStep, setStep } = useResumeBuilderContext();
 
   const auditItems = [
     { label: 'Unrecognizable fonts & symbols', status: 'pass', msg: 'No broken bullet symbols or character blocks detected.' },
@@ -50,6 +50,27 @@ export const StructuralAuditStep: React.FC = () => {
               </Card>
             );
           })}
+
+          {/* Navigation buttons right after contact details validation */}
+          <div className="flex items-center gap-3 mt-2 pt-2">
+            <Button
+              onClick={() => setStep(Math.max(1, currentStep - 1))}
+              disabled={currentStep === 1}
+              variant="outline"
+              className="font-bold text-xs gap-1.5"
+              icon={<ArrowLeft size={13} />}
+            >
+              Back
+            </Button>
+
+            <Button
+              onClick={() => setStep(Math.min(13, currentStep + 1))}
+              disabled={currentStep === 13}
+              className="font-bold text-xs gap-1.5"
+            >
+              Continue <ArrowRight size={13} />
+            </Button>
+          </div>
         </div>
       </div>
 

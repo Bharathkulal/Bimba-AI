@@ -42,7 +42,7 @@ export const ResumeBuilderShell: React.FC<ResumeBuilderShellProps> = ({ children
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-slate-900 flex flex-col text-slate-900 dark:text-white transition-colors duration-200">
+    <div className="h-screen bg-slate-50 dark:bg-slate-900 flex flex-col text-slate-900 dark:text-white transition-colors duration-200 overflow-hidden">
       
       {/* Top Header Bar */}
       <header className="h-16 px-6 border-b border-slate-200 dark:border-white/10 flex items-center justify-between bg-white dark:bg-[#111827] relative z-10 shrink-0">
@@ -108,31 +108,41 @@ export const ResumeBuilderShell: React.FC<ResumeBuilderShellProps> = ({ children
       </div>
 
       {/* Main Content Area */}
-      <main className="flex-grow overflow-y-auto p-4 md:p-8 flex flex-col justify-between">
-        <div className="flex-grow flex items-center justify-center w-full max-w-5xl mx-auto">
+      <main className="flex-grow flex flex-col min-h-0 overflow-hidden">
+        <div className="flex-grow overflow-y-auto p-4 md:p-8 w-full max-w-5xl mx-auto flex items-start justify-center">
           {children}
         </div>
 
         {/* Global Footer Buttons */}
-        <div className="mt-8 border-t border-slate-200 dark:border-white/10 pt-4 flex justify-between items-center w-full max-w-5xl mx-auto shrink-0">
-          <Button
-            onClick={() => setStep(Math.max(1, currentStep - 1))}
-            disabled={currentStep === 1}
-            variant="outline"
-            className="font-bold text-xs gap-1.5"
-            icon={<ArrowLeft size={13} />}
-          >
-            Back
-          </Button>
+        {currentStep !== 10 && (
+          <div className="border-t border-slate-200 dark:border-white/10 px-4 md:px-8 py-4 flex justify-between items-center w-full max-w-5xl mx-auto shrink-0 bg-slate-50 dark:bg-slate-900 z-10">
+            <Button
+              onClick={() => setStep(Math.max(1, currentStep - 1))}
+              disabled={currentStep === 1}
+              variant="outline"
+              className="font-bold text-xs gap-1.5"
+              icon={<ArrowLeft size={13} />}
+            >
+              Back
+            </Button>
 
-          <Button
-            onClick={() => setStep(Math.min(13, currentStep + 1))}
-            disabled={currentStep === 13}
-            className="font-bold text-xs gap-1.5"
-          >
-            Continue <ArrowRight size={13} />
-          </Button>
-        </div>
+            {currentStep === 13 ? (
+              <Button
+                onClick={confirmExit}
+                className="font-bold text-xs gap-1.5"
+              >
+                Back to Dashboard <ArrowRight size={13} />
+              </Button>
+            ) : (
+              <Button
+                onClick={() => setStep(Math.min(13, currentStep + 1))}
+                className="font-bold text-xs gap-1.5"
+              >
+                Continue <ArrowRight size={13} />
+              </Button>
+            )}
+          </div>
+        )}
       </main>
 
       {/* Confirmation Dialog Modal */}

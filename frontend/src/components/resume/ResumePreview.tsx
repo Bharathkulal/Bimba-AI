@@ -84,57 +84,10 @@ export const ResumePreview: React.FC<ResumePreviewProps> = ({
   };
 
   return (
-    <div className="w-full flex flex-col gap-4 text-left">
-      {/* Action Controls Header */}
-      <div className="border-b border-slate-200 pb-3 flex items-center justify-between">
-        <div>
-          <h4 className="text-xs font-black uppercase tracking-wider text-slate-500">
-            Live Preview
-          </h4>
-          <span className="text-[10px] text-slate-400 font-bold">Synchronized in real-time</span>
-        </div>
-
-        <div className="flex items-center gap-2">
-          {/* Typography selector */}
-          <select 
-            value={activeFontFamily}
-            onChange={(e) => handleFontFamilyChange(e.target.value)}
-            className="px-2.5 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-[10px] font-black focus:outline-none"
-          >
-            <option value="Inter">Inter (Default)</option>
-            <option value="Calibri">Calibri</option>
-            <option value="Arial">Arial</option>
-            <option value="Helvetica">Helvetica</option>
-            <option value="Roboto">Roboto</option>
-            <option value="Times New Roman">Times New Roman</option>
-          </select>
-
-          <select 
-            value={activeFontSize}
-            onChange={(e) => handleFontSizeChange(e.target.value)}
-            className="px-2.5 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-[10px] font-black focus:outline-none"
-          >
-            <option value="10pt">10 pt</option>
-            <option value="11pt">11 pt (Recommended)</option>
-            <option value="12pt">12 pt</option>
-          </select>
-
-          {showDownload && (
-            <button
-              onClick={handleDownload}
-              disabled={generating}
-              className="px-3.5 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-[10px] rounded-lg shadow-sm hover:shadow transition-all duration-205 flex items-center gap-1.5 disabled:opacity-50 cursor-pointer"
-            >
-              {generating ? <RefreshCw size={11} className="animate-spin" /> : <Download size={11} />}
-              {generating ? 'Exporting...' : downloadLabel}
-            </button>
-          )}
-        </div>
-      </div>
-
+    <div className="w-full flex flex-col gap-2 text-left">
       {/* Frame view */}
-      <div className={`bg-slate-100 p-4.5 rounded-[22px] border border-slate-200/60 shadow-inner overflow-y-auto ${frameClassName}`}>
-        <div className="bg-white rounded-xl shadow-lg border border-slate-200/40 overflow-hidden transform origin-top transition-transform duration-300">
+      <div className="bg-slate-100/80 dark:bg-slate-900/50 p-2 rounded-2xl border border-slate-200/60 dark:border-white/5 shadow-inner overflow-hidden flex items-start justify-center h-[420px] w-full">
+        <div className="w-[800px] origin-top scale-[0.45] bg-white text-slate-850 rounded-xl shadow-md border border-slate-200/40 overflow-hidden shrink-0">
           <TemplateComponent 
             data={resumeData} 
             fontFamily={activeFontFamily} 

@@ -424,24 +424,7 @@ export const CreateFromScratchWizard: React.FC<CreateFromScratchWizardProps> = (
                 <Save size={12} />
                 {isSaving ? 'Saving...' : `Saved ${formatSavedAt(savedAt)}`}
               </span>
-              <button
-                type="button"
-                onClick={handleBack}
-                disabled={activeIndex === 0}
-                className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2 text-xs font-black text-slate-700 shadow-sm transition hover:border-slate-300 disabled:cursor-not-allowed disabled:opacity-45"
-              >
-                <ArrowLeft size={14} />
-                Back
-              </button>
-              <button
-                type="button"
-                onClick={handleNext}
-                disabled={activeIndex === steps.length - 1}
-                className="inline-flex items-center gap-2 rounded-xl bg-[#173404] px-4 py-2 text-xs font-black text-white shadow-sm transition hover:bg-[#214807] disabled:cursor-not-allowed disabled:opacity-45"
-              >
-                Next
-                <ArrowRight size={14} />
-              </button>
+
               <button
                 type="button"
                 onClick={onClose}
@@ -792,6 +775,39 @@ export const CreateFromScratchWizard: React.FC<CreateFromScratchWizardProps> = (
                   placeholder="Detail-oriented frontend developer with experience building reliable, measurable products..."
                 />
               )}
+
+              <div className="mt-8 flex justify-center items-center gap-4 border-t border-slate-100 pt-5">
+                <button
+                  type="button"
+                  onClick={handleBack}
+                  disabled={activeIndex === 0}
+                  className="inline-flex items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-8 py-3 text-sm font-black text-slate-700 shadow-md transition hover:border-slate-300 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-45 min-w-[120px]"
+                >
+                  <ArrowLeft size={16} />
+                  Back
+                </button>
+
+                {activeIndex === steps.length - 1 ? (
+                  <button
+                    type="button"
+                    onClick={handleContinue}
+                    disabled={!canContinue || submitting}
+                    className="inline-flex items-center justify-center gap-2 rounded-xl bg-[#173404] px-10 py-3 text-sm font-black text-white shadow-md transition hover:bg-[#214807] disabled:cursor-not-allowed disabled:opacity-45 min-w-[200px]"
+                  >
+                    {submitting ? <RefreshCw size={16} className="animate-spin" /> : <CheckCircle2 size={16} />}
+                    Continue to Editor
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={handleNext}
+                    className="inline-flex items-center justify-center gap-2 rounded-xl bg-[#173404] px-10 py-3 text-sm font-black text-white shadow-md transition hover:bg-[#214807] min-w-[160px]"
+                  >
+                    Next
+                    <ArrowRight size={16} />
+                  </button>
+                )}
+              </div>
             </section>
           </main>
 
@@ -807,19 +823,10 @@ export const CreateFromScratchWizard: React.FC<CreateFromScratchWizardProps> = (
         <footer className="flex flex-col gap-3 border-t border-slate-200 bg-white px-5 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-7">
           <div className="flex flex-col">
             <p className="text-xs font-semibold text-slate-500">
-              Continue is available from any section once contact plus experience or education is present.
+              Continue to Editor is available from the summary section once contact details plus either experience or education are present.
             </p>
             {errorMsg && <p className="mt-1 text-xs font-bold text-rose-500">{errorMsg}</p>}
           </div>
-          <button
-            type="button"
-            onClick={handleContinue}
-            disabled={!canContinue || submitting}
-            className="inline-flex items-center justify-center gap-2 rounded-xl bg-[#173404] px-6 py-3 text-sm font-black text-white shadow-sm transition hover:bg-[#214807] disabled:cursor-not-allowed disabled:opacity-45"
-          >
-            {submitting ? <RefreshCw size={15} className="animate-spin" /> : <CheckCircle2 size={15} />}
-            Continue to Editor
-          </button>
         </footer>
       </div>
     </div>

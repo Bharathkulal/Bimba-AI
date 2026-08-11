@@ -161,7 +161,6 @@ export const SnapshotEditorStep: React.FC = () => {
           <div className="flex justify-end border-t border-slate-100 dark:border-white/5 pt-4 mt-6">
             <Button
               onClick={() => setStep(5)}
-              disabled={!isFormValid}
               className="font-bold text-xs gap-1.5"
             >
               Continue to Templates
