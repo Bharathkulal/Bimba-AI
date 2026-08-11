@@ -67,15 +67,16 @@ def get_or_create_resume_analysis(resume_id: int, student_id: int, db: Any) -> d
         "id": int(analysis_id) if str(analysis_id).isdigit() else resume_id,
         "resume_id": resume_id,
         "student_id": student_id,
-        "raw_text": json.dumps(extracted_data),
+        "raw_text": json.dumps(extracted_data, default=str),
         "extracted_data": extracted_data,
         "status": "completed",
         "created_at": datetime.now(timezone.utc).isoformat()
     }
     
     if analysis_record:
+        filter_doc = {"_id": analysis_record["_id"]} if "_id" in analysis_record else {"id": analysis_record.get("id", resume_id)}
         db.resume_analysis.update_one(
-            {"_id": analysis_record["_id"]},
+            filter_doc,
             {"$set": {"extracted_data": extracted_data}}
         )
         analysis_record["extracted_data"] = extracted_data
@@ -87,8 +88,9 @@ def get_or_create_resume_analysis(resume_id: int, student_id: int, db: Any) -> d
         except Exception as e:
             existing = db.resume_analysis.find_one({"resume_id": resume_id}) or db.resume_analysis.find_one({"id": resume_id})
             if existing:
+                filter_ex = {"_id": existing["_id"]} if "_id" in existing else {"id": existing.get("id", resume_id)}
                 db.resume_analysis.update_one(
-                    {"_id": existing["_id"]},
+                    filter_ex,
                     {"$set": {"extracted_data": extracted_data}}
                 )
                 existing["extracted_data"] = extracted_data
@@ -385,8 +387,9 @@ def improve_resume_endpoint(
         )
 
     # 4. Save to MongoDB
+    filter_imp = {"_id": analysis_record["_id"]} if isinstance(analysis_record, dict) and "_id" in analysis_record else {"id": analysis_record.get("id", resume_id)}
     db.resume_analysis.update_one(
-        {"_id": analysis_record["_id"]},
+        filter_imp,
         {"$set": {
             "ai_improvements": improvements,
             "updated_at": datetime.now(timezone.utc).isoformat()

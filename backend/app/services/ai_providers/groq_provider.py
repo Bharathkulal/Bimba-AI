@@ -6,7 +6,7 @@ from typing import Dict, Any
 
 logger = logging.getLogger("groq_provider")
 
-def call_groq(prompt: str, api_key: str = None, timeout: int = 12) -> Dict[str, Any]:
+def call_groq(prompt: str, api_key: str = None, timeout: int = 12, model: str = None) -> Dict[str, Any]:
     """
     Calls the Groq API directly using REST endpoints.
     Tries high-speed Groq Llama 3 models with fallback.
@@ -14,7 +14,11 @@ def call_groq(prompt: str, api_key: str = None, timeout: int = 12) -> Dict[str, 
     if not api_key:
         try:
             import dotenv
-            dotenv.load_dotenv(override=True)
+            env_path = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))), ".env")
+            if os.path.exists(env_path):
+                dotenv.load_dotenv(dotenv_path=env_path, override=True)
+            else:
+                dotenv.load_dotenv(override=True)
         except Exception:
             pass
         api_key = os.getenv("GROQ_API_KEY", "").strip()
@@ -33,6 +37,8 @@ def call_groq(prompt: str, api_key: str = None, timeout: int = 12) -> Dict[str, 
     
     # Active high-performance models on Groq API
     models_to_try = ["llama-3.3-70b-versatile", "llama-3.1-8b-instant", "mixtral-8x7b-32768"]
+    if model:
+        models_to_try = [model] + [m for m in models_to_try if m != model]
     
     last_err = None
     for model_name in models_to_try:

@@ -88,8 +88,8 @@ def despace_spaced_text(text: str) -> str:
 
 def normalize_text_lines(text: str) -> List[str]:
     text_clean = despace_spaced_text(clean_text_artifacts(text))
-    # Replace literal \n embedded in single strings (if any) and normalize line breaks
-    text_clean = text_clean.replace("\\n", "\n")
+    # Replace literal \n embedded in single strings (if any) with space to keep table rows intact
+    text_clean = text_clean.replace("\\n", " ")
     raw_lines = [l.strip() for l in text_clean.split("\n")]
     lines = []
     for l in raw_lines:
@@ -143,28 +143,43 @@ def extract_personal_info(lines: List[str]) -> Dict[str, Any]:
         location = loc_match.group(0)
 
     # 4. Infer Name from top lines without labels
-    name = "Candidate Name"
+    name = ""
     title = ""
-    for l in lines[:10]:
-        l_lower = l.lower()
+    
+    # Try finding explicit candidate name in top 15 lines
+    for l in lines[:15]:
         l_no_tags = re.sub(r'<[^>]+>', '', l).strip()
-        
-        # Skip if it's contact info or has common labels
-        if (email and email in l) or (phone and phone in l) or "github.com" in l_lower or "linkedin.com" in l_lower or "@" in l:
+        if not l_no_tags:
             continue
             
-        if any(kw in l_lower for kw in TITLE_KEYWORDS) and len(l_no_tags) < 60:
-            if not title:
-                title = l_no_tags
-            continue
-            
-        # Stop inferring name if we hit a section header
-        if any(sec_kw in l_lower for kws in SECTION_TAXONOMY.values() for sec_kw in kws):
+        # First check for proper capitalized full name pattern (e.g. Pranam R Betrabet or John Doe)
+        prop_matches = re.findall(r'\b([A-Z][a-z]{1,20}(?:\s+[A-Z]\.?)?\s+[A-Z][a-z]{1,20}(?:\s+[A-Z][a-z]{1,20})?)\b', l_no_tags)
+        for cand in prop_matches:
+            cand_lower = cand.lower()
+            non_name_terms = ["phone", "email", "address", "post", "pin", "contact", "location", "objective", "summary", "experience", "education", "skills", "projects", "m.tech", "b.e", "b.tech", "m.sc", "b.sc", "computer", "engineering", "technology", "science", "college", "institute", "university", "school", "course", "programme", "temple", "road", "village"]
+            if not any(kw in cand_lower for kw in non_name_terms):
+                name = cand
+                break
+        if name:
             break
 
-        # A good candidate for name is a short string, no numbers
-        if len(l_no_tags) > 2 and len(l_no_tags) < 35 and not any(ch.isdigit() for ch in l_no_tags) and name == "Candidate Name":
-            name = l_no_tags
+    if email and "address" in text_clean.lower():
+        idx_e = text_clean.find(email)
+        loc_addr = re.search(r'address\s*:', text_clean, re.IGNORECASE)
+        if idx_e != -1 and loc_addr and loc_addr.start() > idx_e:
+            mid = text_clean[idx_e + len(email):loc_addr.start()].strip(' \t\n\r"\'-,')
+            if mid and len(mid) < 40 and not any(ch.isdigit() for ch in mid):
+                name = mid
+
+    if not name or name == "Candidate Name" or name.lower().startswith("post:"):
+        # Try inferring name from email prefix e.g. pranamrrao@gmail.com -> Pranam R Rao
+        if email:
+            uname = email.split('@')[0]
+            uname_clean = re.sub(r'\d+', '', uname).replace('.', ' ').replace('_', ' ').strip()
+            if len(uname_clean) >= 3:
+                name = " ".join(w.capitalize() for w in uname_clean.split())
+        if not name:
+            name = "Candidate Name"
 
     return {
         "name": name,
@@ -438,11 +453,16 @@ def parse_education(lines: List[str]) -> List[Dict[str, Any]]:
                 deg = parts[col_map["deg"]] if col_map["deg"] < len(parts) else ""
                 yr = parts[col_map["yr"]] if col_map["yr"] < len(parts) else ""
                 cgpa = parts[col_map["cgpa"]] if col_map["cgpa"] < len(parts) else ""
-                
-                # Check if yr and cgpa are swapped (if we mapped defaults and actual content looks swapped)
-                if col_map["yr"] == 2 and col_map["cgpa"] == 3 and ("%" in yr or "cgpa" in yr.lower()):
+
+                # Smart swap/detection for year vs cgpa/percentage
+                if (re.search(r'\b(19|20)\d{2}\b', cgpa) and not re.search(r'\b(19|20)\d{2}\b', yr)) or ("%" in yr or "cgpa" in yr.lower() or "gpa" in yr.lower()):
                     cgpa, yr = yr, cgpa
-                    
+
+                # Clean values
+                if yr and not re.search(r'\b(19|20)\d{2}\b', yr):
+                    y_match = re.search(r'\b(19|20)\d{2}\b', yr)
+                    yr = y_match.group(0) if y_match else yr
+
                 curr_edu = {
                     "id": len(educations) + 1,
                     "institution": inst,
@@ -556,9 +576,33 @@ def extract_structured_data(text: str) -> Dict[str, Any]:
     summary_text = " ".join(untag(sections["summary"])).strip()
     objective_text = " ".join(untag(sections["objective"])).strip()
 
+    # Clean objective text if it grabbed unwanted section blocks
+    if objective_text:
+        # Stop objective text if section markers or bullet lists appear inside it
+        clean_obj_lines = []
+        for line_item in untag(sections["objective"]):
+            l_item_lower = line_item.lower()
+            if any(k in l_item_lower for k in ["programming languages:", "front end:", "computer concepts", "database management", "operating systems", "<table", "<tr", "course |", "internship :-", "work experience"]):
+                break
+            clean_obj_lines.append(line_item)
+        objective_text = " ".join(clean_obj_lines).strip()
+
     experiences = parse_experiences(sections["experience"])
     educations = parse_education(sections["education"])
+
+    # Fallback scanning for education if table was outside mapped education section
+    if not educations:
+        table_lines = [l for l in lines if ("<TR" in l or (l.count("|") >= 2 and any(k in l.lower() for k in ["inst", "college", "university", "school", "course", "degree", "m.tech", "b.e", "b.tech", "puc", "sslc", "percentage", "year"])))]
+        if table_lines:
+            educations = parse_education(table_lines)
+
     projects = parse_projects(sections["projects"])
+
+    # Fallback scanning for experience if none mapped
+    if not experiences:
+        exp_lines = [l for l in lines if any(k in l.lower() for k in ["senior software engineer", "assistant professor", "developer", "engineer", "manager", "internship"])]
+        if exp_lines:
+            experiences = parse_experiences(exp_lines)
 
     # Skills merge
     for line in untag(sections["technical_skills"]):
@@ -570,10 +614,13 @@ def extract_structured_data(text: str) -> Dict[str, Any]:
 
     # Certifications
     cert_lines = untag(sections["certifications"])
+    if not cert_lines:
+        cert_lines = [re.sub(r'<[^>]+>', '', l).strip() for l in lines if any(k in l.lower() for k in ["swayam", "gold medal", "coursera", "nptel", "udemy", "certified", "certification"])]
+
     certifications = []
     for line in cert_lines:
         line_clean = line.strip()
-        if not line_clean:
+        if not line_clean or len(line_clean) < 5:
             continue
         org = ""
         name_str = line_clean

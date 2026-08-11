@@ -534,6 +534,7 @@ export const UploadResumeWizard: React.FC<UploadResumeWizardProps> = ({
     if (selectedFile) {
       setFile(selectedFile);
       startIngestion(selectedFile);
+      if (e.target) e.target.value = '';
     }
   };
 

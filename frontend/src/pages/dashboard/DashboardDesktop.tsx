@@ -155,6 +155,7 @@ export const DashboardDesktop: React.FC = () => {
 
     setWizardFile(file);
     setShowWizard(true);
+    if (e.target) e.target.value = '';
   };
 
   return (

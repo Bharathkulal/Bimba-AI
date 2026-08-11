@@ -191,6 +191,7 @@ export const ResumePage: React.FC = () => {
     
     setWizardFile(file);
     setShowWizard(true);
+    if (e.target) e.target.value = '';
   };
 
   const handleSendChat = async () => {
@@ -240,7 +241,10 @@ export const ResumePage: React.FC = () => {
         </div>
         <div className="flex gap-3 shrink-0 relative z-10">
           <Button 
-            onClick={() => setShowWizard(true)}
+            onClick={() => {
+              setWizardFile(null);
+              setShowWizard(true);
+            }}
             variant="secondary" 
             size="sm"
             className="flex items-center gap-2"

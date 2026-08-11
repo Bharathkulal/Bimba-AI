@@ -13,11 +13,18 @@ class AIProviderManager:
         # Configured fallback priority order matching user preference for Groq AI
         self.priority_order = [
             {"provider_name": "Groq", "slug": "groq", "env_key": "GROQ_API_KEY", "default_model": "llama-3.3-70b-versatile"},
-            {"provider_name": "Gemini", "slug": "gemini", "env_key": "GEMINI_API_KEY", "default_model": "gemini-2.0-flash"},
-            {"provider_name": "OpenRouter", "slug": "openrouter", "env_key": "OPENROUTER_API_KEY", "default_model": "deepseek/deepseek-chat"}
+            {"provider_name": "OpenRouter", "slug": "openrouter", "env_key": "OPENROUTER_API_KEY", "default_model": "meta-llama/llama-3.1-8b-instruct"},
+            {"provider_name": "Gemini", "slug": "gemini", "env_key": "GEMINI_API_KEY", "default_model": "gemini-2.0-flash"}
         ]
 
     def _validate_api_key(self, provider_info: Dict[str, Any]) -> str:
+        # Force reload environment variables from .env on every check
+        try:
+            import dotenv
+            dotenv.load_dotenv(override=True)
+        except Exception:
+            pass
+
         # First check if api_key is configured directly in the DB provider document
         api_key = provider_info.get("api_key")
         if api_key is None:
@@ -27,11 +34,6 @@ class AIProviderManager:
         if not api_key:
             env_key = provider_info.get("env_key")
             if env_key:
-                try:
-                    import dotenv
-                    dotenv.load_dotenv(override=True)
-                except Exception:
-                    pass
                 api_key = os.getenv(env_key, "").strip()
         
         if not api_key:
@@ -42,7 +44,8 @@ class AIProviderManager:
             
         return api_key
 
-    def call_llm(self, prompt: str, feature: str = "Parsing", response_format: str = None) -> str:
+    def call_llm(self, prompt: str, feature: str = "Parsing", response_format: str = None, provider: str = None, preferred_provider: str = None) -> str:
+        target_pref = preferred_provider or provider
         last_error_msg = ""
         last_failed_provider = ""
         
@@ -97,6 +100,12 @@ class AIProviderManager:
                     "retry_attempts": retry_attempts if auto_retry else 1,
                     "fallback_enabled": True
                 })
+
+        if target_pref:
+            target_pref_lower = target_pref.lower()
+            matching = [p for p in active_providers if p["slug"].lower() == target_pref_lower]
+            others = [p for p in active_providers if p["slug"].lower() != target_pref_lower]
+            active_providers = matching + others
 
         detailed_failures = []
         

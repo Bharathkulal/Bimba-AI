@@ -13,28 +13,28 @@ db = client[db_name]
 
 print("Updating AI Provider priorities in DB...")
 
-# Update Gemini
-res_gem = db.ai_providers.update_one(
-    {"slug": "gemini"},
-    {"$set": {"priority": 1}}
-)
-
-# Update Groq
+# Update Groq (Primary)
 res_groq = db.ai_providers.update_one(
     {"slug": "groq"},
-    {"$set": {"priority": 2}}
+    {"$set": {"priority": 1, "model_name": "llama-3.3-70b-versatile", "connection_status": "Connected"}}
 )
 
-# Update OpenRouter
+# Update OpenRouter (Fallback 1)
 res_or = db.ai_providers.update_one(
     {"slug": "openrouter"},
-    {"$set": {"priority": 3}}
+    {"$set": {"priority": 2, "model_name": "meta-llama/llama-3.1-8b-instruct"}}
 )
 
-print(f"Gemini modified count: {res_gem.modified_count}")
+# Update Gemini (Fallback 2)
+res_gem = db.ai_providers.update_one(
+    {"slug": "gemini"},
+    {"$set": {"priority": 3, "model_name": "gemini-2.0-flash"}}
+)
+
 print(f"Groq modified count: {res_groq.modified_count}")
 print(f"OpenRouter modified count: {res_or.modified_count}")
+print(f"Gemini modified count: {res_gem.modified_count}")
 
 print("\nVerify updated priority order:")
 for p in db.ai_providers.find({}).sort("priority", 1):
-    print(f"Priority: {p.get('priority')} | Provider: {p.get('provider_name')} | Slug: {p.get('slug')}")
+    print(f"Priority: {p.get('priority')} | Provider: {p.get('provider_name')} | Slug: {p.get('slug')} | Model: {p.get('model_name')}")
