@@ -696,33 +696,20 @@ export const ResumePage: React.FC = () => {
       )}
 
       {showScratchWizard && (
-        isMobile ? (
-          <ResumeBuilderProvider>
-            <UploadResumeMobile 
-              onSwitchToScratch={() => {}}
-              initialMode="scratch"
-              onClose={() => {
-                setShowScratchWizard(false);
-                fetchResumeData();
-              }}
-            />
-          </ResumeBuilderProvider>
-        ) : (
-          <CreateFromScratchWizard
-            initialContact={{
-              name: displayName === 'Student' ? '' : displayName,
-              email: user?.personal_email || '',
-              phone: (user as any)?.phone || '',
-              location: (user as any)?.address || ''
-            }}
-            onClose={() => setShowScratchWizard(false)}
-            onSuccess={() => {
-              setShowScratchWizard(false);
-              fetchResumeData();
-            }}
-            isDark={isDark}
-          />
-        )
+        <CreateFromScratchWizard
+          initialContact={{
+            name: displayName === 'Student' ? '' : displayName,
+            email: user?.personal_email || '',
+            phone: (user as any)?.phone || '',
+            location: (user as any)?.address || ''
+          }}
+          onClose={() => setShowScratchWizard(false)}
+          onSuccess={() => {
+            setShowScratchWizard(false);
+            fetchResumeData();
+          }}
+          isDark={isDark}
+        />
       )}
 
       {activeAnalysisResumeId !== null && (() => {
