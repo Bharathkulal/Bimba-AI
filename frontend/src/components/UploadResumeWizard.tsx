@@ -1990,8 +1990,40 @@ export const UploadResumeWizard: React.FC<UploadResumeWizardProps> = ({
                               enabledSections: enabledSections
                             }
                           });
-                          if (res.data && res.data.pdf_url) {
-                            window.open(res.data.pdf_url, '_blank');
+                          if (res.data) {
+                            const name = parsedData?.personal_info?.name || 'Resume';
+                            const safeName = name.trim().replace(/\s+/g, '_') || 'My';
+                            const filename = `${safeName}_Resume.pdf`;
+
+                            if (res.data.pdf_base64) {
+                              try {
+                                const sliceSize = 512;
+                                const byteCharacters = atob(res.data.pdf_base64);
+                                const byteArrays = [];
+                                for (let offset = 0; offset < byteCharacters.length; offset += sliceSize) {
+                                  const slice = byteCharacters.slice(offset, offset + sliceSize);
+                                  const byteNumbers = new Array(slice.length);
+                                  for (let i = 0; i < slice.length; i++) {
+                                    byteNumbers[i] = slice.charCodeAt(i);
+                                  }
+                                  const byteArray = new Uint8Array(byteNumbers);
+                                  byteArrays.push(byteArray);
+                                }
+                                const blob = new Blob(byteArrays, { type: 'application/pdf' });
+                                const blobUrl = URL.createObjectURL(blob);
+                                const link = document.createElement('a');
+                                link.href = blobUrl;
+                                link.download = filename;
+                                document.body.appendChild(link);
+                                link.click();
+                                document.body.removeChild(link);
+                                URL.revokeObjectURL(blobUrl);
+                              } catch (error) {
+                                console.error("Base64 download failed:", error);
+                              }
+                            } else if (res.data.pdf_url) {
+                              window.open(res.data.pdf_url, '_blank');
+                            }
                           }
                         }
                       }}

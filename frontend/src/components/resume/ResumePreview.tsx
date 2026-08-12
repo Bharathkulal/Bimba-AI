@@ -61,8 +61,40 @@ export const ResumePreview: React.FC<ResumePreviewProps> = ({
   const handleDownload = async () => {
     if (resumeId) {
       const res = await generatePdf(resumeId);
-      if (res && res.pdf_url) {
-        window.open(res.pdf_url, '_blank');
+      if (res) {
+        const name = resumeData?.personal_info?.name || 'Resume';
+        const safeName = name.trim().replace(/\s+/g, '_') || 'My';
+        const filename = `${safeName}_Resume.pdf`;
+
+        if (res.pdf_base64) {
+          try {
+            const sliceSize = 512;
+            const byteCharacters = atob(res.pdf_base64);
+            const byteArrays = [];
+            for (let offset = 0; offset < byteCharacters.length; offset += sliceSize) {
+              const slice = byteCharacters.slice(offset, offset + sliceSize);
+              const byteNumbers = new Array(slice.length);
+              for (let i = 0; i < slice.length; i++) {
+                byteNumbers[i] = slice.charCodeAt(i);
+              }
+              const byteArray = new Uint8Array(byteNumbers);
+              byteArrays.push(byteArray);
+            }
+            const blob = new Blob(byteArrays, { type: 'application/pdf' });
+            const blobUrl = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = blobUrl;
+            link.download = filename;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            URL.revokeObjectURL(blobUrl);
+          } catch (error) {
+            console.error("Base64 download failed:", error);
+          }
+        } else if (res.pdf_url) {
+          window.open(res.pdf_url, '_blank');
+        }
       }
     }
   };

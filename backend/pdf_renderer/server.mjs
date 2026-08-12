@@ -28,7 +28,7 @@ import { renderStanford } from './templates/stanford.mjs';
 import { renderMicrosoft } from './templates/microsoft.mjs';
 import { renderReactive } from './templates/reactive.mjs';
 import { renderNovoresume } from './templates/novoresume.mjs';
-import { renderFlowcv } from './templates/flowcv.mjs';
+import { renderFlowCV } from './templates/flowcv.mjs';
 import { renderIndeed } from './templates/indeed.mjs';
 import { renderMinimalistModern } from './templates/minimalist_modern.mjs';
 
@@ -41,7 +41,7 @@ const TemplateRenderers = {
   microsoft:           (data, ff, fs) => renderMicrosoft(data, ff, fs),
   reactive:            (data, ff, fs) => renderReactive(data, ff, fs),
   novoresume:          (data, ff, fs) => renderNovoresume(data, ff, fs),
-  flowcv:              (data, ff, fs) => renderFlowcv(data, ff, fs),
+  flowcv:              (data, ff, fs) => renderFlowCV(data, ff, fs),
   indeed:              (data, ff, fs) => renderIndeed(data, ff, fs),
   'minimalist-modern': (data, ff, fs) => renderMinimalistModern(data, ff, fs),
   // Fallback / legacy names

@@ -465,7 +465,6 @@ async def generate_resume_pdf_endpoint(
 
         # 7. Log successful download in download_logs and activity_logs
         try:
-            from datetime import datetime
             db.download_logs.insert_one({
                 "id": get_next_sequence("download_logs"),
                 "student_id": student.id,

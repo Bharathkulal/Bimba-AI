@@ -8,17 +8,70 @@ import { useResumeBuilderStore } from '../../../store/resumeBuilderStore';
 
 export const ExportStep: React.FC = () => {
   const { resumeId } = useResumeBuilderContext();
-  const { generatePdf, generating } = useResumeBuilderStore();
+  const { generatePdf, generating, resumeData } = useResumeBuilderStore();
   const [copied, setCopied] = useState(false);
+
+  const downloadBase64 = (base64: string, filename: string) => {
+    try {
+      const sliceSize = 512;
+      const byteCharacters = atob(base64);
+      const byteArrays = [];
+      for (let offset = 0; offset < byteCharacters.length; offset += sliceSize) {
+        const slice = byteCharacters.slice(offset, offset + sliceSize);
+        const byteNumbers = new Array(slice.length);
+        for (let i = 0; i < slice.length; i++) {
+          byteNumbers[i] = slice.charCodeAt(i);
+        }
+        const byteArray = new Uint8Array(byteNumbers);
+        byteArrays.push(byteArray);
+      }
+      const blob = new Blob(byteArrays, { type: 'application/pdf' });
+      const blobUrl = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = blobUrl;
+      link.download = filename;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(blobUrl);
+    } catch (error) {
+      console.error("Base64 download failed:", error);
+      alert("Base64 PDF decoding failed.");
+    }
+  };
 
   const handleDownloadPdf = async () => {
     if (!resumeId) return;
     try {
       const res = await generatePdf(resumeId);
-      if (res && res.pdf_url) {
-        window.open(res.pdf_url, '_blank');
+      if (res) {
+        if (res.error) {
+          alert(res.error);
+          return;
+        }
+
+        const name = resumeData?.personal_info?.name || 'Resume';
+        const safeName = name.trim().replace(/\s+/g, '_') || 'My';
+        const filename = `${safeName}_Resume.pdf`;
+
+        if (res.pdf_base64) {
+          downloadBase64(res.pdf_base64, filename);
+        } else if (res.pdf_url) {
+          const response = await fetch(res.pdf_url);
+          const blob = await response.blob();
+          const blobUrl = URL.createObjectURL(blob);
+          const link = document.createElement('a');
+          link.href = blobUrl;
+          link.download = filename;
+          document.body.appendChild(link);
+          link.click();
+          document.body.removeChild(link);
+          URL.revokeObjectURL(blobUrl);
+        } else {
+          alert("Failed to retrieve compiled PDF download link.");
+        }
       } else {
-        alert("Failed to retrieve compiled PDF download link.");
+        alert("Failed to compile layout PDF.");
       }
     } catch (e) {
       console.error(e);
