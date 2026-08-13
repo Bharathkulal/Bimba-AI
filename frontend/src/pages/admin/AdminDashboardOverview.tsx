@@ -129,7 +129,7 @@ export const AdminDashboardOverview: React.FC = () => {
       trend: 'up',
       icon: Users,
       chart: 'M0 25 Q15 15, 30 20 T60 5 T95 10',
-      color: 'text-[#111111]'
+      color: 'text-blue-500'
     },
     {
       label: 'Verified Students',
@@ -138,7 +138,7 @@ export const AdminDashboardOverview: React.FC = () => {
       trend: 'up',
       icon: CheckCircle,
       chart: 'M0 25 Q15 20, 30 10 T60 15 T95 5',
-      color: '-[#111111]'
+      color: 'text-emerald-500'
     },
     {
       label: 'Total Resumes',
@@ -147,7 +147,7 @@ export const AdminDashboardOverview: React.FC = () => {
       trend: 'up',
       icon: FileText,
       chart: 'M0 30 Q15 25, 30 15 T60 8 T95 2',
-      color: 'text-[#111111]'
+      color: 'text-purple-500'
     },
     {
       label: 'Avg ATS Score',
@@ -165,7 +165,7 @@ export const AdminDashboardOverview: React.FC = () => {
       trend: 'up',
       icon: Download,
       chart: 'M0 28 Q15 12, 30 22 T60 8 T95 2',
-      color: 'text-[#111111]'
+      color: 'text-red-500'
     },
     {
       label: 'AI Requests',
@@ -174,7 +174,7 @@ export const AdminDashboardOverview: React.FC = () => {
       trend: 'up',
       icon: Cpu,
       chart: 'M0 30 Q15 18, 30 28 T60 8 T95 2',
-      color: 'text-[#111111]'
+      color: 'text-cyan-500'
     }
   ];
 
@@ -203,23 +203,15 @@ export const AdminDashboardOverview: React.FC = () => {
       {/* 6 KPI Cards Grid */}
       <section className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
         {kpis.map((kpi, idx) => {
-          const Icon = kpi.icon;
           return (
-            <Card key={idx} className="p-4 hover:-[#111111]/30 flex flex-col justify-between h-[120px] transition-all">
-              <div className="flex justify-between items-start">
-                <div>
-                  <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wide block truncate max-w-[100px]">
-                    {kpi.label}
-                  </span>
-                  <span className="text-xl font-black text-slate-900 mt-1.5 block tracking-tight">
-                    {kpi.value}
-                  </span>
-                </div>
-                <div className={`w-8 h-8 rounded-lg bg-slate-100/50 flex items-center justify-center border border-border shrink-0 ${kpi.color}`}>
-                  <Icon size={14} />
-                </div>
+            <div key={idx} className="bg-white rounded-2xl p-4 border border-[#E5E7EB] shadow-[0_4px_12px_rgba(15,23,42,0.08)] text-left">
+              <div className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">
+                {kpi.label}
               </div>
-            </Card>
+              <div className={`text-2xl font-black mt-2 ${kpi.color}`}>
+                {kpi.value}
+              </div>
+            </div>
           );
         })}
       </section>
