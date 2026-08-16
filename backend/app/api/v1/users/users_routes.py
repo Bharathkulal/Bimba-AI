@@ -637,65 +637,116 @@ def export_students(format: str = Query("csv"), admin: AdminUser = Depends(get_c
 
 @router.post("/students/import")
 async def import_students(file: UploadFile = File(...), admin: AdminUser = Depends(require_role(["super_admin", "admin"])), db: Any = Depends(get_db)):
-    if not file.filename.endswith('.csv'):
-        raise HTTPException(status_code=400, detail="Only CSV files are supported for now.")
+    if not file.filename.endswith('.csv') and not file.filename.endswith('.xlsx'):
+        raise HTTPException(status_code=400, detail="Only CSV and Excel (.xlsx) files are supported.")
         
     content = await file.read()
-    decoded = content.decode('utf-8').splitlines()
-    reader = csv.DictReader(decoded)
+    records = []
     
+    if file.filename.endswith(".csv"):
+        text = content.decode("utf-8-sig")
+        reader = csv.DictReader(io.StringIO(text))
+        for row in reader:
+            records.append(dict(row))
+    elif file.filename.endswith(".xlsx"):
+        try:
+            import openpyxl
+            wb = openpyxl.load_workbook(io.BytesIO(content), data_only=True)
+            sheet = wb.active
+            headers = [cell.value for cell in sheet[1] if cell.value is not None]
+            for r in range(2, sheet.max_row + 1):
+                row_vals = [sheet.cell(row=r, column=c).value for c in range(1, len(headers) + 1)]
+                if any(v is not None for v in row_vals):
+                    records.append(dict(zip(headers, row_vals)))
+        except Exception as e:
+            raise HTTPException(status_code=400, detail=f"Failed to parse Excel: {str(e)}")
+
     imported = 0
     errors = []
     
-    actual = reader.fieldnames or []
-    # Identify headers in a flexible way
-    name_header = None
-    roll_header = None
-    dob_header = None
-    dept_header = None
-    sem_header = None
+    # Pre-fetch existing roll numbers and emails
+    existing_students = list(db.students.find({}, {"roll_number": 1, "email": 1}))
+    db_rolls = {s.get("roll_number") for s in existing_students}
     
-    for h in actual:
-        hl = h.lower().replace(" ", "").replace("_", "").replace("-", "")
-        if "name" in hl:
-            name_header = h
-        elif "roll" in hl:
-            roll_header = h
-        elif "dob" in hl or "dateofbirth" in hl or "birth" in hl or "password" in hl or "pass" in hl:
-            dob_header = h
-        elif "dept" in hl or "branch" in hl or "course" in hl:
-            dept_header = h
-        elif "sem" in hl:
-            sem_header = h
-            
-    for row in reader:
+    departments = {d.get("code") for d in db.departments.find({}, {"code": 1})}
+
+    # Define helper to flexibly match keys
+    def get_flex_val(row: dict, keys: list) -> str:
+        for rk, rv in row.items():
+            if rv is None:
+                continue
+            rkl = str(rk).lower().replace(" ", "").replace("_", "").replace("-", "")
+            for k in keys:
+                if k in rkl:
+                    return str(rv).strip()
+        # Fallback direct lookup
+        for k in keys:
+            if k in row and row[k] is not None:
+                return str(row[k]).strip()
+        return ""
+
+    for index, r in enumerate(records):
         try:
-            name = (row.get(name_header) if name_header else None) or row.get("name") or row.get("student_name") or ""
-            roll = (row.get(roll_header) if roll_header else None) or row.get("rollNumber") or row.get("rollnumber") or ""
-            dob = (row.get(dob_header) if dob_header else None) or row.get("dateofbirth") or row.get("dob") or row.get("password") or ""
-            dept = (row.get(dept_header) if dept_header else None) or row.get("department") or "CS"
-            sem_val = (row.get(sem_header) if sem_header else None) or row.get("semester") or "1"
-            
-            name = name.strip()
-            roll = roll.strip()
-            dob = dob.strip()
-            dept = dept.strip()
-            
+            # Flex match variables
+            roll = get_flex_val(r, ["rollnumber", "roll"])
+            name = get_flex_val(r, ["studentname", "fullname", "name"])
+            email = get_flex_val(r, ["email", "mail"])
+            dob = get_flex_val(r, ["dob", "dateofbirth", "birth", "password", "pass"])
+            dept = get_flex_val(r, ["dept", "branch", "course", "department"])
+            sem = get_flex_val(r, ["sem", "semester"])
+
+            # Robust DOB parsing & normalization
+            normalized_dob = dob
+            if dob:
+                # Handle float values from Excel formatting (e.g. timestamp/float representation)
+                if dob.endswith(".0"):
+                    dob = dob[:-2]
+                dob_clean = dob.replace("/", "-").replace(".", "-").strip()
+                
+                # Match YYYY-MM-DD
+                match_ymd = re.match(r"^(\d{4})-(\d{2})-(\d{2})(?:\s|T|$)", dob_clean)
+                # Match DD-MM-YYYY
+                match_dmy = re.match(r"^(\d{1,2})-(\d{1,2})-(\d{4})$", dob_clean)
+                
+                if match_ymd:
+                    y, m, d = match_ymd.groups()
+                    normalized_dob = f"{int(d):02d}-{int(m):02d}-{y}"
+                elif match_dmy:
+                    d, m, y = match_dmy.groups()
+                    normalized_dob = f"{int(d):02d}-{int(m):02d}-{y}"
+                else:
+                    try:
+                        from dateutil import parser
+                        parsed_dt = parser.parse(dob_clean)
+                        normalized_dob = parsed_dt.strftime("%d-%m-%Y")
+                    except Exception:
+                        pass
+
+            # Semester format
             try:
-                semester = int(float(str(sem_val).strip()))
+                semester = int(float(sem))
             except Exception:
                 semester = 1
             
-            if not name or not roll or not dob:
-                errors.append(f"Row skipped: Missing required fields (name, rollnumber, or password/dob) for roll {roll or 'Unknown'}")
+            if not name or not roll or not normalized_dob:
+                errors.append(f"Row {index + 2} skipped: Missing required fields (name, roll number, or DOB).")
                 continue
                 
             # Check duplicate
-            if db.students.find_one({"roll_number": roll}):
-                errors.append(f"Row skipped: Roll number {roll} already exists.")
+            if roll in db_rolls:
+                errors.append(f"Row {index + 2} skipped: Roll number {roll} already exists.")
                 continue
                 
-            hashed = get_password_hash(dob)
+            # Department code validation (case-insensitive check)
+            dept_upper = dept.upper() if dept else "CS"
+            if dept_upper not in {d.upper() for d in departments}:
+                errors.append(f"Row {index + 2}: Invalid department code '{dept}'. Defaulting to 'CS'.")
+                dept_upper = "CS"
+                
+            if not email:
+                email = f"{roll.lower()}@bimba.ai"
+                
+            hashed = get_password_hash(normalized_dob)
             next_id = get_next_sequence("students")
             
             doc = {
@@ -703,10 +754,10 @@ async def import_students(file: UploadFile = File(...), admin: AdminUser = Depen
                 "roll_number": roll,
                 "student_name": name,
                 "full_name": name,
-                "email": f"{roll.lower()}@bimba.ai",
-                "dob": dob,
+                "email": email,
+                "dob": normalized_dob,
                 "phone": "",
-                "department": dept or "CS",
+                "department": dept_upper,
                 "semester": semester,
                 "status": "Active",
                 "is_active": True,
@@ -718,10 +769,11 @@ async def import_students(file: UploadFile = File(...), admin: AdminUser = Depen
                 "last_login": None
             }
             db.students.insert_one(doc)
+            db_rolls.add(roll)
             imported += 1
             
         except Exception as e:
-            errors.append(f"Error processing row: {str(e)}")
+            errors.append(f"Row {index + 2}: Error processing row: {str(e)}")
             
     return {
         "success": True,
@@ -881,19 +933,19 @@ async def upload_dataset_preview(file: UploadFile = File(...), admin: AdminUser 
     records = []
     
     if file.filename.endswith(".csv"):
-        text = content.decode("utf-8")
+        text = content.decode("utf-8-sig")
         reader = csv.DictReader(io.StringIO(text))
         for row in reader:
             records.append(dict(row))
     elif file.filename.endswith(".xlsx"):
         try:
             import openpyxl
-            wb = openpyxl.load_workbook(io.BytesIO(content))
+            wb = openpyxl.load_workbook(io.BytesIO(content), data_only=True)
             sheet = wb.active
-            headers = [cell.value for cell in sheet[1]]
+            headers = [cell.value for cell in sheet[1] if cell.value is not None]
             for r in range(2, sheet.max_row + 1):
                 row_vals = [sheet.cell(row=r, column=c).value for c in range(1, len(headers) + 1)]
-                if any(row_vals):
+                if any(v is not None for v in row_vals):
                     records.append(dict(zip(headers, row_vals)))
         except Exception as e:
             raise HTTPException(status_code=400, detail=f"Failed to parse Excel: {str(e)}")
@@ -913,17 +965,63 @@ async def upload_dataset_preview(file: UploadFile = File(...), admin: AdminUser 
     
     departments = {d.get("code") for d in db.departments.find({}, {"code": 1})}
 
+    # Define helper to flexibly match keys
+    def get_flex_val(row: dict, keys: list) -> str:
+        for rk, rv in row.items():
+            if rv is None:
+                continue
+            rkl = str(rk).lower().replace(" ", "").replace("_", "").replace("-", "")
+            for k in keys:
+                if k in rkl:
+                    return str(rv).strip()
+        # Fallback direct lookup
+        for k in keys:
+            if k in row and row[k] is not None:
+                return str(row[k]).strip()
+        return ""
+
     for index, r in enumerate(records):
         issues = []
-        roll = str(r.get("roll_number", "")).strip()
-        name = str(r.get("student_name", "")).strip()
-        email = str(r.get("email", "")).strip()
-        dob = str(r.get("dob", "")).strip()
-        dept = str(r.get("department", "")).strip()
-        sem = str(r.get("semester", "")).strip()
+        
+        # Flex match variables
+        roll = get_flex_val(r, ["rollnumber", "roll"])
+        name = get_flex_val(r, ["studentname", "fullname", "name"])
+        email = get_flex_val(r, ["email", "mail"])
+        dob = get_flex_val(r, ["dob", "dateofbirth", "birth", "password", "pass"])
+        dept = get_flex_val(r, ["dept", "branch", "course", "department"])
+        sem = get_flex_val(r, ["sem", "semester"])
 
-        # Missing fields
-        if not roll or not name or not email or not dob or not dept or not sem:
+        # Robust DOB parsing & normalization
+        normalized_dob = dob
+        if dob:
+            # Handle float values from Excel formatting (e.g. timestamp/float representation)
+            if dob.endswith(".0"):
+                dob = dob[:-2]
+            dob_clean = dob.replace("/", "-").replace(".", "-").strip()
+            
+            # Match YYYY-MM-DD
+            match_ymd = re.match(r"^(\d{4})-(\d{2})-(\d{2})(?:\s|T|$)", dob_clean)
+            # Match DD-MM-YYYY
+            match_dmy = re.match(r"^(\d{1,2})-(\d{1,2})-(\d{4})$", dob_clean)
+            
+            if match_ymd:
+                y, m, d = match_ymd.groups()
+                normalized_dob = f"{int(d):02d}-{int(m):02d}-{y}"
+            elif match_dmy:
+                d, m, y = match_dmy.groups()
+                normalized_dob = f"{int(d):02d}-{int(m):02d}-{y}"
+            else:
+                # Attempt to parse via python datetime if not matched by standard patterns
+                try:
+                    # e.g. "15 Aug 2005" or other formats
+                    from dateutil import parser
+                    parsed_dt = parser.parse(dob_clean)
+                    normalized_dob = parsed_dt.strftime("%d-%m-%Y")
+                except Exception:
+                    pass
+
+        # Missing fields check
+        if not roll or not name or not email or not normalized_dob or not dept or not sem:
             issues.append("Missing Required Fields")
         
         # Email format
@@ -931,36 +1029,43 @@ async def upload_dataset_preview(file: UploadFile = File(...), admin: AdminUser 
             issues.append("Invalid Email Format")
             
         # DOB format (DD-MM-YYYY)
-        if dob and not re.match(r"^\d{2}-\d{2}-\d{4}$", dob):
+        if normalized_dob and not re.match(r"^\d{2}-\d{2}-\d{4}$", normalized_dob):
             issues.append("Invalid DOB (use DD-MM-YYYY)")
             
         # Semester format
         try:
-            sem_int = int(sem)
+            # Handle floats in semester column (e.g., 3.0)
+            sem_int = int(float(sem))
             if sem_int < 1 or sem_int > 8:
                 issues.append("Invalid Semester")
         except ValueError:
             issues.append("Invalid Semester")
 
-        # Department code validation
-        if dept and dept not in departments:
+        # Department code validation (case-insensitive check)
+        dept_upper = dept.upper()
+        if dept and dept_upper not in {d.upper() for d in departments}:
             issues.append("Invalid Department")
+        else:
+            # Normalize department code to uppercase matching database
+            dept = dept_upper
 
         # Duplicates within uploaded sheet
-        if roll in rolls_seen:
+        if roll and roll in rolls_seen:
             issues.append("Duplicate Roll Number in Sheet")
-        if email in emails_seen:
+        if email and email in emails_seen:
             issues.append("Duplicate Email in Sheet")
 
-        rolls_seen.add(roll)
-        emails_seen.add(email)
+        if roll:
+            rolls_seen.add(roll)
+        if email:
+            emails_seen.add(email)
 
         record_preview = {
             "index": index,
             "roll_number": roll,
             "student_name": name,
             "email": email,
-            "dob": dob,
+            "dob": normalized_dob,
             "department": dept,
             "semester": sem,
             "is_update": roll in db_rolls,
@@ -979,6 +1084,8 @@ async def upload_dataset_preview(file: UploadFile = File(...), admin: AdminUser 
         "failed": len(failed_records),
         "records": valid_records + failed_records
     }
+
+
 
 class DatasetImportRequest(BaseModel):
     filename: str

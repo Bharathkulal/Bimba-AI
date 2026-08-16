@@ -432,7 +432,7 @@ export const StudentsModule: React.FC = () => {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
           <div className="bg-[#102117] border border-white/10 rounded-3xl w-full max-w-lg shadow-2xl overflow-hidden">
             <div className="p-6 border-b border-white/5 flex justify-between items-center">
-              <h2 className="text-lg font-bold text-white">Import Students (CSV)</h2>
+              <h2 className="text-lg font-bold text-white">Import Students (CSV or Excel)</h2>
               <button onClick={() => {setIsImportModalOpen(false); setImportFile(null); setImportStatus({status:'idle', msg:''});}} className="text-slate-400 hover:text-white"><X size={18}/></button>
             </div>
             
@@ -441,9 +441,9 @@ export const StudentsModule: React.FC = () => {
                 <>
                   <div className="border-2 border-dashed border-white/10 rounded-2xl p-8 hover:border-white/20 transition-colors cursor-pointer" onClick={() => fileInputRef.current?.click()}>
                     <UploadCloud size={48} className="mx-auto text-emerald-400 mb-4" />
-                    <p className="text-sm text-white font-semibold">Click to upload CSV file</p>
+                    <p className="text-sm text-white font-semibold">Click to upload CSV or Excel file</p>
                     <p className="text-xs text-slate-500 mt-1">Template columns: name, rollnumber, dateofbirth</p>
-                    <input type="file" accept=".csv" className="hidden" ref={fileInputRef} onChange={(e) => setImportFile(e.target.files?.[0] || null)} />
+                    <input type="file" accept=".csv,.xlsx" className="hidden" ref={fileInputRef} onChange={(e) => setImportFile(e.target.files?.[0] || null)} />
                   </div>
                   {importFile && (
                     <div className="flex justify-between items-center bg-white/5 p-3 rounded-xl border border-white/10">
