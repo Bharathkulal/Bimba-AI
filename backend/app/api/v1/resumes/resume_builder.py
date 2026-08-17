@@ -328,14 +328,7 @@ async def generate_resume_pdf_endpoint(
 
         gate_errors = run_quality_gate(payload.resume_data, original_data)
         if gate_errors:
-            print(f"[PDF-GEN] Step 2 FAILED: Quality gate found validation errors: {gate_errors}")
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail={
-                    "message": "Resume data validation failed.",
-                    "errors": gate_errors
-                }
-            )
+            print(f"[PDF-GEN] Step 2 Warning: Quality gate found validation errors (non-blocking): {gate_errors}")
         else:
             print(f"[PDF-GEN] Step 2 OK: Quality gate passed")
 

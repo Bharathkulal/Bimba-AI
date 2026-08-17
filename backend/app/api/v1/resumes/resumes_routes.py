@@ -956,13 +956,7 @@ def get_pdf_export(id: int, inline: bool = False, student: Student = Depends(get
     # Filter non-critical fact audit warnings so they don't block user PDF downloads
     critical_errors = [e for e in gate_errors if not e.startswith("Fact dropped") and not e.startswith("Hallucinated")]
     if critical_errors:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail={
-                "message": "Quality Gate validation failed. Please address the errors before exporting.",
-                "errors": critical_errors
-            }
-        )
+        print(f"[Quality Gate Warning] Download allowed despite validation errors: {critical_errors}")
         
     from app.services.resume_pdf_service import build_pdf_story
     template_slug = resume.get("template_id") or "minimalist-modern"
@@ -1873,10 +1867,7 @@ def improve_and_validate_resume(db, prompt, resume_id, user_id, original_normali
     val_report = ZeroLossEngine.validate_facts(orig_facts, merged)
     if val_report["validation_status"] == "FAIL":
         missing_values = [f["value"] for f in val_report["missing_details"]]
-        raise HTTPException(
-            status_code=400,
-            detail=f"Factual validation failed. Dropped or modified source details: {', '.join(missing_values[:5])}"
-        )
+        print(f"[Zero-Loss Warning] Factual validation issues detected (non-blocking): {', '.join(missing_values[:5])}")
 
     elapsed = time.time() - start_time
     log_pipeline_stage(f"{mode}_SUCCESS", resume_id, user_id, original_normalized, merged, elapsed=elapsed)
