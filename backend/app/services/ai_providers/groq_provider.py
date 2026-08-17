@@ -36,7 +36,7 @@ def call_groq(prompt: str, api_key: str = None, timeout: int = 12, model: str = 
     }
     
     # Active high-performance models on Groq API
-    models_to_try = ["llama-3.3-70b-versatile", "llama-3.1-8b-instant", "mixtral-8x7b-32768"]
+    models_to_try = ["groq/compound", "groq/compound-mini", "llama-3.3-70b-versatile", "llama-3.1-8b-instant", "mixtral-8x7b-32768"]
     if model:
         models_to_try = [model] + [m for m in models_to_try if m != model]
     

@@ -6,7 +6,7 @@ from typing import Dict, Any
 
 logger = logging.getLogger("openrouter_provider")
 
-def call_openrouter(prompt: str, api_key: str = None, timeout: int = 12) -> Dict[str, Any]:
+def call_openrouter(prompt: str, api_key: str = None, timeout: int = 12, model: str = None) -> Dict[str, Any]:
     """
     Calls the OpenRouter API directly using REST endpoints.
     """
@@ -27,8 +27,11 @@ def call_openrouter(prompt: str, api_key: str = None, timeout: int = 12) -> Dict
         "X-Title": "Bimba AI"
     }
     
+    if not model:
+        model = "meta-llama/llama-3.1-8b-instruct:free"
+        
     payload = {
-        "model": "meta-llama/llama-3-8b-instruct:free",
+        "model": model,
         "messages": [
             {
                 "role": "user",

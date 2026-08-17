@@ -18,7 +18,7 @@ def test_gemini():
     if not api_key:
         return "Not Configured"
     # standard gemini check
-    url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={api_key}"
+    url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent?key={api_key}"
     payload = {
         "contents": [{"parts": [{"text": "Hello"}]}]
     }
@@ -67,7 +67,7 @@ def test_groq():
         return "Not Configured"
     url = "https://api.groq.com/openai/v1/chat/completions"
     payload = {
-        "model": "llama3-8b-8192",
+        "model": "groq/compound",
         "messages": [{"role": "user", "content": "Hello"}]
     }
     headers = {

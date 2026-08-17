@@ -10,10 +10,10 @@ import { Button } from '../../components/Button';
 import { Card } from '../../components/Card';
 
 const CORE_PROVIDERS = [
-  { name: 'Gemini API', slug: 'gemini', logo: '♊', models: ['gemini-2.5-flash', 'gemini-2.5-pro', 'gemini-1.5-flash'] },
-  { name: 'Groq API', slug: 'groq', logo: '⚡', models: ['llama-3.3-70b', 'mixtral-8x7b', 'gemma2-9b'] },
+  { name: 'Gemini API', slug: 'gemini', logo: '♊', models: ['gemini-2.5-flash', 'gemini-3.6-flash', 'gemini-3.7-flash', 'gemini-2.5-pro'] },
+  { name: 'Groq API', slug: 'groq', logo: '⚡', models: ['groq/compound', 'groq/compound-mini', 'qwen/qwen3.6-27b', 'llama-3.3-70b'] },
   { name: 'OpenAI API', slug: 'openai', logo: '🤖', models: ['gpt-4o', 'gpt-4o-mini', 'gpt-3.5-turbo'] },
-  { name: 'OpenRouter API', slug: 'openrouter', logo: '🌐', models: ['deepseek/deepseek-chat', 'meta-llama/llama-3-8b', 'qwen/qwen-2.5-72b'] }
+  { name: 'OpenRouter API', slug: 'openrouter', logo: '🌐', models: ['meta-llama/llama-3.1-8b-instruct:free', 'deepseek/deepseek-chat', 'qwen/qwen-2.5-72b'] }
 ];
 
 export const AiGatewayModule: React.FC = () => {

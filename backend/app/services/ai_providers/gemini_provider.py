@@ -6,7 +6,7 @@ from app.core.config import settings
 
 logger = logging.getLogger("gemini_provider")
 
-def call_gemini(prompt: str, api_key: str = None, timeout: int = 12) -> Dict[str, Any]:
+def call_gemini(prompt: str, api_key: str = None, timeout: int = 12, model: str = None) -> Dict[str, Any]:
     """
     Calls the Gemini API directly using REST endpoints.
     """
@@ -18,7 +18,12 @@ def call_gemini(prompt: str, api_key: str = None, timeout: int = 12) -> Dict[str
         logger.error("Gemini API key is not configured.")
         return {"success": False, "error": "Gemini API key missing."}
         
-    url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={api_key}"
+    if not model:
+        model = "gemini-2.0-flash"
+    elif model.startswith("models/"):
+        model = model.replace("models/", "")
+        
+    url = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent?key={api_key}"
     
     headers = {
         "Content-Type": "application/json"

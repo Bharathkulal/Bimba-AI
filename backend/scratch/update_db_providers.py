@@ -17,14 +17,21 @@ for p in db.ai_providers.find({}):
 
 # Auto-update decommissioned models in DB if they exist
 res = db.ai_providers.update_many(
-    {"slug": "gemini", "model_name": "gemini-1.5-flash"},
-    {"$set": {"model_name": "gemini-2.0-flash"}}
+    {"slug": "gemini"},
+    {"$set": {"model_name": "gemini-2.5-flash"}}
 )
 if res.modified_count > 0:
-    print(f"Updated {res.modified_count} gemini provider models to gemini-2.0-flash")
+    print(f"Updated {res.modified_count} gemini provider models to gemini-2.5-flash")
+
+res_groq = db.ai_providers.update_many(
+    {"slug": "groq"},
+    {"$set": {"model_name": "groq/compound"}}
+)
+if res_groq.modified_count > 0:
+    print(f"Updated {res_groq.modified_count} groq provider models to groq/compound")
 
 res_or = db.ai_providers.update_many(
-    {"slug": "openrouter", "model_name": "meta-llama/llama-3-8b-instruct:free"},
+    {"slug": "openrouter"},
     {"$set": {"model_name": "meta-llama/llama-3.1-8b-instruct:free"}}
 )
 if res_or.modified_count > 0:

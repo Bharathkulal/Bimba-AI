@@ -104,8 +104,9 @@ def generate_ai_response(db: Any, prompt: str, task_type: str) -> str:
         attempts = provider_cfg["retry_attempts"] if auto_retry else 1
         
         call_fn = provider_funcs[slug]
+        model_name = provider_cfg.get("model")
         
-        logger.info(f"Attempting provider: {provider_name} (Max attempts: {attempts}, Timeout: {timeout_val}s)")
+        logger.info(f"Attempting provider: {provider_name} (Max attempts: {attempts}, Timeout: {timeout_val}s, Model: {model_name})")
         
         backoff_delay = 1.0
         for attempt in range(attempts):
@@ -113,7 +114,7 @@ def generate_ai_response(db: Any, prompt: str, task_type: str) -> str:
             logger.info(f"[{provider_name}] Attempt {attempt + 1}/{attempts} starting...")
             
             try:
-                res = call_fn(prompt, timeout=timeout_val)
+                res = call_fn(prompt, timeout=timeout_val, model=model_name)
                 
                 if res.get("success"):
                     elapsed = time.time() - start_time
