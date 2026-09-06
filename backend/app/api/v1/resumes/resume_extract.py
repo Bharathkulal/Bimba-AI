@@ -143,31 +143,32 @@ async def extract_resume_data_endpoint(
             detail=f"Failed to extract text from document: {str(e)}"
         )
 
-    # 4. Try AI-driven structured extraction via Groq AI first
+    # 4. Try AI-driven structured extraction
     extracted_data = None
     try:
         from app.services.ai_provider_manager import AIProviderManager
+        from app.services.resume_parser import ResumeParser
+        from app.services.zero_loss_engine import ZeroLossEngine
         from app.ai.resume_prompts import RESUME_PARSE_PROMPT
 
         ai_manager = AIProviderManager(db)
-        prompt = RESUME_PARSE_PROMPT.replace("{resume_text}", raw_text_str)
-        ai_response = ai_manager.call_llm(prompt, provider="groq")
-        if ai_response:
-            cleaned = ai_response.strip()
-            if cleaned.startswith("```json"):
-                cleaned = cleaned[7:]
-            if cleaned.endswith("```"):
-                cleaned = cleaned[:-3]
-            parsed_json = json.loads(cleaned.strip())
-            if isinstance(parsed_json, dict) and (
-                parsed_json.get("personal_info") or 
-                parsed_json.get("personal_information") or 
-                parsed_json.get("education") or 
-                parsed_json.get("technicalSkills") or
-                parsed_json.get("skills")
-            ):
-                from app.services.zero_loss_engine import ZeroLossEngine
+        parser = ResumeParser()
+        chunks = ZeroLossEngine.chunk_resume_text(raw_text_str, max_chunk_chars=6000)
+        
+        if len(chunks) == 1:
+            prompt = RESUME_PARSE_PROMPT.replace("{resume_text}", raw_text_str)
+            ai_response = ai_manager.call_llm(prompt, feature="Resume Ingestion Parsing", response_format="json_object")
+            if ai_response:
+                parsed_json = parser.parse_and_validate(ai_response)
                 extracted_data = ZeroLossEngine.normalize_to_internal_model(parsed_json)
+        else:
+            chunk_results = []
+            for c in chunks:
+                c_prompt = RESUME_PARSE_PROMPT.replace("{resume_text}", c["text"])
+                c_resp = ai_manager.call_llm(c_prompt, feature=f"Resume Chunk {c['chunk_number']}", response_format="json_object")
+                chunk_results.append(parser.parse_and_validate(c_resp))
+            merged = ZeroLossEngine.safe_merge_results(chunk_results)
+            extracted_data = ZeroLossEngine.normalize_to_internal_model(merged)
     except Exception as ai_err:
         print(f"[Resume AI Extraction Warning]: {ai_err}")
 
@@ -175,7 +176,6 @@ async def extract_resume_data_endpoint(
         from app.services.zero_loss_engine import ZeroLossEngine
         raw_structured = extract_structured_data(raw_text_str)
         extracted_data = ZeroLossEngine.normalize_to_internal_model(raw_structured)
-
 
     # 5. Save/Update extraction data in MongoDB
     existing_analysis = db.resume_analysis.find_one({
@@ -187,7 +187,7 @@ async def extract_resume_data_endpoint(
         db.resume_analysis.update_one(
             {"resume_id": resume_id, "student_id": student.id},
             {"$set": {
-                "raw_text": raw_text,
+                "raw_text": raw_text_str,
                 "extracted_data": extracted_data,
                 "status": "extracted",
                 "updated_at": datetime.now(timezone.utc).isoformat()
@@ -200,7 +200,7 @@ async def extract_resume_data_endpoint(
             "id": analysis_id_seq,
             "resume_id": resume_id,
             "student_id": student.id,
-            "raw_text": raw_text,
+            "raw_text": raw_text_str,
             "extracted_data": extracted_data,
             "status": "extracted",
             "created_at": datetime.now(timezone.utc).isoformat()
@@ -208,19 +208,25 @@ async def extract_resume_data_endpoint(
         db.resume_analysis.insert_one(analysis_doc)
         analysis_id = analysis_id_seq
 
-    # Update resumes collection status
+    # Update resumes collection status and structured data
     db.resumes.update_one(
         {"id": resume_id, "student_id": student.id},
-        {"$set": {"status": "extracted"}}
+        {"$set": {
+            "status": "extracted",
+            "raw_extracted_text": raw_text_str,
+            "resume": extracted_data
+        }}
     )
 
+    p_name = extracted_data.get("personal_info", {}).get("name") or extracted_data.get("name") or "Candidate Name"
     return {
         "success": True,
         "message": "Resume extracted successfully",
         "analysis_id": analysis_id,
         "data": {
-            "name": extracted_data["name"],
-            "skills": extracted_data["skills"]
+            "name": p_name,
+            "skills": extracted_data.get("skills", []),
+            "extracted_data": extracted_data
         }
     }
 

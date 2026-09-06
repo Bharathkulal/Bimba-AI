@@ -179,13 +179,17 @@ def test_reg_8_user_deletion():
     # Test 8 — User deletion (user explicitly requests deletion -> fact may be removed)
     original = {"personal_info": {"name": "Jane", "email": "jane@example.com"}}
     # User requests deletion: we explicitly allowed this check
-    payload_user_request = {"personal_info": {"name": "Jane", "email": ""}, "user_requested_deletion": ["email"]}
+    payload_user_request = {"personal_info": {"name": "Jane", "email": ""}, "user_requested_deletion": ["email", "jane@example.com"]}
     
     # We can pass validation if it is explicitly requested by user
     orig_norm = ZeroLossEngine.normalize_to_internal_model(original)
     orig_facts = orig_norm["source_content"]["all_facts"]
     # Filter facts that are explicitly requested for deletion
-    filtered_facts = [f for f in orig_facts if f["value"] not in payload_user_request.get("user_requested_deletion", [])]
+    filtered_facts = [
+        f for f in orig_facts 
+        if f["value"] not in payload_user_request.get("user_requested_deletion", [])
+        and f.get("field") not in payload_user_request.get("user_requested_deletion", [])
+    ]
     
     report = ZeroLossEngine.validate_facts(filtered_facts, payload_user_request)
     assert report["validation_status"] == "PASS"

@@ -4,130 +4,88 @@ import logging
 logger = logging.getLogger("bimba_ai_pipeline")
 
 
-def is_education_like(item: Dict[str, Any]) -> bool:
-    if not isinstance(item, dict):
-        return False
-    keys = set(k.lower() for k in item.keys())
-    # education usually has institution or degree or passing_year/cgpa
-    return bool(keys & {"institution", "degree", "field_of_study", "passing_year", "year", "cgpa", "cgpa_percentage"})
-
-
-def is_certification_like(item: Dict[str, Any]) -> bool:
-    if not isinstance(item, dict):
-        return False
-    keys = set(k.lower() for k in item.keys())
-    # certifications usually have name + organization/issuer or issue_date
-    return bool(("name" in keys and ("organization" in keys or "issuer" in keys or "issue_date" in keys)))
-
-
 def canonicalize_parsed_data(parsed: Dict[str, Any]) -> Dict[str, Any]:
-    """Return a canonicalized copy of parsed resume data.
+    """
+    Return a canonicalized copy of parsed resume data without destructive section swapping.
 
     Rules:
-    - Use canonical keys: education, experience, projects, certifications, skills, technicalSkills, achievements, etc.
-    - Treat `certificates` as a synonym for `certifications` but do not mix unrelated sections.
-    - If items appear in the wrong section (education-like in certifications), move them to the correct canonical section.
-    - Ambiguous items are preserved in `unclassified_content` instead of being dropped.
-    - Preserve `raw_extraction` and `original_parsed_data`.
+    - Use canonical keys: personal_info, summary, objective, education, experience, work_experience,
+      internships, projects, skills, technicalSkills, softSkills, certifications, publications,
+      achievements, leadership_roles, hobbies, personal_details, additional_information.
+    - Preserve all original extracted content without dropping items.
+    - Respect section boundaries: never move work experience into projects or internships into experience.
+    - Ambiguous or unrecognized items are preserved in additional_information / unclassified_content.
+    - Preserve raw_extraction, original_parsed_data, and extraction_version.
     """
     if not isinstance(parsed, dict):
-        return parsed
+        return {}
 
-    out = {}
-    # copy obvious scalar fields
+    out: Dict[str, Any] = {}
+
+    # 1. Obvious scalar fields
     for k in [
-        "personal_info", "summary", "objective", "raw_extraction", "original_parsed_data", "extraction_version"
+        "personal_info", "personal_information", "contact_information",
+        "summary", "objective", "career_objective", "professional_summary",
+        "raw_extraction", "raw_extracted_text", "original_parsed_data",
+        "extraction_version", "validation"
     ]:
-        if k in parsed:
+        if k in parsed and parsed[k] is not None:
             out[k] = parsed[k]
 
-    # canonical lists
-    def get_list(k, alt=None):
+    # 2. Canonical list extractor
+    def get_list(k: str, alt: str = None) -> List[Any]:
         v = parsed.get(k)
-        if v:
+        if isinstance(v, list) and v:
             return list(v)
-        if alt and parsed.get(alt):
-            return list(parsed.get(alt))
+        if alt:
+            alt_v = parsed.get(alt)
+            if isinstance(alt_v, list) and alt_v:
+                return list(alt_v)
+        if isinstance(v, (str, dict)) and v:
+            return [v]
         return []
 
-    education = get_list("education")
-    experience = get_list("experience")
-    projects = get_list("projects")
-    skills = get_list("skills") or get_list("technicalSkills")
-    certifications = get_list("certifications", alt="certificates")
-    achievements = get_list("achievements")
+    out["education"] = get_list("education")
+    out["work_experience"] = get_list("work_experience", alt="experience")
+    out["experience"] = out["work_experience"]
+    out["internships"] = get_list("internships", alt="internship")
+    out["projects"] = get_list("projects")
+    out["skills"] = parsed.get("skills") or get_list("technicalSkills", alt="technical_skills")
+    out["technicalSkills"] = get_list("technicalSkills", alt="technical_skills")
+    out["softSkills"] = get_list("softSkills", alt="soft_skills")
+    out["certifications"] = get_list("certifications", alt="certificates")
+    out["publications"] = get_list("publications", alt="research_papers")
+    out["achievements"] = get_list("achievements", alt="awards")
+    out["leadership_roles"] = get_list("leadership_roles", alt="leadership")
+    out["leadership"] = out["leadership_roles"]
+    out["hobbies"] = get_list("hobbies", alt="hobbies_interests")
+    out["languages"] = get_list("languages")
+    out["portfolioLinks"] = get_list("portfolioLinks", alt="portfolio_links")
+    out["volunteerExperience"] = get_list("volunteerExperience", alt="volunteer_experience")
+    out["references"] = get_list("references")
+    out["personal_details"] = parsed.get("personal_details") if isinstance(parsed.get("personal_details"), dict) else {}
 
+    # 3. Additional sections / unclassified content
     unclassified: List[Any] = list(parsed.get("unclassified_content") or [])
-
-    # Move obviously misclassified items
-    # Certifications that look like education -> move
-    certs_to_keep = []
-    for item in certifications:
-        if is_education_like(item):
-            logger.warning("Canonicalizer: moving item from certifications->education due to education-like fields")
-            education.append(item)
-        else:
-            certs_to_keep.append(item)
-    certifications = certs_to_keep
-
-    # Education that look like certifications -> move
-    edu_to_keep = []
-    for item in education:
-        if is_certification_like(item):
-            logger.warning("Canonicalizer: moving item from education->certifications due to certification-like fields")
-            certifications.append(item)
-        else:
-            edu_to_keep.append(item)
-    education = edu_to_keep
-
-    # Experience vs projects ambiguous items: if item has company -> experience; if has technologies/tech_stack -> project
-    proj_to_keep = []
-    exp_to_keep = []
-    for item in projects:
-        if isinstance(item, dict) and ("company" in item or "position" in item):
-            logger.warning("Canonicalizer: moving item from projects->experience due to company/position fields")
-            experience.append(item)
-        else:
-            proj_to_keep.append(item)
-    projects = proj_to_keep
-
-    for item in experience:
-        if isinstance(item, dict) and ("title" in item or "tech_stack" in item or "technologies" in item):
-            logger.warning("Canonicalizer: moving item from experience->projects due to project-like fields")
-            projects.append(item)
-        else:
-            exp_to_keep.append(item)
-    experience = exp_to_keep
-
-    # Any remaining non-dict or unrecognized items should be preserved in unclassified
-    def cleanup_list(lst):
-        cleaned = []
-        for it in lst:
-            if isinstance(it, dict):
-                cleaned.append(it)
-            else:
-                unclassified.append(it)
-        return cleaned
-
-    education = cleanup_list(education)
-    experience = cleanup_list(experience)
-    projects = cleanup_list(projects)
-    skills = cleanup_list(skills)
-    certifications = cleanup_list(certifications)
-    achievements = cleanup_list(achievements)
-
-    out["education"] = education
-    out["experience"] = experience
-    out["projects"] = projects
-    out["skills"] = skills
-    out["certifications"] = certifications
-    out["achievements"] = achievements
+    add_info = get_list("additional_information", alt="custom_sections")
+    if unclassified:
+        add_info.extend([{"title": "Unclassified Content", "content": unclassified}])
+    out["additional_information"] = add_info
+    out["custom_sections"] = add_info
     out["unclassified_content"] = unclassified
 
-    # preserve any other sections that are lists but not canonicalized
+    # 4. Copy any remaining non-canonical keys into additional_information
+    known_keys = set(out.keys()) | {
+        "personalInfo", "skillsInfo", "extra_curricular", "activities",
+        "technical_skills", "soft_skills", "hobbies_interests", "portfolio_links",
+        "volunteer_experience"
+    }
     for k, v in parsed.items():
-        if k in out or k in ["personal_info", "summary", "objective", "raw_extraction", "original_parsed_data", "extraction_version"]:
-            continue
-        out[k] = v
+        if k not in known_keys and v:
+            out["additional_information"].append({
+                "title": k.replace("_", " ").title(),
+                "section_name": k.replace("_", " ").title(),
+                "content": v
+            })
 
     return out

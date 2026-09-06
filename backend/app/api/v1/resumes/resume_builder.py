@@ -168,59 +168,107 @@ def get_resume_builder_data(
     # Check MongoDB resume_profiles collection
     profile_doc = db.resume_profiles.find_one({"resumeId": resume_id}) or {}
 
-    # Construct clean response with all 15 sections
+    # Construct clean response with all 16 sections
+    res_personal_info = profile_doc.get("personal_info") or resume_doc.get("personal_info") or personal_info
+    res_summary = profile_doc.get("summary") or resume_doc.get("summary") or (summary[0] if isinstance(summary, list) and summary else str(summary or ""))
+    res_objective = profile_doc.get("objective") or resume_doc.get("objective") or resume_doc.get("career_objective") or ""
+    res_education = profile_doc.get("education") or resume_doc.get("education") or [
+        {
+            "degree": edu.get("degree") or edu.get("course") or "",
+            "specialization": edu.get("specialization") or edu.get("stream") or "",
+            "institution": edu.get("institution") or edu.get("school") or edu.get("college") or "",
+            "location": edu.get("location") or "",
+            "year": edu.get("year") or edu.get("passing_year") or "",
+            "score": edu.get("score") or edu.get("cgpa_percentage") or edu.get("cgpa") or edu.get("percentage") or "",
+            "score_type": edu.get("score_type") or ("CGPA" if "cgpa" in str(edu.get("score", "")).lower() else ("Percentage" if "%" in str(edu.get("score", "")) else "")),
+            "cgpa_percentage": edu.get("cgpa_percentage") or edu.get("score") or edu.get("cgpa") or edu.get("percentage") or ""
+        } if isinstance(edu, dict) else {
+            "degree": str(edu),
+            "specialization": "",
+            "institution": "",
+            "year": "",
+            "score": "",
+            "cgpa_percentage": ""
+        } for edu in education
+    ] if isinstance(education, list) else []
+
+    res_experience = profile_doc.get("experience") or resume_doc.get("experience") or [
+        {
+            "position": exp.get("position") or exp.get("role") or exp.get("job_title") or exp.get("title") or "",
+            "role": exp.get("role") or exp.get("position") or exp.get("title") or "",
+            "company": exp.get("company") or exp.get("organization") or exp.get("name") or "",
+            "organization": exp.get("organization") or exp.get("company") or "",
+            "start_date": exp.get("start_date") or "",
+            "end_date": exp.get("end_date") or "",
+            "is_current": bool(exp.get("is_current")),
+            "duration": exp.get("duration") or exp.get("year") or "",
+            "location": exp.get("location") or "",
+            "description": exp.get("description") or ""
+        } if isinstance(exp, dict) else {
+            "position": "",
+            "company": "",
+            "duration": "",
+            "description": str(exp)
+        } for exp in experience
+    ] if isinstance(experience, list) else []
+
+    res_internships = profile_doc.get("internships") or resume_doc.get("internships") or []
+    res_projects = profile_doc.get("projects") or resume_doc.get("projects") or [
+        {
+            "title": proj.get("title") or proj.get("name") or "",
+            "name": proj.get("name") or proj.get("title") or "",
+            "technologies": proj.get("technologies") or proj.get("tech_stack") or "",
+            "tech_stack": proj.get("tech_stack") or proj.get("technologies") or "",
+            "duration": proj.get("duration") or "",
+            "description": proj.get("description") or "",
+            "url": proj.get("url") or proj.get("github") or ""
+        } if isinstance(proj, dict) else {
+            "title": str(proj),
+            "technologies": "",
+            "description": ""
+        } for proj in projects
+    ] if isinstance(projects, list) else []
+
+    res_skills = profile_doc.get("skills") or resume_doc.get("skills") or skills
+    res_tech_skills = profile_doc.get("technicalSkills") or resume_doc.get("technicalSkills") or skills
+    res_soft_skills = profile_doc.get("softSkills") or resume_doc.get("softSkills") or profile_doc.get("personal_skills") or []
+    res_certifications = profile_doc.get("certifications") or resume_doc.get("certifications") or []
+    res_publications = profile_doc.get("publications") or resume_doc.get("publications") or []
+    res_achievements = profile_doc.get("achievements") or resume_doc.get("achievements") or []
+    res_leadership = profile_doc.get("leadership_roles") or profile_doc.get("leadership") or resume_doc.get("leadership_roles") or resume_doc.get("leadership") or []
+    res_hobbies = profile_doc.get("hobbies") or resume_doc.get("hobbies") or []
+    res_languages = profile_doc.get("languages") or resume_doc.get("languages") or []
+    res_personal_details = profile_doc.get("personal_details") or resume_doc.get("personal_details") or {}
+    res_additional_info = profile_doc.get("additional_information") or profile_doc.get("custom_sections") or resume_doc.get("additional_information") or resume_doc.get("custom_sections") or []
+
     return {
         "success": True,
         "extracted_data": {
-            "personal_info": profile_doc.get("personal_info") or personal_info,
-            "summary": profile_doc.get("summary") or (summary[0] if isinstance(summary, list) and summary else str(summary or "")),
-            "objective": profile_doc.get("objective") or "",
-            "skills": profile_doc.get("technicalSkills") or skills,
-            "technicalSkills": profile_doc.get("technicalSkills") or skills,
-            "softSkills": profile_doc.get("softSkills") or [],
-            "experience": profile_doc.get("experience") or [
-                {
-                    "position": exp.get("position") or exp.get("job_title") or exp.get("title") or exp.get("role") or "",
-                    "company": exp.get("company") or exp.get("organization") or exp.get("name") or "",
-                    "duration": exp.get("duration") or exp.get("year") or exp.get("start_date") or "",
-                    "description": exp.get("description") or ""
-                } if isinstance(exp, dict) else {
-                    "position": "",
-                    "company": "",
-                    "duration": "",
-                    "description": str(exp)
-                } for exp in experience
-            ] if isinstance(experience, list) else [],
-            "projects": profile_doc.get("projects") or [
-                {
-                    "title": proj.get("title") or proj.get("name") or "",
-                    "technologies": proj.get("technologies") or proj.get("tech_stack") or "",
-                    "description": proj.get("description") or ""
-                } if isinstance(proj, dict) else {
-                    "title": "",
-                    "technologies": "",
-                    "description": str(proj)
-                } for proj in projects
-            ] if isinstance(projects, list) else [],
-            "education": profile_doc.get("education") or [
-                {
-                    "degree": edu.get("degree") or edu.get("course") or "",
-                    "institution": edu.get("institution") or edu.get("school") or edu.get("college") or "",
-                    "year": edu.get("year") or edu.get("passing_year") or ""
-                } if isinstance(edu, dict) else {
-                    "degree": "",
-                    "institution": "",
-                    "year": str(edu)
-                } for edu in education
-            ] if isinstance(education, list) else [],
-            "certifications": profile_doc.get("certifications") or [],
-            "internships": profile_doc.get("internships") or [],
-            "achievements": profile_doc.get("achievements") or [],
-            "languages": profile_doc.get("languages") or [],
-            "portfolioLinks": profile_doc.get("portfolioLinks") or [],
-            "publications": profile_doc.get("publications") or [],
-            "volunteerExperience": profile_doc.get("volunteerExperience") or [],
-            "references": profile_doc.get("references") or []
+            "personal_info": res_personal_info,
+            "summary": res_summary,
+            "objective": res_objective,
+            "skills": res_skills,
+            "technicalSkills": res_tech_skills,
+            "softSkills": res_soft_skills,
+            "personal_skills": res_soft_skills,
+            "experience": res_experience,
+            "work_experience": res_experience,
+            "internships": res_internships,
+            "projects": res_projects,
+            "education": res_education,
+            "certifications": res_certifications,
+            "publications": res_publications,
+            "achievements": res_achievements,
+            "leadership": res_leadership,
+            "leadership_roles": res_leadership,
+            "hobbies": res_hobbies,
+            "languages": res_languages,
+            "personal_details": res_personal_details,
+            "additional_information": res_additional_info,
+            "custom_sections": res_additional_info,
+            "portfolioLinks": profile_doc.get("portfolioLinks") or resume_doc.get("portfolioLinks") or [],
+            "volunteerExperience": profile_doc.get("volunteerExperience") or resume_doc.get("volunteerExperience") or [],
+            "references": profile_doc.get("references") or resume_doc.get("references") or []
         },
         "ai_improvements": improvements
     }

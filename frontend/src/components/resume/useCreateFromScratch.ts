@@ -138,7 +138,8 @@ export const useCreateFromScratch = ({
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
   // Field validation and touched tracking for contact step
-  const [touchedFields, setTouchedFields] = useState<Record<keyof PersonalInfo, boolean>>({
+  type ContactFieldKey = 'name' | 'email' | 'phone' | 'location';
+  const [touchedFields, setTouchedFields] = useState<Record<ContactFieldKey, boolean>>({
     name: false,
     email: false,
     phone: false,
@@ -147,7 +148,7 @@ export const useCreateFromScratch = ({
 
   // Calculate errors
   const errors = useMemo(() => {
-    const errs: Record<keyof PersonalInfo, string> = {
+    const errs: Record<ContactFieldKey, string> = {
       name: '',
       email: '',
       phone: '',

@@ -1,133 +1,188 @@
 # Modular AI prompt templates for Resume Intelligence Platform
+# Bimba AI — "Reflect Your Best Self."
 
-RESUME_PARSE_PROMPT = """
-You are the Resume Intelligence Engine of Bimba AI.
-Your job is to process an uploaded resume while maintaining 100% factual and informational fidelity to the original document.
-The uploaded resume text is the absolute SOURCE OF TRUTH.
-Your primary responsibility is NOT to summarize the resume.
-Your primary responsibility is: Extract -> Preserve -> Structure -> Validate -> Enhance -> Re-validate -> Generate.
+RESUME_PARSE_PROMPT = """You are the Resume Information Extraction Engine of Bimba AI.
 
-CRITICAL RULES:
-- ZERO INFORMATION LOSS: Keep every single experience, project, education entry, certification, award, skill, and language. Do not delete information because it appears unimportant.
-- DO NOT SUMMARIZE: Do not summarize factual information or combine separate facts. All details must remain individually recoverable.
-- NO HALLUCINATIONS: Do not invent details, guess missing information, correct information without explicit evidence, or add geographic location details not present in the source.
-- SUPPORT CUSTOM/UNKNOWN SECTIONS: Any section/heading not matching the standard fields must be captured under "additional_sections".
-- SOURCE FACT REGISTRY: Create a list of every factual item in "source_content.all_facts" with unique fact_ids.
+Your ONLY task is to convert the provided resume into structured JSON with 100% informational fidelity.
 
-Schema:
+CRITICAL ZERO-LOSS RULES:
+1. Extract ALL meaningful information.
+2. NEVER omit information.
+3. NEVER summarize information or combine separate facts.
+4. NEVER shorten descriptions or bullet points.
+5. NEVER invent, fabricate, or hallucinate information.
+6. NEVER change facts, company names, titles, or scores.
+7. Preserve all names exactly as written.
+8. Preserve all dates exactly (month, year, ranges, or 'Present').
+9. Preserve all education scores, marks, CGPA, and percentages (e.g. '9.05 CGPA', '85%').
+10. Preserve CGPA values and percentages in dedicated fields.
+11. Preserve full addresses (house/building, street, city, district, state, pin/zip code).
+12. Preserve all phone numbers and email addresses.
+13. Preserve all portfolio, LinkedIn, GitHub, and external links.
+14. Preserve all individual technical skills (e.g. C, C++, C#, Java, Python, SQL, CSS, JavaScript, MongoDB, MSSQL, NLP, Data Mining, Cloud Computing, etc.).
+15. Preserve skills categorized if categories exist (e.g. Programming Languages, Frontend, Databases, Technologies, Operating Systems).
+16. Preserve all projects individually with their complete descriptions and tech stacks.
+17. Preserve all certifications and courses (name, provider/organization, dates).
+18. Preserve all internships as a SEPARATE section from work experience.
+19. Preserve all professional work experience with roles, companies, dates, and responsibilities.
+20. Preserve all achievements (e.g. 'Cleared GATE CSE in 2020', '1st place in coding event').
+21. Preserve all leadership roles and responsibilities (e.g. 'Active Member of CSI', 'Vice President of IEI').
+22. Preserve all publications and research papers (title, authors/authorship, year, publisher).
+23. Preserve personal/soft skills (e.g. Communication, Problem Solving).
+24. Preserve hobbies and interests.
+25. Preserve personal details (date of birth, father's name, mother's name, gender, nationality, mother tongue, languages known).
+26. Do NOT merge unrelated sections (e.g. never place projects or publications inside hobbies).
+27. Do NOT duplicate information across sections.
+28. If uncertain about where to categorize any piece of text, put it into 'additional_information' — NEVER discard it!
+29. Return ONLY structured JSON.
+30. Do NOT write conversational explanations or markdown blocks.
+
+JSON SCHEMA:
 {
-  "personal_information": {
-    "name": "string",
-    "date_of_birth": "string",
-    "gender": "string",
-    "nationality": "string",
-    "mother_tongue": "string"
+  "personal_info": {
+    "name": "Full Name",
+    "email": "Email Address",
+    "phone": "Phone Number",
+    "address": "Full Address with Street, City, State, PIN",
+    "location": "City, State / Location",
+    "linkedin": "LinkedIn URL",
+    "github": "GitHub URL",
+    "portfolio": "Portfolio URL",
+    "title": "Target Role / Professional Title"
   },
-  "contact_information": {
-    "email": "string",
-    "phone": "string",
-    "address": "string",
-    "linkedin": "string",
-    "github": "string",
-    "portfolio": "string"
-  },
-  "objective": "string",
-  "work_experience": [
+  "objective": "Career Objective if present in resume",
+  "summary": "Professional Summary if present in resume",
+  "skills": [
     {
-      "company": "string",
-      "location": "string",
-      "job_title": "string",
-      "start_date": "string",
-      "end_date": "string",
-      "responsibilities": ["string"],
-      "technologies": ["string"]
+      "category": "Programming Languages",
+      "skills": ["C", "C++", "C#", "Java", "Python", "SQL"]
+    },
+    {
+      "category": "Frontend",
+      "skills": ["HTML", "CSS", "JavaScript", "React"]
+    },
+    {
+      "category": "Technologies",
+      "skills": ["Data Structures", "Machine Learning", "Data Mining", "Cloud Computing", "Natural Language Processing"]
+    },
+    {
+      "category": "Databases",
+      "skills": ["MySQL", "MSSQL", "MongoDB", "Firebase"]
+    },
+    {
+      "category": "Operating Systems",
+      "skills": ["Windows", "Linux Ubuntu"]
     }
   ],
+  "technical_skills": ["List of all individual technical skills"],
+  "personal_skills": ["List of personal / interpersonal skills"],
   "education": [
     {
-      "degree": "string",
-      "field_of_study": "string",
-      "institution": "string",
-      "location": "string",
-      "cgpa_percentage": "string",
-      "year": "string"
+      "degree": "Degree / Course name (e.g. M.Tech, B.E., 12th / PUC, 10th / SSLC)",
+      "specialization": "Specialization / Stream (e.g. Computer Science & Engineering)",
+      "institution": "Institution / University / School name",
+      "location": "Location of institution",
+      "year": "Graduation or passing year / range (e.g. 2022)",
+      "score": "Score value (e.g. 9.05 or 85%)",
+      "score_type": "CGPA or Percentage",
+      "cgpa_percentage": "Formatted score string"
     }
   ],
-  "skills": {
-    "programming_languages": ["string"],
-    "frontend": ["string"],
-    "backend": ["string"],
-    "databases": ["string"],
-    "frameworks": ["string"],
-    "tools": ["string"],
-    "cloud": ["string"],
-    "machine_learning": ["string"],
-    "other": ["string"]
-  },
   "internships": [
     {
-      "company": "string",
-      "role": "string",
-      "duration": "string",
-      "location": "string",
-      "description": "string"
+      "organization": "Organization / Company name (e.g. NITK)",
+      "role": "Intern Role (e.g. Research Intern)",
+      "location": "Location",
+      "start_date": "Start date",
+      "end_date": "End date",
+      "duration": "Duration",
+      "description": "Full description of internship work",
+      "technologies": ["Technologies used"]
+    }
+  ],
+  "work_experience": [
+    {
+      "organization": "Company / Organization name",
+      "role": "Job Role / Title",
+      "employment_type": "Full-time / Part-time / Contract",
+      "location": "Location",
+      "start_date": "Start date (e.g. September 2022)",
+      "end_date": "End date (or null if current)",
+      "is_current": false,
+      "duration": "Duration string",
+      "description": "Full description / responsibilities",
+      "technologies": ["Technologies used"]
     }
   ],
   "projects": [
     {
-      "title": "string",
-      "description": "string",
-      "tech_stack": "string",
-      "duration": "string"
+      "title": "Project Title",
+      "description": "Detailed description of the project, architecture, and results",
+      "technologies": "Technologies / Tech stack used",
+      "duration": "Duration / Date",
+      "url": "Project URL or GitHub link"
     }
   ],
   "certifications": [
     {
-      "name": "string",
-      "organization": "string",
-      "description": "string"
+      "name": "Certification or Course Name",
+      "provider": "Issuing Organization / Provider (e.g. NPTEL, SWAYAM, Coursera, AWS)",
+      "issue_date": "Date / Year of issue",
+      "credential_id": "Credential ID if any",
+      "description": "Details or score/distinction"
     }
   ],
-  "research_projects": [],
-  "publications": [],
-  "research_articles": [],
-  "achievements": ["string"],
-  "leadership": [],
-  "personal_skills": ["string"],
-  "hobbies_interests": ["string"],
-  "languages": ["string"],
-  "awards": ["string"],
-  "extracurricular_activities": [],
-  "additional_sections": [
+  "publications": [
     {
-      "section_name": "string",
-      "content": ["string"]
+      "title": "Publication / Research Paper Title",
+      "publication_type": "Journal / Conference / Patent",
+      "authorship_type": "Author / Co-author",
+      "description": "Summary or publication details",
+      "publisher": "Journal or Conference name",
+      "year": "Publication year",
+      "url": "URL if any"
     }
   ],
-  "source_content": {
-    "all_sections": ["string"],
-    "all_facts": [
-      {
-        "fact_id": "FACT-001",
-        "category": "string",
-        "field": "string",
-        "value": "string",
-        "source_text": "string",
-        "source_page": 1
-      }
-    ]
-  }
+  "achievements": [
+    {
+      "title": "Achievement Title (e.g. Cleared GATE CSE, 1st place in coding event)",
+      "description": "Context, organizer, rank, or details",
+      "date": "Year / Date (e.g. 2020)"
+    }
+  ],
+  "leadership_roles": [
+    {
+      "organization": "Organization / Club / Society (e.g. CSI, IEI, Developer Student Club)",
+      "role": "Position / Role (e.g. Joint Secretary, Vice President, Core Member)",
+      "start_date": "Start date",
+      "end_date": "End date",
+      "description": "Details of activities and responsibilities"
+    }
+  ],
+  "hobbies": ["Hobbies and interests (e.g. Reading, Badminton, Photography)"],
+  "personal_details": {
+    "date_of_birth": "Date of birth",
+    "father_name": "Father's name",
+    "mother_name": "Mother's name",
+    "gender": "Gender",
+    "nationality": "Nationality",
+    "mother_tongue": "Mother tongue",
+    "languages_known": ["Languages known / spoken"]
+  },
+  "additional_information": [
+    {
+      "title": "Section Title / Context",
+      "content": "Any factual item or unclassified content from the original resume"
+    }
+  ]
 }
-
-Return ONLY valid JSON matching this schema. Do not output any markdown code blocks (e.g. no ```json).
 
 Resume Text:
 {resume_text}
 """
 
 
-RESUME_ANALYZE_PROMPT = """
-You are a senior recruiter and ATS (Applicant Tracking System) optimizer. Analyze the following resume (represented in structured JSON) and compute a series of scores (0 to 100) and specific, actionable recommendations.
+RESUME_ANALYZE_PROMPT = """You are a senior recruiter and ATS (Applicant Tracking System) optimizer. Analyze the following resume (represented in structured JSON) and compute a series of scores (0 to 100) and specific, actionable recommendations.
 Analyze:
 - Overall Resume Score
 - ATS Score
@@ -183,8 +238,7 @@ Resume JSON:
 {resume_json}
 """
 
-RESUME_IMPROVE_PROMPT = """
-You are an expert AI Resume Writer. Rewrite and improve the following resume JSON based on the selected improvement goal: "{improvement_goal}".
+RESUME_IMPROVE_PROMPT = """You are an expert AI Resume Writer. Rewrite and improve the following resume JSON based on the selected improvement goal: "{improvement_goal}".
 You can improve the Summary, Projects, Experience, Skills, Achievements, descriptions, action verbs, grammar, and formatting.
 
 CRITICAL RULES:
@@ -200,8 +254,7 @@ Return ONLY a valid JSON representing the fully improved resume structure (match
 {resume_json}
 """
 
-JD_MATCH_PROMPT = """
-You are an AI Job Matching & Optimization Specialist. Compare the following Resume JSON with the pasted Job Description (JD) and compute match details.
+JD_MATCH_PROMPT = """You are an AI Job Matching & Optimization Specialist. Compare the following Resume JSON with the pasted Job Description (JD) and compute match details.
 Compute:
 1. Overall Match Score (0 to 100)
 2. Missing Skills (list of skills mentioned in the JD but missing from the resume)
@@ -227,8 +280,7 @@ Job Description:
 {job_description}
 """
 
-ATS_OPTIMIZATION_PROMPT = """
-Optimize the wording of the following Resume JSON to align with the provided Job Description, without changing any factual details (do not add fake jobs, fake certifications, or fake degrees).
+ATS_OPTIMIZATION_PROMPT = """Optimize the wording of the following Resume JSON to align with the provided Job Description, without changing any factual details (do not add fake jobs, fake certifications, or fake degrees).
 Only rewrite descriptions, objectives, summaries, and bullet points to include important keywords and match required skills.
 
 Return ONLY the optimized valid JSON object:
@@ -238,8 +290,7 @@ Job Description:
 {job_description}
 """
 
-RESUME_INTELLIGENCE_PROMPT = """
-You are a senior recruiter, hiring manager, ATS (Applicant Tracking System) expert, and professional resume writer.
+RESUME_INTELLIGENCE_PROMPT = """You are a senior recruiter, hiring manager, ATS (Applicant Tracking System) expert, and professional resume writer.
 Analyze the following resume (JSON and original raw text) and return a comprehensive analysis, dynamic organization, and professional sentence-level optimizations.
 
 Input Data:
@@ -253,7 +304,6 @@ OCR Confidence: {ocr_confidence}
 Resume Language: {resume_language}
 Target Job (optional): {target_job}
 Target Industry (optional): {target_industry}
-
 
 CRITICAL RULES:
 1. ZERO INFORMATION LOSS: Keep every single experience, project, education entry, certification, award, skill, and language.
@@ -298,28 +348,20 @@ Your output MUST be ONLY a valid JSON object matching this schema, without markd
   ],
   "skills_groups": [
     {
-      "group_name": "Programming Languages | Cloud | Soft Skills | etc.",
+      "category": "string",
       "skills": ["string"]
     }
   ],
-  "ats_analysis": {
-    "scores": {
-      "overall_score": 75,
-      "formatting_score": 80,
-      "completeness_score": 85,
-      "keywords_score": 70,
-      "experience_score": 75,
-      "skills_score": 80,
-      "projects_score": 70,
-      "grammar_score": 90,
-      "readability_score": 85
-    },
-    "strengths": ["string"],
-    "weaknesses": ["string"],
-    "improvement_suggestions": ["string"],
-    "missing_keywords": ["string"]
-  },
-  "confidence": 0.95
+  "scores": {
+    "ats_score": 85,
+    "formatting": 90,
+    "completeness": 95,
+    "keywords": 80,
+    "experience": 85,
+    "skills": 90,
+    "projects": 80,
+    "grammar": 95,
+    "readability": 90
+  }
 }
 """
-

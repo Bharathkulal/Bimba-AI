@@ -6,43 +6,175 @@ export interface PersonalInfo {
   email: string;
   phone: string;
   location: string;
+  address?: string;
+  linkedin?: string;
+  github?: string;
+  portfolio?: string;
+  website?: string;
+  title?: string;
+  target_role?: string;
 }
 
 export interface ExperienceItem {
   position: string;
   company: string;
-  duration: string;
+  duration?: string;
+  start_date?: string;
+  end_date?: string;
+  is_current?: boolean;
+  location?: string;
   description: string;
+  responsibilities?: string;
+  bullets?: string[];
+  job_title?: string;
+  title?: string;
+  role?: string;
+  organization?: string;
+}
+
+export interface InternshipItem {
+  role?: string;
+  position?: string;
+  title?: string;
+  company: string;
+  organization?: string;
+  duration?: string;
+  start_date?: string;
+  end_date?: string;
+  is_current?: boolean;
+  location?: string;
+  description: string;
+  responsibilities?: string;
 }
 
 export interface ProjectItem {
   title: string;
-  technologies: string;
+  name?: string;
+  technologies?: string | string[];
+  tech_stack?: string[];
+  duration?: string;
+  start_date?: string;
+  end_date?: string;
+  link?: string;
+  url?: string;
+  github?: string;
   description: string;
+  bullets?: string[];
 }
 
 export interface EducationItem {
   degree: string;
   institution: string;
-  year: string;
+  school?: string;
+  university?: string;
+  year?: string;
+  passing_year?: string;
+  start_date?: string;
+  end_date?: string;
+  specialization?: string;
+  field_of_study?: string;
+  cgpa_percentage?: string;
+  score?: string;
+  score_type?: string;
+  cgpa?: string;
+  percentage?: string;
+  gpa?: string;
+  location?: string;
+}
+
+export interface CertificationItem {
+  name?: string;
+  title?: string;
+  organization?: string;
+  issuer?: string;
+  issue_date?: string;
+  year?: string;
+  date?: string;
+  url?: string;
+}
+
+export interface PublicationItem {
+  title?: string;
+  authors?: string;
+  journal?: string;
+  publisher?: string;
+  conference?: string;
+  year?: string;
+  date?: string;
+  url?: string;
+  doi?: string;
+  description?: string;
+}
+
+export interface AchievementItem {
+  title?: string;
+  name?: string;
+  issuer?: string;
+  organization?: string;
+  year?: string;
+  date?: string;
+  description?: string;
+}
+
+export interface LeadershipItem {
+  role?: string;
+  title?: string;
+  position?: string;
+  organization?: string;
+  club?: string;
+  duration?: string;
+  year?: string;
+  description?: string;
+}
+
+export interface SkillCategoryItem {
+  category: string;
+  skills: string[];
+}
+
+export interface PersonalDetails {
+  date_of_birth?: string;
+  gender?: string;
+  marital_status?: string;
+  nationality?: string;
+  languages_known?: string[] | string;
+  passport_number?: string;
+  permanent_address?: string;
+}
+
+export interface CustomSectionItem {
+  section_name?: string;
+  title?: string;
+  content?: string | string[];
+  description?: string;
 }
 
 export interface ResumeBuilderData {
   personal_info: PersonalInfo;
-  summary: string;
+  target_role?: string;
   objective?: string;
-  skills: string[];
-  technicalSkills?: string[];
+  summary: string;
+  skills: any[];
+  technicalSkills?: any[];
+  skill_categories?: SkillCategoryItem[];
+  personalSkills?: string[];
   softSkills?: string[];
   experience: ExperienceItem[];
+  internships?: InternshipItem[];
   projects: ProjectItem[];
   education: EducationItem[];
-  certifications?: any[];
-  internships?: any[];
-  achievements?: string[];
+  certifications?: CertificationItem[];
+  publications?: PublicationItem[];
+  achievements?: Array<string | AchievementItem>;
+  leadership?: LeadershipItem[];
+  hobbies_interests?: string[];
+  hobbies?: string[];
+  personal_details?: PersonalDetails;
   languages?: string[];
   portfolioLinks?: string[];
-  publications?: any[];
+  additional_information?: CustomSectionItem[];
+  custom_sections?: CustomSectionItem[];
+  customSections?: CustomSectionItem[];
   volunteerExperience?: any[];
   references?: any[];
 }
@@ -79,7 +211,7 @@ export const useResumeBuilderStore = create<ResumeBuilderState>((set, get) => ({
   resumeId: null,
   resumeData: null,
   aiImprovements: null,
-  selectedTemplate: 'ats_classic',
+  selectedTemplate: 'harvard',
   generatedFiles: [],
   loading: false,
   generating: false,
@@ -94,7 +226,6 @@ export const useResumeBuilderStore = create<ResumeBuilderState>((set, get) => ({
       console.error('Failed to fetch templates:', err);
     }
   },
-
 
   fetchBuilderData: async (resumeId: number) => {
     set({ loading: true, errors: null, resumeId });
@@ -229,7 +360,7 @@ export const useResumeBuilderStore = create<ResumeBuilderState>((set, get) => ({
     resumeId: null,
     resumeData: null,
     aiImprovements: null,
-    selectedTemplate: 'ats_classic',
+    selectedTemplate: 'harvard',
     generatedFiles: [],
     loading: false,
     generating: false,

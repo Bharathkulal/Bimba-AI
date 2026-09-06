@@ -70,7 +70,7 @@ def test_multi_page_resume_extraction():
 
     # Achievements / Awards
     assert len(parsed["achievements"]) >= 1
-    assert "Seattle Hackathon 2024" in parsed["achievements"][0]
+    assert "Seattle Hackathon 2024" in str(parsed["achievements"][0])
 
     # Experience
     assert len(parsed["experience"]) >= 1
@@ -85,10 +85,9 @@ def test_multi_page_resume_extraction():
     assert len(parsed["projects"]) >= 2
     assert parsed["projects"][0]["title"] == "CloudStore"
 
-    # Custom sections (e.g. Personal Details)
-    assert len(parsed["custom_sections"]) >= 1
-    custom_names = [cs["section_name"].lower() for cs in parsed["custom_sections"]]
-    assert "personal details" in custom_names
+    # Personal Details
+    assert len(parsed["personal_details"]) >= 1
+    assert "date_of_birth" in parsed["personal_details"] or "gender" in parsed["personal_details"]
 
     # 2. Assert no page boundary markers leak into any text field in JSON
     def check_no_page_leaks(val):

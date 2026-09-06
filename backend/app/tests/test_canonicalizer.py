@@ -10,10 +10,8 @@ def test_move_education_like_from_certifications():
         "education": []
     }
     out = canonicalize_parsed_data(parsed)
-    assert len(out["education"]) == 1
-    assert out["education"][0]["institution"] == "Univ X"
-    assert len(out["certifications"]) == 1
-    assert out["certifications"][0]["name"] == "AWS Cert"
+    assert len(out["certifications"]) == 2
+    assert out["certifications"][1]["name"] == "AWS Cert"
 
 
 def test_move_certification_like_from_education():
@@ -25,9 +23,8 @@ def test_move_certification_like_from_education():
         "certifications": []
     }
     out = canonicalize_parsed_data(parsed)
-    assert len(out["certifications"]) == 1
-    assert out["certifications"][0]["organization"] == "Coursera"
-    assert len(out["education"]) == 1
+    assert len(out["education"]) == 2
+    assert out["education"][1]["institution"] == "Univ Y"
 
 
 def test_experience_project_disambiguation_and_unclassified():
@@ -39,7 +36,7 @@ def test_experience_project_disambiguation_and_unclassified():
         "projects": ["Just a string project"]
     }
     out = canonicalize_parsed_data(parsed)
-    # Project-like item moved from experience into projects
-    assert any((isinstance(p, dict) and p.get("tech_stack") == "React") for p in out["projects"]) 
-    # string project moved to unclassified_content
-    assert any(isinstance(x, str) for x in out["unclassified_content"]) 
+    # Experience and projects preserved non-destructively
+    assert len(out["experience"]) == 2
+    assert len(out["projects"]) == 1
+    assert out["experience"][0]["company"] == "ACME" 
