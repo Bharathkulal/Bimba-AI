@@ -138,12 +138,18 @@ def extract_personal_info(lines: List[str]) -> Dict[str, Any]:
 
     # 4. Full Address Extraction (Not reducing to single city!)
     address = ""
-    loc_kw_match = re.search(r'(?:location)\s*[:\-]\s*([^\n|]+)', text_clean, re.IGNORECASE)
-    addr_match = re.search(r'(?:address|residence|contact address)\s*[:\-]\s*([^\n|]+(?:\n[^\n|]+){0,2})', text_clean, re.IGNORECASE)
-    if loc_kw_match:
-        address = loc_kw_match.group(1).strip(' -,|')
-    elif addr_match:
-        address = " ".join(addr_match.group(1).split()).strip(' -,|')
+    addr_match = re.search(r'(?:address|location|residence|contact address)\s*[:\-]\s*([^\n|]+(?:\n[^\n|]+){0,3})', text_clean, re.IGNORECASE)
+    if addr_match:
+        raw_addr_lines = addr_match.group(1).split('\n')
+        clean_addr_parts = []
+        for a_line in raw_addr_lines:
+            a_strip = a_line.strip(' -,|')
+            a_lower = a_strip.lower()
+            if any(k in a_lower for k in ["objective", "summary", "experience", "education", "skills", "projects", "--- page", "email:", "phone:"]):
+                break
+            if a_strip:
+                clean_addr_parts.append(a_strip)
+        address = " ".join(clean_addr_parts) if clean_addr_parts else ""
     else:
         # Check top lines for address pattern (street, pin code, district, city)
         for line in lines[:12]:
@@ -205,20 +211,31 @@ def detect_section_header(line: str, is_preceded_by_empty: bool = False) -> str:
         return None
         
     has_cue = "<H>" in line
-    best_match = None
-    highest_ratio = 0.82
-    
+    # 1. Exact match pass
     for sec_key, kw_list in SECTION_TAXONOMY.items():
         for kw in kw_list:
-            if l_no_tags == kw or l_no_tags.startswith(kw + " ") or l_no_tags.endswith(" " + kw) or l_no_tags.startswith(kw + ":"):
+            if l_no_tags == kw or l_no_tags == (kw + ":"):
                 return sec_key
-            if kw in l_no_tags and len(l_no_tags) - len(kw) < 8:
-                return sec_key
-            ratio = difflib.SequenceMatcher(None, l_no_tags, kw).ratio()
-            if ratio > highest_ratio:
-                highest_ratio = ratio
-                best_match = sec_key
-                
+
+    # 2. Match by longest keyword first (e.g. "internship experience" before "experience")
+    all_kws = []
+    for sec_key, kw_list in SECTION_TAXONOMY.items():
+        for kw in kw_list:
+            all_kws.append((len(kw), kw, sec_key))
+    all_kws.sort(key=lambda x: x[0], reverse=True)
+
+    best_match = None
+    highest_ratio = 0.82
+    for _, kw, sec_key in all_kws:
+        if l_no_tags.startswith(kw + " ") or l_no_tags.endswith(" " + kw) or l_no_tags.startswith(kw + ":"):
+            return sec_key
+        if kw in l_no_tags and len(l_no_tags) - len(kw) < 8:
+            return sec_key
+        ratio = difflib.SequenceMatcher(None, l_no_tags, kw).ratio()
+        if ratio > highest_ratio:
+            highest_ratio = ratio
+            best_match = sec_key
+
     if best_match:
         return best_match
         
@@ -239,10 +256,28 @@ def extract_skills_robust(text: str, skill_lines: List[str] = None) -> List[Dict
     text_clean = despace_spaced_text(clean_text_artifacts(re.sub(r'<[^>]+>', '', text)))
 
     if skill_lines:
+        merged_lines: List[str] = []
         for line in skill_lines:
             l_str = line.strip()
             if not l_str:
                 continue
+            if ":" in l_str or "-" in l_str:
+                parts = re.split(r'[:\-]', l_str, maxsplit=1)
+                cat_name = parts[0].strip(' •-*')
+                # If category name is short (likely category label)
+                if len(cat_name.split()) <= 5:
+                    merged_lines.append(l_str)
+                elif merged_lines:
+                    merged_lines[-1] = merged_lines[-1] + " " + l_str
+                else:
+                    merged_lines.append(l_str)
+            elif merged_lines:
+                # Wrapped continuation line from previous category
+                merged_lines[-1] = merged_lines[-1] + " " + l_str
+            else:
+                merged_lines.append(l_str)
+
+        for l_str in merged_lines:
             if ":" in l_str or "-" in l_str:
                 parts = re.split(r'[:\-]', l_str, maxsplit=1)
                 category = parts[0].strip(' •-*')
@@ -259,9 +294,17 @@ def extract_skills_robust(text: str, skill_lines: List[str] = None) -> List[Dict
                 flat_skills.extend(tokens)
 
     # Match common skills from text body
+    text_normalized = re.sub(r'\s+', ' ', text_clean)
     for skill in COMMON_SKILLS:
-        pattern = r'(?<![A-Za-z0-9_])' + re.escape(skill) + r'(?![A-Za-z0-9_])'
-        if re.search(pattern, text_clean, re.IGNORECASE):
+        if skill == "C":
+            pattern = r'(?<![A-Za-z0-9_+#])C(?![A-Za-z0-9_+#])'
+        elif skill in ["C++", "C#"]:
+            pattern = r'(?<![A-Za-z0-9_])' + re.escape(skill) + r'(?![A-Za-z0-9_])'
+        else:
+            escaped = r'\s+'.join(re.escape(w) for w in skill.split())
+            pattern = r'(?<![A-Za-z0-9_])' + escaped + r'(?![A-Za-z0-9_])'
+
+        if re.search(pattern, text_clean, re.IGNORECASE) or re.search(pattern, text_normalized, re.IGNORECASE):
             if skill not in flat_skills:
                 flat_skills.append(skill)
 
@@ -714,9 +757,56 @@ def extract_structured_data(text: str) -> Dict[str, Any]:
                 "description": lead.strip()
             })
 
-    soft_skills = [s.strip() for s in " ".join(untag(sections["soft_skills"])).split(",") if s.strip()]
+    soft_skills = []
+    hobbies = []
+
+    for line in untag(sections["soft_skills"]):
+        l_str = line.strip()
+        if not l_str:
+            continue
+        if any(hk in l_str.lower() for hk in ["hobbies:", "hobbies & interests:", "interests:"]):
+            parts = re.split(r'[:\-]', l_str, maxsplit=1)
+            if len(parts) > 1:
+                h_tokens = [s.strip() for s in re.split(r'[,;•]', parts[1]) if s.strip()]
+                hobbies.extend(h_tokens)
+        elif any(sk in l_str.lower() for sk in ["personal skills:", "soft skills:", "strengths:"]):
+            parts = re.split(r'[:\-]', l_str, maxsplit=1)
+            if len(parts) > 1:
+                s_tokens = [s.strip() for s in re.split(r'[,;•]', parts[1]) if s.strip()]
+                soft_skills.extend(s_tokens)
+        else:
+            s_tokens = [s.strip() for s in re.split(r'[,;•]', l_str) if s.strip()]
+            soft_skills.extend(s_tokens)
+
+    for line in untag(sections["hobbies"]):
+        l_str = line.strip()
+        if not l_str:
+            continue
+        if any(sk in l_str.lower() for sk in ["personal skills:", "soft skills:"]):
+            parts = re.split(r'[:\-]', l_str, maxsplit=1)
+            if len(parts) > 1:
+                s_tokens = [s.strip() for s in re.split(r'[,;•]', parts[1]) if s.strip()]
+                soft_skills.extend(s_tokens)
+        elif ":" in l_str or "-" in l_str:
+            parts = re.split(r'[:\-]', l_str, maxsplit=1)
+            if len(parts) > 1:
+                h_tokens = [s.strip() for s in re.split(r'[,;•]', parts[1]) if s.strip()]
+                hobbies.extend(h_tokens)
+            else:
+                hobbies.append(l_str)
+        else:
+            h_tokens = [s.strip() for s in re.split(r'[,;•]', l_str) if s.strip()]
+            hobbies.extend(h_tokens)
+
+    if not hobbies:
+        for l in lines:
+            if any(hk in l.lower() for hk in ["hobbies:", "hobbies & interests:", "interests:"]) and not any(tag in l for tag in ["<TABLE>", "<TR>"]):
+                parts = re.split(r'[:\-]', re.sub(r'<[^>]+>', '', l), maxsplit=1)
+                if len(parts) > 1:
+                    hobbies.extend([s.strip() for s in re.split(r'[,;•]', parts[1]) if s.strip()])
+                    break
+
     languages = [s.strip() for s in re.split(r'[,;]', " ".join(untag(sections["languages"]))) if s.strip()]
-    hobbies = [s.strip() for s in re.split(r'[,;]', " ".join(untag(sections["hobbies"]))) if s.strip()]
     portfolio_links = [link.strip() for link in untag(sections["portfolio_links"]) if link.strip()]
 
     # Format custom sections & Personal details

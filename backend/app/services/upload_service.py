@@ -1,7 +1,9 @@
 import os
+import logging
 from typing import Dict, Any, List
 from app.core.exceptions import PipelineException
 from app.core.logging_service import log_stage, log_error
+from app.services.pdf_extractor import PDFExtractor
 from app.services.ocr_service import OCRService
 from app.services.ai_provider_manager import AIProviderManager
 from app.services.resume_parser import ResumeParser
@@ -9,6 +11,9 @@ from app.services.zero_loss_engine import ZeroLossEngine
 from app.services.integrity_validator import ResumeIntegrityValidator
 from app.database.resume_repository import ResumeRepository
 from app.ai.resume_prompts import RESUME_PARSE_PROMPT
+
+logger = logging.getLogger("bimba_ai_pipeline")
+
 
 class UploadService:
     def __init__(self, db: Any):
@@ -20,6 +25,7 @@ class UploadService:
 
     def process_upload(self, file_content: bytes, filename: str, student_id: int) -> Dict[str, Any]:
         # 1. Ingestion / Security Checks
+        logger.info("INFO: Resume upload started")
         size_mb = len(file_content) / (1024 * 1024)
         if size_mb > 15.0:
             raise PipelineException(
@@ -61,32 +67,57 @@ class UploadService:
         
         filepath = ""
         try:
-            # 2. Extract Text via OCRService (PyMuPDF / pdfplumber with OCR fallback)
+            # 2. Extract Text via PyMuPDF (Primary) or OCRService
             log_stage("EXTRACTOR", "START", f"Running layered extraction for {filename}")
-            raw_extraction = self.ocr_service.extract_text(file_content, filename)
             
-            def normalize_extraction_result(result) -> str:
-                if result is None:
-                    return ""
-                if isinstance(result, str):
-                    return result
-                if isinstance(result, dict):
-                    text = result.get("text") or ""
-                    if not text and "pages_metadata" in result:
-                        parts = []
-                        for p in result["pages_metadata"]:
-                            if isinstance(p, dict) and p.get("text"):
-                                parts.append(p["text"])
-                        text = "\n".join(parts)
-                    return text
-                if isinstance(result, list):
-                    return "\n".join(normalize_extraction_result(item) for item in result if item is not None)
-                return str(result)
+            raw_extraction = None
+            extracted_text = ""
+            page_count = 1
+            pages_meta = []
+            
+            def _unpack_raw(raw_data):
+                if isinstance(raw_data, str):
+                    return raw_data, 1, [{"page_number": 1, "text": raw_data}]
+                if isinstance(raw_data, dict):
+                    txt = raw_data.get("full_text") or raw_data.get("text", "")
+                    if not txt and "pages_metadata" in raw_data:
+                        txt = "\n\n".join(p.get("text", "") for p in raw_data["pages_metadata"] if isinstance(p, dict))
+                    elif not txt and "pages" in raw_data:
+                        txt = "\n\n".join(p.get("text", "") if isinstance(p, dict) else str(p) for p in raw_data["pages"])
+                    p_count = raw_data.get("page_count", len(raw_data.get("pages_metadata", raw_data.get("pages", [1]))))
+                    p_meta = raw_data.get("pages", raw_data.get("pages_metadata", []))
+                    return txt, p_count, p_meta
+                if isinstance(raw_data, list):
+                    parts = []
+                    for item in raw_data:
+                        if isinstance(item, dict):
+                            parts.append(item.get("text", ""))
+                        else:
+                            parts.append(str(item))
+                    txt = "\n\n".join(parts)
+                    return txt, len(raw_data), [{"page_number": idx + 1, "text": t} for idx, t in enumerate(parts)]
+                return str(raw_data or ""), 1, []
 
-            extracted_text = normalize_extraction_result(raw_extraction)
+            if ext == "pdf":
+                pdf_res = PDFExtractor.extract_text_from_pdf(file_content, filename)
+                extracted_text, page_count, pages_meta = _unpack_raw(pdf_res)
+                raw_extraction = pdf_res
+
+                # Fallback to OCRService if text is still empty
+                if not extracted_text or not extracted_text.strip():
+                    log_stage("EXTRACTOR", "WARN", "PyMuPDF extracted empty text, attempting OCRService layered extraction...")
+                    raw_ocr = self.ocr_service.extract_text(file_content, filename)
+                    extracted_text, page_count, pages_meta = _unpack_raw(raw_ocr)
+                    raw_extraction = raw_ocr
+            else:
+                raw_ocr = self.ocr_service.extract_text(file_content, filename)
+                extracted_text, page_count, pages_meta = _unpack_raw(raw_ocr)
+                raw_extraction = raw_ocr
+
+            extracted_text = str(extracted_text or "").strip()
             log_stage("EXTRACTOR", "INFO", f"Extracted {len(extracted_text)} characters")
 
-            if not extracted_text or not extracted_text.strip():
+            if not extracted_text:
                 log_stage("EXTRACTOR", "WARN", "Extracted text is empty; raising extraction error")
                 raise PipelineException(
                     step="Text Ingestion / Extraction",
@@ -97,6 +128,7 @@ class UploadService:
             log_stage("EXTRACTOR", "COMPLETED", f"Final extracted characters: {len(extracted_text)}")
 
             # 3. AI Structured Extraction with Intelligent Chunking if large
+            logger.info("INFO: Sending resume to AI parser")
             log_stage("UPLOAD", "INFO", "Structured AI parsing started")
             parsed_data = None
             ai_warnings = []
@@ -109,6 +141,7 @@ class UploadService:
                 try:
                     raw_response = self.ai_manager.call_llm(prompt, feature="Resume Ingestion Parsing", response_format="json_object")
                     parsed_data = self.parser.parse_and_validate(raw_response)
+                    logger.info("INFO: AI structured parsing completed")
                     log_stage("UPLOAD", "INFO", "Structured AI parsing completed for single chunk")
                 except Exception as ai_err:
                     log_error("UPLOAD", "AI parsing failed; falling back to heuristic parsing", ai_err)
@@ -130,6 +163,7 @@ class UploadService:
                         chunk_results.append(c_heuristic)
                 
                 parsed_data = ZeroLossEngine.safe_merge_results(chunk_results)
+                logger.info("INFO: AI structured parsing completed")
                 log_stage("UPLOAD", "INFO", f"Safely merged {len(chunk_results)} chunk results without information loss")
 
             # Fallback to heuristic parser if AI returned empty data
@@ -172,6 +206,8 @@ class UploadService:
                 "filename": filename,
                 "size_bytes": len(file_content),
                 "file_type": ext,
+                "page_count": page_count,
+                "raw_extracted_text": extracted_text,
                 "cloudinary_url": cloudinary_url
             }
 
@@ -187,6 +223,7 @@ class UploadService:
                 validation_meta=validation_metadata
             )
 
+            logger.info("INFO: Resume saved successfully")
             log_stage("UPLOAD", "COMPLETED", f"Orchestration completed successfully for {filename}")
             return {
                 "success": True,

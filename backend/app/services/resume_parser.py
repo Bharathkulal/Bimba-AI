@@ -133,6 +133,7 @@ class ResumeParser:
                 else:
                     raise JSONValidationException("Could not locate JSON block in AI response")
             except Exception as repair_err:
+                logger.error(f"ERROR: AI JSON parsing failed: {str(repair_err)}")
                 log_error("PARSER", "Failed to parse AI response to valid JSON", repair_err)
                 raise JSONValidationException(f"AI response is not valid JSON: {str(repair_err)}")
                 
@@ -595,5 +596,13 @@ class ResumeParser:
 
         normalized["additional_information"] = additional_items
         normalized["custom_sections"] = additional_items
+
+        # 17. Pydantic Model Validation
+        try:
+            from app.schemas.resume import ResumeData
+            ResumeData(**normalized)
+            logger.info("INFO: Pydantic validation passed")
+        except Exception as pydantic_err:
+            logger.error(f"ERROR: Pydantic validation failed: {str(pydantic_err)}")
 
         return normalized
