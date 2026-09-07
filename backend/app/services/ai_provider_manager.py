@@ -140,8 +140,8 @@ class AIProviderManager:
                     last_error_msg = f"{provider_name} returned status {he.code}: {he.reason}"
                     last_failed_provider = provider_name
                     
-                    # Do not retry on 401/403/400 (auth or request errors), switch provider immediately
-                    if he.code in [400, 401, 403]:
+                    # Do not retry on 400/401/403/404 (auth, bad request, or invalid model endpoint), switch provider immediately
+                    if he.code in [400, 401, 403, 404]:
                         detailed_failures.append(f"{provider_name}: HTTP {he.code} {he.reason} [Non-retryable]")
                         break
                         

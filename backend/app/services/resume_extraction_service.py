@@ -21,7 +21,9 @@ ACTION_VERBS = [
     "architected", "developed", "engineered", "spearheaded", "designed", "built",
     "managed", "led", "created", "boosted", "grew", "optimized", "mentored",
     "achieved", "implemented", "formulated", "directed", "administered", "automated",
-    "cleared", "published", "authored", "co-authored", "researched", "presented", "analyzed"
+    "cleared", "published", "authored", "co-authored", "researched", "presented", "analyzed",
+    "investigated", "conducted", "served", "leveraged", "acquired", "explored", "completed",
+    "demonstrating", "contributing", "evaluating", "identifying"
 ]
 
 TITLE_KEYWORDS = [
@@ -152,12 +154,22 @@ def extract_personal_info(lines: List[str]) -> Dict[str, Any]:
         address = " ".join(clean_addr_parts) if clean_addr_parts else ""
     else:
         # Check top lines for address pattern (street, pin code, district, city)
-        for line in lines[:12]:
-            l_clean = line.strip()
-            if any(kw in l_clean.lower() for kw in ["pin:", "pin code", "post:", "taluk", "district", "street", "road", "nagar", "cross", "state", "india", "karnataka", "maharashtra", "delhi", "california", "texas", "ny"]):
-                if not any(k in l_clean.lower() for k in ["objective", "experience", "education", "skills", "projects", "email", "@"]):
-                    address = l_clean
-                    break
+        addr_parts = []
+        for line in lines[:8]:
+            l_str = line.strip()
+            l_clean = l_str
+            if email:
+                l_clean = l_clean.replace(email, "")
+            if phone:
+                l_clean = l_clean.replace(phone, "")
+            l_clean = re.sub(r'[\u2022\u25cf\u25cb\u25a0\u25a1\uf0b7\u25ba\u2192|•]', ' ', l_clean).strip(' -,|')
+            if any(kw in l_clean.lower() for kw in ["shantananda", "pin:", "pin code", "post:", "taluk", "district", "street", "road", "temple", "village", "nagar", "cross", "state", "karnataka", "india", "brahmavar"]):
+                if not any(k in l_clean.lower() for k in ["objective", "summary", "experience", "education", "skills", "projects", "profile"]):
+                    addr_parts.append(l_clean)
+            elif addr_parts:
+                break
+        if addr_parts:
+            address = " ".join(addr_parts)
 
     location = address
     if not location:
@@ -346,7 +358,8 @@ def parse_experiences(lines: List[str]) -> List[Dict[str, Any]]:
         is_date_line = bool(date_match and len(l_str) < 55)
         first_word = l_str.split()[0].lower() if l_str.split() else ""
         is_action_line = first_word in ACTION_VERBS
-        is_title_line = (any(kw in l_str.lower() for kw in TITLE_KEYWORDS) or ("-" in l_str and len(l_str) < 70)) and not is_date_line and not is_action_line
+        has_title_kw = any(kw in l_str.lower() for kw in TITLE_KEYWORDS)
+        is_title_line = (has_title_kw and not is_action_line) or (not curr_exp and "-" in l_str and len(l_str) < 90 and not is_action_line)
 
         if is_title_line:
             if curr_exp:
@@ -409,8 +422,11 @@ def parse_experiences(lines: List[str]) -> List[Dict[str, Any]]:
                     "description": ""
                 }
             else:
-                curr_exp["duration"] = l_str
-                curr_exp["is_current"] = "present" in l_str.lower()
+                if curr_exp["duration"] in ["Present", ""]:
+                    curr_exp["duration"] = l_str
+                else:
+                    curr_exp["duration"] = f"{curr_exp['duration']} {l_str}".strip(' -')
+                curr_exp["is_current"] = "present" in curr_exp["duration"].lower()
                 prefix = l_str[:date_match.start()].strip(' -,|')
                 if prefix and not curr_exp["company"]:
                     curr_exp["company"] = prefix
@@ -452,7 +468,7 @@ def parse_projects(lines: List[str]) -> List[Dict[str, Any]]:
             
         first_word = l_str.split()[0].lower() if l_str.split() else ""
         is_action_line = first_word in ACTION_VERBS
-        is_title_line = ("(" in l_str and ")" in l_str and not is_action_line) or (len(l_str) < 65 and not is_action_line)
+        is_title_line = (len(l_str) < 110 and not l_str.endswith((".", ";")) and not is_action_line) or ("(" in l_str and ")" in l_str and not is_action_line)
 
         if is_title_line or not curr_proj:
             if curr_proj:
@@ -463,7 +479,7 @@ def parse_projects(lines: List[str]) -> List[Dict[str, Any]]:
             
             description = ""
             for separator in [":", " - "]:
-                if separator in title_clean:
+                if separator in title_clean and len(title_clean.split(separator, 1)[0]) < 50:
                     parts = title_clean.split(separator, 1)
                     title_clean = parts[0].strip(' -,|')
                     description = parts[1].strip()
@@ -547,26 +563,42 @@ def parse_education(lines: List[str]) -> List[Dict[str, Any]]:
             continue
 
         is_degree = any(deg in l_str.lower() for deg in ["b.e", "m.tech", "b.tech", "m.sc", "b.sc", "bachelor", "master", "diploma", "pre-university", "s.s.l.c", "puc", "sslc"])
-        is_inst = any(kw in l_str.lower() for kw in ["institute", "college", "university", "school", "academy", "mit", "iit", "iiit"])
+        is_inst = any(kw in l_str.lower() for kw in ["institute", "college", "university", "school", "academy", "mit", "iit", "iiit", "nirmala", "poorna prajna", "nmamit", "manipal"])
         
-        if is_inst or is_degree:
+        cgpa_val = ""
+        cgpa_match = re.search(r'\b(?:cgpa/grade|cgpa|gpa|percentage|marks|score)?\s*:?\s*(\d{1,2}\.\d{1,2}%?|\d{2}\.\d{2}%?)\b', l_str, re.IGNORECASE)
+        if cgpa_match:
+            cgpa_val = cgpa_match.group(1)
+        elif "%" in l_str:
+            pct_match = re.search(r'\b(\d{2}(?:\.\d{1,2})?%)\b', l_str)
+            if pct_match:
+                cgpa_val = pct_match.group(1)
+                
+        year_val = ""
+        year_match = re.search(r'\b(20\d{2}|19\d{2})\b', l_str)
+        if year_match:
+            year_val = year_match.group(1)
+
+        if curr_edu and is_degree and curr_edu.get("degree") in ["Degree", ""]:
+            curr_edu["degree"] = l_str
+            if cgpa_val:
+                curr_edu["score"] = cgpa_val
+                curr_edu["cgpa_percentage"] = cgpa_val
+                curr_edu["score_type"] = "Percentage" if "%" in cgpa_val else "CGPA"
+            if year_val and not curr_edu.get("year"):
+                curr_edu["year"] = year_val
+        elif curr_edu and is_inst and curr_edu.get("institution") in ["Institution", ""]:
+            curr_edu["institution"] = l_str
+            if cgpa_val:
+                curr_edu["score"] = cgpa_val
+                curr_edu["cgpa_percentage"] = cgpa_val
+                curr_edu["score_type"] = "Percentage" if "%" in cgpa_val else "CGPA"
+            if year_val and not curr_edu.get("year"):
+                curr_edu["year"] = year_val
+        elif is_inst or is_degree:
             if curr_edu:
                 educations.append(curr_edu)
             
-            cgpa_val = ""
-            cgpa_match = re.search(r'\b(?:cgpa|gpa|percentage|marks|score)?\s*:?\s*(\d{1,2}\.\d{1,2}%?|\d{2}\.\d{2}%?)\b', l_str, re.IGNORECASE)
-            if cgpa_match:
-                cgpa_val = cgpa_match.group(1)
-            elif "%" in l_str:
-                pct_match = re.search(r'\b(\d{2}(?:\.\d{1,2})?%)\b', l_str)
-                if pct_match:
-                    cgpa_val = pct_match.group(1)
-                    
-            year_val = ""
-            year_match = re.search(r'\b(20\d{2}|19\d{2})\b', l_str)
-            if year_match:
-                year_val = year_match.group(1)
-
             curr_edu = {
                 "id": len(educations) + 1,
                 "institution": l_str if is_inst else "Institution",
@@ -578,15 +610,17 @@ def parse_education(lines: List[str]) -> List[Dict[str, Any]]:
                 "cgpa_percentage": cgpa_val
             }
         elif curr_edu:
-            if any(deg in l_str.lower() for deg in ["b.e", "m.tech", "b.tech", "m.sc", "b.sc", "bachelor", "master", "diploma", "pre-university", "s.s.l.c", "puc", "sslc"]):
-                curr_edu["degree"] = l_str
-            elif re.match(r'^\d{4}$', l_str) or DATE_REGEX.search(l_str):
-                curr_edu["year"] = l_str
-            elif "cgpa" in l_str.lower() or "grade" in l_str.lower() or "%" in l_str:
-                curr_edu["score"] = l_str
-                curr_edu["cgpa_percentage"] = l_str
+            if re.match(r'^\d{4}$', l_str) or DATE_REGEX.search(l_str):
+                curr_edu["year"] = year_val or l_str
+            elif cgpa_val:
+                curr_edu["score"] = cgpa_val
+                curr_edu["cgpa_percentage"] = cgpa_val
+                curr_edu["score_type"] = "Percentage" if "%" in cgpa_val else "CGPA"
             else:
-                curr_edu["degree"] += f" {l_str}"
+                if curr_edu.get("degree") != "Degree":
+                    curr_edu["degree"] += f" {l_str}"
+                else:
+                    curr_edu["institution"] += f" {l_str}"
 
     if curr_edu:
         educations.append(curr_edu)
@@ -685,30 +719,46 @@ def extract_structured_data(text: str) -> Dict[str, Any]:
         cert_lines = [re.sub(r'<[^>]+>', '', l).strip() for l in lines if any(k in l.lower() for k in ["swayam", "gold medal", "coursera", "nptel", "udemy", "certified", "certification"])]
 
     certifications = []
+    curr_cert = None
     for line in cert_lines:
         line_clean = line.strip()
-        if not line_clean or len(line_clean) < 5:
+        if not line_clean or len(line_clean) < 3:
             continue
-        org = ""
-        name_str = line_clean
-        for keyword in [" by ", " from ", " - ", " | "]:
-            if keyword in line_clean:
-                parts = line_clean.split(keyword, 1)
-                name_str = parts[0].strip()
-                org = parts[1].strip()
-                break
-        paren_match = re.search(r'\((.*?)\)', name_str)
-        if paren_match and not org:
-            org = paren_match.group(1).strip()
-            name_str = re.sub(r'\(.*?\)', '', name_str).strip()
-        certifications.append({
-            "id": len(certifications)+1, 
-            "name": name_str,
-            "title": name_str,
-            "provider": org,
-            "organization": org, 
-            "description": line_clean
-        })
+        first_word = line_clean.split()[0].lower() if line_clean.split() else ""
+        is_desc_line = first_word in ["completed", "acquired", "explored", "learned", "gained", "covered", "studied", "participated", "received"] or line_clean.endswith((".", ";")) or len(line_clean) > 85
+        has_cert_kw = any(k in line_clean.lower() for k in ["swayam", "nptel", "coursera", "udemy", "certified", "certificate", "certification", "gold medal", "aws certified", "google cloud certified"])
+        is_title = has_cert_kw or (len(line_clean.split()) <= 6 and not line_clean.endswith((".", ";", ",")) and not is_desc_line)
+
+        if (is_title and not is_desc_line) or not curr_cert:
+            if curr_cert:
+                certifications.append(curr_cert)
+            org = ""
+            name_str = line_clean
+            for keyword in [" by ", " from ", " - ", " | "]:
+                if keyword in line_clean:
+                    parts = line_clean.split(keyword, 1)
+                    name_str = parts[0].strip()
+                    org = parts[1].strip()
+                    break
+            paren_match = re.search(r'\((.*?)\)', name_str)
+            if paren_match and not org:
+                org = paren_match.group(1).strip()
+                name_str = re.sub(r'\(.*?\)', '', name_str).strip()
+            curr_cert = {
+                "id": len(certifications) + 1,
+                "name": name_str,
+                "title": name_str,
+                "provider": org,
+                "organization": org,
+                "description": line_clean
+            }
+        elif curr_cert:
+            if curr_cert["description"]:
+                curr_cert["description"] += (" " + line_clean)
+            else:
+                curr_cert["description"] = line_clean
+    if curr_cert:
+        certifications.append(curr_cert)
 
     # Internships (Dedicated)
     internships = parse_experiences(sections["internships"])
@@ -736,25 +786,38 @@ def extract_structured_data(text: str) -> Dict[str, Any]:
                 "year": ""
             })
 
-    # Achievements (Dedicated)
+    # Achievements & Leadership
+    ach_lines = untag(sections["achievements"])
+    lead_lines = untag(sections["leadership"])
     achievements = []
-    for i, a in enumerate(untag(sections["achievements"])):
-        if a.strip():
+    leadership = []
+
+    for a in ach_lines:
+        a_clean = a.strip()
+        if not a_clean:
+            continue
+        if any(lk in a_clean.lower() for lk in ["active member", "joint secretary", "vice president", "core member", "secretary", "president", "lead", "coordinator", "head", "treasurer"]):
+            leadership.append({
+                "id": len(leadership) + 1,
+                "organization": a_clean,
+                "role": a_clean,
+                "description": a_clean
+            })
+        else:
             achievements.append({
-                "id": i + 1,
-                "title": a.strip(),
-                "description": a.strip()
+                "id": len(achievements) + 1,
+                "title": a_clean,
+                "description": a_clean
             })
 
-    # Leadership (Dedicated)
-    leadership = []
-    for i, lead in enumerate(untag(sections["leadership"])):
-        if lead.strip():
+    for lead in lead_lines:
+        l_clean = lead.strip()
+        if l_clean and not any(l_clean in str(ex) for ex in leadership):
             leadership.append({
-                "id": i + 1,
-                "organization": lead.strip(),
+                "id": len(leadership) + 1,
+                "organization": l_clean,
                 "role": "Role / Member",
-                "description": lead.strip()
+                "description": l_clean
             })
 
     soft_skills = []
@@ -822,14 +885,41 @@ def extract_structured_data(text: str) -> Dict[str, Any]:
                 "content": untag(v)
             })
 
-    if sections.get("personal_info"):
-        personal_lines = untag(sections["personal_info"])
-        for pline in personal_lines:
-            if ":" in pline:
-                parts = pline.split(":", 1)
-                k_norm = parts[0].strip(' -*•:\t').lower().replace(" ", "_")
-                if k_norm:
-                    personal_details_dict[k_norm] = parts[1].strip()
+    personal_source_lines = untag(sections.get("personal_info", []))
+    if not personal_source_lines:
+        in_p_block = False
+        for l in lines:
+            l_clean = re.sub(r'<[^>]+>', '', l).strip()
+            if "personal details" in l_clean.lower():
+                in_p_block = True
+                continue
+            if in_p_block:
+                if detect_section_header(l):
+                    break
+                if ":" in l_clean:
+                    personal_source_lines.append(l_clean)
+
+    for pline in personal_source_lines:
+        if ":" in pline:
+            parts = pline.split(":", 1)
+            k_raw = parts[0].strip(' -*•:\t').lower().replace(" ", "_").replace("'", "")
+            val = parts[1].strip()
+            if "birth" in k_raw or "dob" in k_raw:
+                personal_details_dict["date_of_birth"] = val
+            elif "father" in k_raw:
+                personal_details_dict["father_name"] = val
+            elif "mother_tongue" in k_raw or "mothertongue" in k_raw:
+                personal_details_dict["mother_tongue"] = val
+            elif "mother" in k_raw:
+                personal_details_dict["mother_name"] = val
+            elif "gender" in k_raw or "sex" in k_raw:
+                personal_details_dict["gender"] = val
+            elif "nationality" in k_raw:
+                personal_details_dict["nationality"] = val
+            elif "language" in k_raw:
+                personal_details_dict["languages_known"] = [l.strip() for l in re.split(r'[,;]', val) if l.strip()]
+            elif k_raw:
+                personal_details_dict[k_raw] = val
 
     res = {
         "personal_info": {

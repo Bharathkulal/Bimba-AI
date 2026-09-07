@@ -1,8 +1,11 @@
 import json
 import re
+import logging
 from typing import Dict, Any, List, Union
 from app.core.exceptions import JSONValidationException
 from app.core.logging_service import log_stage, log_error
+
+logger = logging.getLogger("bimba_ai_pipeline")
 
 def unwrap_json_text(text: Any) -> str:
     if text is None:
