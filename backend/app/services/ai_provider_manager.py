@@ -21,7 +21,10 @@ class AIProviderManager:
         # Force reload environment variables from .env on every check
         try:
             import dotenv
-            dotenv.load_dotenv(override=True)
+            env_file = dotenv.find_dotenv(usecwd=True)
+            if not env_file:
+                env_file = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", ".env"))
+            dotenv.load_dotenv(env_file, override=False)
         except Exception:
             pass
 

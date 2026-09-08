@@ -181,13 +181,28 @@ class ResumeIntegrityValidator:
             if isinstance(s_list, list):
                 for item in s_list:
                     if isinstance(item, dict):
-                        res.extend(item.get("skills", []))
+                        sub = item.get("skills", [])
+                        if isinstance(sub, list):
+                            for sub_item in sub:
+                                if isinstance(sub_item, str):
+                                    res.append(sub_item)
+                                elif isinstance(sub_item, dict):
+                                    res.append(str(sub_item.get("name") or sub_item.get("skill_name") or ""))
+                        elif isinstance(sub, str):
+                            res.append(sub)
+                        name_val = item.get("skill_name") or item.get("name")
+                        if isinstance(name_val, str):
+                            res.append(name_val)
                     elif isinstance(item, str):
                         res.append(item)
             t_list = d.get("technicalSkills") or d.get("technical_skills") or []
             if isinstance(t_list, list):
-                res.extend(t_list)
-            return [s.lower().strip() for s in res if s]
+                for item in t_list:
+                    if isinstance(item, str):
+                        res.append(item)
+                    elif isinstance(item, dict):
+                        res.append(str(item.get("name") or item.get("skill_name") or ""))
+            return [s.lower().strip() for s in res if s and isinstance(s, str) and s.strip()]
 
         orig_skills = get_flat_skills(original)
         curr_skills = get_flat_skills(current)

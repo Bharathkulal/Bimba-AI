@@ -33,13 +33,6 @@ class ResumeRepository:
 
         log_stage("DATABASE", "START", "Initiating saving of parsed resume doc to database")
         
-        # 1. Validate DB Connection health
-        try:
-            self.db.client.admin.command('ping')
-        except pymongo.errors.ConnectionFailure as e:
-            log_error("DATABASE", "Database connection lost or offline", e)
-            raise DatabaseException("Database connection failure") from e
-            
         next_id = get_next_sequence("resumes")
         student = self.db.students.find_one({"id": student_id})
         roll_number = student.get("roll_number") if student else None
@@ -49,9 +42,6 @@ class ResumeRepository:
         
         # 1. Education
         edu_list = parsed_data.get("education", []) or []
-        edu_to_gen = sum(1 for edu in edu_list if not (isinstance(edu, dict) and edu.get("id")))
-        start_edu_id = get_next_sequence_batch("resume_education", edu_to_gen) if edu_to_gen > 0 else 0
-        
         education_list = []
         for idx, edu in enumerate(edu_list):
             edu_dict: Dict[str, Any] = {}
@@ -60,26 +50,22 @@ class ResumeRepository:
             elif isinstance(edu, dict):
                 edu_dict = dict(edu)
             if not edu_dict.get("id"):
-                edu_dict["id"] = start_edu_id
-                start_edu_id += 1
+                edu_dict["id"] = idx + 1
             education_list.append(edu_dict)
         education = education_list
+
                 
         # 2. Experience
         exp_list = parsed_data.get("experience", []) or parsed_data.get("work_experience", []) or []
-        exp_to_gen = sum(1 for exp in exp_list if not (isinstance(exp, dict) and exp.get("id")))
-        start_exp_id = get_next_sequence_batch("resume_experience", exp_to_gen) if exp_to_gen > 0 else 0
-        
         experience_list = []
-        for exp in exp_list:
+        for idx, exp in enumerate(exp_list):
             exp_dict: Dict[str, Any] = {}
             if isinstance(exp, str):
                 exp_dict = {"position": "", "company": "", "duration": "", "description": exp}
             elif isinstance(exp, dict):
                 exp_dict = dict(exp)
             if not exp_dict.get("id"):
-                exp_dict["id"] = start_exp_id
-                start_exp_id += 1
+                exp_dict["id"] = idx + 1
             experience_list.append(exp_dict)
         experience = experience_list
                 
@@ -88,19 +74,15 @@ class ResumeRepository:
  
         # 4. Projects
         proj_list = parsed_data.get("projects", []) or []
-        proj_to_gen = sum(1 for proj in proj_list if not (isinstance(proj, dict) and proj.get("id")))
-        start_proj_id = get_next_sequence_batch("resume_project", proj_to_gen) if proj_to_gen > 0 else 0
-        
         projects_list = []
-        for proj in proj_list:
+        for idx, proj in enumerate(proj_list):
             proj_dict: Dict[str, Any] = {}
             if isinstance(proj, str):
                 proj_dict = {"title": "", "technologies": "", "description": proj}
             elif isinstance(proj, dict):
                 proj_dict = dict(proj)
             if not proj_dict.get("id"):
-                proj_dict["id"] = start_proj_id
-                start_proj_id += 1
+                proj_dict["id"] = idx + 1
             projects_list.append(proj_dict)
         projects = projects_list
                 
