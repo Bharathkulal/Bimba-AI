@@ -1,96 +1,18 @@
 import re
 import difflib
-from typing import Dict, Any, List
+from typing import Dict, Any, List, Optional
 
-COMMON_SKILLS = [
-    "Python", "JavaScript", "TypeScript", "React", "React Native", "Vue", "Angular",
-    "Node.js", "Express", "FastAPI", "Flask", "Django", "Spring Boot", "Java", "C", "C++",
-    "C#", "Golang", "Rust", "Ruby", "PHP", "HTML", "CSS", "Tailwind CSS", "Bootstrap",
-    "SQL", "MySQL", "PostgreSQL", "MSSQL", "MongoDB", "Redis", "SQLite", "Firebase", "AWS",
-    "Azure", "GCP", "Docker", "Kubernetes", "Git", "GitHub", "CI/CD", "Linux", "Ubuntu", "Windows",
-    "RESTful API", "GraphQL", "Redux", "Jira", "Scrum", "Agile", "Microservices",
-    "Machine Learning", "Data Science", "Deep Learning", "TensorFlow", "PyTorch",
-    "OpenCV", "Scikit-learn", "Cloud Computing", "Fog Computing", "Natural Language Processing", "NLP",
-    "Data Mining", "Data Structures", "Algorithms", "Computer Networks", "DBMS", "Operating Systems",
-    "Canva", "Adobe Express", "Social Media Strategy", "Copywriting", "Paid Ads",
-    "Analytics", "Influencer Outreach", "SEO", "Content Marketing", "Pandas", "NumPy",
-    "C/C++", "PL/SQL", "Oracle", "Big Data", "Hadoop", "Spark", "Tableau", "Power BI"
-]
-
-ACTION_VERBS = [
-    "architected", "developed", "engineered", "spearheaded", "designed", "built",
-    "managed", "led", "created", "boosted", "grew", "optimized", "mentored",
-    "achieved", "implemented", "formulated", "directed", "administered", "automated",
-    "cleared", "published", "authored", "co-authored", "researched", "presented", "analyzed",
-    "investigated", "conducted", "served", "leveraged", "acquired", "explored", "completed",
-    "demonstrating", "contributing", "evaluating", "identifying"
-]
-
-TITLE_KEYWORDS = [
-    "engineer", "manager", "professor", "specialist", "developer", "analyst",
-    "architect", "lead", "consultant", "designer", "director", "coordinator",
-    "intern", "executive", "head", "officer", "administrator", "fellow", "associate",
-    "lecturer", "assistant professor", "researcher", "trainee"
-]
-
-DATE_REGEX = re.compile(
-    r'\b(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Sept|Oct|Nov|Dec|'
-    r'January|February|March|April|June|July|August|September|October|November|December|\d{4})\b'
-    r'.*?(Present|Current|\d{4})?', re.IGNORECASE
+from app.services.resume_pipeline.section_detector import (
+    SECTION_TAXONOMY, ALL_SECTION_KEYWORDS, DATE_REGEX, SectionDetector
 )
-
-SECTION_TAXONOMY = {
-    "summary": ["professional summary", "summary", "profile summary", "profile", "about me", "executive summary", "career profile", "about", "summary of qualifications", "summary of experience"],
-    "objective": ["career objective", "objective", "career summary", "career goal", "objective & summary"],
-    "experience": ["work experience", "professional experience", "experience", "employment history", "work history", "career history", "employment", "professional background"],
-    "education": ["education", "academic background", "academic qualification", "educational qualification", "academics", "educational qualifications and trainings", "academic profile", "academic qualifications", "academic record"],
-    "projects": ["academic & personal projects", "academic and personal projects", "projects", "personal projects", "key projects", "selected projects", "academic projects", "technical projects"],
-    "technical_skills": ["technical skill set", "technical skills", "skills & technologies", "skills", "technologies", "core competencies", "technical proficiencies", "tech stack", "software skills", "key skills", "programming skills"],
-    "soft_skills": ["personal skills", "soft skills", "interpersonal skills", "key strengths", "competencies", "strengths"],
-    "certifications": ["certifications and online courses", "certifications & online courses", "certifications", "certificates", "courses", "training", "licenses & certifications", "credentials", "trainings & certifications", "online courses"],
-    "internships": ["internship", "internships", "internship experience", "industrial training", "research internship"],
-    "achievements": ["awards and achievements", "awards & achievements", "achievements", "awards", "honors & awards", "accomplishments", "co-curricular activities", "extra-curricular achievements"],
-    "leadership": ["leadership", "leadership & responsibilities", "positions of responsibility", "responsibilities", "leadership roles", "extra-curricular responsibilities"],
-    "publications": ["publications & research papers", "publications and research papers", "publications", "research papers", "patents", "research articles", "articles", "research publications", "conference papers"],
-    "languages": ["languages", "languages spoken", "languages known"],
-    "hobbies": ["hobbies & interests", "hobbies and interests", "hobbies", "interests", "activities"],
-    "portfolio_links": ["links", "urls", "portfolio links", "social links"],
-    "volunteer": ["volunteer experience", "volunteer work", "community service", "volunteering"],
-    "references": ["references", "referees"],
-    "personal_info": ["personal details", "personal information", "personal profile", "contact", "contact information"]
-}
-
-def clean_text_artifacts(raw_text: str) -> str:
-    """Standardize unicode characters, bullets, and dashes."""
-    if not raw_text:
-        return ""
-    text = raw_text.replace('\r\n', '\n').replace('\r', '\n')
-    text = re.sub(r'[\u2010\u2011\u2012\u2013\u2014\u2015\u2212\ufffd]', '-', text)
-    text = re.sub(r'[\u2018\u2019\u201b]', "'", text)
-    text = re.sub(r'[\u201c\u201d\u201f]', '"', text)
-    text = re.sub(r'[\u007f\u2022\u25cf\u25cb\u25a0\u25a1\uf0b7\u25ba\u2192]', '', text)
-    return text
-
-def despace_spaced_text(text: str) -> str:
-    lines = text.split("\n")
-    cleaned_lines = []
-    for line in lines:
-        if re.search(r'(?:\b[A-Za-z0-9]\s){3,}', line):
-            words = re.split(r'\s{2,}', line.strip())
-            despaced_words = []
-            for w in words:
-                w_strip = w.strip()
-                if re.match(r'^(?:[A-Za-z0-9]\s)+[A-Za-z0-9]$', w_strip):
-                    despaced_words.append(w_strip.replace(" ", ""))
-                elif len(w_strip) <= 3 and re.match(r'^(?:[A-Za-z0-9]\s?)+$', w_strip):
-                    despaced_words.append(w_strip.replace(" ", ""))
-                else:
-                    sub_w = re.sub(r'\b([A-Za-z0-9])\s+(?=[A-Za-z0-9]\b)', r'\1', w_strip)
-                    despaced_words.append(sub_w)
-            cleaned_lines.append(" ".join(despaced_words))
-        else:
-            cleaned_lines.append(line)
-    return "\n".join(cleaned_lines)
+from app.services.resume_pipeline.parsers import (
+    PersonalParser, EducationParser, ExperienceParser, SkillsParser,
+    ProjectParser, CertificationParser, PublicationParser, AchievementParser,
+    PersonalDetailsParser, AdditionalParser
+)
+from app.services.resume_pipeline.pipeline import clean_text_artifacts, despace_spaced_text
+from app.services.resume_pipeline.parsers.skills_parser import COMMON_SKILLS_CATALOGUE as COMMON_SKILLS
+from app.services.resume_pipeline.parsers.experience_parser import ACTION_VERBS, TITLE_KEYWORDS
 
 def normalize_text_lines(text: str) -> List[str]:
     text_clean = despace_spaced_text(clean_text_artifacts(text))
@@ -107,869 +29,160 @@ def normalize_text_lines(text: str) -> List[str]:
     return lines
 
 def extract_personal_info(lines: List[str]) -> Dict[str, Any]:
-    text_clean = "\n".join(lines)
-    
-    # 1. Email Regex
-    email_match = re.search(r'[\w\.-]+@[\w\.-]+\.\w+', text_clean)
-    email = email_match.group(0) if email_match else ""
+    return PersonalParser.parse(lines[:15], lines)
 
-    # 2. Phone Regex
-    phone = ""
-    for match in re.finditer(r'\+?[\d\s\-\(\)]{8,20}\d', text_clean):
-        val = match.group(0).strip()
-        digits = re.sub(r'\D', '', val)
-        if 7 <= len(digits) <= 15:
-            if not any(yr in val for yr in ["2020", "2021", "2022", "2023", "2024", "2025", "2026"]):
-                phone = val
-                break
-    if not phone:
-        phone_match = re.search(r'(\+?\d{1,4}[\s-]?)?\(?\d{2,5}\)?[\s-]?\d{3,5}[\s-]?\d{3,5}', text_clean)
-        phone = phone_match.group(0).strip() if phone_match and len(re.sub(r'\D', '', phone_match.group(0))) >= 7 else ""
-
-    # 3. Links
-    linkedin_match = re.search(r'(linkedin\.com/in/[\w-]+)', text_clean, re.IGNORECASE)
-    linkedin = linkedin_match.group(0) if linkedin_match else ""
-
-    github_match = re.search(r'(github\.com/[\w-]+)', text_clean, re.IGNORECASE)
-    github = github_match.group(0) if github_match else ""
-
-    portfolio_match = re.search(r'\b(https?://[^\s]+|[\w-]+\.(?:com|io|dev|me|site))\b', text_clean, re.IGNORECASE)
-    portfolio = ""
-    if portfolio_match and "github" not in portfolio_match.group(0) and "linkedin" not in portfolio_match.group(0) and "@" not in portfolio_match.group(0):
-        portfolio = portfolio_match.group(0)
-
-    # 4. Full Address Extraction (Not reducing to single city!)
-    address = ""
-    addr_match = re.search(r'(?:address|location|residence|contact address)\s*[:\-]\s*([^\n|]+(?:\n[^\n|]+){0,3})', text_clean, re.IGNORECASE)
-    if addr_match:
-        raw_addr_lines = addr_match.group(1).split('\n')
-        clean_addr_parts = []
-        for a_line in raw_addr_lines:
-            a_strip = a_line.strip(' -,|')
-            a_lower = a_strip.lower()
-            if any(k in a_lower for k in ["objective", "summary", "experience", "education", "skills", "projects", "--- page", "email:", "phone:"]):
-                break
-            if a_strip:
-                clean_addr_parts.append(a_strip)
-        address = " ".join(clean_addr_parts) if clean_addr_parts else ""
-    else:
-        # Check top lines for address pattern (street, pin code, district, city)
-        addr_parts = []
-        for line in lines[:8]:
-            l_str = line.strip()
-            l_clean = l_str
-            if email:
-                l_clean = l_clean.replace(email, "")
-            if phone:
-                l_clean = l_clean.replace(phone, "")
-            l_clean = re.sub(r'[\u2022\u25cf\u25cb\u25a0\u25a1\uf0b7\u25ba\u2192|•]', ' ', l_clean).strip(' -,|')
-            if any(kw in l_clean.lower() for kw in ["shantananda", "pin:", "pin code", "post:", "taluk", "district", "street", "road", "temple", "village", "nagar", "cross", "state", "karnataka", "india", "brahmavar"]):
-                if not any(k in l_clean.lower() for k in ["objective", "summary", "experience", "education", "skills", "projects", "profile"]):
-                    addr_parts.append(l_clean)
-            elif addr_parts:
-                break
-        if addr_parts:
-            address = " ".join(addr_parts)
-
-    location = address
-    if not location:
-        # Fallback city/state pattern
-        loc_match = re.search(r'\b([A-Z][a-zA-Z\s]+,\s*[A-Z]{2}|[A-Z][a-zA-Z\s]+,\s*India|[A-Z][a-zA-Z\s]+,\s*USA)\b', text_clean)
-        if loc_match:
-            location = loc_match.group(0)
-
-    # 5. Name Inference
-    name = ""
-    for l in lines[:15]:
-        l_no_tags = re.sub(r'<[^>]+>', '', l).strip()
-        if not l_no_tags:
-            continue
-        prop_matches = re.findall(r'\b([A-Z][a-z]{1,20}(?:\s+[A-Z]\.?)?\s+[A-Z][a-z]{1,20}(?:\s+[A-Z][a-z]{1,20})?)\b', l_no_tags)
-        for cand in prop_matches:
-            cand_lower = cand.lower()
-            non_name_terms = ["phone", "email", "address", "post", "pin", "contact", "location", "objective", "summary", "experience", "education", "skills", "projects", "m.tech", "b.e", "b.tech", "m.sc", "b.sc", "computer", "engineering", "technology", "science", "college", "institute", "university", "school", "course", "programme", "temple", "road", "village"]
-            if not any(kw in cand_lower for kw in non_name_terms):
-                name = cand
-                break
-        if name:
-            break
-
-    if not name and email:
-        uname = email.split('@')[0]
-        uname_clean = re.sub(r'\d+', '', uname).replace('.', ' ').replace('_', ' ').strip()
-        if len(uname_clean) >= 3:
-            name = " ".join(w.capitalize() for w in uname_clean.split())
-    if not name:
-        name = "Candidate Name"
-
-    return {
-        "name": name,
-        "full_name": name,
-        "email": email,
-        "phone": phone,
-        "address": address or location,
-        "location": location or address,
-        "linkedin": linkedin,
-        "github": github,
-        "portfolio": portfolio,
-        "title": ""
-    }
-
-def detect_section_header(line: str, is_preceded_by_empty: bool = False) -> str:
-    if any(tag in line for tag in ["<TABLE>", "</TABLE>", "<TR>", "<TR-HEADER>"]):
-        return None
-    l_no_tags = re.sub(r'<[^>]+>', '', line).strip().lower()
-    if len(l_no_tags) > 45 or not l_no_tags:
-        return None
-        
-    has_cue = "<H>" in line
-    # 1. Exact match pass
-    for sec_key, kw_list in SECTION_TAXONOMY.items():
-        for kw in kw_list:
-            if l_no_tags == kw or l_no_tags == (kw + ":"):
-                return sec_key
-
-    # 2. Match by longest keyword first (e.g. "internship experience" before "experience")
-    all_kws = []
-    for sec_key, kw_list in SECTION_TAXONOMY.items():
-        for kw in kw_list:
-            all_kws.append((len(kw), kw, sec_key))
-    all_kws.sort(key=lambda x: x[0], reverse=True)
-
-    best_match = None
-    highest_ratio = 0.82
-    for _, kw, sec_key in all_kws:
-        if l_no_tags.startswith(kw + " ") or l_no_tags.endswith(" " + kw) or l_no_tags.startswith(kw + ":"):
-            return sec_key
-        if kw in l_no_tags and len(l_no_tags) - len(kw) < 8:
-            return sec_key
-        ratio = difflib.SequenceMatcher(None, l_no_tags, kw).ratio()
-        if ratio > highest_ratio:
-            highest_ratio = ratio
-            best_match = sec_key
-
-    if best_match:
-        return best_match
-        
-    is_caps_or_title = l_no_tags.istitle() or l_no_tags.isupper() or line.strip().istitle() or line.strip().isupper()
-    no_date = not DATE_REGEX.search(line)
-    short_len = 3 < len(l_no_tags) < 30
-    no_punctuation = not any(p in l_no_tags for p in ['.', ',', '-', '!', '|', '(', ')'])
-    
-    if has_cue or (is_caps_or_title and short_len and no_date and no_punctuation and is_preceded_by_empty):
-        return f"custom_{l_no_tags.replace(' ', '_')}"
-        
+def detect_section_header(line: str, is_preceded_by_empty: bool = False) -> Optional[str]:
+    res = SectionDetector.detect_heading(line, is_preceded_by_empty=is_preceded_by_empty)
+    if res:
+        sec_key, _ = res
+        return sec_key
     return None
 
-def extract_skills_robust(text: str, skill_lines: List[str] = None) -> List[Dict[str, Any]]:
-    """Extracts skills preserving categories (e.g. Programming Languages, Frontend, Databases)."""
-    categorized_skills: List[Dict[str, Any]] = []
-    flat_skills: List[str] = []
-    text_clean = despace_spaced_text(clean_text_artifacts(re.sub(r'<[^>]+>', '', text)))
-
-    if skill_lines:
-        merged_lines: List[str] = []
-        for line in skill_lines:
-            l_str = line.strip()
-            if not l_str:
-                continue
-            if ":" in l_str or "-" in l_str:
-                parts = re.split(r'[:\-]', l_str, maxsplit=1)
-                cat_name = parts[0].strip(' •-*')
-                # If category name is short (likely category label)
-                if len(cat_name.split()) <= 5:
-                    merged_lines.append(l_str)
-                elif merged_lines:
-                    merged_lines[-1] = merged_lines[-1] + " " + l_str
-                else:
-                    merged_lines.append(l_str)
-            elif merged_lines:
-                # Wrapped continuation line from previous category
-                merged_lines[-1] = merged_lines[-1] + " " + l_str
-            else:
-                merged_lines.append(l_str)
-
-        for l_str in merged_lines:
-            if ":" in l_str or "-" in l_str:
-                parts = re.split(r'[:\-]', l_str, maxsplit=1)
-                category = parts[0].strip(' •-*')
-                skills_part = parts[1].strip()
-                tokens = [s.strip() for s in re.split(r'[,|;•]', skills_part) if s.strip()]
-                if tokens:
-                    categorized_skills.append({
-                        "category": category,
-                        "skills": tokens
-                    })
-                    flat_skills.extend(tokens)
-            else:
-                tokens = [s.strip() for s in re.split(r'[,|;•]', l_str) if s.strip() and len(s.strip()) < 35]
-                flat_skills.extend(tokens)
-
-    # Match common skills from text body
-    text_normalized = re.sub(r'\s+', ' ', text_clean)
-    for skill in COMMON_SKILLS:
-        if skill == "C":
-            pattern = r'(?<![A-Za-z0-9_+#])C(?![A-Za-z0-9_+#])'
-        elif skill in ["C++", "C#"]:
-            pattern = r'(?<![A-Za-z0-9_])' + re.escape(skill) + r'(?![A-Za-z0-9_])'
-        else:
-            escaped = r'\s+'.join(re.escape(w) for w in skill.split())
-            pattern = r'(?<![A-Za-z0-9_])' + escaped + r'(?![A-Za-z0-9_])'
-
-        if re.search(pattern, text_clean, re.IGNORECASE) or re.search(pattern, text_normalized, re.IGNORECASE):
-            if skill not in flat_skills:
-                flat_skills.append(skill)
-
-    return {
-        "categorized": categorized_skills,
-        "flat": list(dict.fromkeys(flat_skills))
-    }
+def extract_skills_robust(text: str, skill_lines: List[str] = None) -> Dict[str, Any]:
+    return SkillsParser.parse(skill_lines or [], full_text=text)
 
 def parse_experiences(lines: List[str]) -> List[Dict[str, Any]]:
-    experiences = []
-    curr_exp = None
-    
-    for line in lines:
-        if "<TR-HEADER>" in line or "<TABLE>" in line or "</TABLE>" in line:
-            continue
-            
-        l_str = re.sub(r'<[^>]+>', '', line).strip()
-        if not l_str:
-            continue
-
-        if "<TR>" in line:
-            parts = [p.strip() for p in l_str.split("|")]
-            if len(parts) >= 2:
-                if curr_exp: experiences.append(curr_exp)
-                curr_exp = {
-                    "id": len(experiences) + 1,
-                    "position": parts[0],
-                    "role": parts[0],
-                    "company": parts[1] if len(parts) > 1 else "",
-                    "organization": parts[1] if len(parts) > 1 else "",
-                    "duration": parts[2] if len(parts) > 2 else "",
-                    "location": parts[3] if len(parts) > 3 else "",
-                    "description": " ".join(parts[4:]) if len(parts) > 4 else "",
-                    "is_current": "present" in (parts[2].lower() if len(parts) > 2 else "")
-                }
-            continue
-
-        date_match = DATE_REGEX.search(l_str)
-        is_date_line = bool(date_match and len(l_str) < 55)
-        first_word = l_str.split()[0].lower() if l_str.split() else ""
-        is_action_line = first_word in ACTION_VERBS
-        has_title_kw = any(kw in l_str.lower() for kw in TITLE_KEYWORDS)
-        is_title_line = (has_title_kw and not is_action_line) or (not curr_exp and "-" in l_str and len(l_str) < 90 and not is_action_line)
-
-        if is_title_line:
-            if curr_exp:
-                experiences.append(curr_exp)
-            
-            pos = l_str
-            comp = ""
-            if " at " in l_str.lower():
-                idx = l_str.lower().find(" at ")
-                pos = l_str[:idx].strip()
-                comp = l_str[idx + 4:].strip()
-            else:
-                parts = re.split(r'[-–—|@]', l_str, maxsplit=1)
-                pos = parts[0].strip()
-                comp = parts[1].strip() if len(parts) > 1 else ""
-                
-            description = ""
-            date_match = DATE_REGEX.search(comp)
-            dur = "Present"
-            is_curr = True
-            if date_match:
-                dur = date_match.group(0)
-                is_curr = "present" in dur.lower() or "current" in dur.lower()
-                desc_part = comp[date_match.end():].strip(' -,|()')
-                comp = comp[:date_match.start()].strip(' -,|()')
-                if desc_part:
-                    description = desc_part
-            else:
-                date_match_pos = DATE_REGEX.search(pos)
-                if date_match_pos:
-                    dur = date_match_pos.group(0)
-                    is_curr = "present" in dur.lower() or "current" in dur.lower()
-                    desc_part = pos[date_match_pos.end():].strip(' -,|()')
-                    pos = pos[:date_match_pos.start()].strip(' -,|()')
-                    if desc_part:
-                        description = desc_part
-
-            curr_exp = {
-                "id": len(experiences) + 1,
-                "position": pos,
-                "role": pos,
-                "company": comp,
-                "organization": comp,
-                "duration": dur,
-                "is_current": is_curr,
-                "location": "",
-                "description": description
-            }
-        elif is_date_line:
-            if not curr_exp:
-                curr_exp = {
-                    "id": len(experiences) + 1,
-                    "position": "Professional Role",
-                    "role": "Professional Role",
-                    "company": "",
-                    "organization": "",
-                    "duration": l_str,
-                    "is_current": "present" in l_str.lower(),
-                    "location": "",
-                    "description": ""
-                }
-            else:
-                if curr_exp["duration"] in ["Present", ""]:
-                    curr_exp["duration"] = l_str
-                else:
-                    curr_exp["duration"] = f"{curr_exp['duration']} {l_str}".strip(' -')
-                curr_exp["is_current"] = "present" in curr_exp["duration"].lower()
-                prefix = l_str[:date_match.start()].strip(' -,|')
-                if prefix and not curr_exp["company"]:
-                    curr_exp["company"] = prefix
-                    curr_exp["organization"] = prefix
-        elif curr_exp:
-            if curr_exp["description"]:
-                curr_exp["description"] += (" " + l_str)
-            else:
-                curr_exp["description"] = l_str
-        elif not curr_exp:
-            curr_exp = {
-                "id": len(experiences) + 1,
-                "position": l_str,
-                "role": l_str,
-                "company": "",
-                "organization": "",
-                "duration": "Present",
-                "is_current": True,
-                "location": "",
-                "description": ""
-            }
-
-    if curr_exp:
-        experiences.append(curr_exp)
-
-    return experiences
+    return ExperienceParser.parse(lines)
 
 def parse_projects(lines: List[str]) -> List[Dict[str, Any]]:
-    projects = []
-    curr_proj = None
-
-    for line in lines:
-        if "<TR-HEADER>" in line or "<TABLE>" in line or "</TABLE>" in line:
-            continue
-        
-        l_str = re.sub(r'<[^>]+>', '', line).strip()
-        if not l_str:
-            continue
-            
-        first_word = l_str.split()[0].lower() if l_str.split() else ""
-        is_action_line = first_word in ACTION_VERBS
-        is_title_line = (len(l_str) < 110 and not l_str.endswith((".", ";")) and not is_action_line) or ("(" in l_str and ")" in l_str and not is_action_line)
-
-        if is_title_line or not curr_proj:
-            if curr_proj:
-                projects.append(curr_proj)
-            tech_match = re.search(r'\((.*?)\)', l_str)
-            tech = tech_match.group(1).strip() if tech_match else ""
-            title_clean = re.sub(r'\(.*?\)', '', l_str).strip(' -,|')
-            
-            description = ""
-            for separator in [":", " - "]:
-                if separator in title_clean and len(title_clean.split(separator, 1)[0]) < 50:
-                    parts = title_clean.split(separator, 1)
-                    title_clean = parts[0].strip(' -,|')
-                    description = parts[1].strip()
-                    break
-                    
-            curr_proj = {
-                "id": len(projects) + 1,
-                "title": title_clean,
-                "name": title_clean,
-                "technologies": tech,
-                "tech_stack": tech,
-                "duration": "",
-                "description": description
-            }
-        elif curr_proj:
-            if curr_proj["description"]:
-                curr_proj["description"] += (" " + l_str)
-            else:
-                curr_proj["description"] = l_str
-
-    if curr_proj:
-        projects.append(curr_proj)
-
-    return projects
+    return ProjectParser.parse(lines)
 
 def parse_education(lines: List[str]) -> List[Dict[str, Any]]:
-    educations = []
-    curr_edu = None
-    col_map = {"inst": 0, "deg": 1, "yr": 2, "cgpa": 3}
+    return EducationParser.parse(lines)
 
-    for line in lines:
-        if "<TABLE>" in line or "</TABLE>" in line:
-            continue
-            
-        l_str = re.sub(r'<[^>]+>', '', line).strip()
-        if not l_str:
-            continue
+def parse_certifications(lines: List[str]) -> List[Dict[str, Any]]:
+    return CertificationParser.parse(lines)
 
-        if "<TR-HEADER>" in line:
-            parts = [p.strip().lower() for p in l_str.split("|")]
-            for idx, p in enumerate(parts):
-                if any(k in p for k in ["inst", "college", "school", "university", "academy"]):
-                    col_map["inst"] = idx
-                elif any(k in p for k in ["course", "degree", "qualification", "exam", "program", "stream"]):
-                    col_map["deg"] = idx
-                elif any(k in p for k in ["year", "passing", "date"]):
-                    col_map["yr"] = idx
-                elif any(k in p for k in ["cgpa", "percentage", "marks", "gpa", "grade", "score", "%"]):
-                    col_map["cgpa"] = idx
-            continue
+def parse_publications(lines: List[str]) -> List[Dict[str, Any]]:
+    return PublicationParser.parse(lines)
 
-        if "<TR>" in line:
-            parts = [p.strip() for p in l_str.split("|")]
-            if len(parts) >= 2:
-                if curr_edu: educations.append(curr_edu)
-                
-                inst = parts[col_map["inst"]] if col_map["inst"] < len(parts) else ""
-                deg = parts[col_map["deg"]] if col_map["deg"] < len(parts) else ""
-                yr = parts[col_map["yr"]] if col_map["yr"] < len(parts) else ""
-                cgpa = parts[col_map["cgpa"]] if col_map["cgpa"] < len(parts) else ""
+def parse_achievements(lines: List[str]) -> List[Dict[str, Any]]:
+    return AchievementParser.parse(lines)
 
-                if (re.search(r'\b(19|20)\d{2}\b', cgpa) and not re.search(r'\b(19|20)\d{2}\b', yr)) or ("%" in yr or "cgpa" in yr.lower() or "gpa" in yr.lower()):
-                    cgpa, yr = yr, cgpa
+def parse_personal_details(lines: List[str]) -> Dict[str, Any]:
+    return PersonalDetailsParser.parse(lines)
 
-                if yr and not re.search(r'\b(19|20)\d{2}\b', yr):
-                    y_match = re.search(r'\b(19|20)\d{2}\b', yr)
-                    yr = y_match.group(0) if y_match else yr
-
-                score_type = "CGPA" if "cgpa" in cgpa.lower() or ("." in cgpa and not "%" in cgpa) else ("Percentage" if "%" in cgpa else "")
-
-                curr_edu = {
-                    "id": len(educations) + 1,
-                    "institution": inst,
-                    "degree": deg,
-                    "specialization": "",
-                    "year": yr,
-                    "score": cgpa,
-                    "score_type": score_type,
-                    "cgpa_percentage": cgpa
-                }
-            continue
-
-        is_degree = any(deg in l_str.lower() for deg in ["b.e", "m.tech", "b.tech", "m.sc", "b.sc", "bachelor", "master", "diploma", "pre-university", "s.s.l.c", "puc", "sslc"])
-        is_inst = any(kw in l_str.lower() for kw in ["institute", "college", "university", "school", "academy", "mit", "iit", "iiit", "nirmala", "poorna prajna", "nmamit", "manipal"])
-        
-        cgpa_val = ""
-        cgpa_match = re.search(r'\b(?:cgpa/grade|cgpa|gpa|percentage|marks|score)?\s*:?\s*(\d{1,2}\.\d{1,2}%?|\d{2}\.\d{2}%?)\b', l_str, re.IGNORECASE)
-        if cgpa_match:
-            cgpa_val = cgpa_match.group(1)
-        elif "%" in l_str:
-            pct_match = re.search(r'\b(\d{2}(?:\.\d{1,2})?%)\b', l_str)
-            if pct_match:
-                cgpa_val = pct_match.group(1)
-                
-        year_val = ""
-        year_match = re.search(r'\b(20\d{2}|19\d{2})\b', l_str)
-        if year_match:
-            year_val = year_match.group(1)
-
-        if curr_edu and is_degree and curr_edu.get("degree") in ["Degree", ""]:
-            curr_edu["degree"] = l_str
-            if cgpa_val:
-                curr_edu["score"] = cgpa_val
-                curr_edu["cgpa_percentage"] = cgpa_val
-                curr_edu["score_type"] = "Percentage" if "%" in cgpa_val else "CGPA"
-            if year_val and not curr_edu.get("year"):
-                curr_edu["year"] = year_val
-        elif curr_edu and is_inst and curr_edu.get("institution") in ["Institution", ""]:
-            curr_edu["institution"] = l_str
-            if cgpa_val:
-                curr_edu["score"] = cgpa_val
-                curr_edu["cgpa_percentage"] = cgpa_val
-                curr_edu["score_type"] = "Percentage" if "%" in cgpa_val else "CGPA"
-            if year_val and not curr_edu.get("year"):
-                curr_edu["year"] = year_val
-        elif is_inst or is_degree:
-            if curr_edu:
-                educations.append(curr_edu)
-            
-            curr_edu = {
-                "id": len(educations) + 1,
-                "institution": l_str if is_inst else "Institution",
-                "degree": l_str if is_degree else "Degree",
-                "specialization": "",
-                "year": year_val,
-                "score": cgpa_val,
-                "score_type": "Percentage" if "%" in cgpa_val else "CGPA",
-                "cgpa_percentage": cgpa_val
-            }
-        elif curr_edu:
-            if re.match(r'^\d{4}$', l_str) or DATE_REGEX.search(l_str):
-                curr_edu["year"] = year_val or l_str
-            elif cgpa_val:
-                curr_edu["score"] = cgpa_val
-                curr_edu["cgpa_percentage"] = cgpa_val
-                curr_edu["score_type"] = "Percentage" if "%" in cgpa_val else "CGPA"
-            else:
-                if curr_edu.get("degree") != "Degree":
-                    curr_edu["degree"] += f" {l_str}"
-                else:
-                    curr_edu["institution"] += f" {l_str}"
-
-    if curr_edu:
-        educations.append(curr_edu)
-
-    return educations
-
-def verify_extraction_coverage(source_text: str, structured_data: Dict[str, Any]) -> float:
-    source_words = [w.lower() for w in re.findall(r'\b\w+\b', source_text) if not w.isdigit()]
-    source_word_set = set(source_words)
-    if not source_word_set:
+def verify_extraction_coverage(source_text: str, parsed_result: Dict[str, Any]) -> float:
+    if not source_text or not source_text.strip():
         return 1.0
-    def collect_words(val):
-        words = []
-        if isinstance(val, str):
-            words.extend([w.lower() for w in re.findall(r'\b\w+\b', val) if not w.isdigit()])
-        elif isinstance(val, list):
-            for item in val:
-                words.extend(collect_words(item))
-        elif isinstance(val, dict):
-            for k, v in val.items():
-                words.extend(collect_words(v))
-        return words
-    structured_words = collect_words(structured_data)
-    structured_word_set = set(structured_words)
-    captured = source_word_set.intersection(structured_word_set)
-    return len(captured) / len(source_word_set) if source_word_set else 1.0
+    source_words = set(re.findall(r'\b[A-Za-z0-9+#.-]{3,}\b', source_text.lower()))
+    if not source_words:
+        return 1.0
+    structured_dump = str(parsed_result).lower()
+    structured_words = set(re.findall(r'\b[A-Za-z0-9+#.-]{3,}\b', structured_dump))
+    survived = source_words.intersection(structured_words)
+    return float(round(len(survived) / len(source_words), 2))
 
-def extract_structured_data(text: str) -> Dict[str, Any]:
-    lines = normalize_text_lines(text)
-    
-    info = extract_personal_info(lines)
+def extract_structured_data(raw_text: str) -> Dict[str, Any]:
+    """
+    Generic heuristic extractor parsing text lines into the 16 standard section models
+    with zero loss of custom or unclassified data.
+    """
+    text_clean = despace_spaced_text(clean_text_artifacts(raw_text))
+    lines = [l.strip() for l in text_clean.split("\n") if l.strip()]
 
-    sections: Dict[str, List[str]] = {k: [] for k in SECTION_TAXONOMY}
-    custom_sections: Dict[str, List[str]] = {}
-    current_sec = None
-
-    for i, l in enumerate(lines):
-        if not l.strip():
+    # Filter out standalone page numbers
+    filtered_lines = []
+    for l in lines:
+        if re.match(r'^(page\s+\d+(\s+of\s+\d+)?|\d+\s*/\s*\d+|\d+|---\s*page\s+\d+\s*---)$', l, re.IGNORECASE):
             continue
-            
-        is_preceded_by_empty = (i == 0) or (lines[i-1].strip() == "")
-        sec_key = detect_section_header(l, is_preceded_by_empty)
-        if sec_key and sec_key.startswith("custom_") and i < 3:
-            sec_key = None
-        
-        if sec_key:
-            current_sec = sec_key
-            if current_sec.startswith("custom_") and current_sec not in custom_sections:
-                custom_sections[current_sec] = []
-            continue
+        filtered_lines.append(l)
 
-        if current_sec:
-            if current_sec.startswith("custom_"):
-                custom_sections[current_sec].append(l)
-            elif current_sec in sections:
-                sections[current_sec].append(l)
+    section_map = SectionDetector.partition_into_sections(filtered_lines)
 
-    def untag(lines_list):
-        return [re.sub(r'<[^>]+>', '', l).strip() for l in lines_list]
+    # 1. Contact & Personal Info
+    header_lines = section_map.get("header", [])
+    personal_info = PersonalParser.parse(header_lines, filtered_lines)
 
-    summary_text = " ".join(untag(sections["summary"])).strip()
-    objective_text = " ".join(untag(sections["objective"])).strip()
+    # 2. Summary & Objective
+    summary_lines = section_map.get("summary", [])
+    summary_text = " ".join(summary_lines).strip()
 
-    if objective_text:
-        clean_obj_lines = []
-        for line_item in untag(sections["objective"]):
-            l_item_lower = line_item.lower()
-            if any(k in l_item_lower for k in ["programming languages:", "front end:", "database management", "operating systems", "<table", "<tr", "course |", "internship :-", "work experience"]):
-                break
-            clean_obj_lines.append(line_item)
-        objective_text = " ".join(clean_obj_lines).strip()
+    obj_lines = section_map.get("objective", [])
+    obj_text = " ".join(obj_lines).strip()
 
-    experiences = parse_experiences(sections["experience"])
-    educations = parse_education(sections["education"])
+    # 3. Education
+    education = EducationParser.parse(section_map.get("education", []))
 
-    if not educations:
-        table_lines = [l for l in lines if ("<TR" in l or (l.count("|") >= 2 and any(k in l.lower() for k in ["inst", "college", "university", "school", "course", "degree", "m.tech", "b.e", "b.tech", "puc", "sslc", "percentage", "year"])))]
-        if table_lines:
-            educations = parse_education(table_lines)
+    # 4. Experience & Internships
+    experience = ExperienceParser.parse(section_map.get("experience", []))
+    internships = ExperienceParser.parse(section_map.get("internships", []))
 
-    projects = parse_projects(sections["projects"])
+    # 5. Skills
+    skills_res = SkillsParser.parse(section_map.get("technical_skills", []), full_text=text_clean)
+    soft_skills_res = SkillsParser.parse(section_map.get("soft_skills", []))
 
-    if not experiences:
-        exp_lines = [l for l in lines if any(k in l.lower() for k in ["senior software engineer", "assistant professor", "developer", "engineer", "manager"])]
-        if exp_lines:
-            experiences = parse_experiences(exp_lines)
+    # 6. Projects & Certifications
+    projects = ProjectParser.parse(section_map.get("projects", []))
+    certifications = CertificationParser.parse(section_map.get("certifications", []))
 
-    # Robust Skills Extraction
-    skills_extracted = extract_skills_robust(text, untag(sections["technical_skills"]))
-    flat_skills = skills_extracted["flat"]
-    categorized_skills = skills_extracted["categorized"]
+    # 7. Publications & Achievements
+    publications = PublicationParser.parse(section_map.get("publications", []))
+    achievements = AchievementParser.parse(section_map.get("achievements", []))
 
-    # Certifications
-    cert_lines = untag(sections["certifications"])
-    if not cert_lines:
-        cert_lines = [re.sub(r'<[^>]+>', '', l).strip() for l in lines if any(k in l.lower() for k in ["swayam", "gold medal", "coursera", "nptel", "udemy", "certified", "certification"])]
+    # 8. Leadership, Languages, Hobbies
+    leadership = ExperienceParser.parse(section_map.get("leadership", []))
 
-    certifications = []
-    curr_cert = None
-    for line in cert_lines:
-        line_clean = line.strip()
-        if not line_clean or len(line_clean) < 3:
-            continue
-        first_word = line_clean.split()[0].lower() if line_clean.split() else ""
-        is_desc_line = first_word in ["completed", "acquired", "explored", "learned", "gained", "covered", "studied", "participated", "received"] or line_clean.endswith((".", ";")) or len(line_clean) > 85
-        has_cert_kw = any(k in line_clean.lower() for k in ["swayam", "nptel", "coursera", "udemy", "certified", "certificate", "certification", "gold medal", "aws certified", "google cloud certified"])
-        is_title = has_cert_kw or (len(line_clean.split()) <= 6 and not line_clean.endswith((".", ";", ",")) and not is_desc_line)
+    languages = []
+    for l in section_map.get("languages", []):
+        languages.extend([t.strip() for t in re.split(r'[,|;•\t]', l) if t.strip() and len(t.strip()) < 30])
 
-        if (is_title and not is_desc_line) or not curr_cert:
-            if curr_cert:
-                certifications.append(curr_cert)
-            org = ""
-            name_str = line_clean
-            for keyword in [" by ", " from ", " - ", " | "]:
-                if keyword in line_clean:
-                    parts = line_clean.split(keyword, 1)
-                    name_str = parts[0].strip()
-                    org = parts[1].strip()
-                    break
-            paren_match = re.search(r'\((.*?)\)', name_str)
-            if paren_match and not org:
-                org = paren_match.group(1).strip()
-                name_str = re.sub(r'\(.*?\)', '', name_str).strip()
-            curr_cert = {
-                "id": len(certifications) + 1,
-                "name": name_str,
-                "title": name_str,
-                "provider": org,
-                "organization": org,
-                "description": line_clean
-            }
-        elif curr_cert:
-            if curr_cert["description"]:
-                curr_cert["description"] += (" " + line_clean)
-            else:
-                curr_cert["description"] = line_clean
-    if curr_cert:
-        certifications.append(curr_cert)
-
-    # Internships (Dedicated)
-    internships = parse_experiences(sections["internships"])
-    if not internships:
-        for i, l in enumerate(untag(sections["internships"])):
-            if l.strip():
-                internships.append({
-                    "id": i + 1,
-                    "organization": "Organization",
-                    "company": "Organization",
-                    "role": "Intern",
-                    "description": l.strip()
-                })
-
-    # Publications (Dedicated)
-    publications = []
-    for i, p in enumerate(untag(sections["publications"])):
-        if p.strip():
-            publications.append({
-                "id": i + 1,
-                "title": p.strip(),
-                "publication_type": "Publication",
-                "authorship_type": "Author",
-                "publisher": "",
-                "year": ""
-            })
-
-    # Achievements & Leadership
-    ach_lines = untag(sections["achievements"])
-    lead_lines = untag(sections["leadership"])
-    achievements = []
-    leadership = []
-
-    for a in ach_lines:
-        a_clean = a.strip()
-        if not a_clean:
-            continue
-        if any(lk in a_clean.lower() for lk in ["active member", "joint secretary", "vice president", "core member", "secretary", "president", "lead", "coordinator", "head", "treasurer"]):
-            leadership.append({
-                "id": len(leadership) + 1,
-                "organization": a_clean,
-                "role": a_clean,
-                "description": a_clean
-            })
-        else:
-            achievements.append({
-                "id": len(achievements) + 1,
-                "title": a_clean,
-                "description": a_clean
-            })
-
-    for lead in lead_lines:
-        l_clean = lead.strip()
-        if l_clean and not any(l_clean in str(ex) for ex in leadership):
-            leadership.append({
-                "id": len(leadership) + 1,
-                "organization": l_clean,
-                "role": "Role / Member",
-                "description": l_clean
-            })
-
-    soft_skills = []
     hobbies = []
+    for h in section_map.get("hobbies", []):
+        hobbies.extend([t.strip() for t in re.split(r'[,|;•\t]', h) if t.strip() and len(t.strip()) < 40])
 
-    for line in untag(sections["soft_skills"]):
-        l_str = line.strip()
-        if not l_str:
-            continue
-        if any(hk in l_str.lower() for hk in ["hobbies:", "hobbies & interests:", "interests:"]):
-            parts = re.split(r'[:\-]', l_str, maxsplit=1)
-            if len(parts) > 1:
-                h_tokens = [s.strip() for s in re.split(r'[,;•]', parts[1]) if s.strip()]
-                hobbies.extend(h_tokens)
-        elif any(sk in l_str.lower() for sk in ["personal skills:", "soft skills:", "strengths:"]):
-            parts = re.split(r'[:\-]', l_str, maxsplit=1)
-            if len(parts) > 1:
-                s_tokens = [s.strip() for s in re.split(r'[,;•]', parts[1]) if s.strip()]
-                soft_skills.extend(s_tokens)
-        else:
-            s_tokens = [s.strip() for s in re.split(r'[,;•]', l_str) if s.strip()]
-            soft_skills.extend(s_tokens)
+    # 9. Personal Details
+    personal_details_lines = section_map.get("personal_details", []) + header_lines
+    personal_details = PersonalDetailsParser.parse(personal_details_lines)
 
-    for line in untag(sections["hobbies"]):
-        l_str = line.strip()
-        if not l_str:
-            continue
-        if any(sk in l_str.lower() for sk in ["personal skills:", "soft skills:"]):
-            parts = re.split(r'[:\-]', l_str, maxsplit=1)
-            if len(parts) > 1:
-                s_tokens = [s.strip() for s in re.split(r'[,;•]', parts[1]) if s.strip()]
-                soft_skills.extend(s_tokens)
-        elif ":" in l_str or "-" in l_str:
-            parts = re.split(r'[:\-]', l_str, maxsplit=1)
-            if len(parts) > 1:
-                h_tokens = [s.strip() for s in re.split(r'[,;•]', parts[1]) if s.strip()]
-                hobbies.extend(h_tokens)
-            else:
-                hobbies.append(l_str)
-        else:
-            h_tokens = [s.strip() for s in re.split(r'[,;•]', l_str) if s.strip()]
-            hobbies.extend(h_tokens)
+    # 10. Custom & Additional Sections
+    custom_raw = section_map.get("custom_sections", [])
+    additional_sections = AdditionalParser.parse(custom_raw)
 
-    if not hobbies:
-        for l in lines:
-            if any(hk in l.lower() for hk in ["hobbies:", "hobbies & interests:", "interests:"]) and not any(tag in l for tag in ["<TABLE>", "<TR>"]):
-                parts = re.split(r'[:\-]', re.sub(r'<[^>]+>', '', l), maxsplit=1)
-                if len(parts) > 1:
-                    hobbies.extend([s.strip() for s in re.split(r'[,;•]', parts[1]) if s.strip()])
-                    break
-
-    languages = [s.strip() for s in re.split(r'[,;]', " ".join(untag(sections["languages"]))) if s.strip()]
-    portfolio_links = [link.strip() for link in untag(sections["portfolio_links"]) if link.strip()]
-
-    # Format custom sections & Personal details
-    formatted_custom_sections = []
-    personal_details_dict = {}
-    
-    for k, v in custom_sections.items():
-        if v:
-            title = k.replace("custom_", "").replace("_", " ").title()
-            formatted_custom_sections.append({
-                "title": title,
-                "section_name": title,
-                "content": untag(v)
-            })
-
-    personal_source_lines = untag(sections.get("personal_info", []))
-    if not personal_source_lines:
-        in_p_block = False
-        for l in lines:
-            l_clean = re.sub(r'<[^>]+>', '', l).strip()
-            if "personal details" in l_clean.lower():
-                in_p_block = True
-                continue
-            if in_p_block:
-                if detect_section_header(l):
-                    break
-                if ":" in l_clean:
-                    personal_source_lines.append(l_clean)
-
-    for pline in personal_source_lines:
-        if ":" in pline:
-            parts = pline.split(":", 1)
-            k_raw = parts[0].strip(' -*•:\t').lower().replace(" ", "_").replace("'", "")
-            val = parts[1].strip()
-            if "birth" in k_raw or "dob" in k_raw:
-                personal_details_dict["date_of_birth"] = val
-            elif "father" in k_raw:
-                personal_details_dict["father_name"] = val
-            elif "mother_tongue" in k_raw or "mothertongue" in k_raw:
-                personal_details_dict["mother_tongue"] = val
-            elif "mother" in k_raw:
-                personal_details_dict["mother_name"] = val
-            elif "gender" in k_raw or "sex" in k_raw:
-                personal_details_dict["gender"] = val
-            elif "nationality" in k_raw:
-                personal_details_dict["nationality"] = val
-            elif "language" in k_raw:
-                personal_details_dict["languages_known"] = [l.strip() for l in re.split(r'[,;]', val) if l.strip()]
-            elif k_raw:
-                personal_details_dict[k_raw] = val
-
-    res = {
-        "personal_info": {
-            "name": info["name"],
-            "full_name": info["name"],
-            "email": info["email"],
-            "phone": info["phone"],
-            "address": info["address"],
-            "location": info["location"],
-            "linkedin": info["linkedin"],
-            "github": info["github"],
-            "portfolio": info["portfolio"],
-            "website": info["portfolio"],
-            "title": info["title"]
-        },
+    result = {
+        "personal_info": personal_info,
+        "personal_information": personal_info,
+        "contact_information": personal_info,
         "summary": summary_text,
-        "objective": objective_text,
-        "education": educations,
-        "experience": experiences,
-        "work_experience": experiences,
+        "professional_summary": summary_text,
+        "objective": obj_text,
+        "career_objective": obj_text,
+        "education": education,
+        "work_experience": experience,
+        "experience": experience,
         "internships": internships,
+        "skills": skills_res["categorized"] if skills_res["categorized"] else skills_res["flat"],
+        "technicalSkills": skills_res["flat"],
+        "technical_skills": skills_res["flat"],
+        "softSkills": soft_skills_res["flat"],
+        "soft_skills": soft_skills_res["flat"],
+        "personal_skills": soft_skills_res["flat"],
         "projects": projects,
-        "skills": categorized_skills if categorized_skills else flat_skills,
-        "technicalSkills": flat_skills,
-        "technical_skills": flat_skills,
-        "softSkills": soft_skills,
-        "personal_skills": soft_skills,
         "certifications": certifications,
         "publications": publications,
         "achievements": achievements,
         "leadership_roles": leadership,
         "leadership": leadership,
-        "languages": languages,
-        "hobbies": hobbies,
-        "personal_details": personal_details_dict,
-        "portfolioLinks": portfolio_links,
-        "volunteerExperience": [l.strip() for l in untag(sections.get("volunteer", [])) if l.strip()],
-        "volunteer_experience": [l.strip() for l in untag(sections.get("volunteer", [])) if l.strip()],
-        "references": [l.strip() for l in untag(sections.get("references", [])) if l.strip()],
-        "additional_information": formatted_custom_sections,
-        "custom_sections": formatted_custom_sections
+        "languages": list(dict.fromkeys(languages)),
+        "hobbies": list(dict.fromkeys(hobbies)),
+        "hobbies_interests": list(dict.fromkeys(hobbies)),
+        "personal_details": personal_details,
+        "additional_sections": additional_sections,
+        "custom_sections": additional_sections,
+        "additional_information": additional_sections,
+        "portfolioLinks": personal_info.get("other_links", []),
+        "volunteerExperience": [l.strip() for l in section_map.get("volunteer", []) if l.strip()],
+        "volunteer_experience": [l.strip() for l in section_map.get("volunteer", []) if l.strip()],
+        "references": [l.strip() for l in section_map.get("references", []) if l.strip()]
     }
-    
-    coverage = verify_extraction_coverage(text, res)
-    res["confidence_metadata"] = {
+
+    coverage = verify_extraction_coverage(raw_text, result)
+    result["confidence_metadata"] = {
         "coverage_score": float(round(coverage, 2)),
         "low_coverage_warning": bool(coverage < 0.85)
     }
-    return res
 
+    return result
 
 def calculate_section_confidence(data: Dict[str, Any]) -> Dict[str, Dict[str, Any]]:
     """Calculates section confidence scores based on completeness of fields."""
@@ -1000,7 +213,7 @@ def calculate_section_confidence(data: Dict[str, Any]) -> Dict[str, Dict[str, An
         edu_scores = []
         for e in edu:
             s = 100
-            if not e.get("institution"): s -= 40
+            if not e.get("institution") and not e.get("school") and not e.get("university"): s -= 40
             if not e.get("degree"): s -= 40
             edu_scores.append(max(0, s))
         res["education"] = {"score": int(sum(edu_scores) / len(edu_scores))}
@@ -1013,7 +226,7 @@ def calculate_section_confidence(data: Dict[str, Any]) -> Dict[str, Dict[str, An
         exp_scores = []
         for ex in exp:
             s = 100
-            if not ex.get("company"): s -= 40
+            if not ex.get("company") and not ex.get("organization"): s -= 40
             if not ex.get("position") and not ex.get("role"): s -= 40
             exp_scores.append(max(0, s))
         res["experience"] = {"score": int(sum(exp_scores) / len(exp_scores))}

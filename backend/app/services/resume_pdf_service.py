@@ -370,7 +370,7 @@ def build_pdf_story(resume_data: Dict[str, Any], template: str = "harvard", db: 
     return flowables
 
   def make_experience_flowables(sec):
-    experience = resume_data.get("experience", [])
+    experience = resume_data.get("experience") or resume_data.get("work_experience") or []
     if not experience:
       return []
     flowables = [Paragraph(sec.get("title") or "WORK EXPERIENCE", h1_style)]
@@ -773,19 +773,22 @@ def build_pdf_story(resume_data: Dict[str, Any], template: str = "harvard", db: 
     return flowables
 
   def make_custom_sections_flowables(sec):
-    customs = resume_data.get("custom_sections") or []
+    customs = resume_data.get("custom_sections") or resume_data.get("additional_sections") or resume_data.get("additional_information") or []
     if not customs:
       return []
     flowables = []
     for c in customs:
-      title = clean_unicode(c.get("section_name") or "Additional Section")
-      flowables.append(Paragraph(title.upper(), h1_style))
-      content = c.get("content", [])
-      if isinstance(content, list):
-        for item in content:
-          flowables.append(Paragraph(clean_unicode(str(item)), body_style))
-      else:
-        flowables.append(Paragraph(clean_unicode(str(content)), body_style))
+      if isinstance(c, dict):
+        title = clean_unicode(c.get("section_name") or c.get("title") or c.get("heading") or "Additional Section")
+        flowables.append(Paragraph(title.upper(), h1_style))
+        content = c.get("content", [])
+        if isinstance(content, list):
+          for item in content:
+            flowables.append(Paragraph(f"• {clean_unicode(str(item))}", bullet_style))
+        else:
+          flowables.append(Paragraph(clean_unicode(str(content)), body_style))
+      elif isinstance(c, str) and c.strip():
+        flowables.append(Paragraph(clean_unicode(c), body_style))
       flowables.append(Spacer(1, 4))
     return flowables
 
@@ -856,11 +859,11 @@ def build_pdf_story(resume_data: Dict[str, Any], template: str = "harvard", db: 
   # Check if template has layout sections
   sections_to_render = []
   if custom_tpl and "sections" in custom_tpl:
-    sections_to_render = custom_tpl["sections"]
+    sections_to_render = [dict(s) for s in custom_tpl["sections"]]
   else:
     tpl_cfg = TEMPLATE_CONFIGS.get(template, {})
     if "sections" in tpl_cfg:
-        sections_to_render = tpl_cfg["sections"]
+        sections_to_render = [dict(s) for s in tpl_cfg["sections"]]
     else:
         sections_to_render = [
           {"type": "profile", "title": "Professional Summary"},
@@ -906,7 +909,7 @@ def build_pdf_story(resume_data: Dict[str, Any], template: str = "harvard", db: 
         has_content = True
       elif ftype == "activities" and resume_data.get("activities"):
         has_content = True
-      elif ftype == "custom_sections" and resume_data.get("custom_sections"):
+      elif ftype == "custom_sections" and (resume_data.get("custom_sections") or resume_data.get("additional_sections") or resume_data.get("additional_information")):
         has_content = True
       elif ftype == "achievements" and resume_data.get("achievements"):
         has_content = True

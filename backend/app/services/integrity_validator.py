@@ -60,14 +60,29 @@ class ResumeIntegrityValidator:
         if isinstance(raw_sk, list):
             for item in raw_sk:
                 if isinstance(item, dict):
-                    structured_skills.extend(item.get("skills", []))
+                    sub = item.get("skills", [])
+                    if isinstance(sub, list):
+                        for sub_item in sub:
+                            if isinstance(sub_item, str):
+                                structured_skills.append(sub_item)
+                            elif isinstance(sub_item, dict):
+                                structured_skills.append(str(sub_item.get("name") or sub_item.get("skill_name") or ""))
+                    elif isinstance(sub, str):
+                        structured_skills.append(sub)
+                    name_val = item.get("skill_name") or item.get("name")
+                    if isinstance(name_val, str):
+                        structured_skills.append(name_val)
                 elif isinstance(item, str):
                     structured_skills.append(item)
         tech_sk = structured_data.get("technicalSkills") or structured_data.get("technical_skills") or []
         if isinstance(tech_sk, list):
-            structured_skills.extend(tech_sk)
+            for item in tech_sk:
+                if isinstance(item, str):
+                    structured_skills.append(item)
+                elif isinstance(item, dict):
+                    structured_skills.append(str(item.get("name") or item.get("skill_name") or ""))
 
-        structured_skills_set = {s.lower().strip() for s in structured_skills if s}
+        structured_skills_set = {s.lower().strip() for s in structured_skills if s and isinstance(s, str) and s.strip()}
         missing_skills = [s for s in skills_found_in_raw if s.lower().strip() not in structured_skills_set]
 
         coverage = ((len(skills_found_in_raw) - len(missing_skills)) / len(skills_found_in_raw)) if skills_found_in_raw else 1.0
