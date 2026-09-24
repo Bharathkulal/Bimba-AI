@@ -40,18 +40,29 @@ class CertificationParser:
             year_match = YEAR_REGEX.search(clean_str)
             year_val = year_match.group(0).strip() if year_match else ""
 
-            # Detect title
+            # Detect title and split from provider
             title = clean_str
-            if " - " in clean_str or " – " in clean_str or " — " in clean_str or " | " in clean_str:
-                parts = re.split(r'[-–—|]', clean_str)
-                title = parts[0].strip()
-                if len(parts) > 1 and not provider:
-                    for p in parts[1:]:
-                        for prov in CERT_PROVIDERS:
-                            if prov.lower() in p.lower():
-                                provider = prov
-                                break
-            elif ":" in clean_str:
+            for sep in [" - ", " – ", " — ", " | ", " by "]:
+                pattern = re.compile(re.escape(sep), re.IGNORECASE) if sep == " by " else re.compile(re.escape(sep))
+                match = pattern.search(clean_str)
+                if match:
+                    parts = pattern.split(clean_str, maxsplit=1)
+                    possible_title = parts[0].strip()
+                    possible_prov = parts[1].strip()
+                    
+                    is_known = any(p.lower() in possible_prov.lower() for p in CERT_PROVIDERS)
+                    if is_known:
+                        title = possible_title
+                        # if the extracted provider is long/better, use it
+                        provider_match = next((p for p in CERT_PROVIDERS if p.lower() in possible_prov.lower()), possible_prov)
+                        provider = provider_match
+                        break
+                    elif not provider and len(possible_prov) < 40:
+                        title = possible_title
+                        provider = possible_prov
+                        break
+            
+            if title == clean_str and ":" in clean_str:
                 parts = clean_str.split(":", 1)
                 title = parts[1].strip()
                 if not provider and any(prov.lower() in parts[0].lower() for prov in CERT_PROVIDERS):

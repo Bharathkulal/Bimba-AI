@@ -3,15 +3,15 @@ from typing import List, Dict, Any, Optional
 
 DEGREE_PATTERNS = [
     r'\b(Ph\.?D|Doctor of Philosophy|Post\s*Doctorate)\b',
-    r'\b(M\.?Tech|B\.?Tech|B\.?E\.?|M\.?E\.?|M\.?S\.?|B\.?S\.?|B\.?Sc|M\.?Sc|BCA|MCA|BBA|MBA|B\.?Com|M\.?Com)\b',
+    r'\b(M\.?\s*Tech\.?|B\.?\s*Tech\.?|B\.?\s*E\.?|M\.?\s*E\.?|M\.?\s*S\.?|B\.?\s*S\.?|B\.?\s*Sc|M\.?\s*Sc|BCA|MCA|BBA|MBA|B\.?\s*Com|M\.?\s*Com)\b',
     r'\b(Bachelor of Technology|Bachelor of Engineering|Master of Technology|Master of Science|Bachelor of Science|Master of Computer Applications|Bachelor of Computer Applications)\b',
     r'\b(Bachelor\'?s|Master\'?s|Doctorate|Associate\'?s)\s*(?:Degree|of\s+[A-Za-z\s]+)?\b',
-    r'\b(Class\s*XII|Class\s*X|12th\s*Grade|10th\s*Grade|Senior\s*Secondary|Higher\s*Secondary|Secondary\s*School|SSLC|PUC|Pre-University|CBSE|ICSE|State\s*Board|High\s*School|Diploma)\b'
+    r'\b(Class\s*XII|Class\s*X|12th\s*Grade|10th\s*Grade|Senior\s*Secondary|Higher\s*Secondary|Secondary\s*School|SSLC|S\.S\.L\.C|PUC|Pre-University|CBSE|ICSE|State\s*Board|High\s*School|Diploma)\b'
 ]
 
 SCORE_REGEX = re.compile(
     r'\b(?:CGPA|GPA|Score|Percentage|Aggregate|Marks)?\s*[:\-]?\s*'
-    r'(\d{1,2}(?:\.\d{1,3})?\s*(?:/\s*(?:10(?:\.0)?|4(?:\.0)?|100))?%?|\d{2}(?:\.\d{1,2})?%)\b',
+    r'(\d{1,2}(?:\.\d{1,3})?\s*(?:/\s*(?:10(?:\.0)?|4(?:\.0)?|100))?%?|\d{2}(?:\.\d{1,2})?%)(?!\w)',
     re.IGNORECASE
 )
 

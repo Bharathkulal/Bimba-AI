@@ -1,4 +1,4 @@
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, ConfigDict
 from typing import List, Optional, Dict, Any
 from datetime import datetime
 
@@ -70,8 +70,7 @@ class SavedJobResponse(BaseModel):
     application_url: Optional[str] = None
     saved_at: datetime
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 # Job application tracker request
 class JobApplicationCreate(BaseModel):
@@ -107,8 +106,7 @@ class JobApplicationResponse(BaseModel):
     recruiter_email: Optional[str] = None
     timeline: Optional[List[Dict[str, Any]]] = None
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 class MatchBreakdown(BaseModel):
     why_recommended: List[str]

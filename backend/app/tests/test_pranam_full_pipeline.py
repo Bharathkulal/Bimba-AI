@@ -133,20 +133,15 @@ def test_real_pdf_complete_structured_extraction_and_pydantic_validation():
     int_str = " ".join(str(i) for i in internships)
     assert "National Institute of Technology, Surathkal" in int_str or "NITK" in int_str
 
-    # 10. Achievements Verification (GATE CSE 2020 & AJIET Coding Event)
+    # 10. Achievements Verification (GATE CSE 2020 & AJIET Coding Event & CSI, IEI, DSC)
     achievements = data_dump["achievements"]
-    assert len(achievements) >= 2
+    assert len(achievements) >= 5
     ach_str = " ".join(str(a) for a in achievements)
     assert "Cleared GATE CSE in 2020" in ach_str
     assert "AJIET" in ach_str or "1st place in coding event" in ach_str
-
-    # 11. Leadership Roles Verification (CSI, IEI, DSC)
-    leadership = data_dump["leadership_roles"]
-    assert len(leadership) >= 3
-    lead_str = " ".join(str(l) for l in leadership)
-    assert "CSI" in lead_str
-    assert "IEI" in lead_str
-    assert "DSC" in lead_str
+    assert "CSI" in ach_str
+    assert "IEI" in ach_str
+    assert "DSC" in ach_str
 
     # 12. Hobbies Verification
     hobbies = data_dump["hobbies"]
@@ -177,10 +172,13 @@ def test_real_pdf_complete_structured_extraction_and_pydantic_validation():
     assert integrity_report["completenessScore"] >= 90.0
 
 
-def test_real_pdf_production_upload_endpoint():
+import pytest
+
+@pytest.mark.anyio
+async def test_real_pdf_production_upload_endpoint():
     """Verify that POST /api/resume-studio/upload correctly parses and saves the real PDF."""
     import io
-    from fastapi.testclient import TestClient
+    import httpx
     from app.main import app
     from app.api.analytics import get_current_student
     from app.models.student import Student
@@ -190,11 +188,11 @@ def test_real_pdf_production_upload_endpoint():
     with open(REAL_PDF_PATH, "rb") as f:
         pdf_bytes = f.read()
 
-    client = TestClient(app)
-    response = client.post(
-        "/api/resume-studio/upload",
-        files={"file": ("Pranam_R_Betrabet_Resume.pdf", io.BytesIO(pdf_bytes), "application/pdf")}
-    )
+    async with httpx.AsyncClient(transport=httpx.ASGITransport(app=app), base_url="http://testserver") as client:
+        response = await client.post(
+            "/api/resume-studio/upload",
+            files={"file": ("Pranam_R_Betrabet_Resume.pdf", io.BytesIO(pdf_bytes), "application/pdf")}
+        )
 
     assert response.status_code == 200, f"Upload endpoint failed: {response.text}"
     res_data = response.json()

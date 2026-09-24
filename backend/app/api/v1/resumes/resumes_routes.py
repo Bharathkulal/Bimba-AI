@@ -8,7 +8,7 @@ from datetime import datetime, timezone
 from typing import List, Optional, Any, Dict
 from fastapi import APIRouter, Depends, HTTPException, status, Query, Request, UploadFile, File
 from fastapi.responses import StreamingResponse
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 
 # Models and DB
 from app.database.session import get_db
@@ -97,8 +97,7 @@ def analyze_resume_direct(
 class ResumeCreateRequest(BaseModel):
     name: str
 
-    class Config:
-        extra = "allow"
+    model_config = ConfigDict(extra="allow")
 
 class AISummaryRequest(BaseModel):
     role: str

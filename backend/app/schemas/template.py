@@ -1,4 +1,4 @@
-from pydantic import BaseModel, Field, model_validator
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 from typing import List, Optional, Dict, Any
 from datetime import datetime
 
@@ -142,8 +142,7 @@ class TemplateResponse(TemplateBase):
     createdAt: Optional[datetime] = None
     updatedAt: Optional[datetime] = None
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 class TemplateReorderPayload(BaseModel):
     templateIds: List[str]

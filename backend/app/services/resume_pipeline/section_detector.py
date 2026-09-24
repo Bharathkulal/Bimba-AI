@@ -137,18 +137,23 @@ class SectionDetector:
                 if l_lower == kw:
                     return (sec_key, clean_line)
 
+        is_valid_format = clean_line.istitle() or clean_line.isupper() or is_preceded_by_empty or has_cue
+        
         # 2. Longest prefix/suffix matching
         for _, kw, sec_key in ALL_SECTION_KEYWORDS:
             if l_lower.startswith(kw + " ") or l_lower.endswith(" " + kw):
-                return (sec_key, clean_line)
+                if is_valid_format:
+                    return (sec_key, clean_line)
             if kw in l_lower and len(l_lower) - len(kw) <= 6:
-                return (sec_key, clean_line)
+                if is_valid_format:
+                    return (sec_key, clean_line)
 
         # 3. Fuzzy similarity matching
         for _, kw, sec_key in ALL_SECTION_KEYWORDS:
             ratio = difflib.SequenceMatcher(None, l_lower, kw).ratio()
             if ratio >= 0.85:
-                return (sec_key, clean_line)
+                if is_valid_format:
+                    return (sec_key, clean_line)
 
         # 4. Custom Section Detection (e.g. "Workshops", "Research Experience", "Patents", "Key Milestones")
         is_all_caps = clean_line.isupper() and len(clean_line.split()) <= 4

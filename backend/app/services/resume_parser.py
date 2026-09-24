@@ -83,7 +83,7 @@ def deduplicate_list(items: List[Any], key_field: str = None, key_func=None) -> 
             else:
                 # Combine prominent keys
                 parts = [
-                    str(item.get("name") or item.get("title") or ""),
+                    str(item.get("name") or item.get("title") or item.get("degree") or ""),
                     str(item.get("organization") or item.get("provider") or item.get("company") or item.get("institution") or "")
                 ]
                 cmp_key = normalize_comparison_string(" ".join(filter(None, parts)))
@@ -318,7 +318,7 @@ class ResumeParser:
                     "score": "",
                     "cgpa_percentage": ""
                 })
-        normalized["education"] = deduplicate_list(norm_edu, key_field="institution")
+        normalized["education"] = deduplicate_list(norm_edu)
 
         # 8. Process Work Experience & Internships (SEPARATE!)
         norm_exp = []
