@@ -143,39 +143,54 @@ async def extract_resume_data_endpoint(
             detail=f"Failed to extract text from document: {str(e)}"
         )
 
-    # 4. Try AI-driven structured extraction
+    # 4. Determine Extraction Mode
+    import os
+    extraction_mode = os.getenv("EXTRACTION_MODE", "LOCAL_WITH_FALLBACK")
+    
     extracted_data = None
-    try:
-        from app.services.ai_provider_manager import AIProviderManager
-        from app.services.resume_parser import ResumeParser
-        from app.services.zero_loss_engine import ZeroLossEngine
-        from app.ai.resume_prompts import RESUME_PARSE_PROMPT
+    if extraction_mode in ["LOCAL_ONLY", "LOCAL_WITH_FALLBACK"]:
+        try:
+            from app.services.local_resume_extraction.extractor import LocalResumeExtractor
+            local_res = LocalResumeExtractor.extract_from_url(cloudinary_url, filename)
+            raw_text_str = local_res["raw_text"]
+            extracted_data = local_res["extracted_data"]
+        except Exception as local_err:
+            print(f"[Local Extraction Warning]: {local_err}")
+            if extraction_mode == "LOCAL_ONLY":
+                raise HTTPException(status_code=500, detail=f"Local extraction failed: {local_err}")
 
-        ai_manager = AIProviderManager(db)
-        parser = ResumeParser()
-        chunks = ZeroLossEngine.chunk_resume_text(raw_text_str, max_chunk_chars=6000)
-        
-        if len(chunks) == 1:
-            prompt = RESUME_PARSE_PROMPT.replace("{resume_text}", raw_text_str)
-            ai_response = ai_manager.call_llm(prompt, feature="Resume Ingestion Parsing", response_format="json_object")
-            if ai_response:
-                parsed_json = parser.parse_and_validate(ai_response)
-                extracted_data = ZeroLossEngine.normalize_to_internal_model(parsed_json)
-        else:
-            chunk_results = []
-            for c in chunks:
-                c_prompt = RESUME_PARSE_PROMPT.replace("{resume_text}", c["text"])
-                c_resp = ai_manager.call_llm(c_prompt, feature=f"Resume Chunk {c['chunk_number']}", response_format="json_object")
-                chunk_results.append(parser.parse_and_validate(c_resp))
-            merged = ZeroLossEngine.safe_merge_results(chunk_results)
-            extracted_data = ZeroLossEngine.normalize_to_internal_model(merged)
-    except Exception as ai_err:
-        print(f"[Resume AI Extraction Warning]: {ai_err}")
+    if not extracted_data and extraction_mode in ["LOCAL_WITH_FALLBACK", "EXISTING_AI"]:
+        try:
+            from app.services.ai_provider_manager import AIProviderManager
+            from app.services.resume_parser import ResumeParser
+            from app.services.zero_loss_engine import ZeroLossEngine
+            from app.ai.resume_prompts import RESUME_PARSE_PROMPT
 
-    if not extracted_data:
-        from app.services.zero_loss_engine import ZeroLossEngine
-        raw_structured = extract_structured_data(raw_text_str)
-        extracted_data = ZeroLossEngine.normalize_to_internal_model(raw_structured)
+            ai_manager = AIProviderManager(db)
+            parser = ResumeParser()
+            chunks = ZeroLossEngine.chunk_resume_text(raw_text_str, max_chunk_chars=6000)
+            
+            if len(chunks) == 1:
+                prompt = RESUME_PARSE_PROMPT.replace("{resume_text}", raw_text_str)
+                ai_response = ai_manager.call_llm(prompt, feature="Resume Ingestion Parsing", response_format="json_object")
+                if ai_response:
+                    parsed_json = parser.parse_and_validate(ai_response)
+                    extracted_data = ZeroLossEngine.normalize_to_internal_model(parsed_json)
+            else:
+                chunk_results = []
+                for c in chunks:
+                    c_prompt = RESUME_PARSE_PROMPT.replace("{resume_text}", c["text"])
+                    c_resp = ai_manager.call_llm(c_prompt, feature=f"Resume Chunk {c['chunk_number']}", response_format="json_object")
+                    chunk_results.append(parser.parse_and_validate(c_resp))
+                merged = ZeroLossEngine.safe_merge_results(chunk_results)
+                extracted_data = ZeroLossEngine.normalize_to_internal_model(merged)
+        except Exception as ai_err:
+            print(f"[Resume AI Extraction Warning]: {ai_err}")
+
+        if not extracted_data:
+            from app.services.zero_loss_engine import ZeroLossEngine
+            raw_structured = extract_structured_data(raw_text_str)
+            extracted_data = ZeroLossEngine.normalize_to_internal_model(raw_structured)
 
     # 5. Save/Update extraction data in MongoDB
     existing_analysis = db.resume_analysis.find_one({
