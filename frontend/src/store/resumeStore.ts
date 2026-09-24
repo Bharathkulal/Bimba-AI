@@ -1,32 +1,5 @@
 import { create } from 'zustand';
-
-interface ResumeData {
-  title: string;
-  personalInfo: {
-    fullName: string;
-    email: string;
-    phone: string;
-    location: string;
-    website?: string;
-  };
-  experience: Array<{
-    id: string;
-    company: string;
-    position: string;
-    startDate: string;
-    endDate: string;
-    description: string;
-  }>;
-  education: Array<{
-    id: string;
-    institution: string;
-    degree: string;
-    fieldOfStudy: string;
-    startDate: string;
-    endDate: string;
-  }>;
-  skills: string[];
-}
+import type { ResumeData } from '../types/resume';
 
 interface ResumeState {
   currentResume: ResumeData | null;

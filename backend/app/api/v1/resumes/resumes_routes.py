@@ -436,9 +436,22 @@ def get_resume_profile(resume_id: int, student: Student = Depends(get_current_st
 def update_resume_profile(resume_id: int, payload: dict, student: Student = Depends(get_current_student), db: Any = Depends(get_db)):
     verify_ownership(resume_id, student.id, db)
     sync_resume_profile(resume_id, student.id, payload, db)
+    
+    current_doc = db.resumes.find_one({"id": resume_id})
+    current_resume = current_doc.get("resume", {})
+    
+    # Protect zero-loss fields from overwrite
+    for protected_field in ["original_file", "raw_extracted_text", "original_parsed_data", "raw_extraction", "validation"]:
+        if protected_field in payload:
+            payload.pop(protected_field)
+
+    for key, value in payload.items():
+        if key != "master":
+            current_resume[key] = value
+
     db.resumes.update_one(
         {"id": resume_id},
-        {"$set": {"resume": payload, "updated_at": datetime.utcnow()}}
+        {"$set": {"resume": current_resume, "updated_at": datetime.utcnow()}}
     )
     return {"success": True}
 
@@ -446,7 +459,20 @@ def update_resume_profile(resume_id: int, payload: dict, student: Student = Depe
 def update_resume(id: int, payload: dict, student: Student = Depends(get_current_student), db: Any = Depends(get_db)):
     verify_ownership(id, student.id, db)
     
-    # Save the payload exactly as received into the dynamic resume field
+    # Protect zero-loss fields from overwrite
+    for protected_field in ["original_file", "raw_extracted_text", "original_parsed_data", "raw_extraction", "validation"]:
+        if protected_field in payload:
+            payload.pop(protected_field)
+            
+    # Load current and merge safely
+    current_doc = db.resumes.find_one({"id": id})
+    current_resume = current_doc.get("resume", {})
+    
+    for key, value in payload.items():
+        if key != "master":
+            current_resume[key] = value
+
+    # Save the payload securely into the dynamic resume field
     update_fields = {
         "updated_at": datetime.utcnow()
     }
@@ -462,7 +488,7 @@ def update_resume(id: int, payload: dict, student: Student = Depends(get_current
         {"id": id},
         {
             "$set": {
-                "resume": payload,
+                "resume": current_resume,
                 **update_fields
             }
         }
