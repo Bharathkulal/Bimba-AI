@@ -159,38 +159,11 @@ async def extract_resume_data_endpoint(
             if extraction_mode == "LOCAL_ONLY":
                 raise HTTPException(status_code=500, detail=f"Local extraction failed: {local_err}")
 
-    if not extracted_data and extraction_mode in ["LOCAL_WITH_FALLBACK", "EXISTING_AI"]:
-        try:
-            from app.services.ai_provider_manager import AIProviderManager
-            from app.services.resume_parser import ResumeParser
-            from app.services.zero_loss_engine import ZeroLossEngine
-            from app.ai.resume_prompts import RESUME_PARSE_PROMPT
-
-            ai_manager = AIProviderManager(db)
-            parser = ResumeParser()
-            chunks = ZeroLossEngine.chunk_resume_text(raw_text_str, max_chunk_chars=6000)
-            
-            if len(chunks) == 1:
-                prompt = RESUME_PARSE_PROMPT.replace("{resume_text}", raw_text_str)
-                ai_response = ai_manager.call_llm(prompt, feature="Resume Ingestion Parsing", response_format="json_object")
-                if ai_response:
-                    parsed_json = parser.parse_and_validate(ai_response)
-                    extracted_data = ZeroLossEngine.normalize_to_internal_model(parsed_json)
-            else:
-                chunk_results = []
-                for c in chunks:
-                    c_prompt = RESUME_PARSE_PROMPT.replace("{resume_text}", c["text"])
-                    c_resp = ai_manager.call_llm(c_prompt, feature=f"Resume Chunk {c['chunk_number']}", response_format="json_object")
-                    chunk_results.append(parser.parse_and_validate(c_resp))
-                merged = ZeroLossEngine.safe_merge_results(chunk_results)
-                extracted_data = ZeroLossEngine.normalize_to_internal_model(merged)
-        except Exception as ai_err:
-            print(f"[Resume AI Extraction Warning]: {ai_err}")
-
-        if not extracted_data:
-            from app.services.zero_loss_engine import ZeroLossEngine
-            raw_structured = extract_structured_data(raw_text_str)
-            extracted_data = ZeroLossEngine.normalize_to_internal_model(raw_structured)
+    if not extracted_data:
+        from app.services.zero_loss_engine import ZeroLossEngine
+        from app.services.resume_extraction_service import extract_structured_data
+        raw_structured = extract_structured_data(raw_text_str)
+        extracted_data = ZeroLossEngine.normalize_to_internal_model(raw_structured)
 
     # 5. Save/Update extraction data in MongoDB
     existing_analysis = db.resume_analysis.find_one({
@@ -255,8 +228,6 @@ def analyze_resume_endpoint(
     POST /api/resume/analyze/{resume_id}
     Performs AI evaluation of the resume data, returning standardized scorecards.
     """
-    from app.services.resume_ai_analyzer import analyze_resume
-    
     # 1. Verify ownership and fetch or create resume_analysis record
     analysis_record = get_or_create_resume_analysis(resume_id, student.id, db)
 
@@ -265,40 +236,13 @@ def analyze_resume_endpoint(
     target_job = resume_doc.get("target_role") or resume_doc.get("master", {}).get("target_role")
     target_industry = resume_doc.get("target_industry") or resume_doc.get("master", {}).get("target_industry")
 
-    # 2. Call local ATS Engine for deterministic score
+    # 2. Call local ATS Engine for deterministic score and analysis
     from app.services.ats.ats_engine import ATSEngine
     try:
         extracted = analysis_record.get("extracted_data", {})
         raw_text = analysis_record.get("raw_text", "")
         ats_analysis = ATSEngine.analyze_resume(extracted, raw_text=raw_text)
-    except Exception as e:
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Local ATS analysis failed: {str(e)}"
-        )
         
-    # Also get AI suggestions if needed, but ATS score is deterministic
-    try:
-        ai_res = analyze_resume(
-            db, 
-            extracted,
-            raw_text=raw_text,
-            ocr_confidence=analysis_record.get("ocr_confidence", 1.0),
-            resume_language=analysis_record.get("language") or analysis_record.get("resume_language", "en"),
-            target_job=target_job,
-            target_industry=target_industry
-        )
-        # Override AI scores with local deterministic ATS scores
-        ai_res["overall_score"] = ats_analysis["score"]
-        ai_res["ats_score"] = ats_analysis["score"]
-        ai_res["section_scores"] = ats_analysis["breakdown"]
-        # Merge issues and suggestions from ATS Engine
-        ai_res["strengths"].extend(ats_analysis["strengths"])
-        ai_res["weaknesses"].extend(ats_analysis["issues"])
-        ai_res["improvement_suggestions"].extend(ats_analysis["suggestions"])
-        
-    except Exception as e:
-        # Fallback to local ATS Engine only
         ai_res = {
             "overall_score": ats_analysis["score"],
             "ats_score": ats_analysis["score"],
@@ -308,6 +252,11 @@ def analyze_resume_endpoint(
             "improvement_suggestions": ats_analysis["suggestions"],
             "missing_skills": ats_analysis.get("keywordAnalysis", {}).get("missing", [])
         }
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Local ATS analysis failed: {str(e)}"
+        )
 
     # 3. Update resume_analysis record in MongoDB
     db.resume_analysis.update_one(
