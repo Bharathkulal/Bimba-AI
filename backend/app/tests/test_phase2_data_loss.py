@@ -78,7 +78,7 @@ def test_data_loss_1():
     payload = {
         "personal_info": {"fullName": "Jane Doe", "email": "jane@test.com"}
     }
-    response = client.put("/api/v1/resume-studio/999/update", json=payload)
+    response = client.put("/api/resume-studio/999/update", json=payload)
     assert response.status_code == 200
     
     # Verify other fields remain
@@ -94,7 +94,7 @@ def test_data_loss_2():
     payload = {
         "skills": ["Python", "React"]
     }
-    response = client.put("/api/v1/resume-studio/999/update", json=payload)
+    response = client.put("/api/resume-studio/999/update", json=payload)
     assert response.status_code == 200
     
     doc = mock_db.resumes.data[999]["resume"]
@@ -108,7 +108,7 @@ def test_data_loss_3():
     payload = {
         "education": [{"id": 1, "degree": "MTech"}]
     }
-    response = client.put("/api/v1/resume-studio/999/update", json=payload)
+    response = client.put("/api/resume-studio/999/update", json=payload)
     assert response.status_code == 200
     
     doc = mock_db.resumes.data[999]["resume"]
@@ -127,7 +127,7 @@ def test_data_loss_4():
         }
     }
     payload = {"personal_info": {"fullName": "Legacy"}}
-    response = client.put("/api/v1/resume-studio/888/update", json=payload)
+    response = client.put("/api/resume-studio/888/update", json=payload)
     
     doc = mock_db.resumes.data[888]["resume"]
     assert "certificates" in doc
@@ -140,7 +140,7 @@ def test_data_loss_5():
         "raw_extracted_text": "I tried to overwrite this",
         "original_file": None
     }
-    response = client.put("/api/v1/resume-studio/999/update", json=payload)
+    response = client.put("/api/resume-studio/999/update", json=payload)
     assert response.status_code == 200
     
     doc = mock_db.resumes.data[999]["resume"]
