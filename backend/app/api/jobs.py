@@ -21,6 +21,8 @@ from app.schemas.jobs import (
 )
 
 import json
+from pydantic import BaseModel
+from app.services.job_matching.models import JobMatchResponse
 
 router = APIRouter(prefix="/jobs", tags=["Jobs Module"])
 
@@ -491,6 +493,88 @@ def manual_job_search_endpoint(
         "success": True,
         "jobs": ranked_jobs
     }
+
+class JobMatchRequest(BaseModel):
+    job_description: str = ""
+    job_id: Optional[str] = None
+
+@router.post("/match/{resume_id}", response_model=JobMatchResponse)
+def analyze_job_match(
+    resume_id: int,
+    payload: JobMatchRequest,
+    student: Student = Depends(get_current_student),
+    db: Any = Depends(get_db)
+):
+    """
+    POST /api/v1/jobs/match/{resume_id}
+    Performs deterministic, local skill matching between a Resume and Job Description.
+    """
+    from app.services.job_matching.job_requirement_parser import JobRequirementParser
+    from app.services.job_matching.job_match_engine import JobMatchEngine
+    from app.core.mongodb import get_next_sequence
+    
+    # 1. Fetch Resume Analysis (extracted_data)
+    analysis_record = db.resume_analysis.find_one({
+        "resume_id": resume_id,
+        "student_id": student.id
+    })
+    
+    if not analysis_record or not analysis_record.get("extracted_data"):
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Parsed resume data not found. Please extract the resume first."
+        )
+        
+    extracted_data = analysis_record["extracted_data"]
+    
+    # 2. Resolve Job Description
+    job_text = payload.job_description
+    structured_job = None
+    
+    if payload.job_id:
+        # Check saved_jobs or cached recommended_jobs or fallback to linkedin
+        cached_job = db.recommended_jobs.find_one({"id": payload.job_id})
+        if cached_job:
+            structured_job = cached_job
+            job_text = cached_job.get("description", "")
+        else:
+            try:
+                # Naive attempt to fetch from provider if not cached
+                job_detail = linkedin_service.get_job_details(student, payload.job_id)
+                if job_detail:
+                    structured_job = job_detail.dict() if hasattr(job_detail, "dict") else dict(job_detail)
+                    job_text = job_detail.description
+            except Exception:
+                pass
+                
+    if not job_text and not structured_job:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Must provide job_description or valid job_id."
+        )
+        
+    # 3. Parse Job Requirements
+    job_reqs = JobRequirementParser.parse(job_text, structured_job=structured_job)
+    
+    # 4. Match
+    match_result = JobMatchEngine.match(extracted_data, job_reqs)
+    
+    # 5. Persist Results
+    match_id = str(get_next_sequence("job_match_results"))
+    
+    response = JobMatchResponse(
+        resume_id=str(resume_id),
+        job_id=payload.job_id or "custom",
+        result=match_result
+    )
+    
+    match_doc = response.model_dump() if hasattr(response, "model_dump") else response.dict()
+    match_doc["student_id"] = student.id
+    match_doc["_id"] = match_id
+    
+    db.job_match_results.insert_one(match_doc)
+    
+    return response
 
 
 class CreateApplicationRequest(BaseModel):
