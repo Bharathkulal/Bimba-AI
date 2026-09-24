@@ -214,6 +214,46 @@ def get_resume_detail(id: int, student: Student = Depends(get_current_student), 
 
     return response
 
+@router.get("/{id}/health")
+def get_resume_health(id: int, student: Student = Depends(get_current_student), db: Any = Depends(get_db)):
+    """
+    Phase 7: Deterministic Resume Health & Intelligence Analysis
+    """
+    resume = verify_ownership(id, student.id, db)
+    resume_data = resume.get("resume", {})
+    
+    from app.services.resume_intelligence.resume_intelligence_engine import ResumeIntelligenceEngine
+    
+    report = ResumeIntelligenceEngine.analyze(resume_data)
+    
+    # Store calculation if needed
+    try:
+        report_dict = report.model_dump() if hasattr(report, "model_dump") else report.dict()
+        report_dict["resume_id"] = id
+        report_dict["student_id"] = student.id
+        report_dict["created_at"] = datetime.utcnow()
+        db.resume_intelligence_results.insert_one(report_dict)
+    except Exception as e:
+        print(f"Failed to save intelligence result: {e}")
+        
+    return report
+
+class JobImprovementRequest(BaseModel):
+    job_description: str
+
+@router.post("/{id}/job-improvement")
+def get_job_improvement(id: int, payload: JobImprovementRequest, student: Student = Depends(get_current_student), db: Any = Depends(get_db)):
+    """
+    Phase 7: Job-Specific Resume Improvement Recommendations
+    """
+    resume = verify_ownership(id, student.id, db)
+    resume_data = resume.get("resume", {})
+    
+    from app.services.resume_intelligence.resume_intelligence_engine import ResumeIntelligenceEngine
+    
+    report = ResumeIntelligenceEngine.analyze(resume_data, job_description=payload.job_description)
+    return report
+
 @router.post("/create")
 def create_resume(payload: dict, student: Student = Depends(get_current_student), db: Any = Depends(get_db)):
     next_id = get_next_sequence("resumes")

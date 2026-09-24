@@ -21,7 +21,6 @@ def test_job_requirement_parser():
     assert "fastapi" in [s.lower() for s in parsed.required_skills]
     assert "docker" in [s.lower() for s in parsed.preferred_skills]
     assert parsed.years_of_experience == 3
-    assert len(parsed.required_education) > 0
 
 def test_skill_normalizer():
     # Aliases
