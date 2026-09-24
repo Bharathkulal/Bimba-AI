@@ -265,22 +265,49 @@ def analyze_resume_endpoint(
     target_job = resume_doc.get("target_role") or resume_doc.get("master", {}).get("target_role")
     target_industry = resume_doc.get("target_industry") or resume_doc.get("master", {}).get("target_industry")
 
-    # 2. Call AI Analyzer service
+    # 2. Call local ATS Engine for deterministic score
+    from app.services.ats.ats_engine import ATSEngine
+    try:
+        extracted = analysis_record.get("extracted_data", {})
+        raw_text = analysis_record.get("raw_text", "")
+        ats_analysis = ATSEngine.analyze_resume(extracted, raw_text=raw_text)
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Local ATS analysis failed: {str(e)}"
+        )
+        
+    # Also get AI suggestions if needed, but ATS score is deterministic
     try:
         ai_res = analyze_resume(
             db, 
-            analysis_record.get("extracted_data", {}),
-            raw_text=analysis_record.get("raw_text", ""),
+            extracted,
+            raw_text=raw_text,
             ocr_confidence=analysis_record.get("ocr_confidence", 1.0),
             resume_language=analysis_record.get("language") or analysis_record.get("resume_language", "en"),
             target_job=target_job,
             target_industry=target_industry
         )
+        # Override AI scores with local deterministic ATS scores
+        ai_res["overall_score"] = ats_analysis["score"]
+        ai_res["ats_score"] = ats_analysis["score"]
+        ai_res["section_scores"] = ats_analysis["breakdown"]
+        # Merge issues and suggestions from ATS Engine
+        ai_res["strengths"].extend(ats_analysis["strengths"])
+        ai_res["weaknesses"].extend(ats_analysis["issues"])
+        ai_res["improvement_suggestions"].extend(ats_analysis["suggestions"])
+        
     except Exception as e:
-        raise HTTPException(
-            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-            detail="AI analysis service is temporarily unavailable. Please try again later."
-        )
+        # Fallback to local ATS Engine only
+        ai_res = {
+            "overall_score": ats_analysis["score"],
+            "ats_score": ats_analysis["score"],
+            "section_scores": ats_analysis["breakdown"],
+            "strengths": ats_analysis["strengths"],
+            "weaknesses": ats_analysis["issues"],
+            "improvement_suggestions": ats_analysis["suggestions"],
+            "missing_skills": ats_analysis.get("keywordAnalysis", {}).get("missing", [])
+        }
 
     # 3. Update resume_analysis record in MongoDB
     db.resume_analysis.update_one(
@@ -326,14 +353,23 @@ def get_resume_health_endpoint(
     # 1. Verify resume belongs to student and retrieve or create analysis
     analysis_record = get_or_create_resume_analysis(resume_id, student.id, db)
 
-    ai_analysis = analysis_record.get("ai_analysis") or {
-        "overall_score": 78,
-        "ats_score": 75,
-        "strengths": ["Clear section hierarchy", "Relevant technical skills"],
-        "weaknesses": ["Add impact metrics to work experience"],
-        "missing_skills": ["Cloud Architecture", "CI/CD"],
-        "improvement_suggestions": ["Quantify accomplishments with performance statistics"]
-    }
+    ai_analysis = analysis_record.get("ai_analysis")
+    
+    if not ai_analysis:
+        from app.services.ats.ats_engine import ATSEngine
+        extracted = analysis_record.get("extracted_data", {})
+        raw_text = analysis_record.get("raw_text", "")
+        ats_analysis = ATSEngine.analyze_resume(extracted, raw_text=raw_text)
+        
+        ai_analysis = {
+            "overall_score": ats_analysis["score"],
+            "ats_score": ats_analysis["score"],
+            "strengths": ats_analysis["strengths"],
+            "weaknesses": ats_analysis["issues"],
+            "missing_skills": ats_analysis.get("keywordAnalysis", {}).get("missing", []),
+            "improvement_suggestions": ats_analysis["suggestions"],
+            "section_scores": ats_analysis["breakdown"]
+        }
 
     # 2. Determine Text Rating based on Overall Score
     score = ai_analysis.get("overall_score", 70)
@@ -444,10 +480,9 @@ def apply_improvements_endpoint(
             detail="No AI improvements found. Generate improvements first."
         )
 
-    target_score = int(improvements.get("target_ats_score", 96))
-    if target_score < 95:
-        target_score = 96
-
+    # Recalculate ATS score dynamically instead of using fake target_score
+    from app.services.ats.ats_engine import ATSEngine
+    
     extracted_data = analysis_record.get("extracted_data", {})
     accepted_sections = payload.get("accepted_sections") if payload else None
     
@@ -492,18 +527,16 @@ def apply_improvements_endpoint(
                 existing_skills.append(kw)
         extracted_data["skills"] = existing_skills
 
-    # Update MongoDB Collections
+    # Recalculate new ATS score after improvements
+    new_ats_analysis = ATSEngine.analyze_resume(extracted_data, raw_text=analysis_record.get("raw_text", ""))
+    target_score = new_ats_analysis["score"]
+
     # A) resume_analysis
     ai_analysis = analysis_record.get("ai_analysis", {})
     ai_analysis["overall_score"] = target_score
     ai_analysis["ats_score"] = target_score
-    ai_analysis["rating"] = "Excellent"
-    ai_analysis["section_scores"] = {
-        "summary": 95,
-        "skills": 98,
-        "experience": 96,
-        "projects": 97
-    }
+    ai_analysis["rating"] = "Excellent" if target_score >= 90 else "Good"
+    ai_analysis["section_scores"] = new_ats_analysis["breakdown"]
 
     db.resume_analysis.update_one(
         {"resume_id": resume_id, "student_id": student.id},
@@ -543,11 +576,11 @@ def apply_improvements_endpoint(
         {"resume_id": resume_id},
         {"$set": {
             "overall_score": target_score,
-            "formatting_score": 96,
-            "keyword_match": 98,
-            "grammar_score": 97,
-            "readability_score": 95,
-            "recruiter_score": 96,
+            "formatting_score": new_ats_analysis["breakdown"].get("formatting", 0),
+            "keyword_match": new_ats_analysis["breakdown"].get("keywords", 0),
+            "grammar_score": target_score,
+            "readability_score": target_score,
+            "recruiter_score": target_score,
             "updated_at": datetime.utcnow()
         }},
         upsert=True
