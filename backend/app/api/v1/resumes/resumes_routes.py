@@ -327,6 +327,20 @@ def create_resume(payload: dict, student: Student = Depends(get_current_student)
     try:
         db.resumes.insert_one(resume_doc)
         print("[MongoDB] Resume saved successfully")
+        
+        # Create Version 1
+        version_doc = {
+            "id": get_next_sequence("resume_versions"),
+            "resume_id": next_id,
+            "student_id": student.id,
+            "version": 1,
+            "source": "upload",
+            "changes": "Original uploaded resume",
+            "canonical_resume_data": resume_doc.get("resume", {}),
+            "created_at": datetime.utcnow()
+        }
+        db.resume_versions.insert_one(version_doc)
+        print("[MongoDB] Resume Version 1 created")
     except Exception as e:
         print(f"[MongoDB Error] Resumes insert failed: {e}")
         from fastapi.responses import JSONResponse
@@ -340,19 +354,22 @@ def create_resume(payload: dict, student: Student = Depends(get_current_student)
             }
         )
 
-    # Initialize empty default ATS scorecard
+    # Calculate deterministic ATS scorecard
     try:
+        from app.services.ats.ats_engine import ATSEngine
+        ats_result = ATSEngine.analyze_resume(resume_doc.get("resume", {}), resume_doc.get("raw_extracted_text", ""))
+        
         db.resume_ats.insert_one({
             "id": get_next_sequence("resume_ats"),
             "resume_id": next_id,
-            "overall_score": 72,
-            "formatting_score": 75,
-            "keyword_match": 68,
-            "grammar_score": 80,
-            "readability_score": 70,
-            "recruiter_score": 68,
-            "missing_keywords": "Docker, AWS, System Design",
-            "suggestions": "Integrate cloud experience bullet points. Fix grammar in profile bio.",
+            "overall_score": ats_result.get("score", 0),
+            "formatting_score": ats_result.get("breakdown", {}).get("formatting", 0),
+            "keyword_match": ats_result.get("breakdown", {}).get("keywords", 0),
+            "grammar_score": ats_result.get("breakdown", {}).get("completeness", 0),
+            "readability_score": ats_result.get("breakdown", {}).get("experience", 0),
+            "recruiter_score": ats_result.get("breakdown", {}).get("skills", 0),
+            "missing_keywords": ", ".join(ats_result.get("issues", [])[:3]),
+            "suggestions": " ".join(ats_result.get("suggestions", [])[:3]),
             "updated_at": datetime.utcnow()
         })
     except Exception as e:
@@ -532,6 +549,51 @@ def update_resume(id: int, payload: dict, student: Student = Depends(get_current
             }
         }
     )
+    
+    # Save a new version to history
+    try:
+        latest_version = db.resume_versions.find_one(
+            {"resume_id": id}, 
+            sort=[("version", -1)]
+        )
+        new_version_num = (latest_version["version"] + 1) if latest_version else 2
+        
+        db.resume_versions.insert_one({
+            "id": get_next_sequence("resume_versions"),
+            "resume_id": id,
+            "student_id": student.id,
+            "version": new_version_num,
+            "source": "user_edit",
+            "changes": "User updated resume via studio",
+            "canonical_resume_data": current_resume,
+            "created_at": datetime.utcnow()
+        })
+    except Exception as e:
+        print(f"[MongoDB Error] Failed to save resume version {e}")
+        
+    # Recalculate deterministic ATS scorecard on edit
+    try:
+        from app.services.ats.ats_engine import ATSEngine
+        ats_result = ATSEngine.analyze_resume(current_resume, current_doc.get("raw_extracted_text", ""))
+        
+        db.resume_ats.update_one(
+            {"resume_id": id},
+            {"$set": {
+                "overall_score": ats_result.get("score", 0),
+                "formatting_score": ats_result.get("breakdown", {}).get("formatting", 0),
+                "keyword_match": ats_result.get("breakdown", {}).get("keywords", 0),
+                "grammar_score": ats_result.get("breakdown", {}).get("completeness", 0),
+                "readability_score": ats_result.get("breakdown", {}).get("experience", 0),
+                "recruiter_score": ats_result.get("breakdown", {}).get("skills", 0),
+                "missing_keywords": ", ".join(ats_result.get("issues", [])[:3]),
+                "suggestions": " ".join(ats_result.get("suggestions", [])[:3]),
+                "updated_at": datetime.utcnow()
+            }},
+            upsert=True
+        )
+    except Exception as e:
+        print(f"[MongoDB Error] ATS recalculation failed: {e}")
+
     sync_resume_profile(id, student.id, payload, db)
     return {"success": True}
 
