@@ -28,7 +28,7 @@ SECTION_TAXONOMY: Dict[str, List[str]] = {
         "academic & personal projects", "academic and personal projects", "projects",
         "personal projects", "key projects", "selected projects", "academic projects",
         "technical projects", "capstone projects", "project work", "portfolio projects",
-        "major projects", "mini projects"
+        "major projects", "mini projects", "projects and research", "projects & research", "research projects"
     ],
     "technical_skills": [
         "technical skill set", "technical skills", "skills & technologies", "skills",

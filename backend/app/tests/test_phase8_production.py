@@ -24,9 +24,15 @@ def client():
 def clean_db():
     db.resumes.delete_many({"student_id": 888})
     db.resume_versions.delete_many({"student_id": 888})
+    db.students.delete_many({"id": 888})
+    
+    # Create the test student required by upload_service
+    db.students.insert_one({"id": 888, "email": "phase8@test.com", "name": "Phase8 User"})
+    
     yield
     db.resumes.delete_many({"student_id": 888})
     db.resume_versions.delete_many({"student_id": 888})
+    db.students.delete_many({"id": 888})
 
 def test_resume_versioning_original_immutable(client, clean_db):
     """
