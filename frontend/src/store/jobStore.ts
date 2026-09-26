@@ -88,7 +88,7 @@ export const useJobStore = create<JobState>((set, get) => ({
         set({ errors: 'Failed to retrieve recommendations', loading: false });
       }
     } catch (err: any) {
-      set({ errors: err.response?.data?.detail || err.message, loading: false });
+      set({ errors: err.message, loading: false });
     }
   },
 
@@ -102,7 +102,7 @@ export const useJobStore = create<JobState>((set, get) => ({
         set({ errors: 'Failed to generate recommendations', loading: false });
       }
     } catch (err: any) {
-      set({ errors: err.response?.data?.detail || err.message, loading: false });
+      set({ errors: err.message, loading: false });
     }
   },
 
@@ -116,7 +116,7 @@ export const useJobStore = create<JobState>((set, get) => ({
         set({ errors: 'Search query failed', loading: false });
       }
     } catch (err: any) {
-      set({ errors: err.response?.data?.detail || err.message, loading: false });
+      set({ errors: err.message, loading: false });
     }
   },
 

@@ -40,7 +40,7 @@ export const useResumeHealthStore = create<ResumeHealthState>((set) => ({
         set({ error: response.data.message || 'Failed to load health data', loading: false });
       }
     } catch (err: any) {
-      const msg = err.response?.data?.detail || err.message || 'Error fetching resume health metrics';
+      const msg = err.message || 'Error fetching resume health metrics';
       set({ error: msg, loading: false });
     }
   },

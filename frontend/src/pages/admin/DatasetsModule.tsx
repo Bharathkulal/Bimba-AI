@@ -32,7 +32,7 @@ export const DatasetsModule: React.FC = () => {
       const preview = await adminService.uploadDataset(file);
       setUploadPreview(preview);
     } catch (err: any) {
-      alert(err.response?.data?.detail || "Upload and validation checks failed.");
+      alert("Upload and validation checks failed.");
     }
   };
 

@@ -97,7 +97,7 @@ export const Login: React.FC = () => {
       }
       setStep(2);
     } catch (err: any) {
-      setApiError(err.response?.data?.detail || 'Roll Number not found or inactive.');
+      setApiError(err.message || 'Roll Number not found or inactive.');
     } finally {
       setIsLoading(false);
     }
@@ -114,7 +114,7 @@ export const Login: React.FC = () => {
       });
       setStep(3);
     } catch (err: any) {
-      setApiError(err.response?.data?.detail || 'Invalid or expired OTP.');
+      setApiError(err.message || 'Invalid or expired OTP.');
     } finally {
       setIsLoading(false);
     }
@@ -130,7 +130,7 @@ export const Login: React.FC = () => {
       });
       setStep(4);
     } catch (err: any) {
-      setApiError(err.response?.data?.detail || 'Failed to reset password.');
+      setApiError(err.message || 'Failed to reset password.');
     } finally {
       setIsLoading(false);
     }

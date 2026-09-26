@@ -89,7 +89,7 @@ export const SettingsDesktop: React.FC = () => {
       showToast('Password updated successfully.', 'success');
       reset();
     } catch (err: any) {
-      showToast(err.response?.data?.detail || 'Failed to update password.', 'error');
+      showToast('Failed to update password.', 'error');
     } finally {
       setIsLoading(false);
     }

@@ -44,7 +44,7 @@ export const PlacementProfile: React.FC = () => {
       setNewPassword('');
       setConfirmPassword('');
     } catch (err: any) {
-      setMessage({ text: err.response?.data?.detail || "Failed to update password.", type: 'error' });
+      setMessage({ text: "Failed to update password.", type: 'error' });
     } finally {
       setLoading(false);
     }

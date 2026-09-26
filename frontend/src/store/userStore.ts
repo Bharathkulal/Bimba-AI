@@ -62,7 +62,7 @@ export const useUserStore = create<AuthState>((set, get) => ({
     } catch (err: any) {
       set({ 
         isLoading: false, 
-        error: err.response?.data?.detail || err.message || 'Incorrect Roll Number or Password.',
+        error: err.message || 'Incorrect Roll Number or Password.',
         isAuthenticated: false,
         user: null,
         token: null

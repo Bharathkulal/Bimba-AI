@@ -50,7 +50,7 @@ export const ResumeAnalysisStatus: React.FC<ResumeAnalysisStatusProps> = ({
       }
     } catch (err: any) {
       console.error('Resume extraction error:', err);
-      const detailMsg = err.response?.data?.detail || err.message || 'Resume text extraction failed';
+      const detailMsg = err.message || 'Resume text extraction failed';
       setErrorMessage(detailMsg);
       setStatus('error');
     }

@@ -82,7 +82,7 @@ export const DocumentIngestionStep: React.FC = () => {
       }
     } catch (err: any) {
       console.error(err);
-      setErrorMsg(err.response?.data?.detail || "Connection lost or file upload failed. Please try again.");
+      setErrorMsg("Connection lost or file upload failed. Please try again.");
     } finally {
       setUploading(false);
     }
@@ -104,7 +104,7 @@ export const DocumentIngestionStep: React.FC = () => {
       }
     } catch (err: any) {
       console.error(err);
-      setErrorMsg(err.response?.data?.detail || "Failed to submit resume text. Please check the network.");
+      setErrorMsg("Failed to submit resume text. Please check the network.");
     } finally {
       setUploading(false);
     }

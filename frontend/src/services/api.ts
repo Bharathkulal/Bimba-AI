@@ -48,61 +48,47 @@ apiClient.interceptors.request.use(
 apiClient.interceptors.response.use(
   (response) => response,
   (error) => {
-    if (!error.response) {
-      error.message = "Unable to connect to Bimba AI server. Please check whether the backend is running.";
-    } else {
-      const status = error.response.status;
-      if (status === 401) {
-        // Do not redirect on login endpoints so the form can handle the 401 error
-        if (error.config && error.config.url && error.config.url.includes('/login')) {
-          error.message = "Unauthorized";
-          return Promise.reject(error);
-        }
-        
-        const isStaffRequest = error.config.url?.includes('/admin') || 
-                               error.config.url?.includes('/placement') || 
-                               window.location.pathname.startsWith('/admin') || 
-                               window.location.pathname.startsWith('/placement');
-        if (isStaffRequest) {
-          localStorage.removeItem('admin_token');
-          localStorage.removeItem('admin_role');
-          const isPlacement = error.config.url?.includes('/placement') || window.location.pathname.startsWith('/placement');
-          if (isPlacement) {
-            if (window.location.pathname !== '/placement/login') {
-              window.location.href = '/placement/login';
-            }
-          } else {
-            if (window.location.pathname !== '/admin/login') {
-              window.location.href = '/admin/login';
-            }
+    const status = error.response?.status;
+    const isLoginEndpoint = error.config?.url?.includes('/login');
+
+    if (status === 401 && !isLoginEndpoint) {
+      const isStaffRequest = error.config.url?.includes('/admin') || 
+                             error.config.url?.includes('/placement') || 
+                             window.location.pathname.startsWith('/admin') || 
+                             window.location.pathname.startsWith('/placement');
+      if (isStaffRequest) {
+        localStorage.removeItem('admin_token');
+        localStorage.removeItem('admin_role');
+        const isPlacement = error.config.url?.includes('/placement') || window.location.pathname.startsWith('/placement');
+        if (isPlacement) {
+          if (window.location.pathname !== '/placement/login') {
+            window.location.href = '/placement/login';
           }
         } else {
-          import('../store/userStore').then(({ useUserStore }) => {
-            useUserStore.getState().clearAuth();
-            if (window.location.pathname !== '/login') {
-              window.location.href = '/login';
-            }
-          }).catch(() => {
-            localStorage.removeItem('auth_token');
-            if (window.location.pathname !== '/login') {
-              window.location.href = '/login';
-            }
-          });
+          if (window.location.pathname !== '/admin/login') {
+            window.location.href = '/admin/login';
+          }
         }
-      } else if (status === 400) {
-        error.message = "Bad Request";
-      } else if (status === 403) {
-        error.message = "Forbidden";
-      } else if (status === 404) {
-        error.message = "Not Found";
-      } else if (status === 422) {
-        error.message = "Validation Error";
-      } else if (status === 429) {
-        error.message = "Too Many Requests";
-      } else if (status >= 500) {
-        error.message = "Server Error";
+      } else {
+        import('../store/userStore').then(({ useUserStore }) => {
+          useUserStore.getState().clearAuth();
+          if (window.location.pathname !== '/login') {
+            window.location.href = '/login';
+          }
+        }).catch(() => {
+          localStorage.removeItem('auth_token');
+          if (window.location.pathname !== '/login') {
+            window.location.href = '/login';
+          }
+        });
       }
     }
+
+    // Apply unified normalization for all other cases (including login 401s, timeouts, cancellations, etc.)
+    const normalized = normalizeApiError(error);
+    error.message = normalized.message;
+    (error as any).apiError = normalized;
+    
     return Promise.reject(error);
   }
 );

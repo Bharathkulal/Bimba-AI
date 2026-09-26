@@ -71,7 +71,7 @@ export const useResumeImprovementStore = create<ResumeImprovementState>((set, ge
         set({ error: response.data?.message || 'Failed to load improvements.', loading: false });
       }
     } catch (err: any) {
-      const msg = err.response?.data?.detail || err.message || 'Error generating improvements. Please check service availability and try again.';
+      const msg = err.message || 'Error generating improvements. Please check service availability and try again.';
       set({ error: msg, loading: false });
     }
   },
@@ -87,7 +87,7 @@ export const useResumeImprovementStore = create<ResumeImprovementState>((set, ge
       set({ applying: false });
       return response.data?.success || false;
     } catch (err: any) {
-      const msg = err.response?.data?.detail || err.message || 'Error applying improvements';
+      const msg = err.message || 'Error applying improvements';
       set({ error: msg, applying: false });
       return false;
     }

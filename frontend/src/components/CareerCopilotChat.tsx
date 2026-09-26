@@ -140,7 +140,7 @@ export const CareerCopilotChat: React.FC<CareerCopilotChatProps> = ({ resumeId, 
       alert('Rewrite applied successfully to your resume!');
       if (onUpdateResume) onUpdateResume();
     } catch (err: any) {
-      alert(`Failed to apply rewrite: ${err.response?.data?.detail || err.message}`);
+      alert(`Failed to apply rewrite: ${err.message}`);
     }
   };
 

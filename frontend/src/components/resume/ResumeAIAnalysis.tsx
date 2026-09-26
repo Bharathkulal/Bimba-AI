@@ -41,7 +41,7 @@ export const ResumeAIAnalysis: React.FC<ResumeAIAnalysisProps> = ({
       }
     } catch (err: any) {
       console.error('Resume AI analysis error:', err);
-      const detailMsg = err.response?.data?.detail || err.message || 'AI service temporarily unavailable';
+      const detailMsg = err.message || 'AI service temporarily unavailable';
       setErrorMessage(detailMsg);
       setStatus('error');
     }

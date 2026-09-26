@@ -94,7 +94,7 @@ export const useResumeUpload = (): UseResumeUploadResult => {
           delay *= 2; // exponential backoff
         } else {
           console.error('[useResumeUpload] Upload failed finally:', err);
-          const detail = err.response?.data?.detail || err.message || 'Error occurred during parsing';
+          const detail = err.message || 'Error occurred during parsing';
           setUploadError(typeof detail === 'string' ? detail : JSON.stringify(detail));
           setUploadState('error');
           setIsUploading(false);
