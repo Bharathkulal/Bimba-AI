@@ -68,7 +68,7 @@ const PlacementLogin = lazy(() => import('../pages/PlacementLogin').then(module 
 
 // Route Guards
 const ProtectedRoute: React.FC = () => {
-  const { token, initialize, isInitializing } = useUserStore();
+  const { isAuthenticated, initialize, isInitializing } = useUserStore();
 
   useEffect(() => {
     initialize();
@@ -82,7 +82,7 @@ const ProtectedRoute: React.FC = () => {
     );
   }
 
-  if (!token) {
+  if (!isAuthenticated) {
     return <Navigate to="/login" replace />;
   }
 
@@ -90,8 +90,8 @@ const ProtectedRoute: React.FC = () => {
 };
 
 const GuestRoute: React.FC = () => {
-  const token = useUserStore((state) => state.token);
-  if (token) {
+  const isAuthenticated = useUserStore((state) => state.isAuthenticated);
+  if (isAuthenticated) {
     return <Navigate to="/dashboard" replace />;
   }
   return <Outlet />;
