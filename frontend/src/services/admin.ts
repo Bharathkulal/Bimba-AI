@@ -189,14 +189,12 @@ export const adminService = {
     const res = await apiClient.post<{ success: boolean; token: string }>('/api/admin/login', { username, password });
     if (res.data.success && res.data.token) {
       localStorage.setItem('admin_token', res.data.token);
-      apiClient.defaults.headers.common['Authorization'] = `Bearer ${res.data.token}`;
     }
     return res.data;
   },
 
   logout: () => {
     localStorage.removeItem('admin_token');
-    delete apiClient.defaults.headers.common['Authorization'];
   },
 
   getDashboard: async (): Promise<AdminDashboardData> => {

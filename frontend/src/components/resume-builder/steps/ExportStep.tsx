@@ -80,7 +80,7 @@ export const ExportStep: React.FC = () => {
   };
 
   const handleCopyLink = () => {
-    navigator.clipboard.writeText(`http://localhost:5173/resume/${resumeId}/shared`);
+    navigator.clipboard.writeText(`${window.location.origin}/resume/${resumeId}/shared`);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   };
