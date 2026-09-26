@@ -3,6 +3,7 @@ import { useResumeBuilderStore } from '../../store/resumeBuilderStore';
 import { ResumeEditor } from './ResumeEditor';
 import { ResumePreview } from './ResumePreview';
 import { API_BASE_URL } from '../../services/api';
+import { useUserStore } from '../../store/userStore';
 import { TemplateSelector } from './TemplateSelector';
 import { 
   Sparkles, AlertTriangle, ArrowLeft, Check, CheckCircle2, 
@@ -327,7 +328,7 @@ export const ResumeBuilder: React.FC<ResumeBuilderProps> = ({
                         <button
                           onClick={() => {
                             if (ver.id) {
-                              const token = localStorage.getItem('auth_token') || localStorage.getItem('admin_token');
+                              const token = useUserStore.getState().token || localStorage.getItem('admin_token');
                               window.location.href = `${API_BASE_URL}/api/resume/download-pdf/${ver.id}${token ? `?token=${token}` : ''}`;
                             } else {
                               window.open(ver.pdf_url, '_blank');

@@ -68,28 +68,13 @@ const PlacementLogin = lazy(() => import('../pages/PlacementLogin').then(module 
 
 // Route Guards
 const ProtectedRoute: React.FC = () => {
-  const { user, token, setUser, logout } = useUserStore();
-  const [loading, setLoading] = useState(true);
+  const { token, initialize, isInitializing } = useUserStore();
 
   useEffect(() => {
-    const fetchUser = async () => {
-      if (token && !user) {
-        try {
-          const res = await apiClient.get('/api/auth/me');
-          setUser(res.data, token);
-        } catch (err) {
-          logout();
-        } finally {
-          setLoading(false);
-        }
-      } else {
-        setLoading(false);
-      }
-    };
-    fetchUser();
-  }, [token, user, setUser, logout]);
+    initialize();
+  }, [initialize]);
 
-  if (loading) {
+  if (isInitializing) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-slate-50">
         <div className="w-12 h-12 border-4 border-slate-800 border-t-transparent rounded-full animate-spin" />

@@ -529,7 +529,7 @@ export const ResumePage: React.FC = () => {
                                 <button 
                                   onClick={async () => {
                                     await handleTrackAction('download', 'download_pdf', 'PDF');
-                                    const token = localStorage.getItem('auth_token');
+                                    const token = useUserStore.getState().token;
                                     window.open(`${API_BASE_URL}/api/resume-studio/${res.id}/pdf${token ? `?token=${token}` : ''}`, '_blank');
                                   }}
                                   className="w-7.5 h-7.5 rounded-lg bg-white border border-slate-200 flex items-center justify-center text-slate-500 hover:text-emerald-500 hover:border-emerald-500 transition-colors cursor-pointer"
@@ -791,7 +791,7 @@ export const ResumePage: React.FC = () => {
         >
           <div className="w-full h-[70vh] bg-slate-100 dark:bg-[#1E1E1E] rounded-xl overflow-hidden relative">
             <iframe
-              src={`${API_BASE_URL}/api/resume-studio/${previewResumeId}/pdf?inline=true${localStorage.getItem('auth_token') ? `&token=${localStorage.getItem('auth_token')}` : ''}`}
+              src={`${API_BASE_URL}/api/resume-studio/${previewResumeId}/pdf?inline=true${useUserStore.getState().token ? `&token=${useUserStore.getState().token}` : ''}`}
               className="w-full h-full border-none"
               title="Resume PDF Preview"
             />

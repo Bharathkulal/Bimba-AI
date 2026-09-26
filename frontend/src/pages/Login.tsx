@@ -40,7 +40,7 @@ type OtpSchema = z.infer<typeof otpSchema>;
 type ResetPasswordSchema = z.infer<typeof resetPasswordSchema>;
 
 export const Login: React.FC = () => {
-  const setUser = useUserStore((state) => state.setUser);
+  const { login: storeLogin } = useUserStore();
   const navigate = useNavigate();
 
   // Mode: 'login' | 'forgot_password'
@@ -75,12 +75,10 @@ export const Login: React.FC = () => {
     setIsLoading(true);
     setApiError(null);
     try {
-      const response = await apiClient.post('/api/auth/login', data);
-      const { access_token, student } = response.data;
-      setUser(student, access_token);
+      await storeLogin(data);
       navigate('/dashboard');
     } catch (err: any) {
-      setApiError(err.response?.data?.detail || 'Incorrect Roll Number or Password.');
+      setApiError(useUserStore.getState().error || 'Incorrect Roll Number or Password.');
     } finally {
       setIsLoading(false);
     }

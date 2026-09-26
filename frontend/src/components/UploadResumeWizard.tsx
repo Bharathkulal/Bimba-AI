@@ -9,6 +9,7 @@ import {
   Undo, Redo, ZoomIn, ZoomOut, Maximize2, RotateCcw, Columns, Type, Palette, Layout, Settings2, Layers, AlertCircle
 } from 'lucide-react';
 import { apiClient } from '../services/api';
+import { useUserStore } from '../store/userStore';
 import { jobsService, type JobListItem } from '../services/jobs';
 import { Button } from './Button';
 import { Card } from './Card';
@@ -969,7 +970,7 @@ export const UploadResumeWizard: React.FC<UploadResumeWizardProps> = ({
 
   const handleDownload = (format: 'pdf' | 'docx' | 'txt') => {
     if (!resumeId) return;
-    const token = localStorage.getItem('auth_token');
+    const token = useUserStore.getState().token;
     const url = `${apiClient.defaults.baseURL}/api/resume-studio/${resumeId}/download/${format}${token ? `?token=${token}` : ''}`;
     window.open(url, '_blank');
   };
