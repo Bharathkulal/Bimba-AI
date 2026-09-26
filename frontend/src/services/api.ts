@@ -68,13 +68,26 @@ apiClient.interceptors.response.use(
           localStorage.removeItem('admin_role');
           const isPlacement = error.config.url?.includes('/placement') || window.location.pathname.startsWith('/placement');
           if (isPlacement) {
-            window.location.href = '/placement/login';
+            if (window.location.pathname !== '/placement/login') {
+              window.location.href = '/placement/login';
+            }
           } else {
-            window.location.href = '/admin/login';
+            if (window.location.pathname !== '/admin/login') {
+              window.location.href = '/admin/login';
+            }
           }
         } else {
-          localStorage.removeItem('auth_token');
-          window.location.href = '/login';
+          import('../store/userStore').then(({ useUserStore }) => {
+            useUserStore.getState().clearAuth();
+            if (window.location.pathname !== '/login') {
+              window.location.href = '/login';
+            }
+          }).catch(() => {
+            localStorage.removeItem('auth_token');
+            if (window.location.pathname !== '/login') {
+              window.location.href = '/login';
+            }
+          });
         }
       } else if (status === 400) {
         error.message = "Bad Request";
