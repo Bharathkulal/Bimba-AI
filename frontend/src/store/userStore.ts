@@ -33,7 +33,7 @@ interface AuthState {
   login: (credentials: any) => Promise<void>;
   setUser: (user: User, token: string) => void;
   clearAuth: () => void;
-  logout: () => void;
+  logout: () => Promise<void>;
   initialize: () => Promise<void>;
 }
 
@@ -81,8 +81,17 @@ export const useUserStore = create<AuthState>((set, get) => ({
     set({ user: null, token: null, isAuthenticated: false, error: null });
   },
 
-  logout: () => {
-    get().clearAuth();
+  logout: async () => {
+    if (get().isLoading) return;
+    try {
+      set({ isLoading: true });
+      await apiClient.post('/api/auth/logout');
+    } catch (err: any) {
+      console.error('Logout API failed, continuing with local cleanup:', err);
+    } finally {
+      get().clearAuth();
+      set({ isLoading: false });
+    }
   },
 
   initialize: async () => {
