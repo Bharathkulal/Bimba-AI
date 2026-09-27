@@ -10,9 +10,10 @@ class JobMatchEngine:
     MATCH_CONFIG = {
         "required_skills": 40,
         "preferred_skills": 15,
-        "experience": 20,
-        "education": 15,
-        "certifications": 10
+        "experience": 15,
+        "education": 10,
+        "certifications": 10,
+        "location": 10
     }
 
     @staticmethod
@@ -71,7 +72,9 @@ class JobMatchEngine:
             preferred_skill_match=0,
             experience_match=0,
             education_match=0,
-            certification_match=0
+            certification_match=0,
+            location_match=100,
+            location_status="unknown"
         )
         
         resume_skills_raw = JobMatchEngine._extract_resume_skills(resume_data)
@@ -150,6 +153,29 @@ class JobMatchEngine:
         # 4. Certifications
         result.certification_match = 100 # Defaults to 100 if no requirement
         
+        # 4.5 Location Matching
+        result.location_match = 100
+        result.location_status = "unknown"
+        job_loc = str(job_reqs.location).lower()
+        if job_loc:
+            # naive check
+            candidate_loc = str(resume_data.get("personal_info", {}).get("location", "")).lower()
+            candidate_address = str(resume_data.get("personal_info", {}).get("address", "")).lower()
+            if "remote" in job_loc:
+                result.location_match = 100
+                result.location_status = "matched"
+            elif candidate_loc and candidate_loc in job_loc or job_loc in candidate_loc:
+                result.location_match = 100
+                result.location_status = "matched"
+            elif candidate_address and candidate_address in job_loc or job_loc in candidate_address:
+                result.location_match = 100
+                result.location_status = "matched"
+            elif candidate_loc or candidate_address:
+                # User has a location, job has a location, but no match found
+                result.location_match = 0
+                result.location_status = "mismatched"
+                result.warnings.append("Location mismatch: Job is in " + job_reqs.location)
+
         # 5. Overall Score Calculation
         overall = 0.0
         overall += (result.required_skill_match * JobMatchEngine.MATCH_CONFIG["required_skills"]) / 100.0
@@ -157,6 +183,7 @@ class JobMatchEngine:
         overall += (result.experience_match * JobMatchEngine.MATCH_CONFIG["experience"]) / 100.0
         overall += (result.education_match * JobMatchEngine.MATCH_CONFIG["education"]) / 100.0
         overall += (result.certification_match * JobMatchEngine.MATCH_CONFIG["certifications"]) / 100.0
+        overall += (result.location_match * JobMatchEngine.MATCH_CONFIG["location"]) / 100.0
         
         result.overall_match_score = max(0, min(100, int(round(overall))))
         

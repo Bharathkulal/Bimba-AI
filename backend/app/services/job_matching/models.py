@@ -40,6 +40,8 @@ class JobMatchResult(BaseModel):
     experience_match: int
     education_match: int
     certification_match: int
+    location_match: int = 100
+    location_status: str = "unknown"
     responsibility_match: int = 0
     matched_skills: List[MatchedSkill] = Field(default_factory=list)
     missing_required_skills: List[str] = Field(default_factory=list)

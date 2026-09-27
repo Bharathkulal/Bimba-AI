@@ -186,5 +186,13 @@ export const jobsService = {
   async recordFollowUp(id: number, method: string, notes?: string): Promise<any> {
     const response = await apiClient.post(`/api/jobs/applications/${id}/follow-up`, { method, notes });
     return response.data;
+  },
+
+  async getJobMatch(jobId: string, resumeId: number, jobDescription: string): Promise<any> {
+    const response = await apiClient.post(`/api/jobs/match/${resumeId}`, {
+      job_id: jobId,
+      job_description: jobDescription
+    });
+    return response.data;
   }
 };

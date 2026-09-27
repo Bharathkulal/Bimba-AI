@@ -3,10 +3,11 @@ import { useParams, useNavigate, Link } from 'react-router-dom';
 import { 
   ArrowLeft, Building, MapPin, Briefcase, Sparkles, Bookmark, 
   Share2, ExternalLink, Calendar, DollarSign, Award, Heart, 
-  AlertCircle, Check, X, FileText, Send
+  AlertCircle, Check, X, FileText, Send, Activity
 } from 'lucide-react';
 import { jobsService } from '../../services/jobs';
 import type { JobDetailResponse, JobApplication } from '../../services/jobs';
+import { useResumeStore } from '../../store/resumeStore';
 
 export const JobDetails: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -21,6 +22,11 @@ export const JobDetails: React.FC = () => {
   const [isEditingNotes, setIsEditingNotes] = useState(false);
   const [updatingStatus, setUpdatingStatus] = useState(false);
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
+  
+  // Job Match State
+  const { currentResume } = useResumeStore();
+  const [matchResult, setMatchResult] = useState<any>(null);
+  const [isMatching, setIsMatching] = useState(false);
 
   // Fetch all job and application details
   useEffect(() => {
@@ -141,6 +147,23 @@ export const JobDetails: React.FC = () => {
     }
   };
 
+  const handleCalculateMatch = async () => {
+    if (!job || !currentResume?.resume_id) {
+      showToast('Please create or select a resume first.', 'error');
+      return;
+    }
+    try {
+      setIsMatching(true);
+      const res = await jobsService.getJobMatch(job.id, currentResume.resume_id, job.description);
+      setMatchResult(res.result);
+      showToast('Job match calculated!', 'success');
+    } catch (err) {
+      showToast('Failed to calculate job match.', 'error');
+    } finally {
+      setIsMatching(false);
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex flex-col gap-6 w-full max-w-7xl mx-auto px-4 animate-pulse">
@@ -166,12 +189,12 @@ export const JobDetails: React.FC = () => {
     );
   }
 
-  const score = job.ai_match_score || 70;
+  const score = matchResult ? matchResult.overall_match_score : (job.ai_match_score || 0);
   let scoreColor = 'from-blue-650 to-sky-500';
   let scoreBg = 'bg-blue-50 text-blue-700 border-blue-200';
   if (score >= 90) {
-    scoreColor = '-[#111111] to-teal-500';
-    scoreBg = 'bg-[#F8F8F8] -[#111111] border-[#E5E7EB]';
+    scoreColor = 'from-[#111111] to-teal-500';
+    scoreBg = 'bg-[#F8F8F8] text-[#111111] border-[#E5E7EB]';
   } else if (score >= 80) {
     scoreColor = 'from-teal-500 to-cyan-550';
     scoreBg = 'bg-teal-50 text-teal-850 border-teal-200';
@@ -353,70 +376,79 @@ export const JobDetails: React.FC = () => {
         {/* Sidebar Status Tracker & Match Score Panel */}
         <div className="flex flex-col gap-6">
           {/* AI Match Score Circular Panel */}
-          <div className="bg-white border border-slate-200/60 rounded-[22px] p-6 shadow-sm text-center flex flex-col items-center">
-            <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-wider self-start">AI Match Intelligence</h4>
+          <div className="bg-white border border-slate-200/60 rounded-[22px] p-6 shadow-sm text-center flex flex-col items-center relative overflow-hidden">
+            <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-wider self-start z-10">Job Match Intelligence</h4>
             
-            <div className="relative w-28 h-28 mt-6 flex items-center justify-center">
-              {/* Outer Glow Ring */}
-              <div className={`absolute inset-0 rounded-full bg-gradient-to-tr ${scoreColor} opacity-10 blur-xl`} />
-              
-              {/* Progress SVG */}
-              <svg className="w-full h-full transform -rotate-90">
-                <circle 
-                  cx="56" 
-                  cy="56" 
-                  r="48" 
-                  stroke="#E2E8F0" 
-                  strokeWidth="8" 
-                  fill="transparent" 
-                />
-                <circle 
-                  cx="56" 
-                  cy="56" 
-                  r="48" 
-                  className={`stroke-blue-650`}
-                  strokeWidth="8" 
-                  strokeDasharray={2 * Math.PI * 48}
-                  strokeDashoffset={2 * Math.PI * 48 * (1 - score / 100)}
-                  strokeLinecap="round"
-                  fill="transparent" 
-                />
-              </svg>
-              
-              {/* Inner score label */}
-              <div className="absolute flex flex-col items-center">
-                <span className="text-2xl font-black text-slate-800 leading-none">{score}%</span>
-                <span className="text-[7.5px] font-black text-slate-400 uppercase tracking-widest mt-1">Match Score</span>
-              </div>
-            </div>
+            {matchResult ? (
+              <>
+                <div className="relative w-28 h-28 mt-6 flex items-center justify-center z-10">
+                  <div className={`absolute inset-0 rounded-full bg-gradient-to-tr ${scoreColor} opacity-10 blur-xl`} />
+                  <svg className="w-full h-full transform -rotate-90">
+                    <circle cx="56" cy="56" r="48" stroke="#E2E8F0" strokeWidth="8" fill="transparent" />
+                    <circle cx="56" cy="56" r="48" className="stroke-blue-650" strokeWidth="8" strokeDasharray={2 * Math.PI * 48} strokeDashoffset={2 * Math.PI * 48 * (1 - score / 100)} strokeLinecap="round" fill="transparent" />
+                  </svg>
+                  <div className="absolute flex flex-col items-center">
+                    <span className="text-2xl font-black text-slate-800 leading-none">{score}%</span>
+                    <span className="text-[7.5px] font-black text-slate-400 uppercase tracking-widest mt-1">Match Score</span>
+                  </div>
+                </div>
 
-            <div className="w-full border-t border-slate-100 pt-5 mt-6 text-left">
-              <h5 className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Matched Skills</h5>
-              <div className="flex flex-wrap gap-1.5 mt-2">
-                {job.skills_matched && job.skills_matched.length > 0 ? (
-                  job.skills_matched.map((s, i) => (
-                    <span key={i} className="text-[9.5px] font-bold bg-[#F8F8F8] -[#111111] border border-[#E5E7EB] px-2.5 py-0.5 rounded-lg">
-                      {s}
-                    </span>
-                  ))
-                ) : (
-                  <span className="text-[10px] text-slate-400 font-semibold">No skills matched yet</span>
-                )}
-              </div>
+                <div className="w-full border-t border-slate-100 pt-5 mt-6 text-left z-10">
+                  <h5 className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Matched Skills</h5>
+                  <div className="flex flex-wrap gap-1.5 mt-2">
+                    {matchResult.matched_skills && matchResult.matched_skills.length > 0 ? (
+                      matchResult.matched_skills.map((s: any, i: number) => (
+                        <span key={i} className="text-[9.5px] font-bold bg-[#F8F8F8] text-[#111111] border border-[#E5E7EB] px-2.5 py-0.5 rounded-lg">
+                          {s.skill}
+                        </span>
+                      ))
+                    ) : (
+                      <span className="text-[10px] text-slate-400 font-semibold">No skills matched yet</span>
+                    )}
+                  </div>
 
-              <h5 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-4">Missing Skills</h5>
-              <div className="flex flex-wrap gap-1.5 mt-2">
-                {job.skills_missing && job.skills_missing.length > 0 ? (
-                  job.skills_missing.map((s, i) => (
-                    <span key={i} className="text-[9.5px] font-bold bg-slate-50 text-slate-500 border border-slate-205 px-2.5 py-0.5 rounded-lg">
-                      {s}
-                    </span>
-                  ))
-                ) : (
-                  <span className="text-[10px] text-slate-400 font-semibold">None (Perfect match!)</span>
-                )}
+                  <h5 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-4">Missing Skills</h5>
+                  <div className="flex flex-wrap gap-1.5 mt-2">
+                    {matchResult.missing_required_skills && matchResult.missing_required_skills.length > 0 ? (
+                      matchResult.missing_required_skills.map((s: string, i: number) => (
+                        <span key={i} className="text-[9.5px] font-bold bg-slate-50 text-slate-500 border border-slate-205 px-2.5 py-0.5 rounded-lg">
+                          {s}
+                        </span>
+                      ))
+                    ) : (
+                      <span className="text-[10px] text-slate-400 font-semibold">None (Perfect match!)</span>
+                    )}
+                  </div>
+
+                  {matchResult.recommendations && matchResult.recommendations.length > 0 && (
+                    <>
+                      <h5 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-4">Why this matches</h5>
+                      <div className="flex flex-col gap-1.5 mt-2 text-[10px] text-slate-600 font-medium">
+                        {matchResult.recommendations.map((r: string, i: number) => (
+                          <div key={i} className="flex items-start gap-1">
+                            <Sparkles size={10} className="text-blue-500 shrink-0 mt-0.5" />
+                            <span>{r}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </>
+                  )}
+                </div>
+              </>
+            ) : (
+              <div className="mt-8 mb-4 flex flex-col items-center justify-center z-10 w-full">
+                <Activity size={32} className="text-slate-300 mb-3" />
+                <p className="text-xs text-slate-500 mb-4 px-4">Calculate a real-time match against your current resume.</p>
+                <button 
+                  onClick={handleCalculateMatch}
+                  disabled={isMatching || !currentResume}
+                  className="px-5 py-2.5 bg-[#111111] hover:bg-black text-white font-extrabold text-[11px] rounded-xl shadow-md transition-all duration-200 disabled:opacity-50 flex items-center justify-center w-full max-w-[200px]"
+                >
+                  {isMatching ? 'Calculating...' : 'Calculate Match'}
+                </button>
+                {!currentResume && <p className="text-[9px] text-red-500 mt-2">Please create/select a resume first.</p>}
               </div>
-            </div>
+            )}
           </div>
 
           {/* APPLICATION STATUS TRACKER */}
