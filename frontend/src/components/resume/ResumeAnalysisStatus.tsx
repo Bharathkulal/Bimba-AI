@@ -33,12 +33,11 @@ export const ResumeAnalysisStatus: React.FC<ResumeAnalysisStatusProps> = ({
       
       if (resData.success) {
         // Fetch completed detailed data from the MongoDB returned schema
-        // We'll mock the counts based on the payload or parse them cleanly
         setExtractedData({
-          name: resData.data.name || 'Candidate',
+          name: resData.data.name || resData.data.personal_info?.name || 'Candidate',
           skills: resData.data.skills || [],
-          experienceCount: 2, // Mock baseline from matching service
-          educationCount: 1
+          experienceCount: resData.data.experience?.length || resData.data.work_experience?.length || 0,
+          educationCount: resData.data.education?.length || 0
         });
         setStatus('success');
         
