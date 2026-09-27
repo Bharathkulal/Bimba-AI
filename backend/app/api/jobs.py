@@ -819,6 +819,50 @@ def sync_jobs(student: Student = Depends(get_current_student), db: Any = Depends
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to sync jobs: {str(e)}")
 
+@router.get("/career/intelligence/{resume_id}")
+def get_career_intelligence(
+    resume_id: int,
+    student: Student = Depends(get_current_student),
+    db: Any = Depends(get_db)
+):
+    """
+    GET /api/v1/jobs/career/intelligence/{resume_id}
+    Returns skill gaps and career recommendations based on real job data.
+    """
+    from app.services.skill_gap.skill_gap_engine import SkillGapEngine
+    
+    # 1. Fetch Resume Analysis (extracted_data)
+    analysis_record = db.resume_analysis.find_one({
+        "resume_id": resume_id,
+        "student_id": student.id
+    })
+    
+    if not analysis_record or not analysis_record.get("extracted_data"):
+        raise HTTPException(
+            status_code=404,
+            detail="Parsed resume data not found. Please extract the resume first."
+        )
+        
+    extracted_data = analysis_record["extracted_data"]
+    
+    # 2. Fetch recent real job data from the cache
+    jobs_cursor = db.recommended_jobs.find({"title": {"$exists": True}}).sort("created_at", -1).limit(30)
+    jobs_data = list(jobs_cursor)
+    
+    if not jobs_data:
+        # attempt to fetch some jobs if cache is empty
+        try:
+            linkedin_service.search_jobs(student=student, keyword="Developer", location="Remote", limit=15)
+            jobs_cursor = db.recommended_jobs.find({"title": {"$exists": True}}).sort("created_at", -1).limit(30)
+            jobs_data = list(jobs_cursor)
+        except Exception:
+            pass
+            
+    # 3. Analyze Skill Gap and Career Recommendations
+    response_model = SkillGapEngine.analyze(extracted_data, jobs_data, str(resume_id))
+    
+    return response_model.model_dump() if hasattr(response_model, "model_dump") else response_model.dict()
+
 
 companies_router = APIRouter(prefix="/companies", tags=["Companies Module"])
 

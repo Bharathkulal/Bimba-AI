@@ -194,5 +194,10 @@ export const jobsService = {
       job_description: jobDescription
     });
     return response.data;
+  },
+
+  async getCareerIntelligence(resumeId: number): Promise<any> {
+    const response = await apiClient.get(`/api/jobs/career/intelligence/${resumeId}`);
+    return response.data;
   }
 };

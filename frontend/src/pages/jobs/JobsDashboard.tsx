@@ -11,13 +11,14 @@ import { jobsService } from '../../services/jobs';
 import type { JobListItem, JobDetailResponse, JobApplication } from '../../services/jobs';
 import { useUserStore } from '../../store/userStore';
 import { apiClient } from '../../services/api';
+import { SkillGapDashboard } from '../../components/jobs/SkillGapDashboard';
 
 export const JobsDashboard: React.FC = () => {
   const navigate = useNavigate();
   const user = useUserStore((state) => state.user);
 
-  // Active Tab: 'explore' | 'saved' | 'applications' | 'recommended'
-  const [activeTab, setActiveTab] = useState<'explore' | 'saved' | 'applications' | 'recommended'>('explore');
+  // Active Tab: 'explore' | 'saved' | 'applications' | 'recommended' | 'intelligence'
+  const [activeTab, setActiveTab] = useState<'explore' | 'saved' | 'applications' | 'recommended' | 'intelligence'>('explore');
 
   // Search & Filter State
   const [keyword, setKeyword] = useState('');
@@ -291,6 +292,16 @@ export const JobsDashboard: React.FC = () => {
           >
             Applications
           </button>
+          <button 
+            onClick={() => { setActiveTab('intelligence'); setSelectedJob(null); }}
+            className={`px-4 py-2 rounded-lg text-xs font-bold cursor-pointer transition-all flex items-center gap-1.5 ${
+              activeTab === 'intelligence' 
+                ? 'bg-white text-[#111111] shadow-sm' 
+                : 'text-slate-500 hover:text-slate-800'
+            }`}
+          >
+            <Sparkles size={12} className="text-[#111111]" /> Career Intelligence
+          </button>
         </div>
       </section>
 
@@ -347,9 +358,13 @@ export const JobsDashboard: React.FC = () => {
         </Card>
       )}
 
-      {/* DUAL PANE LAYOUT */}
+      {/* DUAL PANE LAYOUT OR SINGLE PANE LAYOUT */}
+      {activeTab === 'intelligence' ? (
+        <div className="w-full">
+          <SkillGapDashboard />
+        </div>
+      ) : (
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch">
-        
         {/* Left Pane: Job List */}
         <div className="lg:col-span-5 flex flex-col gap-4 max-h-[650px] overflow-y-auto pr-1">
           {loading ? (
@@ -582,8 +597,8 @@ export const JobsDashboard: React.FC = () => {
             </div>
           )}
         </div>
-
       </div>
+      )}
 
       {/* Application submission Modal */}
       {isApplyModalOpen && selectedJob && (
