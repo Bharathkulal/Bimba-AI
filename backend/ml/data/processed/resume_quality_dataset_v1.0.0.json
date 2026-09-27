@@ -1,0 +1,2662 @@
+[
+  {
+    "record_id": "rec_70_1.0.0",
+    "resume_id": 70,
+    "features": {
+      "num_skills": 0,
+      "num_experience": 0,
+      "num_education": 0,
+      "num_projects": 0,
+      "num_certifications": 0,
+      "has_summary": 0,
+      "total_experience_text_length": 0,
+      "total_project_text_length": 0
+    },
+    "label": 0,
+    "source": "Bimba_AI_Database",
+    "dataset_version": "1.0.0",
+    "created_at": "2026-09-27T05:07:21.710050+00:00",
+    "split": "train"
+  },
+  {
+    "record_id": "rec_16_1.0.0",
+    "resume_id": 16,
+    "features": {
+      "num_skills": 0,
+      "num_experience": 0,
+      "num_education": 0,
+      "num_projects": 0,
+      "num_certifications": 0,
+      "has_summary": 0,
+      "total_experience_text_length": 0,
+      "total_project_text_length": 0
+    },
+    "label": 0,
+    "source": "Bimba_AI_Database",
+    "dataset_version": "1.0.0",
+    "created_at": "2026-09-27T05:07:21.708315+00:00",
+    "split": "train"
+  },
+  {
+    "record_id": "rec_17_1.0.0",
+    "resume_id": 17,
+    "features": {
+      "num_skills": 0,
+      "num_experience": 0,
+      "num_education": 0,
+      "num_projects": 0,
+      "num_certifications": 0,
+      "has_summary": 0,
+      "total_experience_text_length": 0,
+      "total_project_text_length": 0
+    },
+    "label": 0,
+    "source": "Bimba_AI_Database",
+    "dataset_version": "1.0.0",
+    "created_at": "2026-09-27T05:07:21.708326+00:00",
+    "split": "train"
+  },
+  {
+    "record_id": "rec_18_1.0.0",
+    "resume_id": 18,
+    "features": {
+      "num_skills": 0,
+      "num_experience": 0,
+      "num_education": 0,
+      "num_projects": 0,
+      "num_certifications": 0,
+      "has_summary": 0,
+      "total_experience_text_length": 0,
+      "total_project_text_length": 0
+    },
+    "label": 0,
+    "source": "Bimba_AI_Database",
+    "dataset_version": "1.0.0",
+    "created_at": "2026-09-27T05:07:21.708337+00:00",
+    "split": "train"
+  },
+  {
+    "record_id": "rec_19_1.0.0",
+    "resume_id": 19,
+    "features": {
+      "num_skills": 0,
+      "num_experience": 0,
+      "num_education": 0,
+      "num_projects": 0,
+      "num_certifications": 0,
+      "has_summary": 0,
+      "total_experience_text_length": 0,
+      "total_project_text_length": 0
+    },
+    "label": 0,
+    "source": "Bimba_AI_Database",
+    "dataset_version": "1.0.0",
+    "created_at": "2026-09-27T05:07:21.708347+00:00",
+    "split": "train"
+  },
+  {
+    "record_id": "rec_20_1.0.0",
+    "resume_id": 20,
+    "features": {
+      "num_skills": 0,
+      "num_experience": 0,
+      "num_education": 0,
+      "num_projects": 0,
+      "num_certifications": 0,
+      "has_summary": 0,
+      "total_experience_text_length": 0,
+      "total_project_text_length": 0
+    },
+    "label": 0,
+    "source": "Bimba_AI_Database",
+    "dataset_version": "1.0.0",
+    "created_at": "2026-09-27T05:07:21.708357+00:00",
+    "split": "train"
+  },
+  {
+    "record_id": "rec_21_1.0.0",
+    "resume_id": 21,
+    "features": {
+      "num_skills": 0,
+      "num_experience": 0,
+      "num_education": 0,
+      "num_projects": 0,
+      "num_certifications": 0,
+      "has_summary": 0,
+      "total_experience_text_length": 0,
+      "total_project_text_length": 0
+    },
+    "label": 0,
+    "source": "Bimba_AI_Database",
+    "dataset_version": "1.0.0",
+    "created_at": "2026-09-27T05:07:21.708366+00:00",
+    "split": "train"
+  },
+  {
+    "record_id": "rec_22_1.0.0",
+    "resume_id": 22,
+    "features": {
+      "num_skills": 0,
+      "num_experience": 0,
+      "num_education": 0,
+      "num_projects": 0,
+      "num_certifications": 0,
+      "has_summary": 0,
+      "total_experience_text_length": 0,
+      "total_project_text_length": 0
+    },
+    "label": 0,
+    "source": "Bimba_AI_Database",
+    "dataset_version": "1.0.0",
+    "created_at": "2026-09-27T05:07:21.708376+00:00",
+    "split": "train"
+  },
+  {
+    "record_id": "rec_23_1.0.0",
+    "resume_id": 23,
+    "features": {
+      "num_skills": 0,
+      "num_experience": 0,
+      "num_education": 0,
+      "num_projects": 0,
+      "num_certifications": 0,
+      "has_summary": 0,
+      "total_experience_text_length": 0,
+      "total_project_text_length": 0
+    },
+    "label": 0,
+    "source": "Bimba_AI_Database",
+    "dataset_version": "1.0.0",
+    "created_at": "2026-09-27T05:07:21.708386+00:00",
+    "split": "train"
+  },
+  {
+    "record_id": "rec_26_1.0.0",
+    "resume_id": 26,
+    "features": {
+      "num_skills": 0,
+      "num_experience": 0,
+      "num_education": 1,
+      "num_projects": 0,
+      "num_certifications": 0,
+      "has_summary": 0,
+      "total_experience_text_length": 0,
+      "total_project_text_length": 0
+    },
+    "label": 72,
+    "source": "Bimba_AI_Database",
+    "dataset_version": "1.0.0",
+    "created_at": "2026-09-27T05:07:21.708510+00:00",
+    "split": "train"
+  },
+  {
+    "record_id": "rec_29_1.0.0",
+    "resume_id": 29,
+    "features": {
+      "num_skills": 0,
+      "num_experience": 0,
+      "num_education": 1,
+      "num_projects": 0,
+      "num_certifications": 0,
+      "has_summary": 0,
+      "total_experience_text_length": 0,
+      "total_project_text_length": 0
+    },
+    "label": 72,
+    "source": "Bimba_AI_Database",
+    "dataset_version": "1.0.0",
+    "created_at": "2026-09-27T05:07:21.708541+00:00",
+    "split": "train"
+  },
+  {
+    "record_id": "rec_30_1.0.0",
+    "resume_id": 30,
+    "features": {
+      "num_skills": 0,
+      "num_experience": 0,
+      "num_education": 1,
+      "num_projects": 0,
+      "num_certifications": 0,
+      "has_summary": 0,
+      "total_experience_text_length": 0,
+      "total_project_text_length": 0
+    },
+    "label": 72,
+    "source": "Bimba_AI_Database",
+    "dataset_version": "1.0.0",
+    "created_at": "2026-09-27T05:07:21.708563+00:00",
+    "split": "train"
+  },
+  {
+    "record_id": "rec_61_1.0.0",
+    "resume_id": 61,
+    "features": {
+      "num_skills": 0,
+      "num_experience": 0,
+      "num_education": 0,
+      "num_projects": 0,
+      "num_certifications": 0,
+      "has_summary": 0,
+      "total_experience_text_length": 0,
+      "total_project_text_length": 0
+    },
+    "label": 0,
+    "source": "Bimba_AI_Database",
+    "dataset_version": "1.0.0",
+    "created_at": "2026-09-27T05:07:21.709718+00:00",
+    "split": "train"
+  },
+  {
+    "record_id": "rec_62_1.0.0",
+    "resume_id": 62,
+    "features": {
+      "num_skills": 0,
+      "num_experience": 0,
+      "num_education": 0,
+      "num_projects": 0,
+      "num_certifications": 0,
+      "has_summary": 0,
+      "total_experience_text_length": 0,
+      "total_project_text_length": 0
+    },
+    "label": 0,
+    "source": "Bimba_AI_Database",
+    "dataset_version": "1.0.0",
+    "created_at": "2026-09-27T05:07:21.709726+00:00",
+    "split": "train"
+  },
+  {
+    "record_id": "rec_71_1.0.0",
+    "resume_id": 71,
+    "features": {
+      "num_skills": 0,
+      "num_experience": 0,
+      "num_education": 0,
+      "num_projects": 0,
+      "num_certifications": 0,
+      "has_summary": 0,
+      "total_experience_text_length": 0,
+      "total_project_text_length": 0
+    },
+    "label": 0,
+    "source": "Bimba_AI_Database",
+    "dataset_version": "1.0.0",
+    "created_at": "2026-09-27T05:07:21.710061+00:00",
+    "split": "train"
+  },
+  {
+    "record_id": "rec_73_1.0.0",
+    "resume_id": 73,
+    "features": {
+      "num_skills": 0,
+      "num_experience": 0,
+      "num_education": 0,
+      "num_projects": 0,
+      "num_certifications": 0,
+      "has_summary": 0,
+      "total_experience_text_length": 0,
+      "total_project_text_length": 0
+    },
+    "label": 0,
+    "source": "Bimba_AI_Database",
+    "dataset_version": "1.0.0",
+    "created_at": "2026-09-27T05:07:21.710082+00:00",
+    "split": "train"
+  },
+  {
+    "record_id": "rec_74_1.0.0",
+    "resume_id": 74,
+    "features": {
+      "num_skills": 0,
+      "num_experience": 0,
+      "num_education": 0,
+      "num_projects": 0,
+      "num_certifications": 0,
+      "has_summary": 0,
+      "total_experience_text_length": 0,
+      "total_project_text_length": 0
+    },
+    "label": 0,
+    "source": "Bimba_AI_Database",
+    "dataset_version": "1.0.0",
+    "created_at": "2026-09-27T05:07:21.710094+00:00",
+    "split": "train"
+  },
+  {
+    "record_id": "rec_125_1.0.0",
+    "resume_id": 125,
+    "features": {
+      "num_skills": 0,
+      "num_experience": 0,
+      "num_education": 0,
+      "num_projects": 0,
+      "num_certifications": 0,
+      "has_summary": 0,
+      "total_experience_text_length": 0,
+      "total_project_text_length": 0
+    },
+    "label": 0,
+    "source": "Bimba_AI_Database",
+    "dataset_version": "1.0.0",
+    "created_at": "2026-09-27T05:07:21.711134+00:00",
+    "split": "train"
+  },
+  {
+    "record_id": "rec_126_1.0.0",
+    "resume_id": 126,
+    "features": {
+      "num_skills": 0,
+      "num_experience": 0,
+      "num_education": 0,
+      "num_projects": 0,
+      "num_certifications": 0,
+      "has_summary": 0,
+      "total_experience_text_length": 0,
+      "total_project_text_length": 0
+    },
+    "label": 0,
+    "source": "Bimba_AI_Database",
+    "dataset_version": "1.0.0",
+    "created_at": "2026-09-27T05:07:21.711143+00:00",
+    "split": "train"
+  },
+  {
+    "record_id": "rec_175_1.0.0",
+    "resume_id": 175,
+    "features": {
+      "num_skills": 0,
+      "num_experience": 0,
+      "num_education": 0,
+      "num_projects": 0,
+      "num_certifications": 0,
+      "has_summary": 0,
+      "total_experience_text_length": 0,
+      "total_project_text_length": 0
+    },
+    "label": 0,
+    "source": "Bimba_AI_Database",
+    "dataset_version": "1.0.0",
+    "created_at": "2026-09-27T05:07:21.711383+00:00",
+    "split": "train"
+  },
+  {
+    "record_id": "rec_176_1.0.0",
+    "resume_id": 176,
+    "features": {
+      "num_skills": 0,
+      "num_experience": 0,
+      "num_education": 0,
+      "num_projects": 0,
+      "num_certifications": 0,
+      "has_summary": 0,
+      "total_experience_text_length": 0,
+      "total_project_text_length": 0
+    },
+    "label": 0,
+    "source": "Bimba_AI_Database",
+    "dataset_version": "1.0.0",
+    "created_at": "2026-09-27T05:07:21.711392+00:00",
+    "split": "train"
+  },
+  {
+    "record_id": "rec_249_1.0.0",
+    "resume_id": 249,
+    "features": {
+      "num_skills": 0,
+      "num_experience": 2,
+      "num_education": 5,
+      "num_projects": 3,
+      "num_certifications": 3,
+      "has_summary": 1,
+      "total_experience_text_length": 506,
+      "total_project_text_length": 739
+    },
+    "label": 100.0,
+    "source": "Bimba_AI_Database",
+    "dataset_version": "1.0.0",
+    "created_at": "2026-09-27T05:07:21.714295+00:00",
+    "split": "train"
+  },
+  {
+    "record_id": "rec_250_1.0.0",
+    "resume_id": 250,
+    "features": {
+      "num_skills": 0,
+      "num_experience": 2,
+      "num_education": 5,
+      "num_projects": 3,
+      "num_certifications": 3,
+      "has_summary": 1,
+      "total_experience_text_length": 506,
+      "total_project_text_length": 739
+    },
+    "label": 100.0,
+    "source": "Bimba_AI_Database",
+    "dataset_version": "1.0.0",
+    "created_at": "2026-09-27T05:07:21.715396+00:00",
+    "split": "train"
+  },
+  {
+    "record_id": "rec_251_1.0.0",
+    "resume_id": 251,
+    "features": {
+      "num_skills": 0,
+      "num_experience": 2,
+      "num_education": 5,
+      "num_projects": 3,
+      "num_certifications": 3,
+      "has_summary": 1,
+      "total_experience_text_length": 506,
+      "total_project_text_length": 739
+    },
+    "label": 100.0,
+    "source": "Bimba_AI_Database",
+    "dataset_version": "1.0.0",
+    "created_at": "2026-09-27T05:07:21.715914+00:00",
+    "split": "train"
+  },
+  {
+    "record_id": "rec_257_1.0.0",
+    "resume_id": 257,
+    "features": {
+      "num_skills": 0,
+      "num_experience": 2,
+      "num_education": 5,
+      "num_projects": 3,
+      "num_certifications": 3,
+      "has_summary": 1,
+      "total_experience_text_length": 506,
+      "total_project_text_length": 739
+    },
+    "label": 100.0,
+    "source": "Bimba_AI_Database",
+    "dataset_version": "1.0.0",
+    "created_at": "2026-09-27T05:07:21.716392+00:00",
+    "split": "train"
+  },
+  {
+    "record_id": "rec_263_1.0.0",
+    "resume_id": 263,
+    "features": {
+      "num_skills": 0,
+      "num_experience": 4,
+      "num_education": 5,
+      "num_projects": 3,
+      "num_certifications": 3,
+      "has_summary": 1,
+      "total_experience_text_length": 260,
+      "total_project_text_length": 739
+    },
+    "label": 100.0,
+    "source": "Bimba_AI_Database",
+    "dataset_version": "1.0.0",
+    "created_at": "2026-09-27T05:07:21.716903+00:00",
+    "split": "train"
+  },
+  {
+    "record_id": "rec_264_1.0.0",
+    "resume_id": 264,
+    "features": {
+      "num_skills": 0,
+      "num_experience": 4,
+      "num_education": 5,
+      "num_projects": 3,
+      "num_certifications": 3,
+      "has_summary": 1,
+      "total_experience_text_length": 260,
+      "total_project_text_length": 739
+    },
+    "label": 100.0,
+    "source": "Bimba_AI_Database",
+    "dataset_version": "1.0.0",
+    "created_at": "2026-09-27T05:07:21.717381+00:00",
+    "split": "train"
+  },
+  {
+    "record_id": "rec_267_1.0.0",
+    "resume_id": 267,
+    "features": {
+      "num_skills": 0,
+      "num_experience": 2,
+      "num_education": 1,
+      "num_projects": 0,
+      "num_certifications": 6,
+      "has_summary": 1,
+      "total_experience_text_length": 253,
+      "total_project_text_length": 0
+    },
+    "label": 95.0,
+    "source": "Bimba_AI_Database",
+    "dataset_version": "1.0.0",
+    "created_at": "2026-09-27T05:07:21.717969+00:00",
+    "split": "train"
+  },
+  {
+    "record_id": "rec_269_1.0.0",
+    "resume_id": 269,
+    "features": {
+      "num_skills": 0,
+      "num_experience": 2,
+      "num_education": 1,
+      "num_projects": 0,
+      "num_certifications": 6,
+      "has_summary": 1,
+      "total_experience_text_length": 253,
+      "total_project_text_length": 0
+    },
+    "label": 95.0,
+    "source": "Bimba_AI_Database",
+    "dataset_version": "1.0.0",
+    "created_at": "2026-09-27T05:07:21.718300+00:00",
+    "split": "train"
+  },
+  {
+    "record_id": "rec_295_1.0.0",
+    "resume_id": 295,
+    "features": {
+      "num_skills": 0,
+      "num_experience": 5,
+      "num_education": 5,
+      "num_projects": 3,
+      "num_certifications": 2,
+      "has_summary": 1,
+      "total_experience_text_length": 507,
+      "total_project_text_length": 739
+    },
+    "label": 100.0,
+    "source": "Bimba_AI_Database",
+    "dataset_version": "1.0.0",
+    "created_at": "2026-09-27T05:07:21.719523+00:00",
+    "split": "train"
+  },
+  {
+    "record_id": "rec_323_1.0.0",
+    "resume_id": 323,
+    "features": {
+      "num_skills": 0,
+      "num_experience": 5,
+      "num_education": 5,
+      "num_projects": 3,
+      "num_certifications": 2,
+      "has_summary": 1,
+      "total_experience_text_length": 507,
+      "total_project_text_length": 739
+    },
+    "label": 100.0,
+    "source": "Bimba_AI_Database",
+    "dataset_version": "1.0.0",
+    "created_at": "2026-09-27T05:07:21.720116+00:00",
+    "split": "train"
+  },
+  {
+    "record_id": "rec_324_1.0.0",
+    "resume_id": 324,
+    "features": {
+      "num_skills": 0,
+      "num_experience": 5,
+      "num_education": 6,
+      "num_projects": 3,
+      "num_certifications": 2,
+      "has_summary": 1,
+      "total_experience_text_length": 507,
+      "total_project_text_length": 739
+    },
+    "label": 100.0,
+    "source": "Bimba_AI_Database",
+    "dataset_version": "1.0.0",
+    "created_at": "2026-09-27T05:07:21.720673+00:00",
+    "split": "train"
+  },
+  {
+    "record_id": "rec_325_1.0.0",
+    "resume_id": 325,
+    "features": {
+      "num_skills": 0,
+      "num_experience": 5,
+      "num_education": 6,
+      "num_projects": 3,
+      "num_certifications": 9,
+      "has_summary": 1,
+      "total_experience_text_length": 507,
+      "total_project_text_length": 739
+    },
+    "label": 100.0,
+    "source": "Bimba_AI_Database",
+    "dataset_version": "1.0.0",
+    "created_at": "2026-09-27T05:07:21.721422+00:00",
+    "split": "train"
+  },
+  {
+    "record_id": "rec_326_1.0.0",
+    "resume_id": 326,
+    "features": {
+      "num_skills": 0,
+      "num_experience": 5,
+      "num_education": 6,
+      "num_projects": 3,
+      "num_certifications": 9,
+      "has_summary": 1,
+      "total_experience_text_length": 507,
+      "total_project_text_length": 739
+    },
+    "label": 100.0,
+    "source": "Bimba_AI_Database",
+    "dataset_version": "1.0.0",
+    "created_at": "2026-09-27T05:07:21.722465+00:00",
+    "split": "train"
+  },
+  {
+    "record_id": "rec_327_1.0.0",
+    "resume_id": 327,
+    "features": {
+      "num_skills": 0,
+      "num_experience": 5,
+      "num_education": 6,
+      "num_projects": 3,
+      "num_certifications": 9,
+      "has_summary": 1,
+      "total_experience_text_length": 507,
+      "total_project_text_length": 739
+    },
+    "label": 100.0,
+    "source": "Bimba_AI_Database",
+    "dataset_version": "1.0.0",
+    "created_at": "2026-09-27T05:07:21.723409+00:00",
+    "split": "train"
+  },
+  {
+    "record_id": "rec_328_1.0.0",
+    "resume_id": 328,
+    "features": {
+      "num_skills": 0,
+      "num_experience": 5,
+      "num_education": 6,
+      "num_projects": 3,
+      "num_certifications": 9,
+      "has_summary": 1,
+      "total_experience_text_length": 507,
+      "total_project_text_length": 739
+    },
+    "label": 100.0,
+    "source": "Bimba_AI_Database",
+    "dataset_version": "1.0.0",
+    "created_at": "2026-09-27T05:07:21.724043+00:00",
+    "split": "train"
+  },
+  {
+    "record_id": "rec_335_1.0.0",
+    "resume_id": 335,
+    "features": {
+      "num_skills": 0,
+      "num_experience": 5,
+      "num_education": 6,
+      "num_projects": 3,
+      "num_certifications": 9,
+      "has_summary": 1,
+      "total_experience_text_length": 507,
+      "total_project_text_length": 739
+    },
+    "label": 100.0,
+    "source": "Bimba_AI_Database",
+    "dataset_version": "1.0.0",
+    "created_at": "2026-09-27T05:07:21.724660+00:00",
+    "split": "train"
+  },
+  {
+    "record_id": "rec_342_1.0.0",
+    "resume_id": 342,
+    "features": {
+      "num_skills": 0,
+      "num_experience": 5,
+      "num_education": 6,
+      "num_projects": 3,
+      "num_certifications": 9,
+      "has_summary": 1,
+      "total_experience_text_length": 507,
+      "total_project_text_length": 739
+    },
+    "label": 100.0,
+    "source": "Bimba_AI_Database",
+    "dataset_version": "1.0.0",
+    "created_at": "2026-09-27T05:07:21.725242+00:00",
+    "split": "train"
+  },
+  {
+    "record_id": "rec_349_1.0.0",
+    "resume_id": 349,
+    "features": {
+      "num_skills": 0,
+      "num_experience": 5,
+      "num_education": 6,
+      "num_projects": 3,
+      "num_certifications": 9,
+      "has_summary": 1,
+      "total_experience_text_length": 507,
+      "total_project_text_length": 739
+    },
+    "label": 100.0,
+    "source": "Bimba_AI_Database",
+    "dataset_version": "1.0.0",
+    "created_at": "2026-09-27T05:07:21.725815+00:00",
+    "split": "train"
+  },
+  {
+    "record_id": "rec_356_1.0.0",
+    "resume_id": 356,
+    "features": {
+      "num_skills": 0,
+      "num_experience": 5,
+      "num_education": 6,
+      "num_projects": 3,
+      "num_certifications": 9,
+      "has_summary": 1,
+      "total_experience_text_length": 507,
+      "total_project_text_length": 739
+    },
+    "label": 100.0,
+    "source": "Bimba_AI_Database",
+    "dataset_version": "1.0.0",
+    "created_at": "2026-09-27T05:07:21.726395+00:00",
+    "split": "train"
+  },
+  {
+    "record_id": "rec_33_1.0.0",
+    "resume_id": 33,
+    "features": {
+      "num_skills": 0,
+      "num_experience": 0,
+      "num_education": 1,
+      "num_projects": 0,
+      "num_certifications": 0,
+      "has_summary": 0,
+      "total_experience_text_length": 0,
+      "total_project_text_length": 0
+    },
+    "label": 72,
+    "source": "Bimba_AI_Database",
+    "dataset_version": "1.0.0",
+    "created_at": "2026-09-27T05:07:21.708617+00:00",
+    "split": "train"
+  },
+  {
+    "record_id": "rec_35_1.0.0",
+    "resume_id": 35,
+    "features": {
+      "num_skills": 0,
+      "num_experience": 0,
+      "num_education": 1,
+      "num_projects": 0,
+      "num_certifications": 0,
+      "has_summary": 0,
+      "total_experience_text_length": 0,
+      "total_project_text_length": 0
+    },
+    "label": 72,
+    "source": "Bimba_AI_Database",
+    "dataset_version": "1.0.0",
+    "created_at": "2026-09-27T05:07:21.708759+00:00",
+    "split": "train"
+  },
+  {
+    "record_id": "rec_50_1.0.0",
+    "resume_id": 50,
+    "features": {
+      "num_skills": 0,
+      "num_experience": 0,
+      "num_education": 0,
+      "num_projects": 0,
+      "num_certifications": 0,
+      "has_summary": 0,
+      "total_experience_text_length": 0,
+      "total_project_text_length": 0
+    },
+    "label": 0,
+    "source": "Bimba_AI_Database",
+    "dataset_version": "1.0.0",
+    "created_at": "2026-09-27T05:07:21.709430+00:00",
+    "split": "train"
+  },
+  {
+    "record_id": "rec_51_1.0.0",
+    "resume_id": 51,
+    "features": {
+      "num_skills": 12,
+      "num_experience": 3,
+      "num_education": 4,
+      "num_projects": 6,
+      "num_certifications": 6,
+      "has_summary": 1,
+      "total_experience_text_length": 594,
+      "total_project_text_length": 1548
+    },
+    "label": 96,
+    "source": "Bimba_AI_Database",
+    "dataset_version": "1.0.0",
+    "created_at": "2026-09-27T05:07:21.709538+00:00",
+    "split": "train"
+  },
+  {
+    "record_id": "rec_58_1.0.0",
+    "resume_id": 58,
+    "features": {
+      "num_skills": 0,
+      "num_experience": 0,
+      "num_education": 0,
+      "num_projects": 0,
+      "num_certifications": 0,
+      "has_summary": 0,
+      "total_experience_text_length": 0,
+      "total_project_text_length": 0
+    },
+    "label": 0,
+    "source": "Bimba_AI_Database",
+    "dataset_version": "1.0.0",
+    "created_at": "2026-09-27T05:07:21.709688+00:00",
+    "split": "train"
+  },
+  {
+    "record_id": "rec_59_1.0.0",
+    "resume_id": 59,
+    "features": {
+      "num_skills": 0,
+      "num_experience": 0,
+      "num_education": 0,
+      "num_projects": 0,
+      "num_certifications": 0,
+      "has_summary": 0,
+      "total_experience_text_length": 0,
+      "total_project_text_length": 0
+    },
+    "label": 0,
+    "source": "Bimba_AI_Database",
+    "dataset_version": "1.0.0",
+    "created_at": "2026-09-27T05:07:21.709699+00:00",
+    "split": "train"
+  },
+  {
+    "record_id": "rec_60_1.0.0",
+    "resume_id": 60,
+    "features": {
+      "num_skills": 0,
+      "num_experience": 0,
+      "num_education": 0,
+      "num_projects": 0,
+      "num_certifications": 0,
+      "has_summary": 0,
+      "total_experience_text_length": 0,
+      "total_project_text_length": 0
+    },
+    "label": 0,
+    "source": "Bimba_AI_Database",
+    "dataset_version": "1.0.0",
+    "created_at": "2026-09-27T05:07:21.709710+00:00",
+    "split": "train"
+  },
+  {
+    "record_id": "rec_64_1.0.0",
+    "resume_id": 64,
+    "features": {
+      "num_skills": 0,
+      "num_experience": 0,
+      "num_education": 0,
+      "num_projects": 0,
+      "num_certifications": 0,
+      "has_summary": 0,
+      "total_experience_text_length": 0,
+      "total_project_text_length": 0
+    },
+    "label": 0,
+    "source": "Bimba_AI_Database",
+    "dataset_version": "1.0.0",
+    "created_at": "2026-09-27T05:07:21.709737+00:00",
+    "split": "train"
+  },
+  {
+    "record_id": "rec_65_1.0.0",
+    "resume_id": 65,
+    "features": {
+      "num_skills": 0,
+      "num_experience": 0,
+      "num_education": 0,
+      "num_projects": 0,
+      "num_certifications": 0,
+      "has_summary": 0,
+      "total_experience_text_length": 0,
+      "total_project_text_length": 0
+    },
+    "label": 0,
+    "source": "Bimba_AI_Database",
+    "dataset_version": "1.0.0",
+    "created_at": "2026-09-27T05:07:21.709748+00:00",
+    "split": "train"
+  },
+  {
+    "record_id": "rec_72_1.0.0",
+    "resume_id": 72,
+    "features": {
+      "num_skills": 0,
+      "num_experience": 0,
+      "num_education": 0,
+      "num_projects": 0,
+      "num_certifications": 0,
+      "has_summary": 0,
+      "total_experience_text_length": 0,
+      "total_project_text_length": 0
+    },
+    "label": 0,
+    "source": "Bimba_AI_Database",
+    "dataset_version": "1.0.0",
+    "created_at": "2026-09-27T05:07:21.710071+00:00",
+    "split": "train"
+  },
+  {
+    "record_id": "rec_75_1.0.0",
+    "resume_id": 75,
+    "features": {
+      "num_skills": 12,
+      "num_experience": 3,
+      "num_education": 4,
+      "num_projects": 6,
+      "num_certifications": 6,
+      "has_summary": 1,
+      "total_experience_text_length": 544,
+      "total_project_text_length": 1538
+    },
+    "label": 96,
+    "source": "Bimba_AI_Database",
+    "dataset_version": "1.0.0",
+    "created_at": "2026-09-27T05:07:21.710239+00:00",
+    "split": "train"
+  },
+  {
+    "record_id": "rec_93_1.0.0",
+    "resume_id": 93,
+    "features": {
+      "num_skills": 0,
+      "num_experience": 0,
+      "num_education": 0,
+      "num_projects": 0,
+      "num_certifications": 0,
+      "has_summary": 0,
+      "total_experience_text_length": 0,
+      "total_project_text_length": 0
+    },
+    "label": 72,
+    "source": "Bimba_AI_Database",
+    "dataset_version": "1.0.0",
+    "created_at": "2026-09-27T05:07:21.710624+00:00",
+    "split": "train"
+  },
+  {
+    "record_id": "rec_99_1.0.0",
+    "resume_id": 99,
+    "features": {
+      "num_skills": 0,
+      "num_experience": 0,
+      "num_education": 0,
+      "num_projects": 0,
+      "num_certifications": 0,
+      "has_summary": 0,
+      "total_experience_text_length": 0,
+      "total_project_text_length": 0
+    },
+    "label": 0,
+    "source": "Bimba_AI_Database",
+    "dataset_version": "1.0.0",
+    "created_at": "2026-09-27T05:07:21.710882+00:00",
+    "split": "train"
+  },
+  {
+    "record_id": "rec_100_1.0.0",
+    "resume_id": 100,
+    "features": {
+      "num_skills": 0,
+      "num_experience": 0,
+      "num_education": 0,
+      "num_projects": 0,
+      "num_certifications": 0,
+      "has_summary": 0,
+      "total_experience_text_length": 0,
+      "total_project_text_length": 0
+    },
+    "label": 0,
+    "source": "Bimba_AI_Database",
+    "dataset_version": "1.0.0",
+    "created_at": "2026-09-27T05:07:21.710891+00:00",
+    "split": "train"
+  },
+  {
+    "record_id": "rec_187_1.0.0",
+    "resume_id": 187,
+    "features": {
+      "num_skills": 0,
+      "num_experience": 0,
+      "num_education": 0,
+      "num_projects": 0,
+      "num_certifications": 0,
+      "has_summary": 0,
+      "total_experience_text_length": 0,
+      "total_project_text_length": 0
+    },
+    "label": 0,
+    "source": "Bimba_AI_Database",
+    "dataset_version": "1.0.0",
+    "created_at": "2026-09-27T05:07:21.711601+00:00",
+    "split": "train"
+  },
+  {
+    "record_id": "rec_266_1.0.0",
+    "resume_id": 266,
+    "features": {
+      "num_skills": 0,
+      "num_experience": 2,
+      "num_education": 1,
+      "num_projects": 0,
+      "num_certifications": 6,
+      "has_summary": 1,
+      "total_experience_text_length": 253,
+      "total_project_text_length": 0
+    },
+    "label": 95.0,
+    "source": "Bimba_AI_Database",
+    "dataset_version": "1.0.0",
+    "created_at": "2026-09-27T05:07:21.717764+00:00",
+    "split": "train"
+  },
+  {
+    "record_id": "rec_288_1.0.0",
+    "resume_id": 288,
+    "features": {
+      "num_skills": 0,
+      "num_experience": 2,
+      "num_education": 1,
+      "num_projects": 0,
+      "num_certifications": 5,
+      "has_summary": 1,
+      "total_experience_text_length": 0,
+      "total_project_text_length": 0
+    },
+    "label": 90.0,
+    "source": "Bimba_AI_Database",
+    "dataset_version": "1.0.0",
+    "created_at": "2026-09-27T05:07:21.718904+00:00",
+    "split": "train"
+  },
+  {
+    "record_id": "rec_127_1.0.0",
+    "resume_id": 127,
+    "features": {
+      "num_skills": 0,
+      "num_experience": 0,
+      "num_education": 0,
+      "num_projects": 0,
+      "num_certifications": 0,
+      "has_summary": 0,
+      "total_experience_text_length": 0,
+      "total_project_text_length": 0
+    },
+    "label": 0,
+    "source": "Bimba_AI_Database",
+    "dataset_version": "1.0.0",
+    "created_at": "2026-09-27T05:07:21.711155+00:00",
+    "split": "validation"
+  },
+  {
+    "record_id": "rec_128_1.0.0",
+    "resume_id": 128,
+    "features": {
+      "num_skills": 0,
+      "num_experience": 0,
+      "num_education": 0,
+      "num_projects": 0,
+      "num_certifications": 0,
+      "has_summary": 0,
+      "total_experience_text_length": 0,
+      "total_project_text_length": 0
+    },
+    "label": 0,
+    "source": "Bimba_AI_Database",
+    "dataset_version": "1.0.0",
+    "created_at": "2026-09-27T05:07:21.711168+00:00",
+    "split": "validation"
+  },
+  {
+    "record_id": "rec_129_1.0.0",
+    "resume_id": 129,
+    "features": {
+      "num_skills": 0,
+      "num_experience": 0,
+      "num_education": 0,
+      "num_projects": 0,
+      "num_certifications": 0,
+      "has_summary": 0,
+      "total_experience_text_length": 0,
+      "total_project_text_length": 0
+    },
+    "label": 0,
+    "source": "Bimba_AI_Database",
+    "dataset_version": "1.0.0",
+    "created_at": "2026-09-27T05:07:21.711179+00:00",
+    "split": "validation"
+  },
+  {
+    "record_id": "rec_140_1.0.0",
+    "resume_id": 140,
+    "features": {
+      "num_skills": 0,
+      "num_experience": 0,
+      "num_education": 0,
+      "num_projects": 0,
+      "num_certifications": 0,
+      "has_summary": 0,
+      "total_experience_text_length": 0,
+      "total_project_text_length": 0
+    },
+    "label": 0,
+    "source": "Bimba_AI_Database",
+    "dataset_version": "1.0.0",
+    "created_at": "2026-09-27T05:07:21.711191+00:00",
+    "split": "validation"
+  },
+  {
+    "record_id": "rec_152_1.0.0",
+    "resume_id": 152,
+    "features": {
+      "num_skills": 0,
+      "num_experience": 0,
+      "num_education": 0,
+      "num_projects": 0,
+      "num_certifications": 0,
+      "has_summary": 0,
+      "total_experience_text_length": 0,
+      "total_project_text_length": 0
+    },
+    "label": 0,
+    "source": "Bimba_AI_Database",
+    "dataset_version": "1.0.0",
+    "created_at": "2026-09-27T05:07:21.711317+00:00",
+    "split": "validation"
+  },
+  {
+    "record_id": "rec_5_1.0.0",
+    "resume_id": 5,
+    "features": {
+      "num_skills": 0,
+      "num_experience": 0,
+      "num_education": 0,
+      "num_projects": 0,
+      "num_certifications": 0,
+      "has_summary": 0,
+      "total_experience_text_length": 0,
+      "total_project_text_length": 0
+    },
+    "label": 20,
+    "source": "Bimba_AI_Database",
+    "dataset_version": "1.0.0",
+    "created_at": "2026-09-27T05:07:21.707289+00:00",
+    "split": "test"
+  },
+  {
+    "record_id": "rec_6_1.0.0",
+    "resume_id": 6,
+    "features": {
+      "num_skills": 0,
+      "num_experience": 3,
+      "num_education": 1,
+      "num_projects": 6,
+      "num_certifications": 6,
+      "has_summary": 1,
+      "total_experience_text_length": 234,
+      "total_project_text_length": 0
+    },
+    "label": 20,
+    "source": "Bimba_AI_Database",
+    "dataset_version": "1.0.0",
+    "created_at": "2026-09-27T05:07:21.707466+00:00",
+    "split": "test"
+  },
+  {
+    "record_id": "rec_7_1.0.0",
+    "resume_id": 7,
+    "features": {
+      "num_skills": 0,
+      "num_experience": 0,
+      "num_education": 0,
+      "num_projects": 0,
+      "num_certifications": 0,
+      "has_summary": 0,
+      "total_experience_text_length": 0,
+      "total_project_text_length": 0
+    },
+    "label": 40,
+    "source": "Bimba_AI_Database",
+    "dataset_version": "1.0.0",
+    "created_at": "2026-09-27T05:07:21.707485+00:00",
+    "split": "test"
+  },
+  {
+    "record_id": "rec_8_1.0.0",
+    "resume_id": 8,
+    "features": {
+      "num_skills": 0,
+      "num_experience": 2,
+      "num_education": 4,
+      "num_projects": 3,
+      "num_certifications": 3,
+      "has_summary": 0,
+      "total_experience_text_length": 172,
+      "total_project_text_length": 377
+    },
+    "label": 20,
+    "source": "Bimba_AI_Database",
+    "dataset_version": "1.0.0",
+    "created_at": "2026-09-27T05:07:21.707593+00:00",
+    "split": "test"
+  },
+  {
+    "record_id": "rec_9_1.0.0",
+    "resume_id": 9,
+    "features": {
+      "num_skills": 0,
+      "num_experience": 2,
+      "num_education": 4,
+      "num_projects": 3,
+      "num_certifications": 3,
+      "has_summary": 0,
+      "total_experience_text_length": 172,
+      "total_project_text_length": 377
+    },
+    "label": 20,
+    "source": "Bimba_AI_Database",
+    "dataset_version": "1.0.0",
+    "created_at": "2026-09-27T05:07:21.707696+00:00",
+    "split": "test"
+  },
+  {
+    "record_id": "rec_10_1.0.0",
+    "resume_id": 10,
+    "features": {
+      "num_skills": 0,
+      "num_experience": 2,
+      "num_education": 4,
+      "num_projects": 3,
+      "num_certifications": 3,
+      "has_summary": 0,
+      "total_experience_text_length": 172,
+      "total_project_text_length": 377
+    },
+    "label": 20,
+    "source": "Bimba_AI_Database",
+    "dataset_version": "1.0.0",
+    "created_at": "2026-09-27T05:07:21.707786+00:00",
+    "split": "test"
+  },
+  {
+    "record_id": "rec_11_1.0.0",
+    "resume_id": 11,
+    "features": {
+      "num_skills": 0,
+      "num_experience": 2,
+      "num_education": 4,
+      "num_projects": 3,
+      "num_certifications": 3,
+      "has_summary": 0,
+      "total_experience_text_length": 172,
+      "total_project_text_length": 377
+    },
+    "label": 20,
+    "source": "Bimba_AI_Database",
+    "dataset_version": "1.0.0",
+    "created_at": "2026-09-27T05:07:21.707900+00:00",
+    "split": "test"
+  },
+  {
+    "record_id": "rec_12_1.0.0",
+    "resume_id": 12,
+    "features": {
+      "num_skills": 0,
+      "num_experience": 2,
+      "num_education": 4,
+      "num_projects": 3,
+      "num_certifications": 3,
+      "has_summary": 0,
+      "total_experience_text_length": 172,
+      "total_project_text_length": 377
+    },
+    "label": 40,
+    "source": "Bimba_AI_Database",
+    "dataset_version": "1.0.0",
+    "created_at": "2026-09-27T05:07:21.707998+00:00",
+    "split": "test"
+  },
+  {
+    "record_id": "rec_13_1.0.0",
+    "resume_id": 13,
+    "features": {
+      "num_skills": 0,
+      "num_experience": 2,
+      "num_education": 4,
+      "num_projects": 3,
+      "num_certifications": 3,
+      "has_summary": 0,
+      "total_experience_text_length": 172,
+      "total_project_text_length": 377
+    },
+    "label": 20,
+    "source": "Bimba_AI_Database",
+    "dataset_version": "1.0.0",
+    "created_at": "2026-09-27T05:07:21.708086+00:00",
+    "split": "test"
+  },
+  {
+    "record_id": "rec_14_1.0.0",
+    "resume_id": 14,
+    "features": {
+      "num_skills": 26,
+      "num_experience": 2,
+      "num_education": 4,
+      "num_projects": 3,
+      "num_certifications": 3,
+      "has_summary": 1,
+      "total_experience_text_length": 313,
+      "total_project_text_length": 347
+    },
+    "label": 96,
+    "source": "Bimba_AI_Database",
+    "dataset_version": "1.0.0",
+    "created_at": "2026-09-27T05:07:21.708214+00:00",
+    "split": "test"
+  },
+  {
+    "record_id": "rec_15_1.0.0",
+    "resume_id": 15,
+    "features": {
+      "num_skills": 0,
+      "num_experience": 2,
+      "num_education": 4,
+      "num_projects": 3,
+      "num_certifications": 3,
+      "has_summary": 0,
+      "total_experience_text_length": 172,
+      "total_project_text_length": 377
+    },
+    "label": 20,
+    "source": "Bimba_AI_Database",
+    "dataset_version": "1.0.0",
+    "created_at": "2026-09-27T05:07:21.708303+00:00",
+    "split": "test"
+  },
+  {
+    "record_id": "rec_24_1.0.0",
+    "resume_id": 24,
+    "features": {
+      "num_skills": 0,
+      "num_experience": 2,
+      "num_education": 4,
+      "num_projects": 3,
+      "num_certifications": 3,
+      "has_summary": 1,
+      "total_experience_text_length": 172,
+      "total_project_text_length": 377
+    },
+    "label": 0,
+    "source": "Bimba_AI_Database",
+    "dataset_version": "1.0.0",
+    "created_at": "2026-09-27T05:07:21.708475+00:00",
+    "split": "test"
+  },
+  {
+    "record_id": "rec_25_1.0.0",
+    "resume_id": 25,
+    "features": {
+      "num_skills": 0,
+      "num_experience": 0,
+      "num_education": 0,
+      "num_projects": 0,
+      "num_certifications": 0,
+      "has_summary": 0,
+      "total_experience_text_length": 0,
+      "total_project_text_length": 0
+    },
+    "label": 0,
+    "source": "Bimba_AI_Database",
+    "dataset_version": "1.0.0",
+    "created_at": "2026-09-27T05:07:21.708487+00:00",
+    "split": "test"
+  },
+  {
+    "record_id": "rec_27_1.0.0",
+    "resume_id": 27,
+    "features": {
+      "num_skills": 0,
+      "num_experience": 0,
+      "num_education": 0,
+      "num_projects": 0,
+      "num_certifications": 0,
+      "has_summary": 0,
+      "total_experience_text_length": 0,
+      "total_project_text_length": 0
+    },
+    "label": 0,
+    "source": "Bimba_AI_Database",
+    "dataset_version": "1.0.0",
+    "created_at": "2026-09-27T05:07:21.708521+00:00",
+    "split": "test"
+  },
+  {
+    "record_id": "rec_31_1.0.0",
+    "resume_id": 31,
+    "features": {
+      "num_skills": 0,
+      "num_experience": 0,
+      "num_education": 0,
+      "num_projects": 0,
+      "num_certifications": 0,
+      "has_summary": 0,
+      "total_experience_text_length": 0,
+      "total_project_text_length": 0
+    },
+    "label": 0,
+    "source": "Bimba_AI_Database",
+    "dataset_version": "1.0.0",
+    "created_at": "2026-09-27T05:07:21.708573+00:00",
+    "split": "test"
+  },
+  {
+    "record_id": "rec_32_1.0.0",
+    "resume_id": 32,
+    "features": {
+      "num_skills": 0,
+      "num_experience": 0,
+      "num_education": 1,
+      "num_projects": 0,
+      "num_certifications": 0,
+      "has_summary": 0,
+      "total_experience_text_length": 0,
+      "total_project_text_length": 0
+    },
+    "label": 72,
+    "source": "Bimba_AI_Database",
+    "dataset_version": "1.0.0",
+    "created_at": "2026-09-27T05:07:21.708595+00:00",
+    "split": "test"
+  },
+  {
+    "record_id": "rec_34_1.0.0",
+    "resume_id": 34,
+    "features": {
+      "num_skills": 0,
+      "num_experience": 2,
+      "num_education": 4,
+      "num_projects": 3,
+      "num_certifications": 3,
+      "has_summary": 1,
+      "total_experience_text_length": 172,
+      "total_project_text_length": 377
+    },
+    "label": 0,
+    "source": "Bimba_AI_Database",
+    "dataset_version": "1.0.0",
+    "created_at": "2026-09-27T05:07:21.708732+00:00",
+    "split": "test"
+  },
+  {
+    "record_id": "rec_36_1.0.0",
+    "resume_id": 36,
+    "features": {
+      "num_skills": 0,
+      "num_experience": 2,
+      "num_education": 4,
+      "num_projects": 3,
+      "num_certifications": 3,
+      "has_summary": 0,
+      "total_experience_text_length": 172,
+      "total_project_text_length": 377
+    },
+    "label": 0,
+    "source": "Bimba_AI_Database",
+    "dataset_version": "1.0.0",
+    "created_at": "2026-09-27T05:07:21.708877+00:00",
+    "split": "test"
+  },
+  {
+    "record_id": "rec_37_1.0.0",
+    "resume_id": 37,
+    "features": {
+      "num_skills": 24,
+      "num_experience": 2,
+      "num_education": 4,
+      "num_projects": 3,
+      "num_certifications": 3,
+      "has_summary": 1,
+      "total_experience_text_length": 193,
+      "total_project_text_length": 309
+    },
+    "label": 96,
+    "source": "Bimba_AI_Database",
+    "dataset_version": "1.0.0",
+    "created_at": "2026-09-27T05:07:21.709023+00:00",
+    "split": "test"
+  },
+  {
+    "record_id": "rec_38_1.0.0",
+    "resume_id": 38,
+    "features": {
+      "num_skills": 0,
+      "num_experience": 2,
+      "num_education": 4,
+      "num_projects": 3,
+      "num_certifications": 3,
+      "has_summary": 0,
+      "total_experience_text_length": 172,
+      "total_project_text_length": 377
+    },
+    "label": 0,
+    "source": "Bimba_AI_Database",
+    "dataset_version": "1.0.0",
+    "created_at": "2026-09-27T05:07:21.709108+00:00",
+    "split": "test"
+  },
+  {
+    "record_id": "rec_39_1.0.0",
+    "resume_id": 39,
+    "features": {
+      "num_skills": 0,
+      "num_experience": 0,
+      "num_education": 0,
+      "num_projects": 0,
+      "num_certifications": 0,
+      "has_summary": 0,
+      "total_experience_text_length": 0,
+      "total_project_text_length": 0
+    },
+    "label": 0,
+    "source": "Bimba_AI_Database",
+    "dataset_version": "1.0.0",
+    "created_at": "2026-09-27T05:07:21.709121+00:00",
+    "split": "test"
+  },
+  {
+    "record_id": "rec_42_1.0.0",
+    "resume_id": 42,
+    "features": {
+      "num_skills": 17,
+      "num_experience": 3,
+      "num_education": 4,
+      "num_projects": 6,
+      "num_certifications": 6,
+      "has_summary": 1,
+      "total_experience_text_length": 284,
+      "total_project_text_length": 753
+    },
+    "label": 96,
+    "source": "Bimba_AI_Database",
+    "dataset_version": "1.0.0",
+    "created_at": "2026-09-27T05:07:21.709230+00:00",
+    "split": "test"
+  },
+  {
+    "record_id": "rec_43_1.0.0",
+    "resume_id": 43,
+    "features": {
+      "num_skills": 0,
+      "num_experience": 0,
+      "num_education": 0,
+      "num_projects": 0,
+      "num_certifications": 0,
+      "has_summary": 0,
+      "total_experience_text_length": 0,
+      "total_project_text_length": 0
+    },
+    "label": 0,
+    "source": "Bimba_AI_Database",
+    "dataset_version": "1.0.0",
+    "created_at": "2026-09-27T05:07:21.709244+00:00",
+    "split": "test"
+  },
+  {
+    "record_id": "rec_44_1.0.0",
+    "resume_id": 44,
+    "features": {
+      "num_skills": 0,
+      "num_experience": 0,
+      "num_education": 0,
+      "num_projects": 0,
+      "num_certifications": 0,
+      "has_summary": 0,
+      "total_experience_text_length": 0,
+      "total_project_text_length": 0
+    },
+    "label": 0,
+    "source": "Bimba_AI_Database",
+    "dataset_version": "1.0.0",
+    "created_at": "2026-09-27T05:07:21.709256+00:00",
+    "split": "test"
+  },
+  {
+    "record_id": "rec_45_1.0.0",
+    "resume_id": 45,
+    "features": {
+      "num_skills": 0,
+      "num_experience": 0,
+      "num_education": 0,
+      "num_projects": 0,
+      "num_certifications": 0,
+      "has_summary": 0,
+      "total_experience_text_length": 0,
+      "total_project_text_length": 0
+    },
+    "label": 0,
+    "source": "Bimba_AI_Database",
+    "dataset_version": "1.0.0",
+    "created_at": "2026-09-27T05:07:21.709267+00:00",
+    "split": "test"
+  },
+  {
+    "record_id": "rec_46_1.0.0",
+    "resume_id": 46,
+    "features": {
+      "num_skills": 0,
+      "num_experience": 0,
+      "num_education": 0,
+      "num_projects": 0,
+      "num_certifications": 0,
+      "has_summary": 0,
+      "total_experience_text_length": 0,
+      "total_project_text_length": 0
+    },
+    "label": 0,
+    "source": "Bimba_AI_Database",
+    "dataset_version": "1.0.0",
+    "created_at": "2026-09-27T05:07:21.709278+00:00",
+    "split": "test"
+  },
+  {
+    "record_id": "rec_47_1.0.0",
+    "resume_id": 47,
+    "features": {
+      "num_skills": 12,
+      "num_experience": 2,
+      "num_education": 4,
+      "num_projects": 3,
+      "num_certifications": 6,
+      "has_summary": 1,
+      "total_experience_text_length": 677,
+      "total_project_text_length": 1084
+    },
+    "label": 96,
+    "source": "Bimba_AI_Database",
+    "dataset_version": "1.0.0",
+    "created_at": "2026-09-27T05:07:21.709373+00:00",
+    "split": "test"
+  },
+  {
+    "record_id": "rec_48_1.0.0",
+    "resume_id": 48,
+    "features": {
+      "num_skills": 0,
+      "num_experience": 0,
+      "num_education": 1,
+      "num_projects": 0,
+      "num_certifications": 0,
+      "has_summary": 0,
+      "total_experience_text_length": 0,
+      "total_project_text_length": 0
+    },
+    "label": 72,
+    "source": "Bimba_AI_Database",
+    "dataset_version": "1.0.0",
+    "created_at": "2026-09-27T05:07:21.709398+00:00",
+    "split": "test"
+  },
+  {
+    "record_id": "rec_49_1.0.0",
+    "resume_id": 49,
+    "features": {
+      "num_skills": 0,
+      "num_experience": 0,
+      "num_education": 1,
+      "num_projects": 0,
+      "num_certifications": 0,
+      "has_summary": 0,
+      "total_experience_text_length": 0,
+      "total_project_text_length": 0
+    },
+    "label": 72,
+    "source": "Bimba_AI_Database",
+    "dataset_version": "1.0.0",
+    "created_at": "2026-09-27T05:07:21.709419+00:00",
+    "split": "test"
+  },
+  {
+    "record_id": "rec_52_1.0.0",
+    "resume_id": 52,
+    "features": {
+      "num_skills": 0,
+      "num_experience": 0,
+      "num_education": 0,
+      "num_projects": 0,
+      "num_certifications": 0,
+      "has_summary": 0,
+      "total_experience_text_length": 0,
+      "total_project_text_length": 0
+    },
+    "label": 0,
+    "source": "Bimba_AI_Database",
+    "dataset_version": "1.0.0",
+    "created_at": "2026-09-27T05:07:21.709549+00:00",
+    "split": "test"
+  },
+  {
+    "record_id": "rec_53_1.0.0",
+    "resume_id": 53,
+    "features": {
+      "num_skills": 0,
+      "num_experience": 0,
+      "num_education": 0,
+      "num_projects": 0,
+      "num_certifications": 0,
+      "has_summary": 0,
+      "total_experience_text_length": 0,
+      "total_project_text_length": 0
+    },
+    "label": 0,
+    "source": "Bimba_AI_Database",
+    "dataset_version": "1.0.0",
+    "created_at": "2026-09-27T05:07:21.709558+00:00",
+    "split": "test"
+  },
+  {
+    "record_id": "rec_54_1.0.0",
+    "resume_id": 54,
+    "features": {
+      "num_skills": 0,
+      "num_experience": 0,
+      "num_education": 0,
+      "num_projects": 0,
+      "num_certifications": 0,
+      "has_summary": 0,
+      "total_experience_text_length": 0,
+      "total_project_text_length": 0
+    },
+    "label": 0,
+    "source": "Bimba_AI_Database",
+    "dataset_version": "1.0.0",
+    "created_at": "2026-09-27T05:07:21.709566+00:00",
+    "split": "test"
+  },
+  {
+    "record_id": "rec_55_1.0.0",
+    "resume_id": 55,
+    "features": {
+      "num_skills": 0,
+      "num_experience": 0,
+      "num_education": 0,
+      "num_projects": 0,
+      "num_certifications": 0,
+      "has_summary": 0,
+      "total_experience_text_length": 0,
+      "total_project_text_length": 0
+    },
+    "label": 0,
+    "source": "Bimba_AI_Database",
+    "dataset_version": "1.0.0",
+    "created_at": "2026-09-27T05:07:21.709575+00:00",
+    "split": "test"
+  },
+  {
+    "record_id": "rec_57_1.0.0",
+    "resume_id": 57,
+    "features": {
+      "num_skills": 0,
+      "num_experience": 3,
+      "num_education": 4,
+      "num_projects": 6,
+      "num_certifications": 6,
+      "has_summary": 1,
+      "total_experience_text_length": 234,
+      "total_project_text_length": 0
+    },
+    "label": 0,
+    "source": "Bimba_AI_Database",
+    "dataset_version": "1.0.0",
+    "created_at": "2026-09-27T05:07:21.709674+00:00",
+    "split": "test"
+  },
+  {
+    "record_id": "rec_66_1.0.0",
+    "resume_id": 66,
+    "features": {
+      "num_skills": 0,
+      "num_experience": 0,
+      "num_education": 0,
+      "num_projects": 0,
+      "num_certifications": 0,
+      "has_summary": 0,
+      "total_experience_text_length": 0,
+      "total_project_text_length": 0
+    },
+    "label": 0,
+    "source": "Bimba_AI_Database",
+    "dataset_version": "1.0.0",
+    "created_at": "2026-09-27T05:07:21.709760+00:00",
+    "split": "test"
+  },
+  {
+    "record_id": "rec_67_1.0.0",
+    "resume_id": 67,
+    "features": {
+      "num_skills": 0,
+      "num_experience": 0,
+      "num_education": 0,
+      "num_projects": 0,
+      "num_certifications": 0,
+      "has_summary": 0,
+      "total_experience_text_length": 0,
+      "total_project_text_length": 0
+    },
+    "label": 0,
+    "source": "Bimba_AI_Database",
+    "dataset_version": "1.0.0",
+    "created_at": "2026-09-27T05:07:21.709772+00:00",
+    "split": "test"
+  },
+  {
+    "record_id": "rec_68_1.0.0",
+    "resume_id": 68,
+    "features": {
+      "num_skills": 12,
+      "num_experience": 3,
+      "num_education": 4,
+      "num_projects": 6,
+      "num_certifications": 6,
+      "has_summary": 1,
+      "total_experience_text_length": 581,
+      "total_project_text_length": 1455
+    },
+    "label": 96,
+    "source": "Bimba_AI_Database",
+    "dataset_version": "1.0.0",
+    "created_at": "2026-09-27T05:07:21.709898+00:00",
+    "split": "test"
+  },
+  {
+    "record_id": "rec_69_1.0.0",
+    "resume_id": 69,
+    "features": {
+      "num_skills": 12,
+      "num_experience": 3,
+      "num_education": 4,
+      "num_projects": 6,
+      "num_certifications": 6,
+      "has_summary": 1,
+      "total_experience_text_length": 599,
+      "total_project_text_length": 1704
+    },
+    "label": 96,
+    "source": "Bimba_AI_Database",
+    "dataset_version": "1.0.0",
+    "created_at": "2026-09-27T05:07:21.710038+00:00",
+    "split": "test"
+  },
+  {
+    "record_id": "rec_78_1.0.0",
+    "resume_id": 78,
+    "features": {
+      "num_skills": 0,
+      "num_experience": 0,
+      "num_education": 0,
+      "num_projects": 0,
+      "num_certifications": 0,
+      "has_summary": 0,
+      "total_experience_text_length": 0,
+      "total_project_text_length": 0
+    },
+    "label": 0,
+    "source": "Bimba_AI_Database",
+    "dataset_version": "1.0.0",
+    "created_at": "2026-09-27T05:07:21.710252+00:00",
+    "split": "test"
+  },
+  {
+    "record_id": "rec_79_1.0.0",
+    "resume_id": 79,
+    "features": {
+      "num_skills": 12,
+      "num_experience": 3,
+      "num_education": 4,
+      "num_projects": 6,
+      "num_certifications": 6,
+      "has_summary": 1,
+      "total_experience_text_length": 653,
+      "total_project_text_length": 1607
+    },
+    "label": 96,
+    "source": "Bimba_AI_Database",
+    "dataset_version": "1.0.0",
+    "created_at": "2026-09-27T05:07:21.710392+00:00",
+    "split": "test"
+  },
+  {
+    "record_id": "rec_80_1.0.0",
+    "resume_id": 80,
+    "features": {
+      "num_skills": 0,
+      "num_experience": 0,
+      "num_education": 0,
+      "num_projects": 0,
+      "num_certifications": 0,
+      "has_summary": 0,
+      "total_experience_text_length": 0,
+      "total_project_text_length": 0
+    },
+    "label": 0,
+    "source": "Bimba_AI_Database",
+    "dataset_version": "1.0.0",
+    "created_at": "2026-09-27T05:07:21.710407+00:00",
+    "split": "test"
+  },
+  {
+    "record_id": "rec_81_1.0.0",
+    "resume_id": 81,
+    "features": {
+      "num_skills": 2,
+      "num_experience": 1,
+      "num_education": 1,
+      "num_projects": 0,
+      "num_certifications": 0,
+      "has_summary": 0,
+      "total_experience_text_length": 268,
+      "total_project_text_length": 0
+    },
+    "label": 72,
+    "source": "Bimba_AI_Database",
+    "dataset_version": "1.0.0",
+    "created_at": "2026-09-27T05:07:21.710440+00:00",
+    "split": "test"
+  },
+  {
+    "record_id": "rec_82_1.0.0",
+    "resume_id": 82,
+    "features": {
+      "num_skills": 5,
+      "num_experience": 1,
+      "num_education": 1,
+      "num_projects": 0,
+      "num_certifications": 0,
+      "has_summary": 0,
+      "total_experience_text_length": 38,
+      "total_project_text_length": 0
+    },
+    "label": 72,
+    "source": "Bimba_AI_Database",
+    "dataset_version": "1.0.0",
+    "created_at": "2026-09-27T05:07:21.710475+00:00",
+    "split": "test"
+  },
+  {
+    "record_id": "rec_84_1.0.0",
+    "resume_id": 84,
+    "features": {
+      "num_skills": 0,
+      "num_experience": 1,
+      "num_education": 1,
+      "num_projects": 0,
+      "num_certifications": 0,
+      "has_summary": 1,
+      "total_experience_text_length": 98,
+      "total_project_text_length": 0
+    },
+    "label": 72,
+    "source": "Bimba_AI_Database",
+    "dataset_version": "1.0.0",
+    "created_at": "2026-09-27T05:07:21.710516+00:00",
+    "split": "test"
+  },
+  {
+    "record_id": "rec_85_1.0.0",
+    "resume_id": 85,
+    "features": {
+      "num_skills": 0,
+      "num_experience": 1,
+      "num_education": 1,
+      "num_projects": 0,
+      "num_certifications": 0,
+      "has_summary": 1,
+      "total_experience_text_length": 42,
+      "total_project_text_length": 0
+    },
+    "label": 72,
+    "source": "Bimba_AI_Database",
+    "dataset_version": "1.0.0",
+    "created_at": "2026-09-27T05:07:21.710546+00:00",
+    "split": "test"
+  },
+  {
+    "record_id": "rec_90_1.0.0",
+    "resume_id": 90,
+    "features": {
+      "num_skills": 0,
+      "num_experience": 0,
+      "num_education": 0,
+      "num_projects": 0,
+      "num_certifications": 0,
+      "has_summary": 0,
+      "total_experience_text_length": 0,
+      "total_project_text_length": 0
+    },
+    "label": 72,
+    "source": "Bimba_AI_Database",
+    "dataset_version": "1.0.0",
+    "created_at": "2026-09-27T05:07:21.710567+00:00",
+    "split": "test"
+  },
+  {
+    "record_id": "rec_91_1.0.0",
+    "resume_id": 91,
+    "features": {
+      "num_skills": 0,
+      "num_experience": 0,
+      "num_education": 0,
+      "num_projects": 0,
+      "num_certifications": 0,
+      "has_summary": 0,
+      "total_experience_text_length": 0,
+      "total_project_text_length": 0
+    },
+    "label": 72,
+    "source": "Bimba_AI_Database",
+    "dataset_version": "1.0.0",
+    "created_at": "2026-09-27T05:07:21.710586+00:00",
+    "split": "test"
+  },
+  {
+    "record_id": "rec_92_1.0.0",
+    "resume_id": 92,
+    "features": {
+      "num_skills": 0,
+      "num_experience": 0,
+      "num_education": 0,
+      "num_projects": 0,
+      "num_certifications": 0,
+      "has_summary": 0,
+      "total_experience_text_length": 0,
+      "total_project_text_length": 0
+    },
+    "label": 72,
+    "source": "Bimba_AI_Database",
+    "dataset_version": "1.0.0",
+    "created_at": "2026-09-27T05:07:21.710604+00:00",
+    "split": "test"
+  },
+  {
+    "record_id": "rec_94_1.0.0",
+    "resume_id": 94,
+    "features": {
+      "num_skills": 0,
+      "num_experience": 0,
+      "num_education": 0,
+      "num_projects": 0,
+      "num_certifications": 28,
+      "has_summary": 1,
+      "total_experience_text_length": 0,
+      "total_project_text_length": 0
+    },
+    "label": 0,
+    "source": "Bimba_AI_Database",
+    "dataset_version": "1.0.0",
+    "created_at": "2026-09-27T05:07:21.710736+00:00",
+    "split": "test"
+  },
+  {
+    "record_id": "rec_95_1.0.0",
+    "resume_id": 95,
+    "features": {
+      "num_skills": 0,
+      "num_experience": 0,
+      "num_education": 0,
+      "num_projects": 0,
+      "num_certifications": 8,
+      "has_summary": 0,
+      "total_experience_text_length": 0,
+      "total_project_text_length": 0
+    },
+    "label": 0,
+    "source": "Bimba_AI_Database",
+    "dataset_version": "1.0.0",
+    "created_at": "2026-09-27T05:07:21.710794+00:00",
+    "split": "test"
+  },
+  {
+    "record_id": "rec_96_1.0.0",
+    "resume_id": 96,
+    "features": {
+      "num_skills": 0,
+      "num_experience": 0,
+      "num_education": 0,
+      "num_projects": 0,
+      "num_certifications": 0,
+      "has_summary": 0,
+      "total_experience_text_length": 0,
+      "total_project_text_length": 0
+    },
+    "label": 0,
+    "source": "Bimba_AI_Database",
+    "dataset_version": "1.0.0",
+    "created_at": "2026-09-27T05:07:21.710806+00:00",
+    "split": "test"
+  },
+  {
+    "record_id": "rec_97_1.0.0",
+    "resume_id": 97,
+    "features": {
+      "num_skills": 0,
+      "num_experience": 0,
+      "num_education": 0,
+      "num_projects": 0,
+      "num_certifications": 8,
+      "has_summary": 0,
+      "total_experience_text_length": 0,
+      "total_project_text_length": 0
+    },
+    "label": 0,
+    "source": "Bimba_AI_Database",
+    "dataset_version": "1.0.0",
+    "created_at": "2026-09-27T05:07:21.710860+00:00",
+    "split": "test"
+  },
+  {
+    "record_id": "rec_98_1.0.0",
+    "resume_id": 98,
+    "features": {
+      "num_skills": 0,
+      "num_experience": 0,
+      "num_education": 0,
+      "num_projects": 0,
+      "num_certifications": 0,
+      "has_summary": 0,
+      "total_experience_text_length": 0,
+      "total_project_text_length": 0
+    },
+    "label": 0,
+    "source": "Bimba_AI_Database",
+    "dataset_version": "1.0.0",
+    "created_at": "2026-09-27T05:07:21.710873+00:00",
+    "split": "test"
+  },
+  {
+    "record_id": "rec_101_1.0.0",
+    "resume_id": 101,
+    "features": {
+      "num_skills": 0,
+      "num_experience": 0,
+      "num_education": 0,
+      "num_projects": 0,
+      "num_certifications": 0,
+      "has_summary": 0,
+      "total_experience_text_length": 0,
+      "total_project_text_length": 0
+    },
+    "label": 0,
+    "source": "Bimba_AI_Database",
+    "dataset_version": "1.0.0",
+    "created_at": "2026-09-27T05:07:21.710903+00:00",
+    "split": "test"
+  },
+  {
+    "record_id": "rec_102_1.0.0",
+    "resume_id": 102,
+    "features": {
+      "num_skills": 0,
+      "num_experience": 0,
+      "num_education": 0,
+      "num_projects": 0,
+      "num_certifications": 0,
+      "has_summary": 0,
+      "total_experience_text_length": 0,
+      "total_project_text_length": 0
+    },
+    "label": 0,
+    "source": "Bimba_AI_Database",
+    "dataset_version": "1.0.0",
+    "created_at": "2026-09-27T05:07:21.710916+00:00",
+    "split": "test"
+  },
+  {
+    "record_id": "rec_103_1.0.0",
+    "resume_id": 103,
+    "features": {
+      "num_skills": 0,
+      "num_experience": 2,
+      "num_education": 4,
+      "num_projects": 3,
+      "num_certifications": 3,
+      "has_summary": 0,
+      "total_experience_text_length": 172,
+      "total_project_text_length": 377
+    },
+    "label": 0,
+    "source": "Bimba_AI_Database",
+    "dataset_version": "1.0.0",
+    "created_at": "2026-09-27T05:07:21.711026+00:00",
+    "split": "test"
+  },
+  {
+    "record_id": "rec_104_1.0.0",
+    "resume_id": 104,
+    "features": {
+      "num_skills": 0,
+      "num_experience": 2,
+      "num_education": 4,
+      "num_projects": 3,
+      "num_certifications": 3,
+      "has_summary": 0,
+      "total_experience_text_length": 172,
+      "total_project_text_length": 377
+    },
+    "label": 0,
+    "source": "Bimba_AI_Database",
+    "dataset_version": "1.0.0",
+    "created_at": "2026-09-27T05:07:21.711124+00:00",
+    "split": "test"
+  },
+  {
+    "record_id": "rec_146_1.0.0",
+    "resume_id": 146,
+    "features": {
+      "num_skills": 21,
+      "num_experience": 3,
+      "num_education": 4,
+      "num_projects": 6,
+      "num_certifications": 6,
+      "has_summary": 1,
+      "total_experience_text_length": 543,
+      "total_project_text_length": 1580
+    },
+    "label": 96,
+    "source": "Bimba_AI_Database",
+    "dataset_version": "1.0.0",
+    "created_at": "2026-09-27T05:07:21.711299+00:00",
+    "split": "test"
+  },
+  {
+    "record_id": "rec_168_1.0.0",
+    "resume_id": 168,
+    "features": {
+      "num_skills": 5,
+      "num_experience": 1,
+      "num_education": 1,
+      "num_projects": 1,
+      "num_certifications": 0,
+      "has_summary": 1,
+      "total_experience_text_length": 229,
+      "total_project_text_length": 28
+    },
+    "label": 72,
+    "source": "Bimba_AI_Database",
+    "dataset_version": "1.0.0",
+    "created_at": "2026-09-27T05:07:21.711348+00:00",
+    "split": "test"
+  },
+  {
+    "record_id": "rec_174_1.0.0",
+    "resume_id": 174,
+    "features": {
+      "num_skills": 0,
+      "num_experience": 1,
+      "num_education": 1,
+      "num_projects": 1,
+      "num_certifications": 0,
+      "has_summary": 1,
+      "total_experience_text_length": 89,
+      "total_project_text_length": 16
+    },
+    "label": 72,
+    "source": "Bimba_AI_Database",
+    "dataset_version": "1.0.0",
+    "created_at": "2026-09-27T05:07:21.711373+00:00",
+    "split": "test"
+  },
+  {
+    "record_id": "rec_177_1.0.0",
+    "resume_id": 177,
+    "features": {
+      "num_skills": 0,
+      "num_experience": 0,
+      "num_education": 0,
+      "num_projects": 0,
+      "num_certifications": 0,
+      "has_summary": 0,
+      "total_experience_text_length": 0,
+      "total_project_text_length": 0
+    },
+    "label": 0,
+    "source": "Bimba_AI_Database",
+    "dataset_version": "1.0.0",
+    "created_at": "2026-09-27T05:07:21.711400+00:00",
+    "split": "test"
+  },
+  {
+    "record_id": "rec_178_1.0.0",
+    "resume_id": 178,
+    "features": {
+      "num_skills": 0,
+      "num_experience": 0,
+      "num_education": 0,
+      "num_projects": 0,
+      "num_certifications": 0,
+      "has_summary": 0,
+      "total_experience_text_length": 0,
+      "total_project_text_length": 0
+    },
+    "label": 0,
+    "source": "Bimba_AI_Database",
+    "dataset_version": "1.0.0",
+    "created_at": "2026-09-27T05:07:21.711408+00:00",
+    "split": "test"
+  },
+  {
+    "record_id": "rec_179_1.0.0",
+    "resume_id": 179,
+    "features": {
+      "num_skills": 0,
+      "num_experience": 0,
+      "num_education": 0,
+      "num_projects": 0,
+      "num_certifications": 0,
+      "has_summary": 0,
+      "total_experience_text_length": 0,
+      "total_project_text_length": 0
+    },
+    "label": 0,
+    "source": "Bimba_AI_Database",
+    "dataset_version": "1.0.0",
+    "created_at": "2026-09-27T05:07:21.711417+00:00",
+    "split": "test"
+  },
+  {
+    "record_id": "rec_180_1.0.0",
+    "resume_id": 180,
+    "features": {
+      "num_skills": 0,
+      "num_experience": 1,
+      "num_education": 1,
+      "num_projects": 1,
+      "num_certifications": 0,
+      "has_summary": 1,
+      "total_experience_text_length": 89,
+      "total_project_text_length": 16
+    },
+    "label": 72,
+    "source": "Bimba_AI_Database",
+    "dataset_version": "1.0.0",
+    "created_at": "2026-09-27T05:07:21.711442+00:00",
+    "split": "test"
+  },
+  {
+    "record_id": "rec_181_1.0.0",
+    "resume_id": 181,
+    "features": {
+      "num_skills": 0,
+      "num_experience": 1,
+      "num_education": 1,
+      "num_projects": 0,
+      "num_certifications": 0,
+      "has_summary": 1,
+      "total_experience_text_length": 18,
+      "total_project_text_length": 0
+    },
+    "label": 72,
+    "source": "Bimba_AI_Database",
+    "dataset_version": "1.0.0",
+    "created_at": "2026-09-27T05:07:21.711466+00:00",
+    "split": "test"
+  },
+  {
+    "record_id": "rec_182_1.0.0",
+    "resume_id": 182,
+    "features": {
+      "num_skills": 0,
+      "num_experience": 0,
+      "num_education": 0,
+      "num_projects": 0,
+      "num_certifications": 0,
+      "has_summary": 0,
+      "total_experience_text_length": 0,
+      "total_project_text_length": 0
+    },
+    "label": 0,
+    "source": "Bimba_AI_Database",
+    "dataset_version": "1.0.0",
+    "created_at": "2026-09-27T05:07:21.711482+00:00",
+    "split": "test"
+  },
+  {
+    "record_id": "rec_183_1.0.0",
+    "resume_id": 183,
+    "features": {
+      "num_skills": 0,
+      "num_experience": 1,
+      "num_education": 0,
+      "num_projects": 0,
+      "num_certifications": 0,
+      "has_summary": 0,
+      "total_experience_text_length": 86,
+      "total_project_text_length": 0
+    },
+    "label": 72,
+    "source": "Bimba_AI_Database",
+    "dataset_version": "1.0.0",
+    "created_at": "2026-09-27T05:07:21.711510+00:00",
+    "split": "test"
+  },
+  {
+    "record_id": "rec_184_1.0.0",
+    "resume_id": 184,
+    "features": {
+      "num_skills": 0,
+      "num_experience": 1,
+      "num_education": 0,
+      "num_projects": 0,
+      "num_certifications": 0,
+      "has_summary": 0,
+      "total_experience_text_length": 86,
+      "total_project_text_length": 0
+    },
+    "label": 72,
+    "source": "Bimba_AI_Database",
+    "dataset_version": "1.0.0",
+    "created_at": "2026-09-27T05:07:21.711535+00:00",
+    "split": "test"
+  },
+  {
+    "record_id": "rec_185_1.0.0",
+    "resume_id": 185,
+    "features": {
+      "num_skills": 0,
+      "num_experience": 1,
+      "num_education": 0,
+      "num_projects": 0,
+      "num_certifications": 0,
+      "has_summary": 0,
+      "total_experience_text_length": 86,
+      "total_project_text_length": 0
+    },
+    "label": 72,
+    "source": "Bimba_AI_Database",
+    "dataset_version": "1.0.0",
+    "created_at": "2026-09-27T05:07:21.711560+00:00",
+    "split": "test"
+  },
+  {
+    "record_id": "rec_186_1.0.0",
+    "resume_id": 186,
+    "features": {
+      "num_skills": 0,
+      "num_experience": 1,
+      "num_education": 0,
+      "num_projects": 0,
+      "num_certifications": 0,
+      "has_summary": 0,
+      "total_experience_text_length": 20,
+      "total_project_text_length": 0
+    },
+    "label": 72,
+    "source": "Bimba_AI_Database",
+    "dataset_version": "1.0.0",
+    "created_at": "2026-09-27T05:07:21.711587+00:00",
+    "split": "test"
+  },
+  {
+    "record_id": "rec_199_1.0.0",
+    "resume_id": 199,
+    "features": {
+      "num_skills": 0,
+      "num_experience": 2,
+      "num_education": 4,
+      "num_projects": 0,
+      "num_certifications": 9,
+      "has_summary": 0,
+      "total_experience_text_length": 241,
+      "total_project_text_length": 0
+    },
+    "label": 0,
+    "source": "Bimba_AI_Database",
+    "dataset_version": "1.0.0",
+    "created_at": "2026-09-27T05:07:21.712191+00:00",
+    "split": "test"
+  },
+  {
+    "record_id": "rec_235_1.0.0",
+    "resume_id": 235,
+    "features": {
+      "num_skills": 0,
+      "num_experience": 2,
+      "num_education": 4,
+      "num_projects": 0,
+      "num_certifications": 9,
+      "has_summary": 0,
+      "total_experience_text_length": 241,
+      "total_project_text_length": 0
+    },
+    "label": 95.0,
+    "source": "Bimba_AI_Database",
+    "dataset_version": "1.0.0",
+    "created_at": "2026-09-27T05:07:21.713109+00:00",
+    "split": "test"
+  },
+  {
+    "record_id": "rec_265_1.0.0",
+    "resume_id": 265,
+    "features": {
+      "num_skills": 0,
+      "num_experience": 7,
+      "num_education": 0,
+      "num_projects": 0,
+      "num_certifications": 20,
+      "has_summary": 0,
+      "total_experience_text_length": 8,
+      "total_project_text_length": 0
+    },
+    "label": 75.0,
+    "source": "Bimba_AI_Database",
+    "dataset_version": "1.0.0",
+    "created_at": "2026-09-27T05:07:21.717524+00:00",
+    "split": "test"
+  },
+  {
+    "record_id": "rec_268_1.0.0",
+    "resume_id": 268,
+    "features": {
+      "num_skills": 22,
+      "num_experience": 3,
+      "num_education": 4,
+      "num_projects": 6,
+      "num_certifications": 4,
+      "has_summary": 1,
+      "total_experience_text_length": 550,
+      "total_project_text_length": 0
+    },
+    "label": 96,
+    "source": "Bimba_AI_Database",
+    "dataset_version": "1.0.0",
+    "created_at": "2026-09-27T05:07:21.718091+00:00",
+    "split": "test"
+  },
+  {
+    "record_id": "rec_285_1.0.0",
+    "resume_id": 285,
+    "features": {
+      "num_skills": 22,
+      "num_experience": 2,
+      "num_education": 4,
+      "num_projects": 6,
+      "num_certifications": 6,
+      "has_summary": 1,
+      "total_experience_text_length": 259,
+      "total_project_text_length": 0
+    },
+    "label": 96,
+    "source": "Bimba_AI_Database",
+    "dataset_version": "1.0.0",
+    "created_at": "2026-09-27T05:07:21.718441+00:00",
+    "split": "test"
+  },
+  {
+    "record_id": "rec_286_1.0.0",
+    "resume_id": 286,
+    "features": {
+      "num_skills": 0,
+      "num_experience": 2,
+      "num_education": 4,
+      "num_projects": 6,
+      "num_certifications": 6,
+      "has_summary": 1,
+      "total_experience_text_length": 160,
+      "total_project_text_length": 0
+    },
+    "label": 95.0,
+    "source": "Bimba_AI_Database",
+    "dataset_version": "1.0.0",
+    "created_at": "2026-09-27T05:07:21.718571+00:00",
+    "split": "test"
+  },
+  {
+    "record_id": "rec_287_1.0.0",
+    "resume_id": 287,
+    "features": {
+      "num_skills": 0,
+      "num_experience": 2,
+      "num_education": 4,
+      "num_projects": 6,
+      "num_certifications": 6,
+      "has_summary": 1,
+      "total_experience_text_length": 160,
+      "total_project_text_length": 0
+    },
+    "label": 95.0,
+    "source": "Bimba_AI_Database",
+    "dataset_version": "1.0.0",
+    "created_at": "2026-09-27T05:07:21.718693+00:00",
+    "split": "test"
+  },
+  {
+    "record_id": "rec_357_1.0.0",
+    "resume_id": 357,
+    "features": {
+      "num_skills": 0,
+      "num_experience": 1,
+      "num_education": 5,
+      "num_projects": 6,
+      "num_certifications": 8,
+      "has_summary": 1,
+      "total_experience_text_length": 207,
+      "total_project_text_length": 0
+    },
+    "label": 95.0,
+    "source": "Bimba_AI_Database",
+    "dataset_version": "1.0.0",
+    "created_at": "2026-09-27T05:07:21.726854+00:00",
+    "split": "test"
+  }
+]
