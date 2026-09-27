@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-    <title>Cast &amp; Render — 3D Object Studio</title>
+    <title>Bimba AI — Reflect Your Best Self</title>
     
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -33,12 +33,11 @@
             font-weight: 400;
             -webkit-font-smoothing: antialiased;
             -moz-osx-font-smoothing: grayscale;
-            overflow-x: hidden;
+            overflow: hidden; /* REMOVE SCROLLBAR */
             margin: 0;
             padding: 0;
         }
 
-        /* 4. FIXED BACKGROUND VIDEO LAYER */
         .stage {
             position: fixed;
             inset: 0;
@@ -78,7 +77,6 @@
             background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='140' height='140'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3'/></filter><rect width='140' height='140' filter='url(%23n)' opacity='.5'/></svg>");
         }
 
-        /* 5. CHROME, FOOTER, SCROLL METER */
         .chrome {
             position: fixed;
             left: 0;
@@ -102,10 +100,12 @@
             color: var(--fg);
             min-width: 0;
             flex-shrink: 1;
+            font-weight: 500;
         }
 
         .mark-star {
             opacity: .85;
+            color: #2563eb; /* Blue primary tint */
         }
 
         .nav {
@@ -113,19 +113,6 @@
             align-items: center;
             gap: clamp(14px, 2.4vw, 32px);
             flex-shrink: 0;
-        }
-
-        .nav a:not(.pill) {
-            color: var(--fg);
-            text-decoration: none;
-            font-size: 14.5px;
-            letter-spacing: -.008em;
-            opacity: .88;
-            transition: opacity .3s var(--ease);
-        }
-
-        .nav a:not(.pill):hover {
-            opacity: 1;
         }
 
         .pill {
@@ -156,9 +143,10 @@
 
         .pill:hover, .pill:focus-visible {
             transform: translateY(-2px);
-            background: #000;
+            background: #2563eb;
             color: #fff;
             -webkit-text-fill-color: #fff;
+            border-color: #2563eb;
         }
 
         .pill:focus-visible {
@@ -189,15 +177,13 @@
             top: 0;
             left: 0;
             z-index: 50;
-            height: 2px;
+            height: 3px;
             width: 100%;
             transform: scaleX(0);
             transform-origin: 0 50%;
-            background: var(--fg);
-            opacity: .55;
+            background: #2563eb;
         }
 
-        /* 6. PANEL LAYER */
         .panels {
             position: fixed;
             inset: 0;
@@ -231,6 +217,8 @@
             margin-bottom: clamp(16px, 2vw, 22px);
             max-width: min(46ch, 100%);
             text-align: center;
+            text-transform: uppercase;
+            font-weight: 600;
         }
 
         h1 {
@@ -268,7 +256,6 @@
             max-width: min(100%, 320px);
         }
 
-        /* 8. PRELOADER */
         .boot {
             position: fixed;
             inset: 0;
@@ -292,6 +279,7 @@
             letter-spacing: .05em;
             color: var(--fg-faint);
             margin: 0;
+            font-weight: 500;
         }
 
         .bar {
@@ -305,20 +293,11 @@
             display: block;
             height: 100%;
             width: 100%;
-            background: var(--fg);
+            background: #2563eb;
             transform: scaleX(0);
             transform-origin: 0 50%;
         }
 
-        /* 9. SCROLL TRACK */
-        .track {
-            position: relative;
-            z-index: 1;
-            height: 560vh;
-            min-height: 3200px;
-        }
-
-        /* 10. RESPONSIVE BREAKPOINTS */
         @media (max-width: 900px) {
             .veil {
                 background: 
@@ -329,75 +308,28 @@
         }
 
         @media (max-width: 720px) {
-            .nav a:not(.pill) {
-                display: none;
-            }
-            .mark {
-                font-size: 14px;
-            }
-            .nav .pill {
-                height: 38px;
-                padding: 0 16px;
-                font-size: 13.5px;
-            }
-            h1 {
-                max-width: 12ch;
-                font-size: clamp(30px, 9.8vw, 52px);
-            }
-            .sub {
-                font-size: 15px;
-                max-width: 34ch;
-            }
-            .panel {
-                padding: max(92px, calc(env(safe-area-inset-top, 0px) + 76px)) 18px max(88px, calc(env(safe-area-inset-bottom, 0px) + 72px));
-            }
-            .foot {
-                font-size: 11px;
-                max-width: 34ch;
-            }
+            .nav a:not(.pill) { display: none; }
+            .mark { font-size: 14px; }
+            .nav .pill { height: 38px; padding: 0 16px; font-size: 13.5px; }
+            h1 { max-width: 12ch; font-size: clamp(30px, 9.8vw, 52px); }
+            .sub { font-size: 15px; max-width: 34ch; }
+            .panel { padding: max(92px, calc(env(safe-area-inset-top, 0px) + 76px)) 18px max(88px, calc(env(safe-area-inset-bottom, 0px) + 72px)); }
+            .foot { font-size: 11px; max-width: 34ch; }
         }
 
         @media (max-width: 420px) {
-            .mark-star {
-                display: none;
-            }
-            .nav .pill {
-                height: 36px;
-                padding: 0 14px;
-                font-size: 13px;
-            }
-            h1 {
-                max-width: 11ch;
-                font-size: clamp(28px, 10.5vw, 40px);
-            }
-            .eyebrow {
-                font-size: 11px;
-                letter-spacing: .04em;
-                max-width: 28ch;
-            }
-            .cta .pill {
-                width: 100%;
-                max-width: 280px;
-                height: 44px;
-                padding: 0 20px;
-                font-size: 14px;
-            }
+            .mark-star { display: none; }
+            .nav .pill { height: 36px; padding: 0 14px; font-size: 13px; }
+            h1 { max-width: 11ch; font-size: clamp(28px, 10.5vw, 40px); }
+            .eyebrow { font-size: 11px; letter-spacing: .04em; max-width: 28ch; }
+            .cta .pill { width: 100%; max-width: 280px; height: 44px; padding: 0 20px; font-size: 14px; }
         }
 
         @media (max-height: 520px) and (orientation: landscape) {
-            .panel {
-                padding: max(72px, calc(env(safe-area-inset-top, 0px) + 56px)) 24px max(64px, calc(env(safe-area-inset-bottom, 0px) + 48px));
-            }
-            h1 {
-                font-size: clamp(28px, 8vh, 44px);
-            }
-            .sub {
-                margin-top: 12px;
-                font-size: 14px;
-            }
-            .cta {
-                margin-top: 16px;
-            }
+            .panel { padding: max(72px, calc(env(safe-area-inset-top, 0px) + 56px)) 24px max(64px, calc(env(safe-area-inset-bottom, 0px) + 48px)); }
+            h1 { font-size: clamp(28px, 8vh, 44px); }
+            .sub { margin-top: 12px; font-size: 14px; }
+            .cta { margin-top: 16px; }
         }
     </style>
 </head>
@@ -417,46 +349,43 @@
     <i class="meter" id="meter"></i>
 
     <header class="chrome">
-        <div class="mark"><span class="mark-star" aria-hidden="true">&#10037;</span>&nbsp;Cast &amp; Render</div>
+        <div class="mark">
+            <svg class="mark-star" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"/></svg>
+            &nbsp;Bimba AI
+        </div>
         <nav class="nav">
-            <a href="#board">Works</a>
-            <a href="#visit">About</a>
-            <a class="pill" href="/">Start a brief</a>
+            <a class="pill" href="/">Skip Intro</a>
         </nav>
     </header>
 
     <main class="panels">
         <section class="panel" data-panel>
-            <div class="eyebrow">Objects studio <span>&middot;</span> No. 112 Render Lane</div>
-            <h1>Built at four.<br />Out by seven.</h1>
-            <div class="sub">Six kinds of mesh, one render farm, and a queue that starts before the sun does.</div>
-            <div class="cta"><a class="pill" href="#board">View the reel</a></div>
+            <div class="eyebrow">Smart Parsing <span>&middot;</span> Zero Manual Entry</div>
+            <h1>Upload once.<br />Match forever.</h1>
+            <div class="sub">Intelligent resume parsing, structured skills extraction, and seamless career intelligence designed to accelerate your job hunt.</div>
         </section>
 
         <section class="panel" data-panel>
-            <div class="eyebrow">Across the studio</div>
-            <h1>Flat, never bent.</h1>
-            <div class="sub">The mesh should still be clean when it reaches the viewport. We export to order, never before.</div>
-            <div class="cta"><a class="pill" href="#visit">Tour our space</a></div>
+            <div class="eyebrow">Zero Data Loss</div>
+            <h1>Perfect precision,<br />every time.</h1>
+            <div class="sub">No more missing details. Every skill, certification, and project is preserved with flawless accuracy in your digital profile.</div>
         </section>
 
         <section class="panel" data-panel>
-            <div class="eyebrow">The surface</div>
-            <h1>Smooth enough to<br />hold a light pass.</h1>
-            <div class="sub">Custom surface shaders whipped every morning, spread to the edge and weighed by the quarter pound.</div>
-            <div class="cta"><a class="pill" href="/">Start a brief</a></div>
+            <div class="eyebrow">Career Intelligence</div>
+            <h1>Real Jobs.<br />Real Matches.</h1>
+            <div class="sub">Compare your profile against live job market data to identify missing skills and secure your next role effortlessly.</div>
+            <div class="cta"><a class="pill" href="/">Enter Bimba AI</a></div>
         </section>
     </main>
 
-    <footer class="foot">112 Render Lane &nbsp;&middot;&nbsp; Tue–Sun, 9am till sold out</footer>
-
-    <div class="track"></div>
+    <footer class="foot">Bimba AI Intelligence Platform &nbsp;&middot;&nbsp; Automated Loading Module</footer>
 
     <script>
         (function() {
             "use strict";
 
-            // VIDEO URL — 1920x1080, 10.04s, 241 frames, all-intra (every frame is a keyframe, making seek instant)
+            // We use the same video as it provides a cool atmospheric 3D object background
             var VIDEO_URL = "https://d2ol7oe51mr4n9.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/45567745-d826-44a2-a5ce-7ef670944e60.mp4";
 
             var clip = document.getElementById("clip");
@@ -466,28 +395,16 @@
             var meter = document.getElementById("meter");
             var panels = [].slice.call(document.querySelectorAll("[data-panel]"));
 
-            // Cues: [fadeInStart, fadeInEnd, fadeOutStart, fadeOutEnd] in 0..1 page progress.
-            // Dead zones between cues ensure video scrubbing without text overlapping.
             var CUES = [
-                [0.00, 0.00, 0.15, 0.23],
+                [0.00, 0.00, 0.25, 0.33],
                 [0.35, 0.43, 0.57, 0.65],
-                [0.77, 0.85, 1.10, 1.20]
+                [0.67, 0.75, 1.10, 1.20]
             ];
-            var DRIFT = 22; // px of counter-scroll travel per panel
-
-            // Helpers
-            function clamp(v, a, b) {
-                return Math.max(a, Math.min(b, v));
-            }
-            function smooth(t) {
-                return t * t * (3 - 2 * t);
-            }
-            function ramp(p, a, b) {
-                if (b <= a) return p >= b ? 1 : 0;
-                return smooth(clamp((p - a) / (b - a), 0, 1));
-            }
-
-            // State
+            var DRIFT = 22; 
+            
+            // Animation state
+            var ANIMATION_DURATION_MS = 10500; // 10.5 seconds for the entire intro
+            var startTime = null;
             var progress = 0;
             var seekTo = 0;
             var seekAt = 0;
@@ -495,11 +412,13 @@
             var ready = false;
             var started = false;
             var attached = false;
+            var isRedirecting = false;
 
-            function readScroll() {
-                var max = document.documentElement.scrollHeight - window.innerHeight;
-                progress = max > 0 ? clamp(window.pageYOffset / max, 0, 1) : 0;
-                if (duration) seekTo = progress * duration;
+            function clamp(v, a, b) { return Math.max(a, Math.min(b, v)); }
+            function smooth(t) { return t * t * (3 - 2 * t); }
+            function ramp(p, a, b) {
+                if (b <= a) return p >= b ? 1 : 0;
+                return smooth(clamp((p - a) / (b - a), 0, 1));
             }
 
             function paint() {
@@ -519,18 +438,32 @@
                 }
             }
 
-            function frame() {
+            function frame(timestamp) {
                 if (ready && duration) {
+                    if (!startTime) startTime = timestamp;
+                    
+                    var elapsed = timestamp - startTime;
+                    progress = clamp(elapsed / ANIMATION_DURATION_MS, 0, 1);
+                    seekTo = progress * duration;
+
                     var gap = seekTo - seekAt;
                     if (Math.abs(gap) > 0.0008) {
-                        seekAt += gap * 0.115; // easing factor — do not change
+                        seekAt += gap * 0.115;
                         if (clip.readyState >= 2 && !clip.seeking) {
                             try { clip.currentTime = seekAt; } catch (e) {}
                         }
                     }
+
+                    // Auto-redirect at the end
+                    if (progress >= 1 && !isRedirecting) {
+                        isRedirecting = true;
+                        window.location.href = '/';
+                    }
                 }
                 paint();
-                requestAnimationFrame(frame);
+                if (!isRedirecting) {
+                    requestAnimationFrame(frame);
+                }
             }
 
             function setProgress(f) {
@@ -543,8 +476,6 @@
                 started = true;
                 ready = true;
                 boot.classList.add("done");
-                readScroll();
-                seekAt = seekTo;
             }
 
             function attach(src) {
@@ -554,9 +485,6 @@
                 clip.addEventListener("loadedmetadata", function() {
                     duration = clip.duration || 0;
                     clip.pause();
-                    readScroll();
-                    seekAt = seekTo;
-                    try { clip.currentTime = seekAt; } catch(e){}
                 });
                 clip.addEventListener("loadeddata", start);
                 clip.addEventListener("canplaythrough", start);
@@ -565,11 +493,10 @@
                 clip.src = src;
                 clip.load();
                 
-                setTimeout(start, 12000); // stall timeout
+                setTimeout(start, 5000); 
             }
 
             function preload() {
-                // Fetch the mp4 as a fully buffered blob first, because seeking inside a buffered blob is near instant while range requests over network are jumpy.
                 var controller = window.AbortController ? new AbortController() : null;
                 var signal = controller ? controller.signal : undefined;
                 
@@ -579,7 +506,7 @@
                         setProgress(1);
                         attach(VIDEO_URL);
                     }
-                }, 15000);
+                }, 8000);
 
                 fetch(VIDEO_URL, { signal: signal }).then(function(res) {
                     if (!res.ok || !res.body) throw new Error("Fetch failed");
@@ -611,7 +538,6 @@
                 });
             }
 
-            // iOS will not paint a frame from a video that has never been played, so nudge it once on first interaction and pause immediately.
             function unlock() {
                 var p = clip.play();
                 if (p && p.then) {
@@ -625,12 +551,7 @@
                 window.addEventListener(ev, unlock, { once: true, passive: true });
             });
 
-            // Wiring
-            window.addEventListener("scroll", readScroll, { passive: true });
-            window.addEventListener("resize", readScroll);
-
-            readScroll();
-            paint();
+            // Start preloading immediately, rAF handles logic without scroll listeners.
             preload();
             requestAnimationFrame(frame);
 
