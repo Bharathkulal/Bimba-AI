@@ -26,6 +26,7 @@ import { CreateFromScratchWizard } from '../components/resume/CreateFromScratchW
 import { useIsMobileViewport } from '../features/resume-builder/hooks/useIsMobileViewport';
 import { UploadResumeMobile } from '../features/resume-builder/mobile/UploadResumeMobile';
 import { ResumeBuilderProvider } from '../components/resume-builder/ResumeBuilderContext';
+import { ResumeIntelligenceHub } from '../features/resume-builder/ResumeIntelligenceHub';
 
 export const ResumePage: React.FC = () => {
   const navigate = useNavigate();
@@ -340,23 +341,19 @@ export const ResumePage: React.FC = () => {
       <div className="mt-2">
         {activeSubTab === 'resumes' && (
           <div className="flex flex-col gap-6">
-            <div 
-              onClick={() => {
-                setWizardFile(null);
-                setShowWizard(true);
+            <ResumeIntelligenceHub
+              isUploading={isUploading}
+              onFileUpload={(fileOrEvent) => {
+                if (fileOrEvent instanceof File) {
+                  setWizardFile(fileOrEvent);
+                  setShowWizard(true);
+                } else if (fileOrEvent.target && fileOrEvent.target.files) {
+                  setWizardFile(fileOrEvent.target.files[0]);
+                  setShowWizard(true);
+                }
               }}
-              className="w-full bg-slate-50 dark:bg-white/5 border border-dashed border-slate-200 dark:border-white/10 rounded-2xl p-8 cursor-pointer flex flex-col items-center justify-center gap-3 transition-all hover:bg-slate-100/50 dark:hover:bg-white/10 text-center"
-            >
-              <div className="w-12 h-12 rounded-full bg-emerald-500/10 text-emerald-500 flex items-center justify-center border border-emerald-500/20 shadow-md">
-                <UploadCloud size={24} />
-              </div>
-              <div className="text-sm font-bold text-slate-800 dark:text-slate-250">
-                Launch Unified Career Pipeline & Resume Analyzer
-              </div>
-              <p className="text-xs text-slate-500">
-                Upload your resume (PDF, DOCX, TXT) and complete the 8-stage interactive analysis, rewrite, template generation, and job matcher.
-              </p>
-            </div>
+              onCreateScratch={() => setShowScratchWizard(true)}
+            />
             
             {/* Filters Row */}
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border-b border-slate-100 pb-3">
