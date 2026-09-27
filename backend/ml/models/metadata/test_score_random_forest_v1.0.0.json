@@ -1,0 +1,58 @@
+{
+  "model_name": "test_score_random_forest_v1.0.0",
+  "model_version": "1.0.0",
+  "dataset_version": "0.0.0-test",
+  "feature_version": "0.0.0-test",
+  "task": "resume_quality",
+  "problem_type": "regression",
+  "training_records": 1,
+  "validation_records": 1,
+  "test_records": 1,
+  "features": [
+    "num_skills",
+    "has_summary"
+  ],
+  "hyperparameters": {
+    "bootstrap": true,
+    "ccp_alpha": 0.0,
+    "criterion": "squared_error",
+    "max_depth": null,
+    "max_features": 1.0,
+    "max_leaf_nodes": null,
+    "max_samples": null,
+    "min_impurity_decrease": 0.0,
+    "min_samples_leaf": 1,
+    "min_samples_split": 2,
+    "min_weight_fraction_leaf": 0.0,
+    "monotonic_cst": null,
+    "n_estimators": 100,
+    "n_jobs": null,
+    "oob_score": false,
+    "random_state": 42,
+    "verbose": 0,
+    "warm_start": false
+  },
+  "metrics": {
+    "train": {
+      "mae": 0.0,
+      "rmse": 0.0,
+      "r2": NaN
+    },
+    "validation": {
+      "mae": 30.0,
+      "rmse": 30.0,
+      "r2": NaN
+    },
+    "test": {
+      "mae": 15.0,
+      "rmse": 15.0,
+      "r2": NaN
+    }
+  },
+  "feature_importance": {
+    "num_skills": 0.0,
+    "has_summary": 0.0
+  },
+  "random_seed": 42,
+  "created_at": "2026-09-27T05:16:59.725886+00:00"
+}
